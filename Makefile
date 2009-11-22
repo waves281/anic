@@ -1,9 +1,9 @@
 main: start anic.exe
 	
-all: start cleanout ani.exe
+all: start cleanout anic.exe
 
 start:
-	@echo ani compiler Makefile
+	@echo anic ANI Compiler Makefile
 	
 anic.exe: Makefile temp/version.exe src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h
 	@echo Building main executable...

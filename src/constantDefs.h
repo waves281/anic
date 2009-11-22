@@ -1,11 +1,12 @@
 #ifndef _CONSTANT_DEFS_H_
 #define _CONSTANT_DEFS_H_
 
+#define PROGRAM_STRING "anic"
 #define VERSION_STRING "0.05"
 #define VERSION_YEAR "2009"
 
-#define HEADER_LITERAL "anic -- ANI v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzykci\n" // compiler header
-#define USAGE_LITERAL "\tusage: ani [<sourceFile>]* [-o <outputFile>] [-p <optimizationLevel>] [-h] [-s] [-v]\n" // info literal
+#define HEADER_LITERAL PROGRAM_STRING<<" -- ANI v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzykci\n" // compiler header
+#define USAGE_LITERAL "\tusage: "<<PROGRAM_STRING<<" [<sourceFile>]* [-o <outputFile>] [-p <optimizationLevel>] [-h] [-s] [-v]\n" // info literal
 
 #define VERBOSE_OUTPUT_DEFAULT 0
 

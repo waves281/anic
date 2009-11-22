@@ -19,9 +19,9 @@ int printHelp(void) {
 	return 0;
 }
 
-#define print(s) cout << "ani: " << s << ".\n";
-#define printError(s) cerr << "ani: ERROR: " << s << ".\n"
-#define printWarning(s) cerr << "ani: warning: " << s << ".\n"
+#define print(s) cout << PROGRAM_STRING << ": " << s << ".\n";
+#define printError(s) cerr << PROGRAM_STRING << ": ERROR: " << s << ".\n"
+#define printWarning(s) cerr << PROGRAM_STRING << ": warning: " << s << ".\n"
 
 void die(int doErrorPrint) {
 	if (doErrorPrint) {

@@ -1,16 +1,16 @@
-main: start ani.exe
+main: start anic.exe
 	
 all: start cleanout ani.exe
 
 start:
 	@echo ani compiler Makefile
 	
-ani.exe: Makefile temp/version.exe src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h
+anic.exe: Makefile temp/version.exe src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h
 	@echo Building main executable...
 	@g++ ./src/core.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./temp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"`date +%s`\"" \
-	-o ani.exe \
+	-o anic.exe \
 	-O3 \
 	-Wall
 	@echo Done.
@@ -28,5 +28,5 @@ clean: cleanout
 	
 cleanout:
 	@echo Cleaning output...
-	@rm -f ani.exe
+	@rm -f anic.exe
 	@rm -f temp/version.exe

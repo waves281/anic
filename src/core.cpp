@@ -7,8 +7,6 @@
 #include "../var/lexerStruct.h"
 
 int main(int argc, char **argv) {
-	LEXER_STRUCT
-
 	// verify arguments
 	if (argc == 1) {
 		printHelp();
@@ -64,6 +62,11 @@ int main(int argc, char **argv) {
 	if (inFiles.empty()) {
 		printError("no input files");
 		die();
+	}
+
+	// now, being with lexing the input files
+	for (unsigned int i=0; i<inFiles.size(); i++) {
+		TokenList *tl = lex(inFiles[i]);
 	}
 
 	// terminate the program successfully

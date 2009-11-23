@@ -9,4 +9,13 @@ struct lexerNodeStruct {
 };
 typedef struct lexerNodeStruct LexerNode;
 
+struct tokenListStruct {
+	char *tokenType;
+	char s;
+	struct tokenListStruct *next;
+};
+typedef struct tokenListStruct TokenList;
+
+TokenList *lex(ifstream *in);
+
 #endif

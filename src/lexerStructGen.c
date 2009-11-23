@@ -15,10 +15,12 @@ int main() {
 	if (out == NULL) { // if file open failed, return an error
 		return -1;
 	}
-	// print the necessary prefix into the output file
+	// print the necessary prologue into the output file
 	fprintf(out, "#include \"../src/lexer.h\"\n");
 	fprintf(out, "#define LEXER_STRUCT \\\n");
-	fprintf(out, "LexerNode lexerNode[256][256]; \\\n");
+	fprintf(out, "static LexerNode lexerNode[256][256]; \\\n");
+	fprintf(out, "static int lexerNodesInitialized = 0; \\\n");
+	fprintf(out, "if (!lexerNodesInitialized) { \\\n");
 	fflush(out);
 	// now, process the input file
 	// data buffers
@@ -38,11 +40,11 @@ int main() {
 		if (retVal2 >= 0 && retVal2 <= 3) { // if it was a blank/incomplete line, skip it
 			continue;
 		} else if (retVal2 == 4) { // else if it was a valid data line, process it normally
-			fprintf(out, "lexerNode[%d][%d] = (LexerNode){ \"%s\", %d }; \\\n", fromState, c, tokenType, toState);
+			fprintf(out, "\tlexerNode[%d][%d] = (LexerNode){ \"%s\", %d }; \\\n", fromState, c, tokenType, toState);
 		}
 	}
-	// print out a blank line to overcome the effect of the \ on the previous line
-	fprintf(out, "\n");
+	// print out the epilogue
+	fprintf(out, "} \n");
 	// finally, return normally
 	return 0;
 }

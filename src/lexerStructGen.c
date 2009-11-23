@@ -16,6 +16,8 @@ int main() {
 		return -1;
 	}
 	// print the necessary prologue into the output file
+	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
+	fprintf(out, "#define _LEXER_STRUCT_H_\n");
 	fprintf(out, "#include \"../src/lexer.h\"\n");
 	fprintf(out, "#define LEXER_STRUCT \\\n");
 	fprintf(out, "static LexerNode lexerNode[256][256]; \\\n");
@@ -44,7 +46,9 @@ int main() {
 		}
 	}
 	// print out the epilogue
+	fprintf(out, "\tlexerNodesInitialized = 1; \\\n");
 	fprintf(out, "} \n");
+	fprintf(out, "#endif\n");
 	// finally, return normally
 	return 0;
 }

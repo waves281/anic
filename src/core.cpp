@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 		if (argv[i][0] == '-') { // option argument
 			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
 				verboseOutput = 1;
-				VERBOSE("verbose output enabled");
+				VERBOSE(print("verbose output enabled");)
 				// flag this option as handled
 				vHandled = 1;
 			} else if  (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
@@ -66,8 +66,11 @@ int main(int argc, char **argv) {
 
 	// now, being with lexing the input files
 	for (unsigned int i=0; i<inFiles.size(); i++) {
-		VERBOSE("lexing file '" << argv[i+1] << "'...");
+		VERBOSE(print("lexing file '" << argv[i+1] << "'...");)
 		vector<Token> *tl = lex(inFiles[i], argv[i+1]);
+		if (tl == NULL) { // check if lexing failed with an error
+			die(1);
+		}
 	}
 
 	// terminate the program successfully

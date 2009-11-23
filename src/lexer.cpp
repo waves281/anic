@@ -42,6 +42,8 @@ void commitToken(char *s, int &sSize, int &state, char *&tokenType, int row, int
 }
 
 vector<Token> *lex(ifstream *in, char *fileName) {
+	// local error code
+	int lexerErrorCode = 0;
 	// initialize lexer structure
 	// LexerNode lexerNode[fromState][charSeen] is hereby defined and usable
 	LEXER_STRUCT
@@ -102,7 +104,10 @@ lexerLoopTop: ;
 			if (transition.valid) { // if the transition is valid
 				if (strcmp(transition.tokenType,"REGCOMMENT") == 0) { // if it's a transition into regular comment mode
 					// first, commit the current token if it's pending
-					if (!(strcmp(tokenType,"") == 0)) { // if we have a token pending
+					if (strcmp(tokenType,"ERROR") == 0) { // if we're currently in the error state, flag this fact and reset our state
+						printLexerError("token corrupted by // comment at "<<fileName<<":"<<row<<":"<<col);
+						resetState(sSize, state, tokenType);
+					} else if (!(strcmp(tokenType,"") == 0)) { // else if we have a valid token pending
 						commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
 					}
 					// next, reset our state
@@ -122,7 +127,30 @@ lexerLoopTop: ;
 						}
 					}
 				} else if (strcmp(transition.tokenType,"STARCOMMENT") == 0) { // else if it's a transition into star comment mode
-
+					// first, commit the current token if it's pending
+					if (strcmp(tokenType,"ERROR") == 0) { // if we're currently in the error state, flag this fact and reset our state
+						printLexerError("token corrupted by /* comment at "<<fileName<<":"<<row<<":"<<col);
+						resetState(sSize, state, tokenType);
+					} else if (!(strcmp(tokenType,"") == 0)) { // else if we have a valid token pending
+						commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
+					}
+					// finally, scan and discard characters up to and including the next */
+					char lastChar = '\0';
+					for(;;) { // scan until we hit either EOF or a */
+						bool retVal = (cin >> c);
+						col++;
+						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
+							printLexerError("/* comment truncated at "<<fileName<<":"<<row<<":"<<col);
+							done = 1;
+							goto lexerLoopTop;
+						} else if (isNewLine(c)) { // if we hit a newline, update the row and col as necessary
+							row++;
+							col = 0;
+						} else if (lastChar == '*' && c == '/') { // else if we've found the end of the comment, simply break out of the loop
+							break;
+						}
+						lastChar = c;
+					}
 				} else if (strcmp(transition.tokenType,"CQUOTE") == 0 || strcmp(transition.tokenType,"SQUOTE") == 0) { // else if it's a transition into a quoting mode
 
 				} else { // else if it's any other regular valid transition
@@ -184,6 +212,12 @@ lexerLoopTop: ;
 	// per-character loop is done now
 	// delete the output character buffer
 	delete s;
-	// finally, return the output vector we just created
-	return outputVector;
+	// finally, test the error code to see if we should propagate it up the chain or return normally
+	if (lexerErrorCode) {
+		// deallocate the output vector, since we're just going to return null
+		delete outputVector;
+		return NULL;
+	} else {
+		return outputVector;
+	}
 }

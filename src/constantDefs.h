@@ -19,6 +19,6 @@
 
 #define MAX_TOKEN_LENGTH 80
 
-#define VERBOSE(s) if (verboseOutput) print(s)
+#define VERBOSE(s) if (verboseOutput) {s}
 
 #endif

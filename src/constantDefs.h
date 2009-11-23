@@ -17,4 +17,6 @@
 #define MAX_STRING_LENGTH sizeof(char)*1024
 #define MALLOC_STRING ((char *)malloc(MAX_STRING_LENGTH))
 
+#define VERBOSE(s) if (verboseOutput) print(s)
+
 #endif

@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 	// verify arguments
 	if (argc == 1) {
 		printHelp();
-		die(0);
+		die();
 	}
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector

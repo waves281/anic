@@ -23,11 +23,11 @@ int printHelp(void) {
 #define printError(s) cerr << PROGRAM_STRING << ": ERROR: " << s << ".\n"
 #define printWarning(s) cerr << PROGRAM_STRING << ": warning: " << s << ".\n"
 
-void die(int doErrorPrint) {
-	if (doErrorPrint) {
-		printError("fatal error -- stop");
+void die(int errorCode) {
+	if (errorCode) {
+		printError("fatal error code " << errorCode << " -- stop");
 	}
-	exit(1);
+	exit(errorCode);
 }
 
 void die(void) {

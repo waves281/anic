@@ -12,6 +12,8 @@ typedef struct lexerNodeStruct LexerNode;
 struct tokenListStruct {
 	char *tokenType;
 	char s;
+	int row;
+	int col;
 	struct tokenListStruct *next;
 };
 typedef struct tokenListStruct TokenList;

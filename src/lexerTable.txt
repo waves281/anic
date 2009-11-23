@@ -305,7 +305,8 @@
 105 * DTIMES -1
 
 // state 106 (/ seen)
-106 / DDIVIDE -1
+106 / REGCOMMENT -1
+106 * STARCOMMENT -1
 
 // state 107 (& seen)
 107 & DAND -1

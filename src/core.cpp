@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 	// now, being with lexing the input files
 	for (unsigned int i=0; i<inFiles.size(); i++) {
 		VERBOSE("lexing file '" << argv[i+1] << "'...");
-		TokenList *tl = lex(inFiles[i]);
+		vector<Token> *tl = lex(inFiles[i], argv[i+1]);
 	}
 
 	// terminate the program successfully

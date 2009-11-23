@@ -4,20 +4,44 @@
 #include "constantDefs.h"
 
 struct lexerNodeStruct {
+	int valid;
 	char *tokenType;
 	int toState;
 };
 typedef struct lexerNodeStruct LexerNode;
 
-struct tokenListStruct {
+struct tokenStruct {
 	char *tokenType;
-	char s;
+	char s[MAX_TOKEN_LENGTH];
 	int row;
 	int col;
-	struct tokenListStruct *next;
 };
-typedef struct tokenListStruct TokenList;
+typedef struct tokenStruct Token;
 
-TokenList *lex(ifstream *in);
+class LexerError {
+	private:
+		char *e;
+		char faultChar;
+		int row;
+		int col;
+	public:
+		LexerError(char *e, char faultChar, int row, int col) {
+			this->e = e;
+		}
+		char *getError() {
+			return e;
+		}
+		char getFaultChar() {
+			return faultChar;
+		}
+		int getRow() {
+			return row;
+		}
+		int getCol() {
+			return col;
+		}
+};
+
+vector<Token> *lex(ifstream *in, char *fileName);
 
 #endif

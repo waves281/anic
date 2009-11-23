@@ -23,7 +23,11 @@ int main() {
 	fprintf(out, "static LexerNode lexerNode[256][256]; \\\n");
 	fprintf(out, "static int lexerNodesInitialized = 0; \\\n");
 	fprintf(out, "if (!lexerNodesInitialized) { \\\n");
-	fflush(out);
+	fprintf(out, "\tfor (int i = 0; i<256; i++) { \\\n");
+	fprintf(out, "\t\tfor (int j = 0; j<256; j++) { \\\n");
+	fprintf(out, "\t\t\tlexerNode[i][j].valid = 0; \\\n");
+	fprintf(out, "\t\t} \\\n");
+	fprintf(out, "\t} \\\n");
 	// now, process the input file
 	// data buffers
 	char lineBuf[MAX_STRING_LENGTH];
@@ -42,7 +46,7 @@ int main() {
 		if (retVal2 >= 0 && retVal2 <= 3) { // if it was a blank/incomplete line, skip it
 			continue;
 		} else if (retVal2 == 4) { // else if it was a valid data line, process it normally
-			fprintf(out, "\tlexerNode[%d][%d] = (LexerNode){ \"%s\", %d }; \\\n", fromState, c, tokenType, toState);
+			fprintf(out, "\tlexerNode[%d][%d] = (LexerNode){ 1, \"%s\", %d }; \\\n", fromState, c, tokenType, toState);
 		}
 	}
 	// print out the epilogue

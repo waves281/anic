@@ -17,6 +17,8 @@
 #define MAX_STRING_LENGTH (sizeof(char)*1024)
 #define MALLOC_STRING ((char *)malloc(MAX_STRING_LENGTH))
 
+#define MAX_TOKEN_LENGTH 80
+
 #define VERBOSE(s) if (verboseOutput) print(s)
 
 #endif

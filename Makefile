@@ -7,7 +7,7 @@ start:
 	
 anic.exe: Makefile temp/version.exe var/lexerStruct.h src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h src/lexer.h src/lexer.cpp
 	@echo Building main executable...
-	@g++ ./src/core.cpp ./src/lexer.cpp \
+	@g++ ./src/core.cpp ./src/system.cpp ./src/lexer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./temp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"`date +%s`\"" \
 	-o anic.exe \

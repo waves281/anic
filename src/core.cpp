@@ -3,7 +3,12 @@
 #include "globalVars.h"
 #include "system.h"
 
+#include "lexer.h"
+#include "../var/lexerStruct.h"
+
 int main(int argc, char **argv) {
+	LEXER_STRUCT
+
 	// verify arguments
 	if (argc == 1) {
 		printHelp();

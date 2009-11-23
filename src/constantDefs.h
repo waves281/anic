@@ -14,4 +14,7 @@
 #define MIN_OPTIMIZATION_LEVEL 0
 #define MAX_OPTIMIZATION_LEVEL 5
 
+#define MAX_STRING_LENGTH sizeof(char)*1024
+#define MALLOC_STRING ((char *)malloc(MAX_STRING_LENGTH))
+
 #endif

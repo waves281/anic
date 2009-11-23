@@ -5,12 +5,12 @@
 int main() {
 	unsigned long long buildNumber;
 	FILE *f;
-	if ((f = fopen("./var/version.cfg","r")) == NULL) { // no version file exists, so create one
+	if ((f = fopen("./var/version.cfg","r")) == NULL) { // if no version file exists, create one
 		f = fopen("./var/version.cfg","w");
 		buildNumber = 1;
 		fprintf(f,"%s %d\n",VERSION_STRING,buildNumber);
 	} else { // a version file exists, so use it
-		char *version = (char *)malloc(sizeof(char)*1024);
+		char *version = MALLOC_STRING;
 		fscanf(f, "%s %llu",version,&buildNumber);
 		fclose(f);
 		f = fopen("./var/version.cfg","w");

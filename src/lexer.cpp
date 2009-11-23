@@ -13,7 +13,6 @@ int isNewLine(unsigned char c) {
 	return (c == '\n' || c == '\r');
 }
 
-
 vector<Token> *lex(ifstream *in, char *fileName) {
 	// initialize lexer structure
 	// LexerNode lexerNode[fromState][charSeen] is hereby defined and usable

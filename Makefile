@@ -5,7 +5,9 @@ all: start cleanout anic.exe
 start:
 	@echo anic ANI Compiler Makefile
 	
-anic.exe: Makefile temp/version.exe var/lexerStruct.h src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h src/lexer.h src/lexer.cpp
+anic.exe: Makefile temp/version.exe var/lexerStruct.h \
+		src/core.cpp src/system.h src/mainDefs.h src/constantDefs.h src/globalVars.h src/lexer.h \
+		src/lexer.cpp src/system.cpp
 	@echo Building main executable...
 	@g++ ./src/core.cpp ./src/system.cpp ./src/lexer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./temp/version.exe`\"" \

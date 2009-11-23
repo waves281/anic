@@ -15,7 +15,7 @@ anic.exe: Makefile temp/version.exe var/lexerStruct.h src/core.cpp src/lexer.h s
 	-Wall
 	@echo Done.
 	
-temp/version.exe: src/version.c
+temp/version.exe: src/version.c src/constantDefs.h
 	@echo Building version controller...
 	@mkdir -p var
 	@mkdir -p temp

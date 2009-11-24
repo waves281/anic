@@ -22,15 +22,15 @@ void resetState(int &sSize, int &state, char *&tokenType) {
 	return;
 }
 
-void commitToken(char *s, int &sSize, int &state, char *&tokenType, int row, int col, vector<Token> *outputVector, unsigned char c, unsigned char &carryOver) {
+void commitToken(char *s, int &sSize, int &state, char *&tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c, char &carryOver) {
 	// first, terminate s
 	s[sSize] = '\0';
 	// then, build up the token
 	Token t;
 	t.tokenType = tokenType;
 	strcpy(t.s, s);
-	t.row = row;
-	t.col = col;
+	t.row = rowStart;
+	t.col = colStart;
 	// now, commit it to the output vector
 	outputVector->push_back(t);
 	// finally, reset our state back to the default
@@ -50,8 +50,8 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	// declare output vector
 	vector<Token> *outputVector = new vector<Token>();
 	// input character buffers
-	unsigned char c;
-	unsigned char carryOver = '\0';
+	char c;
+	char carryOver = '\0';
 	// output character buffer
 	char *s = MALLOC_STRING;
 	int sSize = 0;
@@ -61,18 +61,19 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	// the position in the file we're currently in
 	int row = 1;
 	int col = 0;
+	int rowStart = -1;
+	int colStart = -1;
 	// loop flags
 	int done = 0;
 	for(;;) { // per-character loop
 
 lexerLoopTop: ;
-
 		// get a new character
 		if (carryOver != '\0') { // if there is a character to carry over, use it
 			c = carryOver;
 			carryOver = '\0';
 		} else { // otherwise, grab a character from the input
-			if ( !(in == NULL ? cin >> c : *in >> c) ) { // if getting a character fails, flag the fact that we're done now
+			if ( !(in == NULL ? cin.get(c) : in->get(c)) ) { // if getting a character fails, flag the fact that we're done now
 				if (done) { // if this is the second time we're trying to read EOF, break out of the loop
 					break;
 				}
@@ -87,12 +88,12 @@ lexerLoopTop: ;
 		// first, check it it was a special character
 		if (isWhiteSpace(c)) { // whitespace?
 			if (strcmp(tokenType,"ERROR") == 0) { // if we got whitespace space while in error mode,
-				printLexerError("token corrupted by '"<<c<<"' at "<<fileName<<":"<<row<<":"<<col);
+				printLexerError("token corrupted by \'"<<c<<"\' at "<<fileName<<":"<<rowStart<<":"<<colStart);
 				// throw away this token and continue parsing
 				resetState(sSize, state, tokenType);
 				carryOver = c;
 			} else if (!(strcmp(tokenType,"") == 0)) { // else if we were in a commitable state, commit this token to the output vector
-				commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
+				commitToken(s, sSize, state, tokenType, rowStart, colStart, outputVector, c, carryOver);
 			}
 			if (isNewLine(c)) { // newline?
 				// bump up the row count and carriage return the column
@@ -100,21 +101,20 @@ lexerLoopTop: ;
 				col = 0;
 			}
 		} else { // else if it was a non-whitepace character, check if there is a valid transition for this state
-			LexerNode transition = lexerNode[state][c];
+			LexerNode transition = state == -1 ? lexerNode[255][(unsigned char)c] : lexerNode[state][(unsigned char)c];
 			if (transition.valid) { // if the transition is valid
+				// first, set rowStart amd colStart if we're coming from the core state
+				if (state == 0) {
+					rowStart = row;
+					colStart = col;
+				}
+				// now, branch based on the type of transition it was
 				if (strcmp(transition.tokenType,"REGCOMMENT") == 0) { // if it's a transition into regular comment mode
-					// first, commit the current token if it's pending
-					if (strcmp(tokenType,"ERROR") == 0) { // if we're currently in the error state, flag this fact and reset our state
-						printLexerError("token corrupted by // comment at "<<fileName<<":"<<row<<":"<<col);
-						resetState(sSize, state, tokenType);
-					} else if (!(strcmp(tokenType,"") == 0)) { // else if we have a valid token pending
-						commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
-					}
-					// next, reset our state
+					// first, reset our state
 					resetState(sSize, state, tokenType);
 					// finally, scan and discard characters up to and including the next newline
 					for(;;) { // scan until we hit either EOF or a newline
-						bool retVal = (in == NULL ? cin >> c : *in >> c);
+						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						if (!retVal) { // if we hit EOF, flag the fact that we're done and jump to the top of the loop
 							done = 1;
 							goto lexerLoopTop;
@@ -127,17 +127,12 @@ lexerLoopTop: ;
 						}
 					}
 				} else if (strcmp(transition.tokenType,"STARCOMMENT") == 0) { // else if it's a transition into star comment mode
-					// first, commit the current token if it's pending
-					if (strcmp(tokenType,"ERROR") == 0) { // if we're currently in the error state, flag this fact and reset our state
-						printLexerError("token corrupted by /* comment at "<<fileName<<":"<<row<<":"<<col);
-						resetState(sSize, state, tokenType);
-					} else if (!(strcmp(tokenType,"") == 0)) { // else if we have a valid token pending
-						commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
-					}
-					// finally, scan and discard characters up to and including the next */
+					// first, reset our state
+					resetState(sSize, state, tokenType);
+					// next, scan and discard characters up to and including the next * /
 					char lastChar = '\0';
-					for(;;) { // scan until we hit either EOF or a */
-						bool retVal = (in == NULL ? cin >> c : *in >> c);
+					for(;;) { // scan until we hit either EOF or a * /
+						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						col++;
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							printLexerError("/* comment truncated at "<<fileName<<":"<<row<<":"<<col);
@@ -154,17 +149,17 @@ lexerLoopTop: ;
 				} else if (strcmp(transition.tokenType,"CQUOTE") == 0 || strcmp(transition.tokenType,"SQUOTE") == 0) { // else if it's a transition into a quoting mode
 
 				} else { // else if it's any other regular valid transition
-					if (sSize < MAX_TOKEN_LENGTH) { // if there is room in the buffer for this character, log it
+					if (sSize < (MAX_TOKEN_LENGTH-1)) { // if there is room in the buffer for this character, log it
 						s[sSize] = c;
 						sSize++;
 						tokenType = transition.tokenType;
 						state = transition.toState;
 					} else { // else if there is no more room in the buffer for this character, discard the token with an error
-						printLexerError("token overflow at "<<fileName<<":"<<row<<":"<<col);
+						printLexerError("token overflow at "<<fileName<<":"<<rowStart<<":"<<colStart);
 						// also, reset state and scan to the end of this token
 						resetState(sSize, state, tokenType);
 						for(;;) {
-							bool retVal = (in == NULL ? cin >> c : *in >> c);
+							bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 							// handle newline cursor logging properly
 							if (isNewLine(c)) {
 								row++;
@@ -183,12 +178,12 @@ lexerLoopTop: ;
 				}
 			} else { // else if the transition isn't valid
 				if (strcmp(tokenType,"") == 0) { // if there were no valid characters before this junk
-					printLexerError("unexpected character '"<<c<<"' at "<<fileName<<":"<<row<<":"<<col);
+					printLexerError("stray character \'"<<c<<"\' at "<<fileName<<":"<<row<<":"<<col);
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(sSize, state, tokenType);
 					for(;;) {
-						bool retVal = (in == NULL ? cin >> c : *in >> c);
+						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						// handle newline cursor logging properly
 						if (isNewLine(c)) {
 							row++;
@@ -204,7 +199,7 @@ lexerLoopTop: ;
 						}
 					}
 				} else { // else if there is a valid commit pending, do it and carry over this character for the next round
-					commitToken(s, sSize, state, tokenType, row, col, outputVector, c, carryOver);
+					commitToken(s, sSize, state, tokenType, rowStart, colStart, outputVector, c, carryOver);
 				}
 			}
 		}

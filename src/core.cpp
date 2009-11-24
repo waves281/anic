@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
 	}
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
+	vector<char *> inFileNames; // source file name vector
 	// handled flags for each option
 	int vHandled = 0;
 	int pHandled = 0;
@@ -56,8 +57,9 @@ int main(int argc, char **argv) {
 			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
 				die();
-			} else { // else if file open succeeded, add the file to the vector
+			} else { // else if file open succeeded, add the file and its name to the appropriate vectors
 				inFiles.push_back(inFile);
+				inFileNames.push_back(fileName);
 			}
 		}
 	}
@@ -68,13 +70,38 @@ int main(int argc, char **argv) {
 	}
 
 	// now, being with lexing the input files
+	vector<vector<Token> *> lexemes;
 	for (unsigned int i=0; i<inFiles.size(); i++) {
-		VERBOSE(print("lexing file '" << argv[i+1] << "'...");)
-		vector<Token> *tl = lex(inFiles[i], argv[i+1]);
-		if (tl == NULL) { // check if lexing failed with an error
+		// check file arguments
+		char *fileName = inFileNames[i];
+		if (strcmp(fileName,"-") == 0) {
+			fileName = "stdin";
+		}
+		VERBOSE(print("lexing file \'" << fileName << "\'...");)
+		// do the actual lexing
+		vector<Token> *lexeme = lex(inFiles[i], fileName);
+		if (lexeme == NULL) { // check if lexing failed with an error
 			die(1);
 		}
+		// finally, log the lexeme to our vector of them
+		lexemes.push_back(lexeme);
 	}
+
+	// print out the tokens if we're in verbose mode
+	VERBOSE(
+		for (unsigned int fileIndex = 0; fileIndex < lexemes.size(); fileIndex++) {
+			char *fileName = inFileNames[fileIndex];
+			if (strcmp(fileName,"-") == 0) {
+				fileName = "stdin";
+			}
+			cout << fileName << ":\n";
+			vector<Token> *fileVector = lexemes[fileIndex];
+			for (unsigned int tokenIndex = 0; tokenIndex < fileVector->size(); tokenIndex++) {
+				Token tokenCur = (*fileVector)[tokenIndex];
+				cout << "[" << tokenCur.tokenType << "," << tokenCur.s << "," << tokenCur.row << "," << tokenCur.col << "] " ;
+			} // per-token loop
+		} // per-file loop
+	) // VERBOSE
 
 	// terminate the program successfully
 	return 0;

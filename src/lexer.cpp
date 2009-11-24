@@ -72,7 +72,7 @@ lexerLoopTop: ;
 			c = carryOver;
 			carryOver = '\0';
 		} else { // otherwise, grab a character from the input
-			if ( !(*in >> c) ) { // if getting a character fails, flag the fact that we're done now
+			if ( !(in == NULL ? cin >> c : *in >> c) ) { // if getting a character fails, flag the fact that we're done now
 				if (done) { // if this is the second time we're trying to read EOF, break out of the loop
 					break;
 				}
@@ -114,7 +114,7 @@ lexerLoopTop: ;
 					resetState(sSize, state, tokenType);
 					// finally, scan and discard characters up to and including the next newline
 					for(;;) { // scan until we hit either EOF or a newline
-						bool retVal = (cin >> c);
+						bool retVal = (in == NULL ? cin >> c : *in >> c);
 						if (!retVal) { // if we hit EOF, flag the fact that we're done and jump to the top of the loop
 							done = 1;
 							goto lexerLoopTop;
@@ -137,7 +137,7 @@ lexerLoopTop: ;
 					// finally, scan and discard characters up to and including the next */
 					char lastChar = '\0';
 					for(;;) { // scan until we hit either EOF or a */
-						bool retVal = (cin >> c);
+						bool retVal = (in == NULL ? cin >> c : *in >> c);
 						col++;
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							printLexerError("/* comment truncated at "<<fileName<<":"<<row<<":"<<col);
@@ -164,7 +164,7 @@ lexerLoopTop: ;
 						// also, reset state and scan to the end of this token
 						resetState(sSize, state, tokenType);
 						for(;;) {
-							bool retVal = (cin >> c);
+							bool retVal = (in == NULL ? cin >> c : *in >> c);
 							// handle newline cursor logging properly
 							if (isNewLine(c)) {
 								row++;
@@ -188,7 +188,7 @@ lexerLoopTop: ;
 					// reset state
 					resetState(sSize, state, tokenType);
 					for(;;) {
-						bool retVal = (cin >> c);
+						bool retVal = (in == NULL ? cin >> c : *in >> c);
 						// handle newline cursor logging properly
 						if (isNewLine(c)) {
 							row++;

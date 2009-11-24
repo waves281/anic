@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 	int vHandled = 0;
 	int pHandled = 0;
 	for (int i=1; i<argc; i++) {
-		if (argv[i][0] == '-') { // option argument
+		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
 				verboseOutput = 1;
 				VERBOSE(print("verbose output enabled");)
@@ -49,8 +49,11 @@ int main(int argc, char **argv) {
 
 		} else { // default case; assume regular file argument
 			char *fileName = argv[i];
-			ifstream *inFile = new ifstream(fileName); // create a stream for this file
-			if (!inFile->good()) { // if file open failed
+			if (argv[i][0] == '-') {
+				fileName = "stdin";
+			}
+			ifstream *inFile = (strcmp(fileName,"stdin") == 0) ? NULL : new ifstream(fileName); // create a stream for this file
+			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
 				die();
 			} else { // else if file open succeeded, add the file to the vector

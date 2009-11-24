@@ -70,7 +70,8 @@ int main(int argc, char **argv) {
 	}
 
 	// now, being with lexing the input files
-	vector<vector<Token> *> lexemes;
+	int lexerError = 0; // error flag
+	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
 		// check file arguments
 		char *fileName = inFileNames[i];
@@ -80,14 +81,18 @@ int main(int argc, char **argv) {
 		VERBOSE(printNotice("lexing file \'" << fileName << "\'..");)
 		// do the actual lexing
 		vector<Token> *lexeme = lex(inFiles[i], fileName);
-		if (lexeme == NULL) { // check if lexing failed with an error
-			die(1);
+		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
+			lexerError = 1;
+		} else { // else if lexing was successful, log the lexeme to the vector
+			lexemes.push_back(lexeme);
 		}
-		// finally, log the lexeme to our vector of them
-		lexemes.push_back(lexeme);
+	}
+	// now, check if lexing failed and kill the system as appropriate
+	if (lexerError) {
+		die(1);
 	}
 
-	// print out the tokens if we're in verbose mode
+	// print out the lexemes if we're in verbose mode
 	VERBOSE(
 		for (unsigned int fileIndex = 0; fileIndex < lexemes.size(); fileIndex++) {
 			char *fileName = inFileNames[fileIndex];

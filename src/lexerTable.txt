@@ -71,7 +71,7 @@
 0 ] RSQUARE 101
 0 { LCURLY -1
 0 } RCURLY -1
-0 = EQUALS 9
+0 = EQUALS 10
 0 . DOT -1
 0 , COMMA -1
 0 \ SLASH 102
@@ -88,7 +88,7 @@
 0 < LT 109
 0 > GT 110
 // logical characters
-0 ! NOT 10
+0 ! NOT 11
 0 ~ COMPLEMENT -1
 0 & AND 107
 0 | OR 108
@@ -180,81 +180,82 @@
 2 9 INUM 2
 // numeric modifiers
 2 . ERROR 4
-3 e ERROR 5
+3 e ERROR 6
 
 // state 3 (saw an initial 0)
-// double zero (error)
-3 0 ERROR -1
+// double zero (fail)
+3 0 FAIL -1
 // standard octal numbers, lacking zero
-3 1 INUM 7
-3 2 INUM 7
-3 3 INUM 7
-3 4 INUM 7
-3 5 INUM 7
-3 6 INUM 7
-3 7 INUM 7
+3 1 INUM 8
+3 2 INUM 8
+3 3 INUM 8
+3 4 INUM 8
+3 5 INUM 8
+3 6 INUM 8
+3 7 INUM 8
 // hexadecimal modifier
-3 x ERROR 8
+3 x ERROR 9
 // numeric modifiers
 3 . ERROR 4
 
 // state 4 (saw a decimal in a number)
 // standard numbers
-4 0 FNUM 4
-4 1 FNUM 4
-4 2 FNUM 4
-4 3 FNUM 4
-4 4 FNUM 4
-4 5 FNUM 4
-4 6 FNUM 4
-4 7 FNUM 4
-4 8 FNUM 4
-4 9 FNUM 4
+4 0 FNUM 5
+4 1 FNUM 5
+4 2 FNUM 5
+4 3 FNUM 5
+4 4 FNUM 5
+4 5 FNUM 5
+4 6 FNUM 5
+4 7 FNUM 5
+4 8 FNUM 5
+4 9 FNUM 5
+
+// state 5 (saw number decimal number)
+5 0 FNUM 5
+5 1 FNUM 5
+5 2 FNUM 5
+5 3 FNUM 5
+5 4 FNUM 5
+5 5 FNUM 5
+5 6 FNUM 5
+5 7 FNUM 5
+5 8 FNUM 5
+5 9 FNUM 5
 // numeric modifiers
-4 e ERROR 5
+5 e ERROR 6
 
-// state 5 (saw an e in a number, possible + or - upcoming)
+// state 6 (saw an e in a number, possible + or - upcoming)
 // standard numbers
-5 0 FNUM 6
-5 1 FNUM 6
-5 2 FNUM 6
-5 3 FNUM 6
-5 4 FNUM 6
-5 5 FNUM 6
-5 6 FNUM 6
-5 7 FNUM 6
-5 8 FNUM 6
-5 9 FNUM 6
+6 0 FNUM 7
+6 1 FNUM 7
+6 2 FNUM 7
+6 3 FNUM 7
+6 4 FNUM 7
+6 5 FNUM 7
+6 6 FNUM 7
+6 7 FNUM 7
+6 8 FNUM 7
+6 9 FNUM 7
 // signage specifiers
-5 + ERROR 6
-5 - ERROR 6
+6 + ERROR 7
+6 - ERROR 7
 
-// state 6 (e in a number, no more + or - allowed)
+// state 7 (e in a number, no more + or - allowed)
 // standard numbers
-6 0 FNUM 6
-6 1 FNUM 6
-6 2 FNUM 6
-6 3 FNUM 6
-6 4 FNUM 6
-6 5 FNUM 6
-6 6 FNUM 6
-6 7 FNUM 6
-6 8 FNUM 6
-6 9 FNUM 6
+7 0 FNUM 7
+7 1 FNUM 7
+7 2 FNUM 7
+7 3 FNUM 7
+7 4 FNUM 7
+7 5 FNUM 7
+7 6 FNUM 7
+7 7 FNUM 7
+7 8 FNUM 7
+7 9 FNUM 7
 
-// state 7 (continuation of an octal number)
+// state 8 (continuation of an octal number)
 // standard octal numbers
-7 0 INUM 7
-7 1 INUM 7
-7 2 INUM 7
-7 3 INUM 7
-7 4 INUM 7
-7 5 INUM 7
-7 6 INUM 7
-7 7 INUM 7
-
-// state 8 (continuation of a hex number)
-// standard numbers
 8 0 INUM 8
 8 1 INUM 8
 8 2 INUM 8
@@ -263,28 +264,39 @@
 8 5 INUM 8
 8 6 INUM 8
 8 7 INUM 8
-8 8 INUM 8
-8 9 INUM 8
+
+// state 9 (continuation of a hex number)
+// standard numbers
+9 0 INUM 9
+9 1 INUM 9
+9 2 INUM 9
+9 3 INUM 9
+9 4 INUM 9
+9 5 INUM 9
+9 6 INUM 9
+9 7 INUM 9
+9 8 INUM 9
+9 9 INUM 9
 // standard lowercase hex digits
-8 a INUM 8
-8 b INUM 8
-8 c INUM 8
-8 d INUM 8
-8 e INUM 8
-8 f INUM 8
+9 a INUM 9
+9 b INUM 9
+9 c INUM 9
+9 d INUM 9
+9 e INUM 9
+9 f INUM 9
 // standard uppercase hex digits
-8 A INUM 8
-8 B INUM 8
-8 C INUM 8
-8 D INUM 8
-8 E INUM 8
-8 F INUM 8
+9 A INUM 9
+9 B INUM 9
+9 C INUM 9
+9 D INUM 9
+9 E INUM 9
+9 F INUM 9
 
-// state 9 (continuation of equality)
-9 = DEQUALS -1
+// state 10 (continuation of equality)
+10 = DEQUALS -1
 
-// state 10 (continuation of not)
-10 = NEQUALS -1
+// state 11 (continuation of not)
+11 = NEQUALS -1
 
 // state 100 ([ seen)
 100 [ DLSQUARE -1

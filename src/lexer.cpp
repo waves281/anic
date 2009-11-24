@@ -88,7 +88,7 @@ lexerLoopTop: ;
 		// first, check it it was a special character
 		if (isWhiteSpace(c)) { // whitespace?
 			if (strcmp(tokenType,"ERROR") == 0) { // if we got whitespace space while in error mode,
-				printLexerError("token corrupted by \'"<<c<<"\' at "<<fileName<<":"<<rowStart<<":"<<colStart);
+				printLexerError(fileName,rowStart,colStart,"whitespace-truncated token");
 				// throw away this token and continue parsing
 				resetState(sSize, state, tokenType);
 				carryOver = c;
@@ -107,6 +107,17 @@ lexerLoopTop: ;
 				if (state == 0) {
 					rowStart = row;
 					colStart = col;
+				}
+				// second, check if we're jumping into a failure state
+				if(strcmp(transition.tokenType,"FAIL") == 0) { // if it's a failure state, print an error, reset, and continue
+					// print the error message
+					printLexerError(fileName,row,col,"token mangled by \'"<<c<<"\'");
+					// also, reset state
+					resetState(sSize, state, tokenType);
+					// however, carry over the faulting character, as it might be useful for later debugging
+					carryOver = c;
+					// finally, continue from the top of the loop
+					continue;
 				}
 				// now, branch based on the type of transition it was
 				if (strcmp(transition.tokenType,"REGCOMMENT") == 0) { // if it's a transition into regular comment mode
@@ -135,7 +146,7 @@ lexerLoopTop: ;
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						col++;
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
-							printLexerError("/* comment truncated at "<<fileName<<":"<<row<<":"<<col);
+							printLexerError(fileName,rowStart,colStart,"/* comment truncated by EOF");
 							done = 1;
 							goto lexerLoopTop;
 						} else if (isNewLine(c)) { // if we hit a newline, update the row and col as necessary
@@ -155,7 +166,7 @@ lexerLoopTop: ;
 						tokenType = transition.tokenType;
 						state = transition.toState;
 					} else { // else if there is no more room in the buffer for this character, discard the token with an error
-						printLexerError("token overflow at "<<fileName<<":"<<rowStart<<":"<<colStart);
+						printLexerError(fileName,rowStart,colStart,"token overflow");
 						// also, reset state and scan to the end of this token
 						resetState(sSize, state, tokenType);
 						for(;;) {
@@ -178,7 +189,7 @@ lexerLoopTop: ;
 				}
 			} else { // else if the transition isn't valid
 				if (strcmp(tokenType,"") == 0) { // if there were no valid characters before this junk
-					printLexerError("stray character \'"<<c<<"\' at "<<fileName<<":"<<row<<":"<<col);
+					printLexerError(fileName,row,col,"stray character \'"<<c<<"\'");
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(sSize, state, tokenType);
@@ -198,6 +209,13 @@ lexerLoopTop: ;
 							goto lexerLoopTop;
 						}
 					}
+				} else if (strcmp(tokenType,"ERROR") == 0) { // else if it's an invalid transition from an error state, flag it
+					// print the error message
+					printLexerError(fileName,row,col,"token truncated by \'"<<c<<"\'");
+					// also, reset state
+					resetState(sSize, state, tokenType);
+					// however, carry over the faulting character, as it might be useful for later debugging
+					carryOver = c;
 				} else { // else if there is a valid commit pending, do it and carry over this character for the next round
 					commitToken(s, sSize, state, tokenType, rowStart, colStart, outputVector, c, carryOver);
 				}

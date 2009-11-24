@@ -15,6 +15,6 @@ void die(void);
 #define printError(s) cerr << PROGRAM_STRING << ": ERROR: " << s << ".\n"
 #define printWarning(s) cerr << PROGRAM_STRING << ": warning: " << s << ".\n"
 
-#define printLexerError(s) cerr << PROGRAM_STRING << ": ERROR: LEXER: " << s << ".\n"; lexerErrorCode = 1
+#define printLexerError(fileName,row,col,s) cerr << PROGRAM_STRING << ": ERROR: LEXER: " << fileName << ":" << row << ":" << col << ": " << s << ".\n"; lexerErrorCode = 1
 
 #endif

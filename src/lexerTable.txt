@@ -299,7 +299,8 @@
 103 + DPLUS -1
 
 // state 104 (- seen)
-104 - DMINUS -1
+104 - DMINUS 111
+104 > RARROW -1
 
 // state 105 (* seen)
 105 * DTIMES -1
@@ -319,3 +320,6 @@
 
 // state 110 (> seen)
 110 > RS -1
+
+// state 111 (-- seen)
+111 > DRARROW -1

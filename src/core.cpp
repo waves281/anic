@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
 				verboseOutput = 1;
-				VERBOSE(print("verbose output enabled");)
+				VERBOSE(printNotice("verbose output enabled");)
 				// flag this option as handled
 				vHandled = 1;
 			} else if  (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 		if (strcmp(fileName,"-") == 0) {
 			fileName = "stdin";
 		}
-		VERBOSE(print("lexing file \'" << fileName << "\'...");)
+		VERBOSE(printNotice("lexing file \'" << fileName << "\'..");)
 		// do the actual lexing
 		vector<Token> *lexeme = lex(inFiles[i], fileName);
 		if (lexeme == NULL) { // check if lexing failed with an error
@@ -94,12 +94,13 @@ int main(int argc, char **argv) {
 			if (strcmp(fileName,"-") == 0) {
 				fileName = "stdin";
 			}
-			cout << fileName << ":\n";
+			printLabel(fileName << ":");
 			vector<Token> *fileVector = lexemes[fileIndex];
 			for (unsigned int tokenIndex = 0; tokenIndex < fileVector->size(); tokenIndex++) {
 				Token tokenCur = (*fileVector)[tokenIndex];
 				cout << "[" << tokenCur.tokenType << "," << tokenCur.s << "," << tokenCur.row << "," << tokenCur.col << "] " ;
 			} // per-token loop
+			cout << "\n";
 		} // per-file loop
 	) // VERBOSE
 

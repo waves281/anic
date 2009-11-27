@@ -6,6 +6,16 @@
 #include "lexer.h"
 #include "../var/lexerStruct.h"
 
+int containsString(vector<char *>inFileNames, char *s) {
+	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
+		if (strcmp(inFileNames[i], s) == 0) { // if we have a match at this index, return true
+			return 1;
+		}
+	}
+	// else if we did not find any matches, return false
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	// verify arguments
 	if (argc == 1) {
@@ -51,9 +61,13 @@ int main(int argc, char **argv) {
 		} else { // default case; assume regular file argument
 			char *fileName = argv[i];
 			if (argv[i][0] == '-') {
-				fileName = "stdin";
+				fileName = STD_IN;
 			}
-			ifstream *inFile = (strcmp(fileName,"stdin") == 0) ? NULL : new ifstream(fileName); // create a stream for this file
+			if (containsString(inFileNames, fileName)) {
+				printWarning("including file '" << fileName << "' multiple times");
+				continue;
+			}
+			ifstream *inFile = (strcmp(fileName,STD_IN) == 0) ? NULL : new ifstream(fileName); // create a stream for this file
 			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
 				die();

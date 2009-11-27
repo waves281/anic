@@ -37,6 +37,14 @@ void commitToken(vector<char> &s, int &state, char *&tokenType, int rowStart, in
 	return;
 }
 
+vector<char> hex(unsigned char c) {
+	vector<char> retVal;
+	char hexDigits[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+	retVal.push_back(hexDigits[(c>>4)&0xF]);
+	retVal.push_back(hexDigits[c&0xF]);
+	return retVal;
+}
+
 vector<Token> *lex(ifstream *in, char *fileName) {
 	// local error code
 	int lexerErrorCode = 0;
@@ -106,7 +114,7 @@ lexerLoopTop: ;
 				// second, check if we're jumping into a failure state
 				if(strcmp(transition.tokenType,"FAIL") == 0) { // if it's a failure state, print an error, reset, and continue
 					// print the error message
-					printLexerError(fileName,row,col,"token mangled by \'"<<c<<"\'");
+					printLexerError(fileName,row,col,"token mangled by stray character 0x"<<hex(c));
 					// also, reset state
 					resetState(s, state, tokenType);
 					// however, carry over the faulting character, as it might be useful for later debugging
@@ -183,7 +191,7 @@ lexerLoopTop: ;
 				}
 			} else { // else if the transition isn't valid
 				if (strcmp(tokenType,"") == 0) { // if there were no valid characters before this junk
-					printLexerError(fileName,row,col,"stray character \'"<<c<<"\'");
+					printLexerError(fileName,row,col,"stray character 0x"<<hex(c));
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(s, state, tokenType);
@@ -205,7 +213,7 @@ lexerLoopTop: ;
 					}
 				} else if (strcmp(tokenType,"ERROR") == 0) { // else if it's an invalid transition from an error state, flag it
 					// print the error message
-					printLexerError(fileName,row,col,"token truncated by \'"<<c<<"\'");
+					printLexerError(fileName,row,col,"token truncated by stray character 0x"<<hex(c));
 					// also, reset state
 					resetState(s, state, tokenType);
 					// however, carry over the faulting character, as it might be useful for later debugging

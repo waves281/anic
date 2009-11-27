@@ -4,6 +4,6 @@
 #include "mainDefs.h"
 
 // string vector streaming operator
-ostream &operator<< (ostream &os, vector<char> &s);
+ostream &operator<< (ostream &os, vector<char> s);
 
 #endif

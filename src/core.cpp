@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 			vector<Token> *fileVector = lexemes[fileIndex];
 			for (unsigned int tokenIndex = 0; tokenIndex < fileVector->size(); tokenIndex++) {
 				Token tokenCur = (*fileVector)[tokenIndex];
-				cout << "[" << tokenCur.tokenType << "," << tokenCur.s << "," << tokenCur.row << "," << tokenCur.col << "] " ;
+				cout << "[" << tokenCur.tokenType << "," << tokenCur.s << "," << tokenCur.row << "," << tokenCur.col << ":"<< tokenCur.s.size() << "] " ;
 			} // per-token loop
 			cout << "\n";
 		} // per-file loop

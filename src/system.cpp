@@ -1,8 +1,5 @@
 #include "system.h"
 
-#include "mainDefs.h"
-#include "constantDefs.h"
-
 int printHeader(void) {
 	cerr << HEADER_LITERAL;
 	return 0;

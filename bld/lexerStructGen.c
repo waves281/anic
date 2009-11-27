@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "constantDefs.h"
+
+#include "../src/constantDefs.h"
 
 // parses the lexer table into an includable .h file with the appropriate struct representation
 int main() {

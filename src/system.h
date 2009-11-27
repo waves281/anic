@@ -1,6 +1,7 @@
 #ifndef _SYSTEM_H_
 #define _SYSTEM_H_
 
+#include "mainDefs.h"
 #include "constantDefs.h"
 
 int printHeader(void);

@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "constantDefs.h"
+
+#include "../src/constantDefs.h"
 
 // prints the buildnumber to stdout
 int main() {

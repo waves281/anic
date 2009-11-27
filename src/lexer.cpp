@@ -10,7 +10,7 @@ int isWhiteSpace(unsigned char c) {
 }
 
 int isNewLine(unsigned char c) {
-	return (c == '\n' || c == '\r');
+	return (c == '\n');
 }
 
 void resetState(vector<char> &s, int &state, char *&tokenType) {
@@ -22,7 +22,7 @@ void resetState(vector<char> &s, int &state, char *&tokenType) {
 	return;
 }
 
-void commitToken(vector<char> &s, int &state, char *&tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c, char &carryOver) {
+void commitToken(vector<char> &s, int &state, char *&tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
 	Token t;
 	t.tokenType = tokenType;
@@ -33,8 +33,6 @@ void commitToken(vector<char> &s, int &state, char *&tokenType, int rowStart, in
 	outputVector->push_back(t);
 	// finally, reset our state back to the default
 	resetState(s, state, tokenType);
-	// also, carry over the current character to the next round
-	carryOver = c;
 	// finally, return normally
 	return;
 }
@@ -90,7 +88,7 @@ lexerLoopTop: ;
 				resetState(s, state, tokenType);
 				carryOver = c;
 			} else if (!(strcmp(tokenType,"") == 0)) { // else if we were in a commitable state, commit this token to the output vector
-				commitToken(s, state, tokenType, rowStart, colStart, outputVector, c, carryOver);
+				commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
 			}
 			if (isNewLine(c)) { // newline?
 				// bump up the row count and carriage return the column
@@ -213,7 +211,9 @@ lexerLoopTop: ;
 					// however, carry over the faulting character, as it might be useful for later debugging
 					carryOver = c;
 				} else { // else if there is a valid commit pending, do it and carry over this character for the next round
-					commitToken(s, state, tokenType, rowStart, colStart, outputVector, c, carryOver);
+					commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
+					// also, carry over the current character to the next round
+					carryOver = c;
 				}
 			}
 		}

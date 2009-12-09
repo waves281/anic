@@ -45,6 +45,26 @@ vector<char> hex(unsigned char c) {
 	return retVal;
 }
 
+// discared input up until the end of the current token
+void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
+	for(;;) {
+		bool retVal = (in == NULL ? cin.get(c) : in->get(c));
+		// handle newline cursor logging properly
+		if (isNewLine(c)) {
+			row++;
+			col = 0;
+		} else {
+			col++;
+		}
+		if (!retVal) { // if we hit the end of the file, flag the fact that we're done and continue lexing
+			done = true;
+			return;
+		} else if (isWhiteSpace(c)) { // else if it was whitespace, continue lexing normally
+			return;
+		}
+	}
+}
+
 vector<Token> *lex(ifstream *in, char *fileName) {
 	// local error code
 	int lexerErrorCode = 0;
@@ -67,7 +87,7 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	int rowStart = -1;
 	int colStart = -1;
 	// loop flags
-	int done = 0;
+	bool done = false;
 	for(;;) { // per-character loop
 
 lexerLoopTop: ;
@@ -80,7 +100,7 @@ lexerLoopTop: ;
 				if (done) { // if this is the second time we're trying to read EOF, break out of the loop
 					break;
 				}
-				done = 1;
+				done = true;
 				// pretend that there's a newline at the end of the file so the last token can be processed nominally
 				c = '\n';
 			}
@@ -130,7 +150,7 @@ lexerLoopTop: ;
 					for(;;) { // scan until we hit either EOF or a newline
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						if (!retVal) { // if we hit EOF, flag the fact that we're done and jump to the top of the loop
-							done = 1;
+							done = true;
 							goto lexerLoopTop;
 						} else if (isNewLine(c)) { // if we hit a newline, break out of this loop and continue normally
 							row++;
@@ -150,7 +170,7 @@ lexerLoopTop: ;
 						col++;
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							printLexerError(fileName,rowStart,colStart,"/* comment truncated by EOF");
-							done = 1;
+							done = true;
 							goto lexerLoopTop;
 						} else if (isNewLine(c)) { // if we hit a newline, update the row and col as necessary
 							row++;
@@ -161,7 +181,96 @@ lexerLoopTop: ;
 						lastChar = c;
 					}
 				} else if (strcmp(transition.tokenType,"CQUOTE") == 0 || strcmp(transition.tokenType,"SQUOTE") == 0) { // else if it's a transition into a quoting mode
+					// log the type of transition we're making
+					tokenType = transition.tokenType;
+					// pre-decide the terminal that should signal the end of the quote
+					char termChar = (strcmp(transition.tokenType,"CQUOTE") == 0) ? '\'' : '\"';
+					// whether the last character seen was the escape character
+					bool lastCharWasEsc = false;
+					for(;;) { // scan until we hit either EOF or the termChar
+						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
+						col++;
+						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
+							if (termChar == '\'') {
+								printLexerError(fileName,rowStart,colStart,"character literal truncated by EOF");
+							} else {
+								printLexerError(fileName,rowStart,colStart,"string literal truncated by EOF");
+							}
+							done = true;
+							goto lexerLoopTop;
+						}
+						// escape character handling
+						if (c == ESCAPE_CHARACTER && !lastCharWasEsc) { // if it's the escape character and not a double, log this and wait for the next character
+							lastCharWasEsc = true;
+							// continue so the character isn't logged
+							continue;
+						} else if (lastCharWasEsc) { // else if the last character was an escape character, specially handle this one
+							// first, unflag the condition
+							lastCharWasEsc = false;
+							// then, branch based on the type of escape it is
+							if (c == 'a') { // bell character
+								c = '\a';
+							} else if (c == 'b') { // backspace
+								c = '\b';
+							} else if (c == 't') { // tab
+								c = '\t';
+							} else if (c == 'n') { // tab
+								c = '\n';
+								// we need to jump past the newline detection in this case
+								goto logCharacter;
+							} else if (c == 'v') { // vertical tab
+								c = '\v';
+							} else if (c == 'f') { // from feed
+								c = '\f';
+							} else if (c == 'r') { // carriage return
+								c = '\r';
+							} else if (c == '0') { // null character
+								c = '\0';
+							} else if (c == '\'') { // c-quote
+								// nothing, the below code will properly process it
+							} else if (c == '\"') { // s-quote
+								// nothing, the below code will properly process it
+							} else if (c == ESCAPE_CHARACTER) { // escape-escape
+								// nothing, the below code will properly process it
+							} else if (c == '\n') { // newline escape
+								row++;
+								col = 0;
+								// continue so the character isn't logged
+								continue;
+							} else { // else if it's an unrecognized escape sequence, throw an error and discard the character
+								printLexerError(fileName,row,col-1,"unrecognized escape sequence "<<ESCAPE_CHARACTER<<"0x"<<hex(c));
+								// continue so the character isn't logged
+								continue;
+							}
+						}
+						// termination detection
+						if (isNewLine(c)) { // if we hit a newline, throw a quote truncation error
+							if (termChar == '\'') {
+								printLexerError(fileName,rowStart,colStart,"character literal truncated by end of line");
+							} else {
+								printLexerError(fileName,rowStart,colStart,"string literal truncated by end of line");
+							}
+							row++;
+							col = 0;
+							goto lexerLoopTop;
+						} else if (c == termChar) { // else if we've found the end of the quote, commit the token and continue with processing
+							commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
+							break;
+						}
 
+						// character logging
+logCharacter: ;
+						if (s.size() < (MAX_TOKEN_LENGTH-1)) { // else if there is room in the buffer for this character, log it
+							s.push_back(c);
+						} else { // else if there is no more room in the buffer for this character, discard the token with an error
+							printLexerError(fileName,rowStart,colStart,"quoted literal overflow");
+							// also, reset state and scan to the end of this token
+							resetState(s, state, tokenType);
+							discardToken(in, c, row, col, done);
+							// finally, break out of the quote loop
+							break;
+						} // if there is room in the buffer
+					} // for (;;)
 				} else { // else if it's any other regular valid transition
 					if (s.size() < (MAX_TOKEN_LENGTH-1)) { // if there is room in the buffer for this character, log it
 						s.push_back(c);
@@ -171,22 +280,7 @@ lexerLoopTop: ;
 						printLexerError(fileName,rowStart,colStart,"token overflow");
 						// also, reset state and scan to the end of this token
 						resetState(s, state, tokenType);
-						for(;;) {
-							bool retVal = (in == NULL ? cin.get(c) : in->get(c));
-							// handle newline cursor logging properly
-							if (isNewLine(c)) {
-								row++;
-								col = 0;
-							} else {
-								col++;
-							}
-							if (!retVal) { // if we hit the end of the file, flag the fact that we're done and continue lexing
-								done = 1;
-								goto lexerLoopTop;
-							} else if (isWhiteSpace(c)) { // else if it was whitespace, continue lexing normally
-								goto lexerLoopTop;
-							}
-						}
+						discardToken(in, c, row, col, done);
 					}
 				}
 			} else { // else if the transition isn't valid
@@ -195,22 +289,7 @@ lexerLoopTop: ;
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(s, state, tokenType);
-					for(;;) {
-						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
-						// handle newline cursor logging properly
-						if (isNewLine(c)) {
-							row++;
-							col = 0;
-						} else {
-							col++;
-						}
-						if (!retVal) { // if we hit the end of the file, flag the fact that we're done and continue lexing
-							done = 1;
-							goto lexerLoopTop;
-						} else if (isWhiteSpace(c)) { // else if it was whitespace, continue lexing normally
-							goto lexerLoopTop;
-						}
-					}
+					discardToken(in, c, row, col, done);
 				} else if (strcmp(tokenType,"ERROR") == 0) { // else if it's an invalid transition from an error state, flag it
 					// print the error message
 					printLexerError(fileName,row,col,"token truncated by stray character 0x"<<hex(c));

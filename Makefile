@@ -1,6 +1,6 @@
 main: start anic.exe
 	
-all: start cleanout anic.exe
+all: start cleanout test
 
 start:
 	@echo anic ANI Compiler Makefile
@@ -16,7 +16,7 @@ anic.exe: Makefile tmp/version.exe var/lexerStruct.h bld/hexTruncate.awk \
 	-o anic.exe \
 	-O3 \
 	-Wall
-	@echo Done.
+	@echo Done building main executable.
 	
 tmp/version.exe: bld/version.c src/mainDefs.h src/constantDefs.h
 	@echo Building version controller...
@@ -33,6 +33,13 @@ tmp/lexerStructGen.exe: bld/lexerStructGen.c
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
 	@gcc bld/lexerStructGen.c -o tmp/lexerStructGen.exe
+	
+test: anic.exe
+	@echo
+	@echo ...Running default test cases...
+	@echo
+	./anic.exe -v ./tst/test.ani
+	@echo Done running tests.
 
 clean: cleanout
 	@echo Cleaning temporary files...

@@ -77,7 +77,7 @@
 0 \ SLASH 102
 0 ; SEMICOLON -1
 0 ? QUESTION -1
-0 : COLON -1
+0 : COLON 112
 // arithmetic characters
 0 + PLUS 103
 0 - MINUS 104
@@ -334,4 +334,7 @@
 110 > RS -1
 
 // state 111 (-- seen)
-111 > DRARROW -1
+111 > DRARROW -1
+
+// state 112 (: seen)
+112 : DCOLON -1

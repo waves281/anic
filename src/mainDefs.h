@@ -16,6 +16,7 @@ using std::endl;
 using std::flush;
 using std::ifstream;
 using std::ostream;
+using std::string;
 using std::vector;
 
 #endif

@@ -1,0 +1,408 @@
+/*
+ * Copyright (c) 2007, Xin Chen
+ * All rights reserved. This file is distributed under BSD license.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the copyright holder nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY the copyright holder ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL the copyright holder BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * hyaccpar
+ *
+ * HYACC Parser engine.
+ *
+ * @Author: Xin Chen
+ * @Created on: 1/30/2007
+ * @Last modified: 10/27/2007
+ * @Copyright (C) 2007
+ */
+
+#define YYLEX() yylex()
+
+#ifndef YYSTYPE
+#define YYSTYPE int
+#endif
+
+#define YYNOACTION -10000000 
+#define YYEOF     0   /* for strEnd, input end marker. */
+#define YYERRCODE 256 /* for use by "error" token. */
+
+#define yyclearin yychar = -1
+#define yyerrok yyerrflag = 0
+#define YYRESUME return(0)
+#define YYABORT return(1)
+#define YYACCEPT return(0)
+#define YYERROR goto yyerrlab
+#define YYRECOVERING() (!!yyerrflag) /* !! */
+#define YYMAX_STACK_CAPACITY 16384   /* 2^14 */
+int yystack_capacity = 256; /* initial stack capacity. */
+#define YYNEW(type) (type *) malloc((yystack_capacity) * sizeof(type))
+#define YYENLARGE(from, type) \
+        (type *) realloc((void *) from, (yystack_capacity) * sizeof(type))
+#define YYERR_EXIT(errmsg) { printf("%s\n", errmsg); exit(1); }
+
+int yychar;     /* current input token number, i.e., lookahead. */
+FILE * yyparse_fp; /* output file to trace parse steps. */
+char * yyparse_file = "y.parse";
+int * yyps;     /* state stack. */
+int yyps_pt;    /* top of state stack: yyps+yyps_pt-1. */
+YYSTYPE * yypv; /* value stack. */
+int yypv_pt;    /* top of value stack: yypv+yypv_pt-1. */
+#if YYDEBUG
+int * yypm;     /* symbol stack. */
+int yypm_pt;    /* top of symbol stack: yypm+yypm_pt-1. */
+#endif
+
+int yynerrs;    /* number of errors */
+int yyerrflag;  /* error recovery flag */
+
+extern int yychar;
+extern int yyerrflag;
+
+YYSTYPE yylval; /* the value of yylval is from yylex. */
+YYSTYPE yyval;  /* "$$" used in production action. */
+
+
+#if YYDEBUG
+
+/* get token name from value of yychar. */
+char * yyget_tok(const int yychar) {
+  static char c[1];
+  int i;
+  if (yychar == YYEOF) return "EOF";
+  if (yychar == 256) return "error";
+  if (yychar < 0) { /* search for non-terminal. */
+    for (i = 0; yynts[i].t_val <= 0; i ++)  
+      if (yychar == yynts[i].t_val) return yynts[i].t_name;
+  }
+  /* yychar > 256, search for terminal. */
+  for (i = 0; yytoks[i].t_val >= 0; i ++) 
+    if (yychar == yytoks[i].t_val) return yytoks[i].t_name;
+  if (yychar > 0 && yychar < 256) { c[0] = yychar; return c; }
+  
+  return "-none-";
+}
+
+void yywrite_stack() { 
+  int i; 
+  /* It's unknown what data type yypv is, so can't write here. */ 
+  /* The user can customize the code here himself. */ 
+  /* fprintf(yyparse_fp, "value stack: "); 
+  for (i = 0; i < yypv_pt - 1; i ++) 
+    fprintf(yyparse_fp, "%d, ", yypv[i]); 
+  if (yypv_pt > 0) fprintf(yyparse_fp, "%d", yypv[i]); 
+  fprintf(yyparse_fp, "\n"); 
+  */
+
+  fprintf(yyparse_fp, "symbol stack: ");
+  for (i = 0; i < yypm_pt - 1; i ++)
+    fprintf(yyparse_fp, "%s, ", yyget_tok(yypm[i]));
+  if (yypm_pt > 0) fprintf(yyparse_fp, "%s", yyget_tok(yypm[i]));
+  fprintf(yyparse_fp, "\n");
+  
+  fprintf(yyparse_fp, "state stack: "); 
+  for (i = 0; i < yyps_pt - 1; i ++) 
+    fprintf(yyparse_fp, "%d, ", yyps[i]); 
+  if (yyps_pt > 0) fprintf(yyparse_fp, "%d", yyps[i]); 
+  fprintf(yyparse_fp, "\n"); 
+}
+
+#define YYEXPAND_SYMBOL_STACK  \
+    if ((yypm = YYENLARGE(yypm, int)) == NULL)  \
+      YYERR_EXIT("YYEXPAND_STACK error: out of memory\n");
+
+#else
+#define YYEXPAND_SYMBOL_STACK
+#endif
+
+
+#define YYEXPAND_STACK \
+{ \
+  if (yyps_pt >= YYMAX_STACK_CAPACITY) { \
+    printf("YYEXPAND_STACK error: YYMAX_STACK_CAPACITY reached.\n"); \
+    exit(1); \
+  } \
+  if (yyps_pt >= yystack_capacity) { \
+    yystack_capacity *= 2; \
+    if ((yyps = YYENLARGE(yyps, int)) == NULL) \
+      YYERR_EXIT("YYEXPAND_STACK error: out of memory\n"); \
+    if ((yypv = YYENLARGE(yypv, YYSTYPE)) == NULL) \
+      YYERR_EXIT("YYEXPAND_STACK error: out of memory\n"); \
+    YYEXPAND_SYMBOL_STACK \
+    /*printf("stack size expanded to %d\n", yystack_capacity); */ \
+  } \
+}
+
+
+/*
+ * A macro to get an action from (state, token) pair in the
+ * parsing table. Use macro instead of function to improve
+ * performance.
+ * Input: state, token
+ * Output: action
+ * if action > 0, then is a shift/goto target state.
+ * if action < 0, then is the reduction rule number.
+ * if action == 0, then is accept.
+ * if action == YYNOACTION, then no action exists.
+ */
+#define YYGET_ACTION(state, token, action) \
+{ \
+  /* offset_h to (offset_t - 1) is the range to search. */ \
+  int offset_h = yyrowoffset[state]; \
+  int offset_t = yyrowoffset[state + 1]; \
+  \
+  /* now use linear search. Will change to binary search. */ \
+  int offset; \
+  for (offset = offset_h; offset < offset_t; offset ++) \
+    if (yyptbltok[offset] == token) break; \
+  \
+  if (offset == offset_t) action = YYNOACTION; \
+  else action = yyptblact[offset]; \
+}
+
+
+/*
+ * Handles error when no action is found in yyparse().
+ * state: yystate. lookahead: yychar.
+ * return: 0 if success, -1 if fail, 1 if eat a token.
+ */
+int yyerror_handler(int yystate) {
+  int yyaction;
+  switch (yyerrflag) {
+    case 0:
+      yyerror("syntax error"); 
+#if YYDEBUG
+      fprintf(yyparse_fp, "syntax error: \
+        no action exists for state/token pair (%d, %s).\n",
+        yystate, yyget_tok(yychar)); 
+#endif
+      goto skip_init;
+    yyerrlab: /* we have a user generated syntax type error */
+    skip_init:
+      yynerrs ++;
+    case 1:
+    case 2: /* incompletely recovered error */
+      yyerrflag = 3; /* ! */
+      /* find state where "error" is a legal shift action */
+      while (yyps_pt > 0) { /* while state stack is not empty. */
+#if YYDEBUG
+        fprintf(yyparse_fp, 
+                "look for error action on state %d\n", yystate);
+#endif
+        YYGET_ACTION(yystate, YYERRCODE, yyaction);
+        if (yyaction > 0) { /* shift on "error" found for yystate. */
+          /* simulate shift for "error" token. */
+          /* push target state on state stack. */
+          * (yyps + yyps_pt) = yyaction; 
+          if (++ yyps_pt == yystack_capacity) YYEXPAND_STACK; 
+          * (yypv + yypv_pt) = yyval; /* should not matter */
+          yypv_pt ++;
+#if YYDEBUG
+          * (yypm + yypm_pt) = YYERRCODE;
+          yypm_pt ++;
+          fprintf(yyparse_fp, "- shift on error\n");
+#endif
+          return 0; /* return control to yyparse(), resume parsing. */
+        } else {    /* no error shift action found, pop this state. */
+#if YYDEBUG
+          fprintf(yyparse_fp, 
+                  "- pop state %d\n", * (yyps + yyps_pt - 1));
+#endif
+          yyps_pt --; /* pop state stack. */
+          yypv_pt --; /* pop value stack. */
+#if YYDEBUG
+          yypm_pt --;
+          yywrite_stack();
+#endif
+          yystate = * (yyps + yyps_pt - 1); /* get current state. */
+        }
+      }
+      /* the state stack is empty now, no error shift action found. */
+#if YYDEBUG
+      fprintf(yyparse_fp, "state stack is empty. abort.\n");
+#endif
+      return -1; /* yyparse return 1. */
+    case 3: /* no shift yet, eat a token */
+      if (yychar == YYEOF) return -1; /* yyparse() ABORT. */
+#if YYDEBUG
+      fprintf(yyparse_fp, "eat token %s\n", yyget_tok(yychar));
+#endif
+      /* discard lookahead, resume parsing. */
+      yychar = -1; /* eat this token and read next symbol. */
+      return 1; 
+    default:
+      YYERR_EXIT("yyerror_handler error: \
+                 yyerrflag > 3 (should be 0~3)\n");
+  } /* end of switch. */
+} /* end of yyerror_handler(). */
+
+
+/*
+ * yyparse - return 0 if succeeds, 1 if anything goes wrong.
+ */
+int yyparse() {
+  YYSTYPE * yypvt;    /* top of value stack for $vars. */
+  int yystate, yyaction = -1, yy_lhs, yy_rhs_ct, yyerr_hdl;
+  yynerrs = yyerrflag = 0;
+
+#if YYDEBUG
+  if ((yyparse_fp = fopen(yyparse_file, "w")) == NULL) 
+    YYERR_EXIT("yyparse error: cannot open file y.parse\n");
+   
+  if ((yypm = YYNEW(int)) == NULL) 
+    YYERR_EXIT("yyparse error: out of memory\n");
+  
+  yypm_pt = 0;
+#endif
+  if ((yyps = YYNEW(int)) == NULL || (yypv = YYNEW(YYSTYPE)) == NULL) 
+    YYERR_EXIT("yyparse error: out of memory\n");
+
+  yyps_pt = yypv_pt = 0;
+
+  * (yyps + yyps_pt) = 0; /* push 0 onto the state stack. */
+  if (++ yyps_pt == yystack_capacity) YYEXPAND_STACK; 
+
+  yychar = -1; /* to allow reading the first symbol. */
+
+  while (1) {
+#if YYDEBUG
+    yywrite_stack();
+#endif
+
+    if (yyaction >= 0 && yyfs[yyaction] < 0) {
+      yyaction = yyfs[yyaction]; /* final state default reduce. */
+
+    } else {
+      if (yychar < 0) { /* we want to read next symbol. */
+        yychar = yylex();
+        if (yychar <= 0) yychar = YYEOF; /* end of file. */
+#if YYDEBUG
+        fprintf(yyparse_fp, "- read next symbol: %s\n", yyget_tok(yychar));
+#endif
+      }
+
+      /* update current state: yystate. lookahead is yychar. */
+      yystate = * (yyps + yyps_pt - 1);
+      /* find action in parsing table. */
+      YYGET_ACTION(yystate, yychar, yyaction);
+#if YYDEBUG
+      fprintf(yyparse_fp, "action at (%d, %s) is %d\n", 
+              yystate, yyget_tok(yychar), yyaction);
+#endif
+    } /* end of else */
+
+
+    if (yyaction > 0) { /* is shift */
+      * (yyps + yyps_pt) = yyaction; /* push target state on state stack */
+      if (++ yyps_pt == yystack_capacity) YYEXPAND_STACK; 
+
+      yyval = yylval; /* yylval is obtained from yylex(). */
+      * (yypv + yypv_pt) = yyval; /* push value onto value stack. */
+      yypv_pt ++;
+
+#if YYDEBUG
+      * (yypm + yypm_pt) = yychar;
+      yypm_pt ++;
+      fprintf(yyparse_fp, "- shift: state %d. \n", yyaction);
+#endif
+
+      yychar = -1; /* we want to read next symbol. */
+      if (yyerrflag > 0) yyerrflag --; 
+
+    } else if (yyaction == YYNOACTION) { /* no action found. error */
+      yyerr_hdl = yyerror_handler(yystate); 
+      if (yyerr_hdl == -1) break; /* YYABORT; */
+      else if (yyerr_hdl == 1) continue; /* eat a token. */
+
+    } else if (yyaction < 0) { /* is reduction */
+      yyaction = (-1) * yyaction; /* get reduction number. */
+#if YYDEBUG
+      fprintf(yyparse_fp, "- reduce: by rule %d. ", yyaction);
+#endif
+
+      yy_lhs = yyr1[yyaction]; /* lhs symbol. */
+      yy_rhs_ct = yyr2[yyaction] >> 1; /* number of rhs symbols. */
+
+      yypvt = yypv + yypv_pt - 1; /* top of value stack. */
+      /* default: $$ = $1. $$ then can be changed by rule actions. */
+      yyval = * (yypvt - yy_rhs_ct + 1);
+
+      if ((yyr2[yyaction] & 1) == 1) { /* output associated code. */
+        switch(yyaction) { 
+          $A
+        }
+      } 
+
+      yyps_pt -= yy_rhs_ct; /* pop yy_rhs_ct states from state stack. */
+      yystate = * (yyps + yyps_pt -1); /* get current state. */
+      YYGET_ACTION(yystate, yy_lhs, yyaction); /* get goto state. */
+      if (yyaction == YYNOACTION) {
+        YYERR_EXIT("yyparse symbol table error: goto state not found\n");
+      }
+      * (yyps + yyps_pt) = yyaction; /* push goto state onto stack. */
+      if (++ yyps_pt == yystack_capacity) YYEXPAND_STACK; 
+
+      /* push new value of $$ (yyval) onto value stack. */
+      yypv_pt -= yy_rhs_ct;
+      * (yypv + yypv_pt) = yyval;
+      yypv_pt ++;
+
+#if YYDEBUG
+      yypm_pt -= yy_rhs_ct;
+      * (yypm + yypm_pt) = yy_lhs;
+      yypm_pt ++;
+
+      fprintf(yyparse_fp, "after reduction: goto state=%d, lookahead=%s\n",
+             * (yyps + yyps_pt - 1), yyget_tok(yychar));
+#endif
+
+    } else if (yyaction == 0) { /* is accept */
+      if (yychar == YYEOF) {
+#if YYDEBUG
+        fprintf(yyparse_fp, "- valid accept\n");
+#endif
+        break; /* break out of while loop. */
+      }
+      else { /* this should not happen, since acc happens only on $. */
+        yyerror("yyparse symbol table error: accept not on end marker");
+#if YYDEBUG
+        fprintf(yyparse_fp, "invalid accept. next lookahead is: %s\n",
+                yyget_tok(yychar));
+#endif
+        YYABORT;
+      } 
+    }
+  } /* end of while(1). */
+
+#if YYDEBUG
+  fclose(yyparse_fp);
+  free(yypm);
+#endif
+  free(yyps);
+  free(yypv);
+
+  if (yyerr_hdl == -1) YYABORT;
+  else YYACCEPT;
+} /* end of yyparse */
+
+
+

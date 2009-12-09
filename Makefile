@@ -4,6 +4,7 @@ all: start cleanout test
 
 start:
 	@echo anic ANI Compiler Makefile
+	@echo
 	
 anic.exe: Makefile tmp/version.exe var/lexerStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/globalVars.h \

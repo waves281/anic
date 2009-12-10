@@ -47,7 +47,7 @@ tmp/parserStructGen.exe:
 
 var/parserTable.txt: bld/hyacc/hyacc.exe src/parserGrammar.y
 	@echo Generating parser table...
-	@./bld/hyacc/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
+	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.OUTPUT var/parserTable.txt
 
 bld/hyacc/hyacc.exe: bld/hyacc/makefile

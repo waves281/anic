@@ -4,6 +4,7 @@
 #include "customOperators.h"
 #include "constantDefs.h"
 
+#include "lexer.h"
 #include "../var/lexerStruct.h"
 
 // action definitions

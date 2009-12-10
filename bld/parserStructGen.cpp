@@ -83,7 +83,7 @@ int main() {
 			parsingNonTerms = true;
 		}
 		if (parsingNonTerms) {
-			fprintf(out, "#define %s MAX_TOKENS + %d\n", token.c_str(), nonTermCount);
+			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), nonTermCount);
 			nonTermCount++;
 		}
 		// push the string to the token ordering map

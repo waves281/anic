@@ -31,16 +31,23 @@ class Tree {
 		// allocators/deallocators
 		Tree();
 		Tree(Tree *next, Tree *back, Tree *child, Tree *parent);
+		~Tree();
 		// public interface
 		Tree &next();
 		Tree &back();
 		Tree &child();
 		Tree &parent();
-		// public operators
+		// traversal operators
 		Tree &operator+(unsigned int n);
 		Tree &operator-(unsigned int n);
 		Tree &operator*(unsigned int n);
-		Tree &operator^(unsigned int n);
+		Tree &operator&(unsigned int n);
+		Tree &operator+();
+		Tree &operator-();
+		Tree &operator*();
+		Tree &operator&();
 };
+
+Tree *parse(vector<Token> *lexeme, char *fileName);
 
 #endif

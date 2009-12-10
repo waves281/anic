@@ -70,7 +70,7 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	int lexerErrorCode = 0;
 	// initialize lexer structure
 	// LexerNode lexerNode[fromState][charSeen] is hereby defined and usable
-	LEXER_STRUCT
+	LEXER_STRUCT;
 	// declare output vector
 	vector<Token> *outputVector = new vector<Token>();
 	// input character buffers

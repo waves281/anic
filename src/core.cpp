@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 		die();
 	}
 
-	// now, being with lexing the input files
+	// now, begin with lexing the input files
 	int lexerError = 0; // error flag
 	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 		if (strcmp(fileName,"-") == 0) {
 			fileName = "stdin";
 		}
-		VERBOSE(printNotice("lexing file \'" << fileName << "\'..");)
+		VERBOSE(printNotice("lexing file \'" << fileName << "\'...");)
 		// do the actual lexing
 		vector<Token> *lexeme = lex(inFiles[i], fileName);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
@@ -125,6 +125,31 @@ int main(int argc, char **argv) {
 			cout << "\n";
 		} // per-file loop
 	) // VERBOSE
+
+	// now, begin with parsing the lexemes
+	int parserError = 0; // error flag
+	unsigned int fileIndex = 0; // file name index
+	vector<Tree *> parsemes; // per-file vector of the parsemes that the parser is about to generate
+	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
+		char *fileName = inFileNames[fileIndex];
+		if (strcmp(fileName,"-") == 0) {
+			fileName = "stdin";
+		}
+		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
+		// do the actual parsing
+		Tree *parseme = parse(*lexemeIter, fileName);
+		if (parseme == NULL) { // if parsing failed with an error, log the error condition
+			parserError = 1;
+		} else { // else if lexing was successful, log the lexeme to the vector
+			parsemes.push_back(parseme);
+		}
+		// advance file name index
+		fileIndex++;
+	}
+	// now, check if parsing failed and kill the system as appropriate
+	if (parserError) {
+		die(1);
+	}
 
 	// terminate the program successfully
 	return 0;

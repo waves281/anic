@@ -99,7 +99,7 @@ int main() {
 	}
 	// print out additional $end token case
 	fprintf(out2, "\t\tcase TOKEN_END:\n");
-	fprintf(out2, "\t\t\treturn \"TOKEN_END\";\n");
+	fprintf(out2, "\t\t\treturn \"END\";\n");
 	fprintf(out2, "\t\t\tbreak;\n");
 	// print out epilogue
 	fprintf(out2, "\t}\n");

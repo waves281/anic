@@ -26,8 +26,9 @@ int main() {
 	}
 	// print the necessary prologue into the output file
 	fprintf(out, "#ifndef _PARSER_STRUCT_H_\n");
-	fprintf(out, "#define _PARSER_STRUCT_H_\n");
+	fprintf(out, "#define _PARSER_STRUCT_H_\n\n");
 	fprintf(out, "#include \"../src/parser.h\"\n\n");
+	fprintf(out, "#define NUM_RULES %d\n\n", NUM_RULES);
 
 	// now, process the input file
 	char lineBuf[MAX_STRING_LENGTH]; // line data buffer
@@ -92,9 +93,9 @@ int main() {
 
 	// print struct header
 	fprintf(out, "#define PARSER_STRUCT \\\n");
-	fprintf(out, "static int ruleLength[%d]; \\\n", NUM_RULES);
-	fprintf(out, "static ParserNode parserNode[%d][NUM_TOKENS]; \\\n", NUM_RULES);
-	fprintf(out, "static int parserNodesInitialized = 0; \\\n");
+	fprintf(out, "static int ruleLength[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS]; \\\n", NUM_RULES);
+	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
@@ -116,7 +117,7 @@ int main() {
 	}
 
 	// get rule lengths
-	for (unsigned int i=0; true; i++) { // oer-rule line loop
+	for (unsigned int i=0; true; i++) { // per-rule line loop
 		// first, discard the junk before the rule's RHS
 		char junk[MAX_STRING_LENGTH];
 		fscanf(in, "%s", junk); // scan the first token of the line
@@ -193,7 +194,7 @@ int main() {
 	}
 	// print out the epilogue
 	fprintf(out, "\t\\\n");
-	fprintf(out, "\tparserNodesInitialized = 1; \\\n");
+	fprintf(out, "\tparserNodesInitialized = true; \\\n");
 	fprintf(out, "} \n\n");
 	fprintf(out, "#endif\n");
 	// finally, return normally

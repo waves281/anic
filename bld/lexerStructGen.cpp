@@ -40,11 +40,11 @@ int main() {
 	}
 	// print the necessary prologue into the output file
 	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
-	fprintf(out, "#define _LEXER_STRUCT_H_\n");
+	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
 	fprintf(out, "#include \"../src/lexer.h\"\n\n");
 	fprintf(out, "#define LEXER_STRUCT \\\n");
 	fprintf(out, "static LexerNode lexerNode[256][256]; \\\n");
-	fprintf(out, "static int lexerNodesInitialized = 0; \\\n");
+	fprintf(out, "static bool lexerNodesInitialized = false; \\\n");
 	fprintf(out, "if (!lexerNodesInitialized) { \\\n");
 	fprintf(out, "\tfor (int i = 0; i<256; i++) { \\\n");
 	fprintf(out, "\t\tfor (int j = 0; j<256; j++) { \\\n");
@@ -76,7 +76,7 @@ int main() {
 	}
 	// terminate the structure definition
 	fprintf(out, "\t\\\n");
-	fprintf(out, "\tlexerNodesInitialized = 1; \\\n");
+	fprintf(out, "\tlexerNodesInitialized = true; \\\n");
 	fprintf(out, "} \n\n");
 	// print out token definitions
 	fprintf(out, "#define NUM_TOKENS %d\n\n", tokenMap.size());

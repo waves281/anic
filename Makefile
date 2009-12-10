@@ -51,7 +51,7 @@ var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 	@mv y.OUTPUT var/parserTable.txt
 
 tmp/hyacc.exe: bld/hyacc/makefile
-	@echo Building hyacc parser generator...
+	@echo Building hyacc parse table generator...
 	@make --directory=bld/hyacc --makefile=makefile -s
 
 test: anic.exe

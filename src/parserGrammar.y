@@ -63,8 +63,6 @@
 %left POWER ROOT
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
-/* never used in expressions */
-%left UMINUS
 
 %%
 Program : Nodes

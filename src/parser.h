@@ -37,10 +37,10 @@ class Tree {
 		Tree &child();
 		Tree &parent();
 		// public operators
-		Tree &operator+(Tree &left, unsigned int n);
-		Tree &operator-(Tree &left, unsigned int n);
-		Tree &operator*(Tree &left, unsigned int n);
-		Tree &operator^(Tree &left, unsigned int n);
+		Tree &operator+(unsigned int n);
+		Tree &operator-(unsigned int n);
+		Tree &operator*(unsigned int n);
+		Tree &operator^(unsigned int n);
 };
 
 #endif

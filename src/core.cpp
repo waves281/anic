@@ -6,6 +6,9 @@
 #include "lexer.h"
 #include "../var/lexerStruct.h"
 
+#include "parser.h"
+#include "../var/parserStruct.h"
+
 int containsString(vector<char *>inFileNames, char *s) {
 	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
 		if (strcmp(inFileNames[i], s) == 0) { // if we have a match at this index, return true

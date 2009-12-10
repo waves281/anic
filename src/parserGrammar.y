@@ -68,5 +68,6 @@
 Program : Nodes
 	;
 Nodes : ID
+	| INUM FNUM
 	;
 %%

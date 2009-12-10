@@ -61,7 +61,7 @@ int main() {
 	// read the lexer data
 	for(;;) {
 		char *retVal = fgets(lineBuf, MAX_STRING_LENGTH, in);
-		if (retVal == NULL) { // if we've reached the end of the line, break out of the loop
+		if (retVal == NULL) { // if we've reached the end of the file, break out of the loop
 			break;
 		}
 		// the line was valid, so now try parsing the data out of it
@@ -75,6 +75,7 @@ int main() {
 		}
 	}
 	// terminate the structure definition
+	fprintf(out, "\t\\\n");
 	fprintf(out, "\tlexerNodesInitialized = 1; \\\n");
 	fprintf(out, "} \n\n");
 	// print out token definitions
@@ -82,6 +83,8 @@ int main() {
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
 		fprintf(out, "#define TOKEN_%s %d\n", queryBuf->first.c_str(), queryBuf->second);
 	}
+	// print out additional $end token definition
+	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
 	fprintf(out, "\n");
 	// print out the tokenType2String forward declaration to the .h
 	fprintf(out, "char *tokenType2String(int tokenType);\n\n");
@@ -94,6 +97,11 @@ int main() {
 		fprintf(out2, "\t\t\treturn \"%s\";\n", queryBuf->first.c_str());
 		fprintf(out2, "\t\t\tbreak;\n");
 	}
+	// print out additional $end token case
+	fprintf(out2, "\t\tcase TOKEN_END:\n");
+	fprintf(out2, "\t\t\treturn \"TOKEN_END\";\n");
+	fprintf(out2, "\t\t\tbreak;\n");
+	// print out epilogue
 	fprintf(out2, "\t}\n");
 	fprintf(out2, "\treturn NULL; // can't happen if the above covers all cases, which it should\n");
 	fprintf(out2, "}\n");

@@ -40,10 +40,10 @@ var/parserStruct.h: tmp/parserStructGen.exe var/parserTable.txt
 	@mkdir -p var
 	@./tmp/parserStructGen.exe
 	
-tmp/parserStructGen.exe: 
+tmp/parserStructGen.exe: bld/parserStructGen.cpp
 	@echo Building parser structure generator...
 	@mkdir -p tmp
-	@gcc bld/parserStructGen.c -o tmp/parserStructGen.exe
+	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen.exe
 
 var/parserTable.txt: bld/hyacc/hyacc.exe src/parserGrammar.y
 	@echo Generating parser table...

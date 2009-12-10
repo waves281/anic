@@ -2,7 +2,7 @@
 #define _CONSTANT_DEFS_H_
 
 #define PROGRAM_STRING "anic"
-#define VERSION_STRING "0.21"
+#define VERSION_STRING "0.22"
 #define VERSION_YEAR "2009"
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- ANI v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" // compiler header

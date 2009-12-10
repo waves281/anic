@@ -64,7 +64,7 @@ int main() {
 	// read in the token ordering itself
 	bool parsingNonTerms = false; // whether we have reached the nonterminal part yet
 	unsigned int nonTermCount = 0;
-	string token; // temportart token string
+	string token; // temportary token string
 	map<unsigned int, string> tokenOrder;
 	for(;;) {
 		if (sscanf(lbCur, "%s", junk) < 1) {
@@ -93,7 +93,8 @@ int main() {
 
 	// print struct header
 	fprintf(out, "#define PARSER_STRUCT \\\n");
-	fprintf(out, "static int ruleLength[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static unsigned int ruleLength[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static int ruleLhs[NUM_RULES]; \\\n", NUM_RULES);
 	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS]; \\\n", NUM_RULES);
 	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");
@@ -124,13 +125,18 @@ int main() {
 		if (junk[0] == 'N') { // break if we've reached the end of the rule set
 			break;
 		}
-		fscanf(in, "%s %s", junk, junk); // scan and throw away the next 2 tokens in the line
+		fscanf(in, "%s", junk); // scan in the lhs of the rule
+		string lhs(junk); // log the lhs in a string wrapper
+		fscanf(in, "%s", junk); // scan and throw away the next "->" token in the line
 		// now, count the number of elements on the RHS
 		int rhsElements = 0;
 		while (fscanf(in, "%s", junk) && junk[0] != '(') {
 			rhsElements++;
 		}
-		// then, log the size of the rhs in the static array
+		// then, log the lhs and size of the rule in the corresponding arrays
+		if (lhs != "$accept") {
+			fprintf(out, "\truleLhs[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
+		}
 		fprintf(out, "\truleLength[%d] = %d; \\\n", i, rhsElements);
 		// finally, throw away the rest of the line
 		fgets(lineBuf, MAX_STRING_LENGTH, in);

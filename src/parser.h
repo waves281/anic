@@ -16,13 +16,14 @@
 
 struct parserNodeStruct {
 	int action; // the action to take in this situation (ACTION_ defines above)
-	int n; // either the state to go to (SHIFT/GOTO) or the rule to reduce by (REDUCE)
+	unsigned int n; // either the state to go to (SHIFT/GOTO) or the rule to reduce by (REDUCE)
 };
 typedef struct parserNodeStruct ParserNode;
 
 class Tree {
 	private:
 		// object-local variables
+		Token tInternal;
 		Tree *nextInternal;
 		Tree *backInternal;
 		Tree *childInternal;
@@ -30,22 +31,23 @@ class Tree {
 	public:
 		// allocators/deallocators
 		Tree();
-		Tree(Tree *next, Tree *back, Tree *child, Tree *parent);
+		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		~Tree();
-		// public interface
-		Tree &next();
-		Tree &back();
-		Tree &child();
-		Tree &parent();
+		// accessors
+		Token &t();
 		// traversal operators
-		Tree &operator+(unsigned int n);
-		Tree &operator-(unsigned int n);
-		Tree &operator*(unsigned int n);
-		Tree &operator&(unsigned int n);
-		Tree &operator+();
-		Tree &operator-();
-		Tree &operator*();
-		Tree &operator&();
+		Tree *operator+(unsigned int n);
+		Tree *operator-(unsigned int n);
+		Tree *operator*(unsigned int n);
+		Tree *operator&(unsigned int n);
+		Tree *operator+();
+		Tree *operator-();
+		Tree *operator*();
+		Tree *operator&();
+		// binary concatenators
+		Tree &operator+=(Tree *&next);
+		Tree &operator*=(Tree *&child);
+		Tree &operator&=(Tree *&parent);
 };
 
 Tree *parse(vector<Token> *lexeme, char *fileName);

@@ -60,7 +60,7 @@
 %left LS RS
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
-%left POWER ROOT
+%left POWER
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
 

@@ -45,12 +45,12 @@ tmp/parserStructGen.exe: bld/parserStructGen.cpp
 	@mkdir -p tmp
 	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen.exe
 
-var/parserTable.txt: bld/hyacc/hyacc.exe src/parserGrammar.y
+var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 	@echo Generating parser table...
 	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.OUTPUT var/parserTable.txt
 
-bld/hyacc/hyacc.exe: bld/hyacc/makefile
+tmp/hyacc.exe: bld/hyacc/makefile
 	@echo Building hyacc parser generator...
 	@make --directory=bld/hyacc --makefile=makefile -s
 

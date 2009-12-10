@@ -6,12 +6,12 @@ start:
 	@echo anic ANI Compiler Makefile
 	@echo
 
-anic.exe: Makefile tmp/version.exe var/lexerStruct.h var/grammarStruct.h bld/hexTruncate.awk \
+anic.exe: Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/globalVars.h \
-		src/system.h src/customOperators.h src/lexer.h \
-		src/core.cpp src/system.cpp src/customOperators.cpp src/lexer.cpp
+		src/system.h src/customOperators.h src/lexer.h src/parser.h \
+		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp
 	@echo Building main executable...
-	@g++ src/core.cpp src/system.cpp src/customOperators.cpp src/lexer.cpp \
+	@g++ src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | crypt password | awk -f bld/hexTruncate.awk `\"" \
 	-o anic.exe \
@@ -25,20 +25,30 @@ tmp/version.exe: bld/version.c src/mainDefs.h src/constantDefs.h
 	@mkdir -p tmp
 	@gcc bld/version.c -o tmp/version.exe
 
-var/lexerStruct.h: tmp/lexerStructGen.exe src/lexerTable.txt
-	@echo Generating lexer structure...
+var/lexerStruct.h var/lexerStruct.cpp: tmp/lexerStructGen.exe src/lexerTable.txt
+	@echo Generating lexer structures...
 	@mkdir -p var
 	@./tmp/lexerStructGen.exe
 
-tmp/lexerStructGen.exe: bld/lexerStructGen.c
+tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
-	@gcc bld/lexerStructGen.c -o tmp/lexerStructGen.exe
+	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen.exe
 
-var/grammarStruct.h: bld/hyacc/hyacc.exe src/grammar.y
+var/parserStruct.h: tmp/parserStructGen.exe var/parserTable.txt
 	@echo Generating parser structure...
-	@./bld/hyacc/hyacc.exe -c -v -D1 -D2 -O1 -Q src/grammar.y
-	@mv y.OUTPUT var/grammarStruct.h
+	@mkdir -p var
+	@./tmp/parserStructGen.exe
+	
+tmp/parserStructGen.exe: 
+	@echo Building parser structure generator...
+	@mkdir -p tmp
+	@gcc bld/parserStructGen.c -o tmp/parserStructGen.exe
+
+var/parserTable.txt: bld/hyacc/hyacc.exe src/parserGrammar.y
+	@echo Generating parser table...
+	@./bld/hyacc/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
+	@mv y.OUTPUT var/parserTable.txt
 
 bld/hyacc/hyacc.exe: bld/hyacc/makefile
 	@echo Building hyacc parser generator...
@@ -62,4 +72,5 @@ cleanout:
 	@rm -f anic.exe
 	@rm -f tmp/version.exe
 	@rm -f tmp/lexerStructGen.exe
+	@rm -f tmp/parserStructGen.exe
 	@make --directory=bld/hyacc --makefile=makefile clean -s

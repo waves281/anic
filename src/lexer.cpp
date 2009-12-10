@@ -13,16 +13,16 @@ int isNewLine(unsigned char c) {
 	return (c == '\n');
 }
 
-void resetState(vector<char> &s, int &state, char *&tokenType) {
+void resetState(vector<char> &s, int &state, int &tokenType) {
 	// reset the state variables
 	s.clear(); // clear the raw token buffer
 	state = 0;
-	tokenType = "";
+	tokenType = -1;
 	// return normally
 	return;
 }
 
-void commitToken(vector<char> &s, int &state, char *&tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
+void commitToken(vector<char> &s, int &state, int &tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
 	Token t;
 	t.tokenType = tokenType;
@@ -80,7 +80,7 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	vector<char> s;
 	// state variables
 	int state = 0;
-	char *tokenType = "";
+	int tokenType = -1;
 	// the position in the file we're currently in
 	int row = 1;
 	int col = 0;
@@ -110,12 +110,12 @@ lexerLoopTop: ;
 		// now, process the character we just got
 		// first, check it it was a special character
 		if (isWhiteSpace(c)) { // whitespace?
-			if (strcmp(tokenType,"ERROR") == 0) { // if we got whitespace space while in error mode,
+			if (tokenType == TOKEN_ERROR) { // if we got whitespace space while in error mode,
 				printLexerError(fileName,rowStart,colStart,"whitespace-truncated token");
 				// throw away this token and continue parsing
 				resetState(s, state, tokenType);
 				carryOver = c;
-			} else if (!(strcmp(tokenType,"") == 0)) { // else if we were in a commitable state, commit this token to the output vector
+			} else if (tokenType != -1) { // else if we were in a commitable state, commit this token to the output vector
 				commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
 			}
 			if (isNewLine(c)) { // newline?
@@ -132,7 +132,7 @@ lexerLoopTop: ;
 					colStart = col;
 				}
 				// second, check if we're jumping into a failure state
-				if(strcmp(transition.tokenType,"FAIL") == 0) { // if it's a failure state, print an error, reset, and continue
+				if(transition.tokenType == TOKEN_FAIL) { // if it's a failure state, print an error, reset, and continue
 					// print the error message
 					printLexerError(fileName,row,col,"token mangled by stray character 0x"<<hex(c));
 					// also, reset state
@@ -143,7 +143,7 @@ lexerLoopTop: ;
 					continue;
 				}
 				// now, branch based on the type of transition it was
-				if (strcmp(transition.tokenType,"REGCOMMENT") == 0) { // if it's a transition into regular comment mode
+				if (transition.tokenType == TOKEN_REGCOMMENT) { // if it's a transition into regular comment mode
 					// first, reset our state
 					resetState(s, state, tokenType);
 					// finally, scan and discard characters up to and including the next newline
@@ -160,7 +160,7 @@ lexerLoopTop: ;
 							col++;
 						}
 					}
-				} else if (strcmp(transition.tokenType,"STARCOMMENT") == 0) { // else if it's a transition into star comment mode
+				} else if (transition.tokenType == TOKEN_STARCOMMENT) { // else if it's a transition into star comment mode
 					// first, reset our state
 					resetState(s, state, tokenType);
 					// next, scan and discard characters up to and including the next * /
@@ -180,11 +180,11 @@ lexerLoopTop: ;
 						}
 						lastChar = c;
 					}
-				} else if (strcmp(transition.tokenType,"CQUOTE") == 0 || strcmp(transition.tokenType,"SQUOTE") == 0) { // else if it's a transition into a quoting mode
+				} else if (transition.tokenType == TOKEN_CQUOTE || transition.tokenType == TOKEN_SQUOTE) { // else if it's a transition into a quoting mode
 					// log the type of transition we're making
 					tokenType = transition.tokenType;
 					// pre-decide the terminal that should signal the end of the quote
-					char termChar = (strcmp(transition.tokenType,"CQUOTE") == 0) ? '\'' : '\"';
+					char termChar = (tokenType == TOKEN_CQUOTE) ? '\'' : '\"';
 					// whether the last character seen was the escape character
 					bool lastCharWasEsc = false;
 					for(;;) { // scan until we hit either EOF or the termChar
@@ -284,13 +284,13 @@ logCharacter: ;
 					}
 				}
 			} else { // else if the transition isn't valid
-				if (strcmp(tokenType,"") == 0) { // if there were no valid characters before this junk
+				if (tokenType == -1) { // if there were no valid characters before this junk
 					printLexerError(fileName,row,col,"stray character 0x"<<hex(c));
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(s, state, tokenType);
 					discardToken(in, c, row, col, done);
-				} else if (strcmp(tokenType,"ERROR") == 0) { // else if it's an invalid transition from an error state, flag it
+				} else if (tokenType == TOKEN_ERROR) { // else if it's an invalid transition from an error state, flag it
 					// print the error message
 					printLexerError(fileName,row,col,"token truncated by stray character 0x"<<hex(c));
 					// also, reset state

@@ -6,14 +6,14 @@
 
 struct lexerNodeStruct {
 	int valid;
-	char *tokenType;
+	int tokenType;
 	int toState;
 };
 typedef struct lexerNodeStruct LexerNode;
 
 class Token {
 	public:
-		char *tokenType;
+		int tokenType;
 		vector<char> s;
 		int row;
 		int col;

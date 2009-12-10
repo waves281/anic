@@ -60,7 +60,7 @@ test: anic.exe
 	@echo --------------------------------
 	./anic.exe -v ./tst/test.ani
 	@echo --------------------------------
-	@echo Done running test cases.
+	@echo Done running default test cases.
 
 clean: cleanout
 	@echo Cleaning temporary files...

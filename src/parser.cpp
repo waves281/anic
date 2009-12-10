@@ -87,6 +87,33 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 	// allocate the root pointer
 	Tree *root = new Tree();
 
+	// iterate through the lexemes and do the actual parsing
+
+	// initialize the state stack and push the initial state onto it
+	stack<unsigned int> stateStack;
+	stateStack.push(0);
+	// iterate through the lexemes
+	for (vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
+		// get the current state off the top of the stack
+		unsigned int curState = stateStack.top();
+		stateStack.pop();
+		// get the transition node for the current state
+		ParserNode transition = parserNode[curState][lexemeIter->tokenType];
+		// branch based on the type of action dictated by the transition
+		if (transition.action == ACTION_SHIFT) {
+
+		} else if (transition.action == ACTION_REDUCE) {
+
+		} else if (transition.action == ACTION_ACCEPT) {
+
+		} else if (transition.action == ACTION_GOTO) {
+
+		} else if (transition.action == ACTION_ERROR) {
+
+		}
+		stateStack.push(curState);
+	}
+
 	// finally, return to the caller
 	if (parserErrorCode) {
 		// deallocate the output vector, since we're just going to return null

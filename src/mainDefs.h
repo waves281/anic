@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <stack>
 
 #include <stdio.h>
 #include <limits.h>
@@ -18,5 +19,6 @@ using std::ifstream;
 using std::ostream;
 using std::string;
 using std::vector;
+using std::stack;
 
 #endif

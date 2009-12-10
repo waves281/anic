@@ -314,6 +314,16 @@ logCharacter: ;
 		delete outputVector;
 		return NULL;
 	} else {
+		// augment the vector with the end token
+		Token termToken;
+		termToken.tokenType = TOKEN_END;
+		termToken.s.push_back('E');
+		termToken.s.push_back('O');
+		termToken.s.push_back('F');
+		termToken.row = -1;
+		termToken.col = -1;
+		outputVector->push_back(termToken);
+		// finally, return the vector to the caller
 		return outputVector;
 	}
 }

@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
 			} // per-token loop
 			cout << "\n";
 		} // per-file loop
+		cout << "\n";
 	) // VERBOSE
 
 	// now, begin with parsing the lexemes

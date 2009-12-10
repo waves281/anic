@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
 		Tree *parseme = parse(*lexemeIter, fileName);
 		if (parseme == NULL) { // if parsing failed with an error, log the error condition
 			parserError = 1;
-		} else { // else if lexing was successful, log the lexeme to the vector
+		} else { // else if parsing was successful, log the parseme to the vector
 			parsemes.push_back(parseme);
 		}
 		// advance file name index

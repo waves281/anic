@@ -126,18 +126,48 @@ int main() {
 
 	// get rule lengths
 	for (unsigned int i=0; true; i++) { // per-rule line loop
-		// first, discard the junk before the rule's RHS
+		// read in a line
+		char *retVal = fgets(lineBuf, MAX_STRING_LENGTH, in);
+		if (retVal == NULL) { // if we've reached the end of the file, break out of the loop
+			return -1;
+		}
+		char *lbCur = lineBuf;
+		// discard the junk before the rule's lhs
 		char junk[MAX_STRING_LENGTH];
-		fscanf(in, "%s", junk); // scan the first token of the line
+		sscanf(lbCur, "%s", junk); // scan the first token of the line
 		if (junk[0] == 'N') { // break if we've reached the end of the rule set
 			break;
 		}
-		fscanf(in, "%s", junk); // scan in the lhs of the rule
+		// scan over to the next token
+		lbCur += strlen(junk);
+		while (lbCur[0] == ' ' || lbCur[0] == 't') {
+			lbCur++;
+		}
+		// scan in the lhs of the rule
+		sscanf(lbCur, "%s", junk);
 		string lhs(junk); // log the lhs in a string wrapper
-		fscanf(in, "%s", junk); // scan and throw away the next "->" token in the line
+		// scan over to the next token
+		lbCur += strlen(junk);
+		while (lbCur[0] == ' ' || lbCur[0] == 't') {
+			lbCur++;
+		}
+		sscanf(lbCur, "%s", junk); // scan and throw away the next "->" token in the line
+		// scan over to the next token
+		lbCur += strlen(junk);
+		while (lbCur[0] == ' ' || lbCur[0] == 't') {
+			lbCur++;
+		}
 		// now, count the number of elements on the RHS
 		int rhsElements = 0;
-		while (fscanf(in, "%s", junk) && junk[0] != '(') {
+		for(;;) {
+			if (sscanf(lbCur, "%s", junk) < 1 || junk[0] == '(') { // break wif we reach the end of the line
+				break;
+			}
+			// scan over to the next token
+			lbCur += strlen(junk);
+			while (lbCur[0] == ' ' || lbCur[0] == 't') {
+				lbCur++;
+			}
 			rhsElements++;
 		}
 		// then, log the lhs and size of the rule in the corresponding arrays
@@ -145,8 +175,6 @@ int main() {
 			fprintf(out, "\truleLhs[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
 		}
 		fprintf(out, "\truleLength[%d] = %d; \\\n", i, rhsElements);
-		// finally, throw away the rest of the line
-		fgets(lineBuf, MAX_STRING_LENGTH, in);
 	}
 	fprintf(out, "\t\\\n");
 

@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 		if (strcmp(fileName,"-") == 0) {
 			fileName = "stdin";
 		}
-		VERBOSE(printNotice("lexing file \'" << fileName << "\'...");)
+		VERBOSE(printNotice("lexing file \'" << fileName << "\'..");)
 		// do the actual lexing
 		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 		if (strcmp(fileName,"-") == 0) {
 			fileName = "stdin";
 		}
-		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
+		VERBOSE(printNotice("parsing file \'" << fileName << "\'..");)
 		// do the actual parsing
 		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel);
 		if (parseme == NULL) { // if parsing failed with an error, log the error condition
@@ -144,6 +144,15 @@ int main(int argc, char **argv) {
 		} else { // else if parsing was successful, log the parseme to the vector
 			parsemes.push_back(parseme);
 		}
+		VERBOSE(
+			if (parseme != NULL && parseme->t().tokenType == TOKEN_Program) {
+				printNotice("successfully parsed file \'" << fileName << "\'");
+				print(""); // new line
+			} else {
+				printNotice("failed to parse file \'" << fileName << "\'");
+				print(""); // new line
+			}
+		)
 		// advance file name index
 		fileIndex++;
 	}

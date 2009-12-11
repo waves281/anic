@@ -136,15 +136,19 @@ int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {
 int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	Token t;
 	t.tokenType = tokenType;
-	t.row = treeCur->t().row;
-	t.col = treeCur->t().col;
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, &(*treeCur));
-	if (&(*treeCur) != NULL) { // if this not the root (the parent pointer is non-null)
-		*(&(*treeCur)) *= treeToAdd; // update treeCur's parent to point down to the new node
-		(*treeCur) &= treeToAdd; // update treeCur to point up to the new node
-	} else { // else if this is the root
+	t.row = treeCur != NULL ? treeCur->t().row : 0;
+	t.col = treeCur != NULL ? treeCur->t().col : 0;
+	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur != NULL ? &(*treeCur) : NULL);
+	if (treeCur != NULL) {
+		if (&(*treeCur) != NULL) { // if this not the root (the parent pointer is non-null)
+			*(&(*treeCur)) *= treeToAdd; // update treeCur's parent to point down to the new node
+			(*treeCur) &= treeToAdd; // update treeCur to point up to the new node
+		} else { // else if this is the root
+			root = treeToAdd;
+			(*treeCur) &= treeToAdd; // update treeCur to point up the new node
+		}
+	} else {
 		root = treeToAdd;
-		(*treeCur) &= treeToAdd; // update treeCur to point up the new node
 	}
 	// finally, set treeCur to the newly allocated node
 	treeCur = treeToAdd;
@@ -196,8 +200,8 @@ transitionParserState: ;
 			}
 			promoteToken(treeCur, ruleLhsTokenType, root);
 			// take the goto branch of the new transition
-			curState = stateStack.top();
-			stateStack.push(parserNode[curState][ruleLhsTokenType].n);
+			int tempState = stateStack.top();
+			stateStack.push(parserNode[tempState][ruleLhsTokenType].n);
 
 			VERBOSE( cout << "\tREDUCE " << curState << " -> " << stateStack.top() << endl; )
 

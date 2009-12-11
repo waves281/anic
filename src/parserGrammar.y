@@ -65,9 +65,30 @@
 %left LBRACKET RBRACKET
 
 %%
-Program : Nodes
+Program : Definitions
 	;
-Nodes : ID
-	| INUM FNUM
+Definitions : 
+	| Definition Definitions
+	;
+Definition : ID EQUALS NodeDefinition
+	;
+NodeDefinition : DLSQUARE TypeList DRSQUARE Stream
+	;
+TypeList : 
+	| Type
+	| Type COMMA NonEmptyTypeList
+	;
+Type : ID ID
+	;
+NonEmptyTypeList : Type
+	| Type COMMA NonEmptyTypeList
+	;
+Stream : SEMICOLON
+	| LCURLY Pipes RCURLY
+	;
+Pipes : 
+	| Pipe SEMICOLON Pipes
+	;
+Pipe : ID
 	;
 %%

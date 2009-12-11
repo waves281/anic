@@ -1,1 +1,6 @@
-"\\lol"
+main = [[int argc, int argv]] {
+	lol;
+	lol2;
+	lol3;
+	// okay, we're done now!
+}

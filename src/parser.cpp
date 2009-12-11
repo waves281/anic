@@ -148,7 +148,9 @@ int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 			(*treeCur) &= treeToAdd; // update treeCur to point up the new node
 		}
 	} else {
-		root = treeToAdd;
+		if (root == NULL) {
+			root = treeToAdd;
+		}
 	}
 	// finally, set treeCur to the newly allocated node
 	treeCur = treeToAdd;

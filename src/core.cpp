@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 		die();
 	}
 
-	// now, begin with lexing the input files
+	// lex files
 	int lexerError = 0; // error flag
 	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
@@ -95,7 +95,10 @@ int main(int argc, char **argv) {
 		if (strcmp(fileName,"-") == 0) {
 			fileName = "stdin";
 		}
-		VERBOSE(printNotice("lexing file \'" << fileName << "\'..");)
+		VERBOSE(
+			cout << "\n";
+			printNotice("lexing file \'" << fileName << "\'..");
+		)
 		// do the actual lexing
 		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
@@ -103,31 +106,29 @@ int main(int argc, char **argv) {
 		} else { // else if lexing was successful, log the lexeme to the vector
 			lexemes.push_back(lexeme);
 		}
+		// print out the tokens if we're in verbose mode
+		VERBOSE(
+			if (lexeme != NULL) {
+				for (unsigned int tokenIndex = 0; tokenIndex < lexeme->size(); tokenIndex++) {
+					Token tokenCur = (*lexeme)[tokenIndex];
+					cout << "[" << tokenType2String(tokenCur.tokenType) << " " << tokenCur.s << " (" << tokenCur.row << "," << tokenCur.col << ")] " ;
+				} // per-token loop
+				cout << "\n";
+			}
+			if (!lexerError) {
+				printNotice("successfully lexed file \'" << fileName << "\'");
+			} else {
+				printNotice("failed to lex file \'" << fileName << "\'");
+			}
+			print(""); // new line
+		)
 	}
 	// now, check if lexing failed and kill the system as appropriate
 	if (lexerError) {
 		die(1);
 	}
 
-	// print out the lexemes if we're in verbose mode
-	VERBOSE(
-		for (unsigned int fileIndex = 0; fileIndex < lexemes.size(); fileIndex++) {
-			char *fileName = inFileNames[fileIndex];
-			if (strcmp(fileName,"-") == 0) {
-				fileName = "stdin";
-			}
-			printLabel(fileName << ":");
-			vector<Token> *fileVector = lexemes[fileIndex];
-			for (unsigned int tokenIndex = 0; tokenIndex < fileVector->size(); tokenIndex++) {
-				Token tokenCur = (*fileVector)[tokenIndex];
-				cout << "[" << tokenType2String(tokenCur.tokenType) << " " << tokenCur.s << " (" << tokenCur.row << "," << tokenCur.col << ")] " ;
-			} // per-token loop
-			cout << "\n";
-		} // per-file loop
-		cout << "\n";
-	) // VERBOSE
-
-	// now, begin with parsing the lexemes
+	// parse lexemes
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parsemes; // per-file vector of the parsemes that the parser is about to generate
@@ -147,11 +148,10 @@ int main(int argc, char **argv) {
 		VERBOSE(
 			if (parseme != NULL && parseme->t().tokenType == TOKEN_Program) {
 				printNotice("successfully parsed file \'" << fileName << "\'");
-				print(""); // new line
 			} else {
 				printNotice("failed to parse file \'" << fileName << "\'");
-				print(""); // new line
 			}
+			print(""); // new line
 		)
 		// advance file name index
 		fileIndex++;

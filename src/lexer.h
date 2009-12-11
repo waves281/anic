@@ -14,7 +14,7 @@ typedef struct lexerNodeStruct LexerNode;
 class Token {
 	public:
 		int tokenType;
-		vector<char> s;
+		string s;
 		int row;
 		int col;
 };

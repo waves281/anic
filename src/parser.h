@@ -48,6 +48,8 @@ class Tree {
 		Tree &operator+=(Tree *&next);
 		Tree &operator*=(Tree *&child);
 		Tree &operator&=(Tree *&parent);
+		// generalized traverser
+		Tree *traverse(char *s);
 };
 
 Tree *parse(vector<Token> *lexeme, char *fileName);

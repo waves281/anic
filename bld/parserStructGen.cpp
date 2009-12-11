@@ -98,6 +98,13 @@ int main() {
 	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS]; \\\n", NUM_RULES);
 	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");
+	// initialize all parser nodes to error conditions
+	fprintf(out, "\tfor (unsigned int i=0; i < NUM_RULES; i++) { \\\n");
+	fprintf(out, "\t\tfor (unsigned int j=0; j < NUM_TOKENS; j++) { \\\n");
+	fprintf(out, "\t\t\tparserNode[i][j].action = ACTION_ERROR; \\\n");
+	fprintf(out, "\t\t} \\\n");
+	fprintf(out, "\t} \\\n");
+	fprintf(out, "\t\\\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);

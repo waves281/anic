@@ -13,7 +13,7 @@ int isNewLine(unsigned char c) {
 	return (c == '\n');
 }
 
-void resetState(vector<char> &s, int &state, int &tokenType) {
+void resetState(string &s, int &state, int &tokenType) {
 	// reset the state variables
 	s.clear(); // clear the raw token buffer
 	state = 0;
@@ -22,7 +22,7 @@ void resetState(vector<char> &s, int &state, int &tokenType) {
 	return;
 }
 
-void commitToken(vector<char> &s, int &state, int &tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
+void commitToken(string &s, int &state, int &tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
 	Token t;
 	t.tokenType = tokenType;
@@ -77,7 +77,7 @@ vector<Token> *lex(ifstream *in, char *fileName) {
 	char c;
 	char carryOver = '\0';
 	// output character buffer
-	vector<char> s;
+	string s;
 	// state variables
 	int state = 0;
 	int tokenType = -1;
@@ -261,7 +261,7 @@ lexerLoopTop: ;
 						// character logging
 logCharacter: ;
 						if (s.size() < (MAX_TOKEN_LENGTH-1)) { // else if there is room in the buffer for this character, log it
-							s.push_back(c);
+							s += c;
 						} else { // else if there is no more room in the buffer for this character, discard the token with an error
 							printLexerError(fileName,rowStart,colStart,"quoted literal overflow");
 							// also, reset state and scan to the end of this token
@@ -273,7 +273,7 @@ logCharacter: ;
 					} // for (;;)
 				} else { // else if it's any other regular valid transition
 					if (s.size() < (MAX_TOKEN_LENGTH-1)) { // if there is room in the buffer for this character, log it
-						s.push_back(c);
+						s += c;
 						tokenType = transition.tokenType;
 						state = transition.toState;
 					} else { // else if there is no more room in the buffer for this character, discard the token with an error
@@ -317,11 +317,9 @@ logCharacter: ;
 		// augment the vector with the end token
 		Token termToken;
 		termToken.tokenType = TOKEN_END;
-		termToken.s.push_back('E');
-		termToken.s.push_back('O');
-		termToken.s.push_back('F');
-		termToken.row = -1;
-		termToken.col = -1;
+		termToken.s = "EOF";
+		termToken.row = 0;
+		termToken.col = 0;
 		outputVector->push_back(termToken);
 		// finally, return the vector to the caller
 		return outputVector;

@@ -93,6 +93,29 @@ Tree &Tree::operator&=(Tree *&parent) {
 	parentInternal = parent;
 	return *parent;
 }
+// generalized traverser
+Tree *Tree::traverse(char *s) {
+	Tree *cur = this;
+	for(;;) {
+		if (cur == NULL || s[0] == '\0') {
+			 return cur;
+		} else if (s[0] == '>') {
+			cur = cur->nextInternal;
+			s++;
+		} else if (s[0] == '<') {
+			cur = cur->backInternal;
+			s++;
+		} else if (s[0] == 'v') {
+			cur = cur->childInternal;
+			s++;
+		} else if (s[0] == '^') {
+			cur = cur->parentInternal;
+			s++;
+		} else {
+			throw string("INTERNAL ERROR: illegal tree traverser");
+		}
+	}
+}
 
 // main parsing functions
 
@@ -114,9 +137,9 @@ int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	t.tokenType = tokenType;
 	t.row = treeCur->t().row;
 	t.col = treeCur->t().col;
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, &(*treeCur));
-	if (&(*treeCur) != NULL) { // if this not the root (the parent pointer is non-null)
-		*(&(*treeCur)) *= treeToAdd; // update treeCur's parent to point down to the new node
+	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur->traverse("^"));
+	if (treeCur->traverse("^") != NULL) { // if this not the root (the parent pointer is non-null)
+		*(treeCur->traverse("^")) *= treeToAdd; // update treeCur's parent to point down to the new node
 		(*treeCur) &= treeToAdd; // update treeCur to point up to the new node
 	} else { // else if this is the root
 		root = treeToAdd;
@@ -145,13 +168,16 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 	// iterate through the lexemes
 	Tree *treeCur = root; // the current bit of tree that we're examining
 	for (vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
+		Token &t = *lexemeIter;
 		// get the current state off the top of the stack
 		unsigned int curState = stateStack.top();
+
+transitionParserState: ;
 		// get the transition node for the current state
-		ParserNode transition = parserNode[curState][lexemeIter->tokenType];
+		ParserNode transition = parserNode[curState][t.tokenType];
 		// branch based on the type of action dictated by the transition
 		if (transition.action == ACTION_SHIFT) {
-			shiftToken(treeCur, *lexemeIter, root);
+			shiftToken(treeCur, t, root);
 			stateStack.push(transition.n);
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleLength[transition.n];
@@ -162,11 +188,18 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 			}
 			promoteToken(treeCur, tokenType, root);
 		} else if (transition.action == ACTION_ACCEPT) {
-
+			break;
 		} else if (transition.action == ACTION_GOTO) {
 
 		} else if (transition.action == ACTION_ERROR) {
-
+			string errorString = "syntax error at ";
+			if (t.tokenType == TOKEN_CQUOTE || t.tokenType == TOKEN_SQUOTE) {
+				errorString += "quoted literal";
+			} else {
+				errorString += "\'" + t.s + "\'";
+			}
+			printParserError(fileName,t.row,t.col,errorString);
+			continue;
 		}
 	}
 

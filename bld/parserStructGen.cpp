@@ -83,7 +83,7 @@ int main() {
 			parsingNonTerms = true;
 		}
 		if (parsingNonTerms) {
-			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), nonTermCount);
+			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), 1 + nonTermCount);
 			nonTermCount++;
 		}
 		// push the string to the token ordering map
@@ -95,12 +95,12 @@ int main() {
 	fprintf(out, "#define PARSER_STRUCT \\\n");
 	fprintf(out, "static unsigned int ruleLength[NUM_RULES]; \\\n", NUM_RULES);
 	fprintf(out, "static int ruleLhs[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS]; \\\n", NUM_RULES);
+	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS + %d]; \\\n", NUM_RULES, 1 + nonTermCount);
 	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");
 	// initialize all parser nodes to error conditions
 	fprintf(out, "\tfor (unsigned int i=0; i < NUM_RULES; i++) { \\\n");
-	fprintf(out, "\t\tfor (unsigned int j=0; j < NUM_TOKENS; j++) { \\\n");
+	fprintf(out, "\t\tfor (unsigned int j=0; j < (NUM_TOKENS + %d); j++) { \\\n", 1 + nonTermCount);
 	fprintf(out, "\t\t\tparserNode[i][j].action = ACTION_ERROR; \\\n");
 	fprintf(out, "\t\t} \\\n");
 	fprintf(out, "\t} \\\n");
@@ -182,26 +182,32 @@ int main() {
 		// first, read the state number
 		char *lbCur = lineBuf;
 		sscanf(lbCur, "%s", junk);
-		lbCur += strlen(junk)+1; // advance past the state number
+		// advance past the current token
+		lbCur += strlen(junk);
+		while(lbCur[0] == ' ' || lbCur[0] == '\t') {
+			lbCur++;
+		}
 		// parse out the state number from the string
 		fromState = atoi(junk);
 		// now, read all of the transitions for this state
 		for(unsigned int i=0; i<tokenOrder.size(); i++) {
-			if (sscanf(lbCur, "%s", junk) < 1) { // read a transition
-				break;
+			sscanf(lbCur, "%s", junk); // read a transition
+			// advance past the current token
+			lbCur += strlen(junk);
+			while(lbCur[0] == ' ' || lbCur[0] == '\t') {
+				lbCur++;
 			}
-			lbCur += strlen(junk)+1;
 			// branch based on the type of transition action it is
 			if (junk[0] == 's') { // shift action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %s }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_SHIFT", (junk+1) );
+				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_SHIFT", atoi(junk+1) );
 			} else if (junk[0] == 'r') { // reduce action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %s }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_REDUCE", (junk+1) );
+				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_REDUCE", atoi(junk+1) );
 			} else if (junk[0] == 'a') { // accept action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %s }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", "0" );
+				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", 0 );
 			} else if (junk[0] == 'g') { // goto action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %s }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", (junk+1) );
+				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", atoi(junk+1) );
 			} else if (junk[0] == '0') { // error action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %s }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ERROR", "0" );
+				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ERROR", 0 );
 			}
 		}
 	}

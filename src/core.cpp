@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("lexing file \'" << fileName << "\'...");)
 		// do the actual lexing
-		vector<Token> *lexeme = lex(inFiles[i], fileName);
+		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
 			lexerError = 1;
 		} else { // else if lexing was successful, log the lexeme to the vector
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		Tree *parseme = parse(*lexemeIter, fileName);
+		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel);
 		if (parseme == NULL) { // if parsing failed with an error, log the error condition
 			parserError = 1;
 		} else { // else if parsing was successful, log the parseme to the vector

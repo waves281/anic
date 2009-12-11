@@ -53,6 +53,6 @@ class Tree {
 		Tree *traverse(char *s);
 };
 
-Tree *parse(vector<Token> *lexeme, char *fileName);
+Tree *parse(vector<Token> *lexeme, char *fileName, int verboseOutput, int optimizationLevel);
 
 #endif

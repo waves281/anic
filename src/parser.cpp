@@ -152,7 +152,7 @@ int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	return 0;
 }
 
-Tree *parse(vector<Token> *lexeme, char *fileName) {
+Tree *parse(vector<Token> *lexeme, char *fileName, int verboseOutput, int optimizationLevel) {
 	// local error code
 	int parserErrorCode = 0;
 	// initialize lexer structure
@@ -165,50 +165,56 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 	stack<unsigned int> stateStack;
 	stateStack.push(0);
 	// iterate through the lexemes
-	vector<Token>::iterator lexemeIter = lexeme->begin(); // the iterator for the current token
-	Tree *root = new Tree(*lexemeIter); // tree root pointer, starts off as the first token in the input
+
+	Tree *root = NULL; // tree root pointer, starts off as the first token in the input
 	Tree *treeCur = root; // the current bit of tree that we're examining
 
-	for(;;) {
-
-		// advance the lexeme iterator one point
-		lexemeIter++;
+	for(vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
 
 transitionParserState: ;
 
 		// get the current state off the top of the stack
 		unsigned int curState = stateStack.top();
+		// peek at the next token of input
+		Token &t = *lexemeIter;
 		// get the transition node for the current state
-		ParserNode transition = parserNode[curState][treeCur->t().tokenType];
+		ParserNode transition = parserNode[curState][t.tokenType];
 
 		// branch based on the type of action dictated by the transition
 		if (transition.action == ACTION_SHIFT) {
-			shiftToken(treeCur, *lexemeIter, root);
+			shiftToken(treeCur, t, root);
 			stateStack.push(transition.n);
-			continue;
+
+			VERBOSE( cout << "\tSHIFT " << curState << " -> " << transition.n << endl; )
+
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleLength[transition.n];
-			int tokenType = ruleLhs[transition.n];
+			int ruleLhsTokenType = ruleLhs[transition.n];
 			treeCur = (*treeCur) - (numRhs-1);
 			for (unsigned int i=0; i<numRhs; i++) {
 				stateStack.pop();
 			}
-			promoteToken(treeCur, tokenType, root);
+			promoteToken(treeCur, ruleLhsTokenType, root);
+			// take the goto branch of the new transition
+			curState = stateStack.top();
+			stateStack.push(parserNode[curState][ruleLhsTokenType].n);
+
+			VERBOSE( cout << "\tREDUCE " << curState << " -> " << stateStack.top() << endl; )
+
 			goto transitionParserState;
 		} else if (transition.action == ACTION_ACCEPT) {
+
+			VERBOSE( cout << "\tACCEPT " << endl; )
+
 			break;
-		} else if (transition.action == ACTION_GOTO) {
-			stateStack.pop();
-			stateStack.push(transition.n);
-			goto transitionParserState;
 		} else if (transition.action == ACTION_ERROR) {
 			string errorString = "syntax error at ";
-			if (treeCur->t().tokenType == TOKEN_CQUOTE || treeCur->t().tokenType == TOKEN_SQUOTE) {
+			if (t.tokenType == TOKEN_CQUOTE || t.tokenType == TOKEN_SQUOTE) {
 				errorString += "quoted literal";
 			} else {
-				errorString += "\'" + treeCur->t().s + "\'";
+				errorString += "\'" + t.s + "\'";
 			}
-			printParserError(fileName, treeCur->t().row, treeCur->t().col, errorString);
+			printParserError(fileName, t.row, t.col, errorString);
 			break;
 		}
 	}

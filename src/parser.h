@@ -31,6 +31,7 @@ class Tree {
 	public:
 		// allocators/deallocators
 		Tree();
+		Tree(Token &t);
 		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		~Tree();
 		// accessors
@@ -44,7 +45,7 @@ class Tree {
 		Tree *operator-();
 		Tree *operator*();
 		Tree *operator&();
-		// binary concatenators
+		// binary attatchers
 		Tree &operator+=(Tree *&next);
 		Tree &operator*=(Tree *&child);
 		Tree &operator&=(Tree *&parent);

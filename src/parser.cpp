@@ -8,6 +8,7 @@
 
 // constructors
 Tree::Tree() : nextInternal(NULL), backInternal(NULL), childInternal(NULL), parentInternal(NULL) {}
+Tree::Tree(Token &t) : tInternal(t), nextInternal(NULL), backInternal(NULL), childInternal(NULL), parentInternal(NULL) {}
 Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : tInternal(t), nextInternal(next), backInternal(back), childInternal(child), parentInternal(parent) {}
 
 // destructor
@@ -80,7 +81,7 @@ Tree *Tree::operator*() {
 Tree *Tree::operator&() {
 	return this->operator&(1);
 }
-// binary concatenators
+// binary attatchers
 Tree &Tree::operator+=(Tree *&next) {
 	nextInternal = next;
 	return *next;
@@ -137,9 +138,9 @@ int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	t.tokenType = tokenType;
 	t.row = treeCur->t().row;
 	t.col = treeCur->t().col;
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur->traverse("^"));
-	if (treeCur->traverse("^") != NULL) { // if this not the root (the parent pointer is non-null)
-		*(treeCur->traverse("^")) *= treeToAdd; // update treeCur's parent to point down to the new node
+	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, &(*treeCur));
+	if (&(*treeCur) != NULL) { // if this not the root (the parent pointer is non-null)
+		*(&(*treeCur)) *= treeToAdd; // update treeCur's parent to point down to the new node
 		(*treeCur) &= treeToAdd; // update treeCur to point up to the new node
 	} else { // else if this is the root
 		root = treeToAdd;
@@ -157,8 +158,6 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 	// initialize lexer structure
 	// int ruleLength[NUM_RULES], ruleLhs[NUM_RULES], and ParserNode parserNode[NUM_RULES][NUM_TOKENS] are hereby defined and usable
 	PARSER_STRUCT;
-	// allocate the root pointer
-	Tree *root = NULL;
 
 	// iterate through the lexemes and do the actual parsing
 
@@ -166,19 +165,27 @@ Tree *parse(vector<Token> *lexeme, char *fileName) {
 	stack<unsigned int> stateStack;
 	stateStack.push(0);
 	// iterate through the lexemes
+	vector<Token>::iterator lexemeIter = lexeme->begin(); // the iterator for the current token
+	Tree *root = new Tree(*lexemeIter); // tree root pointer, starts off as the first token in the input
 	Tree *treeCur = root; // the current bit of tree that we're examining
-	for (vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
-		Token &t = *lexemeIter;
-		// get the current state off the top of the stack
-		unsigned int curState = stateStack.top();
+
+	for(;;) {
+
+		// advance the lexeme iterator one point
+		lexemeIter++;
 
 transitionParserState: ;
+
+		// get the current state off the top of the stack
+		unsigned int curState = stateStack.top();
 		// get the transition node for the current state
-		ParserNode transition = parserNode[curState][t.tokenType];
+		ParserNode transition = parserNode[curState][treeCur->t().tokenType];
+
 		// branch based on the type of action dictated by the transition
 		if (transition.action == ACTION_SHIFT) {
-			shiftToken(treeCur, t, root);
+			shiftToken(treeCur, *lexemeIter, root);
 			stateStack.push(transition.n);
+			continue;
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleLength[transition.n];
 			int tokenType = ruleLhs[transition.n];
@@ -187,19 +194,22 @@ transitionParserState: ;
 				stateStack.pop();
 			}
 			promoteToken(treeCur, tokenType, root);
+			goto transitionParserState;
 		} else if (transition.action == ACTION_ACCEPT) {
 			break;
 		} else if (transition.action == ACTION_GOTO) {
-
+			stateStack.pop();
+			stateStack.push(transition.n);
+			goto transitionParserState;
 		} else if (transition.action == ACTION_ERROR) {
 			string errorString = "syntax error at ";
-			if (t.tokenType == TOKEN_CQUOTE || t.tokenType == TOKEN_SQUOTE) {
+			if (treeCur->t().tokenType == TOKEN_CQUOTE || treeCur->t().tokenType == TOKEN_SQUOTE) {
 				errorString += "quoted literal";
 			} else {
-				errorString += "\'" + t.s + "\'";
+				errorString += "\'" + treeCur->t().s + "\'";
 			}
-			printParserError(fileName,t.row,t.col,errorString);
-			continue;
+			printParserError(fileName, treeCur->t().row, treeCur->t().col, errorString);
+			break;
 		}
 	}
 

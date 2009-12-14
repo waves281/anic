@@ -74,10 +74,6 @@ Program : Pipes
 Pipes : 
 	| Pipe
 	| Pipe SEMICOLON Pipes
-	| ComplexPipe
-	;
-ComplexPipe : Pipe COMMA Pipe
-	| Pipe COMMA ComplexPipe
 	;
 Pipe : Declaration
 	| NonEmptyTerms
@@ -101,6 +97,7 @@ ClosedTerm : SimpleTerm
 SimpleTerm : Node
 	| Literal
 	| Access
+	| Compound
 	| Send
 	| Block
 	;
@@ -147,6 +144,8 @@ Access : PopAccess
 PopAccess : SLASH Node
 	;
 StreamAccess : DSLASH Node
+	;
+Compound : COMMA SimpleTerm
 	;
 Send : RARROW Node
 	;

@@ -1,5 +1,10 @@
 TARGET = anic.exe
 OPTIMIZATION_LEVEL = 3
+TEST_FILES = tst/test.ani
+
+
+
+### /* BUILD TYPES */
 
 main: start $(TARGET)
 
@@ -7,6 +12,10 @@ all: start cleanout test
 
 debug: 
 	@make all -s OPTIMIZATION_LEVEL=0
+
+
+
+### /* DEPENDENCIES */
 
 start:
 	@echo anic ANI Compiler Makefile
@@ -65,7 +74,7 @@ test: $(TARGET)
 	@echo
 	@echo ...Running default test cases...
 	@echo --------------------------------
-	./$(TARGET) -v ./tst/test.ani
+	./$(TARGET) -v $(TEST_FILES)
 	@echo --------------------------------
 	@echo Done running default test cases.
 

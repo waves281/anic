@@ -174,7 +174,7 @@ int main() {
 		// then, log the lhs tokenType, lhs tokenString and rhs size of the rule in the corresponding arrays
 		if (lhs != "$accept") {
 			fprintf(out, "\truleLhsTokenType[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
-			fprintf(out, "\truleLhsTokenString[%d] = \"%s\";", i, lhs.c_str());
+			fprintf(out, "\truleLhsTokenString[%d] = \"%s\"; \\\n", i, lhs.c_str());
 		}
 		fprintf(out, "\truleRhsLength[%d] = %d; \\\n", i, rhsElements);
 	}
@@ -236,9 +236,8 @@ int main() {
 				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", 0 );
 			} else if (junk[0] == 'g') { // goto action
 				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", atoi(junk+1) );
-			} else if (junk[0] == '0') { // error action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ERROR", 0 );
 			}
+			// do nothing on error states; all states have been defaulted to ACTION_ERROR already
 		}
 	}
 	// print out the epilogue

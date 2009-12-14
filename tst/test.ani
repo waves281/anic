@@ -3,4 +3,4 @@ main = [[int argc, int argv]] {
 	lol2;
 	lol3;
 	// okay, we're done now!
-}
+};

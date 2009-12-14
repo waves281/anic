@@ -20,6 +20,10 @@
 %token DRSQUARE
 %token CQUOTE
 %token SQUOTE
+%token RARROW
+%token DRARROW
+%token SLASH
+%token DSLASH
 
 /* arithmetic tokens */
 %token DOR
@@ -65,30 +69,82 @@
 %left LBRACKET RBRACKET
 
 %%
-Program : Definitions
+Program : Pipes
 	;
-Definitions : 
-	| Definition Definitions
+Pipes :
+	| Pipe SEMICOLON Pipes
 	;
-Definition : ID EQUALS NodeDefinition
+Pipe : Declaration
+	| NonEmptyTerms
 	;
-NodeDefinition : DLSQUARE TypeList DRSQUARE Stream
+Declaration : ID EQUALS	NonEmptyTerms
 	;
-TypeList : 
-	| Type
-	| Type COMMA NonEmptyTypeList
+NonEmptyTerms : Term Terms
 	;
-Type : ID ID
+Terms : 
+	| Term Terms
+	;
+Term : OpenTerm
+	| ClosedTerm
+	;
+OpenTerm : SimpleCond
+	| OpenCond
+	;
+ClosedTerm : SimpleTerm
+	| ClosedCond
+	;
+SimpleTerm : Node
+	| Literal
+	| Access
+	| Send
+	| Block
+	;
+SimpleCond : QUESTION Term
+	;
+OpenCond : QUESTION ClosedTerm COLON OpenTerm
+	;
+ClosedCond : QUESTION ClosedTerm COLON ClosedTerm
+	;
+Node : QualifiedIdentifier
+	| NodeLiteral
+	;
+QualifiedIdentifier : ID
+	| ID PERIOD QualifiedIdentifier
+	;
+Literal : INUM
+	| FNUM
+	| CQUOTE
+	| SQUOTE
+	;
+NodeLiteral : NodeHeader Block
+	;
+NodeHeader : DLSQUARE DeclList RetList DRSQUARE
+	;
+DeclList : 
+	| NonEmptyDeclList
+	;
+NonEmptyDeclList: Decl
+	| Decl COMMA NonEmptyDeclList
+	;
+RetList : 
+	| DRARROW NonEmptyTypeList
+	;
+Decl : Type ID
+	;
+Type : QualifiedIdentifier
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
-Stream : SEMICOLON
-	| LCURLY Pipes RCURLY
+Access : PopAccess
+	| StreamAccess
 	;
-Pipes : 
-	| Pipe SEMICOLON Pipes
+PopAccess : SLASH Node
 	;
-Pipe : ID
+StreamAccess : DSLASH Node
+	;
+Send : RARROW Node
+	;
+Block : LCURLY Pipes RCURLY
 	;
 %%

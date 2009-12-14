@@ -115,7 +115,20 @@ ClosedCond : QUESTION ClosedTerm COLON ClosedTerm
 	;
 BracketedExp : LBRACKET Exp RBRACKET
 	;
-Exp : ID
+Exp : ExpLeft ExpRight
+	;
+ExpLeft : PrimaryExp
+	| PrefixOp ExpLeft
+	| CastExp ExpLeft
+	;
+ExpRight : 
+	| InfixOp ExpLeft
+	;
+PrimaryExp : QualifiedIdentifier
+	| PrimLiteral
+	| BracketedExp
+	;
+CastExp : BracketedExp
 	;
 Node : QualifiedIdentifier
 	| NodeLiteral
@@ -125,7 +138,13 @@ Node : QualifiedIdentifier
 QualifiedIdentifier : ID
 	| ID PERIOD QualifiedIdentifier
 	;
-PrimNode : DOR
+PrimNode : PrefixOp
+	| InfixOp
+	;
+PrefixOp : NOT
+	| COMPLEMENT
+	;
+InfixOp : DOR
 	| DAND
 	| OR
 	| XOR
@@ -144,8 +163,6 @@ PrimNode : DOR
 	| DIVIDE
 	| MOD
 	| DTIMES
-	| NOT
-	| COMPLEMENT
 	;
 PrimLiteral : INUM
 	| FNUM

@@ -1,10 +1,16 @@
-main /* lol, main!!!*/ = [[int argc, int argv --> int]] {
+main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
 	x = 5 lol.filter.X;
 
-	retVal = int;
+	retVal = {int, int};
 	
-	argc ? { argv ? 1 : 2 } : 3 -> retVal;
+	argc ? { loop =
+			argv ?
+				{1,2}
+			:
+				{3,4}
+		} : {5,6} -> retVal;
 	retVal -> return;
 	// okay, we're done now!
 }
+// EOF comment

@@ -71,9 +71,13 @@
 %%
 Program : Pipes
 	;
-Pipes :
+Pipes : 
 	| Pipe
 	| Pipe SEMICOLON Pipes
+	| ComplexPipe
+	;
+ComplexPipe : Pipe COMMA Pipe
+	| Pipe COMMA ComplexPipe
 	;
 Pipe : Declaration
 	| NonEmptyTerms

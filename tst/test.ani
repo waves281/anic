@@ -1,6 +1,10 @@
-main = [[int argc, int argv]] {
-	lol;
-	lol2;
-	lol3;
+main /* lol, main!!!*/ = [[int argc, int argv --> int]] {
+
+	x = 5 lol.filter.X;
+
+	retVal = int;
+	
+	argc ? { argv ? 1 : 2 } : 3 -> retVal;
+	retVal -> return;
 	// okay, we're done now!
-};
+}

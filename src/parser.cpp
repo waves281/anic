@@ -194,18 +194,21 @@ transitionParserState: ;
 			VERBOSE( cout << "\tSHIFT " << curState << " -> " << transition.n << endl; )
 
 		} else if (transition.action == ACTION_REDUCE) {
-			unsigned int numRhs = ruleLength[transition.n];
-			int ruleLhsTokenType = ruleLhs[transition.n];
+			unsigned int numRhs = ruleRhsLength[transition.n];
+			int tokenType = ruleLhsTokenType[transition.n];
 			treeCur = (*treeCur) - (numRhs-1);
 			for (unsigned int i=0; i<numRhs; i++) {
 				stateStack.pop();
 			}
-			promoteToken(treeCur, ruleLhsTokenType, root);
+			promoteToken(treeCur, tokenType, root);
 			// take the goto branch of the new transition
 			int tempState = stateStack.top();
-			stateStack.push(parserNode[tempState][ruleLhsTokenType].n);
+			stateStack.push(parserNode[tempState][tokenType].n);
 
-			VERBOSE( cout << "\tREDUCE " << curState << " -> " << stateStack.top() << endl; )
+			VERBOSE(
+				char *tokenString = ruleLhsTokenString[transition.n];
+				cout << "\tREDUCE " << curState << " -> " << stateStack.top() << "\t[ " << tokenString << " ]" << endl;
+			)
 
 			goto transitionParserState;
 		} else if (transition.action == ACTION_ACCEPT) {

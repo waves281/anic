@@ -93,8 +93,9 @@ int main() {
 
 	// print struct header
 	fprintf(out, "#define PARSER_STRUCT \\\n");
-	fprintf(out, "static unsigned int ruleLength[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static int ruleLhs[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static unsigned int ruleRhsLength[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static int ruleLhsTokenType[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static char *ruleLhsTokenString[NUM_RULES]; \\\n", NUM_RULES);
 	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS + %d]; \\\n", NUM_RULES, 1 + nonTermCount);
 	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");
@@ -170,11 +171,12 @@ int main() {
 			}
 			rhsElements++;
 		}
-		// then, log the lhs and size of the rule in the corresponding arrays
+		// then, log the lhs tokenType, lhs tokenString and rhs size of the rule in the corresponding arrays
 		if (lhs != "$accept") {
-			fprintf(out, "\truleLhs[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
+			fprintf(out, "\truleLhsTokenType[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
+			fprintf(out, "\truleLhsTokenString[%d] = \"%s\";", i, lhs.c_str());
 		}
-		fprintf(out, "\truleLength[%d] = %d; \\\n", i, rhsElements);
+		fprintf(out, "\truleRhsLength[%d] = %d; \\\n", i, rhsElements);
 	}
 	fprintf(out, "\t\\\n");
 

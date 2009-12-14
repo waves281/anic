@@ -72,6 +72,7 @@
 Program : Pipes
 	;
 Pipes :
+	| Pipe
 	| Pipe SEMICOLON Pipes
 	;
 Pipe : Declaration

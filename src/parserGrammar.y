@@ -22,6 +22,7 @@
 %token SQUOTE
 %token RARROW
 %token DRARROW
+%token ERARROW
 %token SLASH
 %token DSLASH
 
@@ -64,7 +65,7 @@
 %left LS RS
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
-%left POWER
+%left DTIMES
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
 
@@ -78,7 +79,12 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : ID EQUALS	NonEmptyTerms
+Declaration : SimpleDecl
+	| ThroughDecl
+	;
+SimpleDecl : ID EQUALS NonEmptyTerms
+	;
+ThroughDecl : ID ERARROW NonEmptyTerms
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -95,7 +101,7 @@ ClosedTerm : SimpleTerm
 	| ClosedCond
 	;
 SimpleTerm : Node
-	| Literal
+	| BracketedExp
 	| Access
 	| Compound
 	| Send
@@ -107,13 +113,41 @@ OpenCond : QUESTION ClosedTerm COLON OpenTerm
 	;
 ClosedCond : QUESTION ClosedTerm COLON ClosedTerm
 	;
+BracketedExp : LBRACKET Exp RBRACKET
+	;
+Exp : ID
+	;
 Node : QualifiedIdentifier
 	| NodeLiteral
+	| PrimNode
+	| PrimLiteral
 	;
 QualifiedIdentifier : ID
 	| ID PERIOD QualifiedIdentifier
 	;
-Literal : INUM
+PrimNode : DOR
+	| DAND
+	| OR
+	| XOR
+	| AND
+	| DEQUALS
+	| NEQUALS
+	| LT
+	| GT
+	| LE
+	| GE
+	| LS
+	| RS
+	| PLUS
+	| MINUS
+	| TIMES
+	| DIVIDE
+	| MOD
+	| DTIMES
+	| NOT
+	| COMPLEMENT
+	;
+PrimLiteral : INUM
 	| FNUM
 	| CQUOTE
 	| SQUOTE

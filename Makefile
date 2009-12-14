@@ -1,12 +1,18 @@
-main: start anic.exe
+TARGET = anic.exe
+OPTIMIZATION_LEVEL = 3
+
+main: start $(TARGET)
 
 all: start cleanout test
+
+debug: 
+	@make all -s OPTIMIZATION_LEVEL=0
 
 start:
 	@echo anic ANI Compiler Makefile
 	@echo
 
-anic.exe: Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
+$(TARGET): Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/globalVars.h \
 		src/system.h src/customOperators.h src/lexer.h src/parser.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp
@@ -14,8 +20,9 @@ anic.exe: Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexT
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | crypt password | awk -f bld/hexTruncate.awk `\"" \
-	-o anic.exe \
-	-O3 \
+	-o $(TARGET) \
+	-O$(OPTIMIZATION_LEVEL) \
+	-pipe \
 	-Wall
 	@echo Done building main executable.
 
@@ -54,11 +61,11 @@ tmp/hyacc.exe: bld/hyacc/makefile
 	@echo Building hyacc parse table generator...
 	@make --directory=bld/hyacc --makefile=makefile -s
 
-test: anic.exe
+test: $(TARGET)
 	@echo
 	@echo ...Running default test cases...
 	@echo --------------------------------
-	./anic.exe -v ./tst/test.ani
+	./$(TARGET) -v ./tst/test.ani
 	@echo --------------------------------
 	@echo Done running default test cases.
 
@@ -69,7 +76,7 @@ clean: cleanout
 	
 cleanout:
 	@echo Cleaning output...
-	@rm -f anic.exe
+	@rm -f $(TARGET)
 	@rm -f tmp/version.exe
 	@rm -f tmp/lexerStructGen.exe
 	@rm -f tmp/parserStructGen.exe

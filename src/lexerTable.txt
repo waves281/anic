@@ -292,10 +292,11 @@
 9 E INUM 9
 9 F INUM 9
 
-// state 10 (continuation of equality)
+// state 10 (= seen)
 10 = DEQUALS -1
+10 > ERARROW -1
 
-// state 11 (continuation of not)
+// state 11 (! seen)
 11 = NEQUALS -1
 
 // state 100 ([ seen)
@@ -329,9 +330,11 @@
 
 // state 109 (< seen)
 109 < LS -1
+109 = LE -1
 
 // state 110 (> seen)
 110 > RS -1
+110 = GE -1
 
 // state 111 (-- seen)
 111 > DRARROW -1

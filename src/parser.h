@@ -21,36 +21,34 @@ struct parserNodeStruct {
 typedef struct parserNodeStruct ParserNode;
 
 class Tree {
-	private:
-		// object-local variables
-		Token tInternal;
-		Tree *nextInternal;
-		Tree *backInternal;
-		Tree *childInternal;
-		Tree *parentInternal;
 	public:
+		// object-local variables
+		Token t;
+		Tree *next;
+		Tree *back;
+		Tree *child;
+		Tree *parent;
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);
 		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		~Tree();
-		// accessors
-		Token &t();
 		// traversal operators
-		Tree *operator+(unsigned int n);
-		Tree *operator-(unsigned int n);
-		Tree *operator*(unsigned int n);
-		Tree *operator&(unsigned int n);
-		Tree *operator+();
-		Tree *operator-();
-		Tree *operator*();
-		Tree *operator&();
+		Tree *goNext(unsigned int n);
+		Tree *goBack(unsigned int n);
+		Tree *goChild(unsigned int n);
+		Tree *goParent(unsigned int n);
 		// binary attatchers
 		Tree &operator+=(Tree *&next);
+		Tree &operator-=(Tree *&back);
 		Tree &operator*=(Tree *&child);
 		Tree &operator&=(Tree *&parent);
+		void operator+=(int x);
+		void operator-=(int x);
+		void operator*=(int x);
+		void operator&=(int x);
 		// generalized traverser
-		Tree *traverse(char *s);
+		Tree *operator()(char *s);
 };
 
 Tree *parse(vector<Token> *lexeme, char *fileName, int verboseOutput, int optimizationLevel);

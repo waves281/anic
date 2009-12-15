@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 			parsemes.push_back(parseme);
 		}
 		VERBOSE(
-			if (parseme != NULL && parseme->t().tokenType == TOKEN_Program) {
+			if (parseme != NULL && parseme->t.tokenType == TOKEN_Program) {
 				printNotice("successfully parsed file \'" << fileName << "\'");
 			} else {
 				printNotice("failed to parse file \'" << fileName << "\'");
@@ -159,6 +159,47 @@ int main(int argc, char **argv) {
 	// now, check if parsing failed and kill the system as appropriate
 	if (parserError) {
 		die(1);
+	}
+
+	// parsing is done now, so now merge the generated parsemes into a unified root
+	vector<Tree *>::iterator parsemeIter = parsemes.begin();
+	// log the root parseme as the Program node of the first parseme (which is guaranteed to exist)
+	Tree *rootParseme = *parsemeIter; // Program
+	// advance to the second parseme
+	parsemeIter++;
+	// set parsemeCur to the first Pipes node with a NULL child
+	Tree *parsemeCur = rootParseme->child; // child of Program (Pipes)
+	while (parsemeCur->child != NULL && parsemeCur->child->next != NULL) { // while the child of the Pipes node in non-NULL and we can go deeper
+		parsemeCur = parsemeCur->child->next->next;
+	}
+	for (; parsemeIter != parsemes.end(); parsemeIter++) {
+		Tree *thisTreeRoot = *parsemeIter; // the root of the next tree we're examining
+		Tree *handle = thisTreeRoot->child; // the handle of the next tree we're examining
+		// unlink the next tree's root, then delete it
+		*thisTreeRoot *= 0;
+		*handle &= 0;
+		delete thisTreeRoot;
+		// link the handle into the global parse tree
+		if (parsemeCur->child == NULL) { // if the cursor's child is NULL, plug in the handle directly
+			*parsemeCur *= handle;
+			*handle &= parsemeCur;
+		} else if (parsemeCur->child->next == NULL) { // else if the cursor is at a Pipes -> Pipe production, hackishly link in the new node
+			Token t;
+			t.tokenType = TOKEN_SEMICOLON;
+			t.s = "";
+			t.row = -1;
+			t.col = -1;
+			// create the linking SEMICOLON node
+			Tree *semiColonNode = new Tree(t, handle, parsemeCur->child, NULL, NULL);
+			// link in from the right
+			*(parsemeCur->child) += semiColonNode;
+			// link in from the left
+			*handle -= semiColonNode;
+		}
+		// finally, advance the parseme cursor appropriately
+		while (parsemeCur->child != NULL && parsemeCur->child->next != NULL) { // while the child of the Pipes node in non-NULL and we can go deeper
+			parsemeCur = parsemeCur->child->next->next;
+		}
 	}
 
 	// terminate the program successfully

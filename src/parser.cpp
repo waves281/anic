@@ -7,110 +7,108 @@
 // tree functions
 
 // constructors
-Tree::Tree() : nextInternal(NULL), backInternal(NULL), childInternal(NULL), parentInternal(NULL) {}
-Tree::Tree(Token &t) : tInternal(t), nextInternal(NULL), backInternal(NULL), childInternal(NULL), parentInternal(NULL) {}
-Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : tInternal(t), nextInternal(next), backInternal(back), childInternal(child), parentInternal(parent) {}
+Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL) {}
+Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL) {}
+Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent) {}
 
 // destructor
 Tree::~Tree() {
-	delete nextInternal;
-	delete childInternal;
-}
-
-// accessors
-Token &Tree::t() {
-	return tInternal;
+	delete next;
+	delete child;
 }
 
 // traversal operators
 // binary traversers
-Tree *Tree::operator+(unsigned int n) {
+Tree *Tree::goNext(unsigned int n) {
 	Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
-			cur = cur->nextInternal;
+			cur = cur->next;
 		} else {
 			return NULL;
 		}
 	}
 	return cur;
 }
-Tree *Tree::operator-(unsigned int n) {
+Tree *Tree::goBack(unsigned int n) {
 	Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
-			cur = cur->backInternal;
+			cur = cur->back;
 		} else {
 			return NULL;
 		}
 	}
 	return cur;
 }
-Tree *Tree::operator*(unsigned int n) {
+Tree *Tree::goChild(unsigned int n) {
 	Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
-			cur = cur->childInternal;
+			cur = cur->child;
 		} else {
 			return NULL;
 		}
 	}
 	return cur;
 }
-Tree *Tree::operator&(unsigned int n) {
+Tree *Tree::goParent(unsigned int n) {
 	Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
-			cur = cur->parentInternal;
+			cur = cur->parent;
 		} else {
 			return NULL;
 		}
 	}
 	return cur;
-}
-// unary traversers
-Tree *Tree::operator+() {
-	return this->operator+(1);
-}
-Tree *Tree::operator-() {
-	return this->operator-(1);
-}
-Tree *Tree::operator*() {
-	return this->operator*(1);
-}
-Tree *Tree::operator&() {
-	return this->operator&(1);
 }
 // binary attatchers
 Tree &Tree::operator+=(Tree *&next) {
-	nextInternal = next;
+	this->next = next;
 	return *next;
 }
+Tree &Tree::operator-=(Tree *&back) {
+	this->back = back;
+	return *back;
+}
 Tree &Tree::operator*=(Tree *&child) {
-	childInternal = child;
+	this->child = child;
 	return *child;
 }
 Tree &Tree::operator&=(Tree *&parent) {
-	parentInternal = parent;
+	this->parent = parent;
 	return *parent;
 }
+void Tree::operator+=(int x) {
+	next = (Tree *)x;
+}
+void Tree::operator-=(int x) {
+	back = (Tree *)x;
+}
+void Tree::operator*=(int x) {
+	child = (Tree *)x;
+}
+void Tree::operator&=(int x) {
+	parent = (Tree *)x;
+}
 // generalized traverser
-Tree *Tree::traverse(char *s) {
+Tree *Tree::operator()(char *s) {
 	Tree *cur = this;
 	for(;;) {
 		if (cur == NULL || s[0] == '\0') {
 			 return cur;
 		} else if (s[0] == '>') {
-			cur = cur->nextInternal;
+			cur = cur->next;
 			s++;
 		} else if (s[0] == '<') {
-			cur = cur->backInternal;
+			cur = cur->back;
 			s++;
 		} else if (s[0] == 'v') {
-			cur = cur->childInternal;
+			cur = cur->child;
 			s++;
 		} else if (s[0] == '^') {
-			cur = cur->parentInternal;
+			cur = cur->parent;
 			s++;
 		} else {
 			throw string("INTERNAL ERROR: illegal tree traverser");
@@ -136,16 +134,16 @@ int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {
 int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	Token t;
 	t.tokenType = tokenType;
-	t.row = treeCur != NULL ? treeCur->t().row : 0;
-	t.col = treeCur != NULL ? treeCur->t().col : 0;
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur != NULL ? &(*treeCur) : NULL);
+	t.row = treeCur != NULL ? treeCur->t.row : 0;
+	t.col = treeCur != NULL ? treeCur->t.col : 0;
+	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur != NULL ? treeCur->parent : NULL);
 	if (treeCur != NULL) {
-		if (&(*treeCur) != NULL) { // if this not the root (the parent pointer is non-null)
-			*(&(*treeCur)) *= treeToAdd; // update treeCur's parent to point down to the new node
-			(*treeCur) &= treeToAdd; // update treeCur to point up to the new node
+		if (treeCur->parent != NULL) { // if this not the root (the parent pointer is non-null)
+			*(treeCur->parent) *= treeToAdd; // update treeCur's parent to point down to the new node
+			*treeCur &= treeToAdd; // update treeCur to point up to the new node
 		} else { // else if this is the root
 			root = treeToAdd;
-			(*treeCur) &= treeToAdd; // update treeCur to point up the new node
+			*treeCur &= treeToAdd; // update treeCur to point up the new node
 		}
 	} else {
 		if (root == NULL) {
@@ -196,7 +194,7 @@ transitionParserState: ;
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleRhsLength[transition.n];
 			int tokenType = ruleLhsTokenType[transition.n];
-			treeCur = (*treeCur) - (numRhs-1);
+			treeCur = treeCur->goBack(numRhs-1);
 			for (unsigned int i=0; i<numRhs; i++) {
 				stateStack.pop();
 			}

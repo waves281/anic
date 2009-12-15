@@ -28,7 +28,6 @@ $(TARGET): Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hex
 	-o $(TARGET) \
 	-O3 \
 	-fomit-frame-pointer \
-	-funroll-loops \
 	-ffast-math \
 	-pipe \
 	-Wall

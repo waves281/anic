@@ -10,21 +10,21 @@ main: start $(TARGET)
 
 all: start cleanout test install
 
-install: $(TARGET)
+install: start $(TARGET)
 	@echo Installing...
 	@cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)
 	@echo Done installing.
 
-uninstall: 
+uninstall: start
 	@echo Uninstalling...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
 
-clean: cleanout
+clean: start cleanout
 	@echo Cleaning temporary files...
 	@rm -R -f var
 	@rm -R -f tmp
 
-cleanout:
+cleanout: start
 	@echo Cleaning output...
 	@rm -f $(TARGET)
 	@rm -f tmp/version.exe
@@ -32,7 +32,7 @@ cleanout:
 	@rm -f tmp/parserStructGen.exe
 	@make --directory=bld/hyacc --makefile=makefile clean -s
 
-purge: uninstall clean
+purge: start uninstall clean
 
 
 

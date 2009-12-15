@@ -29,16 +29,17 @@ int main(int argc, char **argv) {
 	vector<ifstream *> inFiles; // source file vector
 	vector<char *> inFileNames; // source file name vector
 	// handled flags for each option
-	int vHandled = 0;
-	int pHandled = 0;
+	bool vHandled = false;
+	bool pHandled = false;
+	bool eHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
-				verboseOutput = 1;
+				verboseOutput = true;
 				VERBOSE(printNotice("verbose output enabled");)
 				// flag this option as handled
-				vHandled = 1;
-			} else if  (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
+				vHandled = true;
+			} else if (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-p expected optimization level");
 					die();
@@ -56,7 +57,11 @@ int main(int argc, char **argv) {
 					}
 				}
 				// flag this option as handled
-				pHandled = 1;
+				pHandled = true;
+			} else if (strcmp((argv[i] + 1),"e") == 0 && !eHandled) {
+				eventuallyGiveUp = false;
+				// flag this option as handled
+				eHandled = true;
 			} else {
 				printWarning("confused by option '" << argv[i] << "', skipping");
 			}
@@ -100,7 +105,7 @@ int main(int argc, char **argv) {
 			printNotice("lexing file \'" << fileName << "\'..");
 		)
 		// do the actual lexing
-		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel);
+		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
 			lexerError = 1;
 		} else { // else if lexing was successful, log the lexeme to the vector
@@ -139,7 +144,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'..");)
 		// do the actual parsing
-		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel);
+		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (parseme == NULL) { // if parsing failed with an error, log the error condition
 			parserError = 1;
 		} else { // else if parsing was successful, log the parseme to the vector

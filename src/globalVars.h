@@ -3,7 +3,8 @@
 
 #include "constantDefs.h"
 
-int verboseOutput = VERBOSE_OUTPUT_DEFAULT;
+bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 int optimizationLevel = OPTIMIZATION_LEVEL_DEFAULT;
+bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 #endif

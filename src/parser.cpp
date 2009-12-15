@@ -156,7 +156,7 @@ int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
 	return 0;
 }
 
-Tree *parse(vector<Token> *lexeme, char *fileName, int verboseOutput, int optimizationLevel) {
+Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
 	int parserErrorCode = 0;
 	// initialize lexer structure

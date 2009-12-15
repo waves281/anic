@@ -51,6 +51,6 @@ class Tree {
 		Tree *operator()(char *s);
 };
 
-Tree *parse(vector<Token> *lexeme, char *fileName, int verboseOutput, int optimizationLevel);
+Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

@@ -1,5 +1,4 @@
 TARGET = anic.exe
-OPTIMIZATION_LEVEL = 3
 TEST_FILES = tst/test.ani
 
 
@@ -9,9 +8,6 @@ TEST_FILES = tst/test.ani
 main: start $(TARGET)
 
 all: start cleanout test
-
-debug: 
-	@make all -s OPTIMIZATION_LEVEL=0
 
 
 
@@ -30,7 +26,10 @@ $(TARGET): Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hex
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | crypt password | awk -f bld/hexTruncate.awk `\"" \
 	-o $(TARGET) \
-	-O$(OPTIMIZATION_LEVEL) \
+	-O3 \
+	-fomit-frame-pointer \
+	-funroll-loops \
+	-ffast-math \
 	-pipe \
 	-Wall
 	@echo Done building main executable.

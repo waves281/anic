@@ -117,18 +117,14 @@ BracketedExp : LBRACKET Exp RBRACKET
 	;
 Exp : ExpLeft ExpRight
 	;
-ExpLeft : PrimaryExp
-	| PrefixOp ExpLeft
-	| CastExp ExpLeft
+ExpLeft : QualifiedIdentifier
+	| PrimLiteral
+	| PrefixOrMultiOp ExpLeft
+	| LBRACKET Exp RBRACKET
+	| LBRACKET Exp RBRACKET ExpLeft
 	;
 ExpRight : 
-	| InfixOp ExpLeft
-	;
-PrimaryExp : QualifiedIdentifier
-	| PrimLiteral
-	| BracketedExp
-	;
-CastExp : BracketedExp
+	| InfixOrMultiOp Exp
 	;
 Node : QualifiedIdentifier
 	| NodeLiteral
@@ -140,6 +136,7 @@ QualifiedIdentifier : ID
 	;
 PrimNode : PrefixOp
 	| InfixOp
+	| MultiOp
 	;
 PrefixOp : NOT
 	| COMPLEMENT
@@ -157,12 +154,19 @@ InfixOp : DOR
 	| GE
 	| LS
 	| RS
-	| PLUS
-	| MINUS
 	| TIMES
 	| DIVIDE
 	| MOD
 	| DTIMES
+	;
+MultiOp : PLUS
+	| MINUS
+	;
+PrefixOrMultiOp : PrefixOp
+	| MultiOp
+	;
+InfixOrMultiOp : InfixOp
+	| MultiOp
 	;
 PrimLiteral : INUM
 	| FNUM

@@ -202,11 +202,9 @@ lexerLoopTop: ;
 						// escape character handling
 						if (c == ESCAPE_CHARACTER && !lastCharWasEsc) { // if it's the escape character and not a double, log this and wait for the next character
 							lastCharWasEsc = true;
-							// continue so the character isn't logged
+							// continue so the character isn't logged, and the condition is unflagged
 							continue;
 						} else if (lastCharWasEsc) { // else if the last character was an escape character, specially handle this one
-							// first, unflag the condition
-							lastCharWasEsc = false;
 							// then, branch based on the type of escape it is
 							if (c == 'a') { // bell character
 								c = '\a';
@@ -235,10 +233,14 @@ lexerLoopTop: ;
 							} else if (c == '\n') { // newline escape
 								row++;
 								col = 0;
+								// unflag the condition
+								lastCharWasEsc = false;
 								// continue so the character isn't logged
 								continue;
 							} else { // else if it's an unrecognized escape sequence, throw an error and discard the character
 								printLexerError(fileName,row,col-1,"unrecognized escape sequence "<<ESCAPE_CHARACTER<<"0x"<<hex(c));
+								// unflag the condition
+								lastCharWasEsc = false;
 								// continue so the character isn't logged
 								continue;
 							}
@@ -253,10 +255,12 @@ lexerLoopTop: ;
 							row++;
 							col = 0;
 							goto lexerLoopTop;
-						} else if (c == termChar) { // else if we've found the end of the quote, commit the token and continue with processing
+						} else if (c == termChar && !lastCharWasEsc) { // else if we've found the end of the quote, commit the token and continue with processing
 							commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
 							break;
 						}
+						// unflag the escape character condition now, since we've passed all of its dependencies
+						lastCharWasEsc = false;
 
 						// character logging
 logCharacter: ;

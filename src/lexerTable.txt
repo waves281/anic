@@ -180,7 +180,7 @@
 2 9 INUM 2
 // numeric modifiers
 2 . ERROR 4
-3 e ERROR 6
+2 e ERROR 6
 
 // state 3 (saw an initial 0)
 // double zero (fail)

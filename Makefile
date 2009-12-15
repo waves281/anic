@@ -1,4 +1,5 @@
 TARGET = anic.exe
+INSTALL_PATH = /usr/bin
 TEST_FILES = tst/test.ani
 
 
@@ -7,7 +8,31 @@ TEST_FILES = tst/test.ani
 
 main: start $(TARGET)
 
-all: start cleanout test
+all: start cleanout test install
+
+install: $(TARGET)
+	@echo Installing...
+	@cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)
+	@echo Done installing.
+
+uninstall: 
+	@echo Uninstalling...
+	@rm -f $(INSTALL_PATH)/$(TARGET)
+
+clean: cleanout
+	@echo Cleaning temporary files...
+	@rm -R -f var
+	@rm -R -f tmp
+
+cleanout:
+	@echo Cleaning output...
+	@rm -f $(TARGET)
+	@rm -f tmp/version.exe
+	@rm -f tmp/lexerStructGen.exe
+	@rm -f tmp/parserStructGen.exe
+	@make --directory=bld/hyacc --makefile=makefile clean -s
+
+purge: uninstall clean
 
 
 
@@ -17,7 +42,7 @@ start:
 	@echo anic ANI Compiler Makefile
 	@echo
 
-$(TARGET): Makefile tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
+$(TARGET): tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/globalVars.h \
 		src/system.h src/customOperators.h src/lexer.h src/parser.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp
@@ -75,16 +100,3 @@ test: $(TARGET)
 	./$(TARGET) -v $(TEST_FILES)
 	@echo --------------------------------
 	@echo Done running default test cases.
-
-clean: cleanout
-	@echo Cleaning temporary files...
-	@rm -R -f var
-	@rm -R -f tmp
-	
-cleanout:
-	@echo Cleaning output...
-	@rm -f $(TARGET)
-	@rm -f tmp/version.exe
-	@rm -f tmp/lexerStructGen.exe
-	@rm -f tmp/parserStructGen.exe
-	@make --directory=bld/hyacc --makefile=makefile clean -s

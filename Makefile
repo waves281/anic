@@ -52,6 +52,7 @@ $(TARGET): tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.
 	-D BUILD_NUMBER_SUB="\"` date | crypt password | awk -f bld/hexTruncate.awk `\"" \
 	-o $(TARGET) \
 	-O3 \
+	-s \
 	-fomit-frame-pointer \
 	-ffast-math \
 	-pipe \

@@ -3,7 +3,7 @@
 
 #define PROGRAM_STRING "anic"
 #define LANGUAGE_STRING "ANI"
-#define VERSION_STRING "0.52"
+#define VERSION_STRING "0.55"
 #define VERSION_YEAR "2009"
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" // compiler header

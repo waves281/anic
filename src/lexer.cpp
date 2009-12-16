@@ -22,11 +22,12 @@ void resetState(string &s, int &state, int &tokenType) {
 	return;
 }
 
-void commitToken(string &s, int &state, int &tokenType, int rowStart, int colStart, vector<Token> *outputVector, char c) {
+void commitToken(string &s, int &state, int &tokenType, char *fileName, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
 	Token t;
 	t.tokenType = tokenType;
 	t.s = s;
+	t.fileName = fileName;
 	t.row = rowStart;
 	t.col = colStart;
 	// now, commit it to the output vector
@@ -116,7 +117,7 @@ lexerLoopTop: ;
 				resetState(s, state, tokenType);
 				carryOver = c;
 			} else if (tokenType != -1) { // else if we were in a commitable state, commit this token to the output vector
-				commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
+				commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
 			}
 			if (isNewLine(c)) { // newline?
 				// bump up the row count and carriage return the column
@@ -256,7 +257,7 @@ lexerLoopTop: ;
 							col = 0;
 							goto lexerLoopTop;
 						} else if (c == termChar && !lastCharWasEsc) { // else if we've found the end of the quote, commit the token and continue with processing
-							commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
+							commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
 							break;
 						}
 						// unflag the escape character condition now, since we've passed all of its dependencies
@@ -302,7 +303,7 @@ logCharacter: ;
 					// however, carry over the faulting character, as it might be useful for later debugging
 					carryOver = c;
 				} else { // else if there is a valid commit pending, do it and carry over this character for the next round
-					commitToken(s, state, tokenType, rowStart, colStart, outputVector, c);
+					commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
 					// also, carry over the current character to the next round
 					carryOver = c;
 				}
@@ -322,6 +323,7 @@ logCharacter: ;
 		Token termToken;
 		termToken.tokenType = TOKEN_END;
 		termToken.s = "EOF";
+		termToken.fileName = fileName;
 		termToken.row = 0;
 		termToken.col = 0;
 		outputVector->push_back(termToken);

@@ -44,10 +44,10 @@ start:
 
 $(TARGET): tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/globalVars.h \
-		src/system.h src/customOperators.h src/lexer.h src/parser.h \
-		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp
+		src/system.h src/customOperators.h src/lexer.h src/parser.h src/namer.h \
+		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp src/namer.cpp
 	@echo Building main executable...
-	@g++ src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp \
+	@g++ src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp src/namer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | crypt password | awk -f bld/hexTruncate.awk `\"" \
 	-o $(TARGET) \

@@ -15,6 +15,7 @@ class Token {
 	public:
 		int tokenType;
 		string s;
+		string fileName;
 		int row;
 		int col;
 };

@@ -1,7 +1,6 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
-#include "customOperators.h"
 #include "constantDefs.h"
 
 #include "lexer.h"

@@ -131,11 +131,7 @@ int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {
 	return 0;
 }
 
-int promoteToken(Tree *&treeCur, int tokenType, Tree *&root) {
-	Token t;
-	t.tokenType = tokenType;
-	t.row = treeCur != NULL ? treeCur->t.row : 0;
-	t.col = treeCur != NULL ? treeCur->t.col : 0;
+int promoteToken(Tree *&treeCur, Token &t, Tree *&root) {
 	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur != NULL ? treeCur->parent : NULL);
 	if (treeCur != NULL) {
 		if (treeCur->parent != NULL) { // if this not the root (the parent pointer is non-null)
@@ -198,7 +194,14 @@ transitionParserState: ;
 			for (unsigned int i=0; i<numRhs; i++) {
 				stateStack.pop();
 			}
-			promoteToken(treeCur, tokenType, root);
+			// create the token that the promoted node will have
+			Token t;
+			t.tokenType = tokenType;
+			t.fileName = fileName;
+			t.row = treeCur != NULL ? treeCur->t.row : 0;
+			t.col = treeCur != NULL ? treeCur->t.col : 0;
+			// promote the current token, as appropriate
+			promoteToken(treeCur, t, root);
 			// take the goto branch of the new transition
 			int tempState = stateStack.top();
 			stateStack.push(parserNode[tempState][tokenType].n);

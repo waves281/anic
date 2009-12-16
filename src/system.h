@@ -22,5 +22,8 @@ void die(void);
 #define printParserError(fn,r,c,str) cerr << PROGRAM_STRING << ": ERROR: PARSER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
 	parserErrorCode++; \
 	if (eventuallyGiveUp && parserErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
+#define printNamerError(fn,r,c,str) cerr << PROGRAM_STRING << ": ERROR: NAMER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
+	namerErrorCode++; \
+	if (eventuallyGiveUp && namerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
 #endif

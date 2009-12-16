@@ -117,11 +117,16 @@ BracketedExp : LBRACKET Exp RBRACKET
 	;
 Exp : ExpLeft ExpRight
 	;
+NonCastExp : NonCastExpLeft ExpRight
+	;
 ExpLeft : QualifiedIdentifier
-	| PrimLiteral
+	| NonCastExpLeft
+	;
+NonCastExpLeft : PrimLiteral
 	| PrefixOrMultiOp ExpLeft
-	| LBRACKET Exp RBRACKET
-	| LBRACKET Exp RBRACKET ExpLeft
+	| LBRACKET NonCastExp RBRACKET
+	| LBRACKET QualifiedIdentifier RBRACKET
+	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
 	;
 ExpRight : 
 	| InfixOrMultiOp Exp

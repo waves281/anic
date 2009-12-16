@@ -25,6 +25,7 @@
 %token ERARROW
 %token SLASH
 %token DSLASH
+%token AT
 
 /* arithmetic tokens */
 %token DOR
@@ -81,10 +82,13 @@ Pipe : Declaration
 	;
 Declaration : SimpleDecl
 	| ThroughDecl
+	| ImportDecl
 	;
 SimpleDecl : ID EQUALS NonEmptyTerms
 	;
 ThroughDecl : ID ERARROW NonEmptyTerms
+	;
+ImportDecl : AT QualifiedIdentifier
 	;
 NonEmptyTerms : Term Terms
 	;

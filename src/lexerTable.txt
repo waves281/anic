@@ -96,6 +96,8 @@
 // quote characters
 0 ' CQUOTE -1
 0 " SQUOTE -1
+// package traversal operators
+0 @ AT -1
 
 // state 1 (continuing id)
 // lowercase letters

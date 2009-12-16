@@ -23,6 +23,8 @@
 
 #define STD_IN "stdin"
 
+#define STANDARD_LIBRARY_PREFIX "std"
+
 #define ESCAPE_CHARACTER '\\'
 
 #define MAX_TOKEN_LENGTH INT_MAX

@@ -9,6 +9,8 @@
 #include "parser.h"
 #include "../var/parserStruct.h"
 
+#include "namer.h"
+
 int containsString(vector<char *>inFileNames, char *s) {
 	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
 		if (strcmp(inFileNames[i], s) == 0) { // if we have a match at this index, return true
@@ -192,6 +194,23 @@ int main(int argc, char **argv) {
 		printNotice("Parse trees merged successfully");
 		print(""); // new line
 	)
+
+	// parse trees are generated and merged now, so move on to name analysis
+
+	VERBOSE(printNotice("Mapping identifiers...");)
+
+	SymbolTable *stRoot = name(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
+	// now, check if parsing failed and kill the system as appropriate
+	if (stRoot == NULL) {
+		VERBOSE(printNotice("Identifier mapping generated inconsistencies");)
+		print(""); // new line
+		die(1);
+	} else {
+		VERBOSE(
+			printNotice("Identifiers mapped successfully");
+			print(""); // new line
+		)
+	}
 
 	// terminate the program successfully
 	return 0;

@@ -1,3 +1,5 @@
+@Extra.Package;
+
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
 	x = (- 500e-100 *80+10 - "\\lol !!!\"" ) lol.filter.X;

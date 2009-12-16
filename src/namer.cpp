@@ -72,6 +72,10 @@ SymbolTable *name(Tree *rootParseme, bool verboseOutput, int optimizationLevel, 
 	// initialize the sysmbol table with the the default standard definitions
 	SymbolTable *stRoot = genStdDefs();
 
+	// perform main identifier analysis on the supplied root parse tree
+
+
+
 	// finally, return to the caller
 	if (namerErrorCode) {
 		// deallocate the output vector, since we're just going to return null

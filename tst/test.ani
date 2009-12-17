@@ -35,6 +35,6 @@ philosopher = [[table\ t, int id]] {
 };
 
 t = [[ table\ ]] <- 5;
-[[ philosopher[5] ]] <- {table, _};
+[[ philosopher[5] ]] <- {t, _};
 
 // EOF comment

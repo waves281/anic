@@ -28,7 +28,7 @@ table = [[int numChopsticks]] {
 
 philosopher = [[table\ t, int id]] {
 	eat = [[int\ cs1, int\ cs2 --> int\, int\]] {
-		"Philosopher " + i + " eating...\n" ->std.out;
+		"Philosopher " + id + " eating...\n" ->std.out;
 		\cs1, \cs2 ->return;
 	};
 	loopback => std.rand std.delay \t.getChopSticks eat ->t.returnChopsticks loopback;

@@ -147,19 +147,19 @@ int main(int argc, char **argv) {
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
 		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
-		if (parseme == NULL) { // if parsing failed with an error, log the error condition
+		if (parseme == NULL || parseme->t.tokenType != TOKEN_Program) { // if parsing failed with an error, log the error condition
+			VERBOSE(
+				printNotice("failed to parse file \'" << fileName << "\'");
+				print(""); // new line
+			)
 			parserError = 1;
 		} else { // else if parsing was successful, log the parseme to the vector
+			VERBOSE(
+				printNotice("successfully parsed file \'" << fileName << "\'");
+				print(""); // new line
+			)
 			parsemes.push_back(parseme);
 		}
-		VERBOSE(
-			if (parseme != NULL && parseme->t.tokenType == TOKEN_Program) {
-				printNotice("successfully parsed file \'" << fileName << "\'");
-			} else {
-				printNotice("failed to parse file \'" << fileName << "\'");
-			}
-			print(""); // new line
-		)
 		// advance file name index
 		fileIndex++;
 	}
@@ -199,17 +199,24 @@ int main(int argc, char **argv) {
 
 	VERBOSE(printNotice("Mapping identifiers...");)
 
+	int namerError = 0; // error flag
 	SymbolTable *stRoot = name(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if parsing failed and kill the system as appropriate
 	if (stRoot == NULL) {
-		VERBOSE(printNotice("Identifier mapping generated inconsistencies");)
-		print(""); // new line
-		die(1);
+		VERBOSE(
+			printNotice("Identifier mapping generated inconsistencies");
+			print(""); // new line
+		)
+		namerError = 1;
 	} else {
 		VERBOSE(
 			printNotice("Identifiers mapped successfully");
 			print(""); // new line
 		)
+	}
+	// now, check if naming failed and kill the system as appropriate
+	if (namerError) {
+		die(1);
 	}
 
 	// terminate the program successfully

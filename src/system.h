@@ -4,9 +4,10 @@
 #include "mainDefs.h"
 #include "constantDefs.h"
 
-int printHeader(void);
-int printUsage(void);
-int printHelp(void);
+void printHeader(void);
+void printUsage(void);
+void printHelp(void);
+void printLink(void);
 void die(int errorCode);
 void die(void);
 

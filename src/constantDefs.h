@@ -5,9 +5,11 @@
 #define LANGUAGE_STRING "ANI"
 #define VERSION_STRING "0.55"
 #define VERSION_YEAR "2009"
+#define HOME_PAGE "http://www.anic.googlecode.com/"
 
-#define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" // compiler header
-#define USAGE_LITERAL "\tusage: "<<PROGRAM_STRING<<" {<sourceFile>} [-] [-o <outputFile>] [-p <optimizationLevel>] [-s] [-v] [-e] [-h]\n" // info literal
+#define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (©) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" /* compiler header */
+#define USAGE_LITERAL "\tusage: "<<PROGRAM_STRING<<" {<sourceFile>} [-] [-o <outputFile>] [-p <optimizationLevel>] [-s] [-v] [-e] [-h]\n" /* info literal */
+#define LINK_LITERAL "\thome page: "<<HOME_PAGE<<"\n" /* link literal */
 
 #define VERBOSE_OUTPUT_DEFAULT false
 #define OPTIMIZATION_LEVEL_DEFAULT 0

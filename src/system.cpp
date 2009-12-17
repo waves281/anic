@@ -1,19 +1,21 @@
 #include "system.h"
 
-int printHeader(void) {
+void printHeader(void) {
 	cerr << HEADER_LITERAL;
-	return 0;
 }
 
-int printUsage(void) {
+void printUsage(void) {
 	cerr << USAGE_LITERAL;
-	return 0;
 }
 
-int printHelp(void) {
+void printLink(void) {
+	cerr << LINK_LITERAL;
+}
+
+void printHelp(void) {
 	printHeader();
 	printUsage();
-	return 0;
+	printLink();
 }
 
 void die(int errorCode) {

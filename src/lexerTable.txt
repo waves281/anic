@@ -337,6 +337,7 @@
 // state 109 (< seen)
 109 < LS -1
 109 = LE -1
+110 - LARROW -1
 
 // state 110 (> seen)
 110 > RS -1

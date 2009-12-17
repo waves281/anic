@@ -24,6 +24,7 @@
 %token RARROW
 %token DRARROW
 %token ERARROW
+%token LARROW
 %token SLASH
 %token DSLASH
 %token AT
@@ -52,12 +53,7 @@
 %token NOT
 %token COMPLEMENT
 
-/* precedence rules */
-%left COMMA
-%left ID
-%left QUESTION
-%left COLON
-/* arithmetic precedence */
+/* arithmetic precedence rules */
 %left DOR
 %left DAND
 %left OR
@@ -72,6 +68,7 @@
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
 
+
 %%
 Program : Pipes
 	;
@@ -82,13 +79,13 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : SimpleDecl
-	| ThroughDecl
+Declaration : SimpleDeclPrefix NonEmptyTerms
+	| ThroughDeclPrefix NonEmptyTerms
 	| ImportDecl
 	;
-SimpleDecl : ID EQUALS NonEmptyTerms
+SimpleDeclPrefix : ID EQUALS
 	;
-ThroughDecl : ID ERARROW NonEmptyTerms
+ThroughDeclPrefix : ID ERARROW
 	;
 ImportDecl : AT QualifiedIdentifier
 	;
@@ -106,12 +103,13 @@ OpenTerm : SimpleCond
 ClosedTerm : SimpleTerm
 	| ClosedCond
 	;
-SimpleTerm : Node
-	| BracketedExp
-	| Access
+SimpleTerm : StaticTerm
 	| Compound
 	| Send
-	| Block
+	;
+StaticTerm : Node
+	| BracketedExp
+	| Access
 	;
 SimpleCond : QUESTION Term
 	;
@@ -126,25 +124,42 @@ Exp : ExpLeft ExpRight
 NonCastExp : NonCastExpLeft ExpRight
 	;
 ExpLeft : QualifiedIdentifier
+	| QualifiedIdentifier IdentifierArraySuffixList
 	| NonCastExpLeft
 	;
-NonCastExpLeft : DefaultIdentifier
-	| PrimLiteral
+NonCastExpLeft : PrimLiteral
 	| PrefixOrMultiOp ExpLeft
 	| LBRACKET NonCastExp RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET
+	| LBRACKET QualifiedIdentifier IdentifierArraySuffixList RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
+	| LBRACKET QualifiedIdentifier IdentifierArraySuffixList RBRACKET ExpLeft
 	;
 ExpRight : 
 	| InfixOrMultiOp Exp
 	;
 Node : QualifiedIdentifier
+	| NodeInstantiation
 	| NodeLiteral
 	| PrimNode
 	| PrimLiteral
+	| BlockNode
 	;
-QualifiedIdentifier : ID
+QualifiedIdentifier : DefaultIdentifier
+	| DefaultIdentifier PERIOD QualifiedIdentifier
+	| ID
 	| ID PERIOD QualifiedIdentifier
+	;
+NodeInstantiation : DLSQUARE Type DRSQUARE
+	| DLSQUARE Type DRSQUARE LARROW StaticTerm
+	;
+IdentifierSlashSuffixList : SLASH
+	| DSLASH
+	| SLASH IdentifierSlashSuffixList
+	| DSLASH IdentifierSlashSuffixList
+	;
+IdentifierArraySuffixList : LSQUARE Exp RSQUARE
+	| LSQUARE Exp RSQUARE IdentifierArraySuffixList
 	;
 DefaultIdentifier : UNDERSCORE
 	;
@@ -188,7 +203,7 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-NodeLiteral : NodeHeaderList Block
+NodeLiteral : NodeHeaderList BlockNode
 	;
 NodeHeaderList : NodeHeader
 	| NodeHeader COMMA NodeHeaderList
@@ -207,21 +222,19 @@ RetList :
 Decl : Type ID
 	;
 Type : QualifiedIdentifier
+	| QualifiedIdentifier IdentifierSlashSuffixList
+	| QualifiedIdentifier IdentifierArraySuffixList
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
-Access : PopAccess
-	| StreamAccess
+BlockNode : LCURLY Pipes RCURLY
 	;
-PopAccess : SLASH Node
+Access : SLASH Node
+	| DSLASH Node
 	;
-StreamAccess : DSLASH Node
-	;
-Compound : COMMA SimpleTerm
+Compound : COMMA StaticTerm
 	;
 Send : RARROW Node
-	;
-Block : LCURLY Pipes RCURLY
 	;
 %%

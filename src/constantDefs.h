@@ -3,7 +3,7 @@
 
 #define PROGRAM_STRING "anic"
 #define LANGUAGE_STRING "ANI"
-#define VERSION_STRING "0.56"
+#define VERSION_STRING "0.60"
 #define VERSION_YEAR "2009"
 #define HOME_PAGE "http://www.anic.googlecode.com/"
 

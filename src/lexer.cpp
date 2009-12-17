@@ -215,8 +215,6 @@ lexerLoopTop: ;
 								c = '\t';
 							} else if (c == 'n') { // tab
 								c = '\n';
-								// we need to jump past the newline detection in this case
-								goto logCharacter;
 							} else if (c == 'v') { // vertical tab
 								c = '\v';
 							} else if (c == 'f') { // from feed
@@ -247,24 +245,26 @@ lexerLoopTop: ;
 							}
 						}
 						// termination detection
-						if (isNewLine(c)) { // if we hit a newline, throw a quote truncation error
-							if (termChar == '\'') {
-								printLexerError(fileName,rowStart,colStart,"character literal truncated by end of line");
-							} else {
-								printLexerError(fileName,rowStart,colStart,"string literal truncated by end of line");
+						if (!lastCharWasEsc) { // if we don't need special forced commiting of this character due to escaping
+							if (isNewLine(c)) { // if we hit a newline, throw a quote truncation error
+								if (termChar == '\'') {
+									printLexerError(fileName,rowStart,colStart,"character literal truncated by end of line");
+								} else {
+									printLexerError(fileName,rowStart,colStart,"string literal truncated by end of line");
+								}
+								row++;
+								col = 0;
+								goto lexerLoopTop;
+							} else if (c == termChar) { // else if we've found the end of the quote, commit the token and continue with processing
+								commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
+								break;
 							}
-							row++;
-							col = 0;
-							goto lexerLoopTop;
-						} else if (c == termChar && !lastCharWasEsc) { // else if we've found the end of the quote, commit the token and continue with processing
-							commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
-							break;
+						} else { // else if we *do* need to force the character to commit due to escaping
+							// unflag the escape character condition now, since we've passed all of its dependencies
+							lastCharWasEsc = false;
 						}
-						// unflag the escape character condition now, since we've passed all of its dependencies
-						lastCharWasEsc = false;
 
 						// character logging
-logCharacter: ;
 						if (s.size() < (MAX_TOKEN_LENGTH-1)) { // else if there is room in the buffer for this character, log it
 							s += c;
 						} else { // else if there is no more room in the buffer for this character, discard the token with an error

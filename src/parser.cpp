@@ -185,7 +185,7 @@ transitionParserState: ;
 			shiftToken(treeCur, t, root);
 			stateStack.push(transition.n);
 
-			VERBOSE( cout << "\tSHIFT " << curState << " -> " << transition.n << endl; )
+			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << endl; )
 
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleRhsLength[transition.n];
@@ -208,7 +208,7 @@ transitionParserState: ;
 
 			VERBOSE(
 				char *tokenString = ruleLhsTokenString[transition.n];
-				cout << "\tREDUCE " << curState << " -> " << stateStack.top() << "\t[ " << tokenString << " ]" << endl;
+				cout << "\tREDUCE\t" << curState << "\t->\t" << stateStack.top() << "\t[ " << tokenString << " ]" << endl;
 			)
 
 			goto transitionParserState;

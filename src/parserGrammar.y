@@ -79,7 +79,7 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : SimpleDeclPrefix NonEmptyTerms
+Declaration : SimpleDeclPrefix StaticTerm
 	| ThroughDeclPrefix NonEmptyTerms
 	| ImportDecl
 	;

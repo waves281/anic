@@ -98,6 +98,10 @@
 0 " SQUOTE -1
 // package traversal operators
 0 @ AT -1
+// stream operators
+0 $ DOLLAR -1
+// miscellaneous name chars
+0 _ UNDERSCORE -1
 
 // state 1 (continuing id)
 // lowercase letters

@@ -1,5 +1,6 @@
 /* core tokens */
 %token ID
+%token UNDERSCORE
 %token INUM
 %token FNUM
 %token PERIOD
@@ -26,6 +27,7 @@
 %token SLASH
 %token DSLASH
 %token AT
+%token DOLLAR
 
 /* arithmetic tokens */
 %token DOR
@@ -126,7 +128,8 @@ NonCastExp : NonCastExpLeft ExpRight
 ExpLeft : QualifiedIdentifier
 	| NonCastExpLeft
 	;
-NonCastExpLeft : PrimLiteral
+NonCastExpLeft : DefaultIdentifier
+	| PrimLiteral
 	| PrefixOrMultiOp ExpLeft
 	| LBRACKET NonCastExp RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET
@@ -142,6 +145,8 @@ Node : QualifiedIdentifier
 	;
 QualifiedIdentifier : ID
 	| ID PERIOD QualifiedIdentifier
+	;
+DefaultIdentifier : UNDERSCORE
 	;
 PrimNode : PrefixOp
 	| InfixOp
@@ -167,6 +172,7 @@ InfixOp : DOR
 	| DIVIDE
 	| MOD
 	| DTIMES
+	| DOLLAR
 	;
 MultiOp : PLUS
 	| MINUS
@@ -182,7 +188,10 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-NodeLiteral : NodeHeader Block
+NodeLiteral : NodeHeaderList Block
+	;
+NodeHeaderList : NodeHeader
+	| NodeHeader COMMA NodeHeaderList
 	;
 NodeHeader : DLSQUARE DeclList RetList DRSQUARE
 	;

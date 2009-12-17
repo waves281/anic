@@ -150,8 +150,8 @@ QualifiedIdentifier : DefaultIdentifier
 	| ID
 	| ID PERIOD QualifiedIdentifier
 	;
-NodeInstantiation : DLSQUARE Type DRSQUARE
-	| DLSQUARE Type DRSQUARE LARROW StaticTerm
+NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
+	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
 	;
 IdentifierSlashSuffixList : SLASH
 	| DSLASH

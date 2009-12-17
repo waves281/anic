@@ -220,9 +220,9 @@ RetList :
 	;
 Decl : Type ID
 	;
-Type : QualifiedIdentifier
-	| QualifiedIdentifier IdentifierSlashSuffixList
-	| QualifiedIdentifier IdentifierArraySuffixList
+Type : Node
+	| Node IdentifierSlashSuffixList
+	| Node IdentifierArraySuffixList
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

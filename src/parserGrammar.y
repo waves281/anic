@@ -133,7 +133,6 @@ NonCastExpLeft : PrimLiteral
 	| LBRACKET QualifiedIdentifier RBRACKET
 	| LBRACKET QualifiedIdentifier IdentifierArraySuffixList RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
-	| LBRACKET QualifiedIdentifier IdentifierArraySuffixList RBRACKET ExpLeft
 	;
 ExpRight : 
 	| InfixOrMultiOp Exp

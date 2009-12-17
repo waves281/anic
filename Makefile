@@ -59,7 +59,7 @@ $(TARGET): tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.
 	-Wall
 	@echo Done building main executable.
 
-tmp/version.exe: bld/version.c src/mainDefs.h src/constantDefs.h
+tmp/version.exe: bld/version.c
 	@echo Building version controller...
 	@mkdir -p var
 	@mkdir -p tmp

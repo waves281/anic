@@ -45,7 +45,7 @@ vector<string> genId(char *s) {
 	return retVal;
 }
 
-// main naming functions
+// main semantic analysis functions
 
 SymbolTable *genStdDefs() {
 	// standard root
@@ -77,7 +77,7 @@ SymbolTable *genStdDefs() {
 
 SymbolTable *sem(Tree *rootParseme, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
-	int namerErrorCode = 0;
+	int semmerErrorCode = 0;
 
 	// initialize the sysmbol table with the the default standard definitions
 	SymbolTable *stRoot = genStdDefs();
@@ -87,7 +87,7 @@ SymbolTable *sem(Tree *rootParseme, bool verboseOutput, int optimizationLevel, b
 
 
 	// finally, return to the caller
-	if (namerErrorCode) {
+	if (semmerErrorCode) {
 		// deallocate the output vector, since we're just going to return null
 		delete stRoot;
 		return NULL;

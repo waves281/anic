@@ -197,25 +197,25 @@ int main(int argc, char **argv) {
 
 	// parse trees are generated and merged now, so move on to name analysis
 
-	VERBOSE(printNotice("Mapping identifiers...");)
+	VERBOSE(printNotice("Mapping semantics...");)
 
-	int namerError = 0; // error flag
+	int semmerErrorCode = 0; // error flag
 	SymbolTable *stRoot = sem(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if parsing failed and kill the system as appropriate
 	if (stRoot == NULL) {
 		VERBOSE(
-			printNotice("Identifier mapping generated inconsistencies");
+			printNotice("Semantic mapping generated inconsistencies");
 			print(""); // new line
 		)
-		namerError = 1;
+		semmerErrorCode = 1;
 	} else {
 		VERBOSE(
-			printNotice("Identifiers mapped successfully");
+			printNotice("Semantics successfully mapped");
 			print(""); // new line
 		)
 	}
 	// now, check if naming failed and kill the system as appropriate
-	if (namerError) {
+	if (semmerErrorCode) {
 		die(1);
 	}
 

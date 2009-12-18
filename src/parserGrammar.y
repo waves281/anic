@@ -45,7 +45,9 @@
 %token LS
 %token RS
 %token PLUS
+%token DPLUS
 %token MINUS
+%token DMINUS
 %token TIMES
 %token DIVIDE
 %token MOD
@@ -182,6 +184,8 @@ InfixOp : DOR
 	| GE
 	| LS
 	| RS
+	| DPLUS
+	| DMINUS
 	| TIMES
 	| DIVIDE
 	| MOD
@@ -235,5 +239,6 @@ Access : SLASH Node
 Compound : COMMA StaticTerm
 	;
 Send : RARROW Node
+	| DRARROW
 	;
 %%

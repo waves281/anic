@@ -1,7 +1,7 @@
 #include "mainDefs.h"
 #include "system.h"
 
-#include "namer.h"
+#include "semmer.h"
 
 // symbol table functions
 
@@ -75,7 +75,7 @@ SymbolTable *genStdDefs() {
 	return retVal;
 }
 
-SymbolTable *name(Tree *rootParseme, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+SymbolTable *sem(Tree *rootParseme, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
 	int namerErrorCode = 0;
 

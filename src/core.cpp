@@ -9,7 +9,7 @@
 #include "parser.h"
 #include "../var/parserStruct.h"
 
-#include "namer.h"
+#include "semmer.h"
 
 int containsString(vector<char *>inFileNames, char *s) {
 	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 	VERBOSE(printNotice("Mapping identifiers...");)
 
 	int namerError = 0; // error flag
-	SymbolTable *stRoot = name(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
+	SymbolTable *stRoot = sem(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if parsing failed and kill the system as appropriate
 	if (stRoot == NULL) {
 		VERBOSE(

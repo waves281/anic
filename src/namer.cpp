@@ -51,6 +51,7 @@ SymbolTable *genStdDefs() {
 	// standard root
 	SymbolTable *retVal = new SymbolTable(STANDARD_LIBRARY_PREFIX, NULL, NULL);
 	// standard types
+	*retVal *= new SymbolTable("node", NULL, NULL);
 	*retVal *= new SymbolTable("byte", NULL, NULL);
 	*retVal *= new SymbolTable("int", NULL, NULL);
 	*retVal *= new SymbolTable("float", NULL, NULL);
@@ -61,6 +62,15 @@ SymbolTable *genStdDefs() {
 	*retVal *= new SymbolTable("stdin", NULL, NULL);
 	*retVal *= new SymbolTable("stdout", NULL, NULL);
 	*retVal *= new SymbolTable("stderr", NULL, NULL);
+	// standard library
+	// standard containers
+	*retVal *= new SymbolTable("stack", NULL, NULL);
+	*retVal *= new SymbolTable("map", NULL, NULL);
+	// standard filters
+	*retVal *= new SymbolTable("filter", NULL, NULL);
+	*retVal *= new SymbolTable("sort", NULL, NULL);
+	// standard generators
+	*retVal *= new SymbolTable("gen", NULL, NULL);
 	// return the compiled standard list to the caller
 	return retVal;
 }

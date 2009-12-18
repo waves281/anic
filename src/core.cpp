@@ -136,6 +136,8 @@ int main(int argc, char **argv) {
 	}
 
 	// parse lexemes
+	deque<SymbolTable *> stRoot; // symbol table root (filled by user-level definitions during parsing)
+
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parsemes; // per-file vector of the parsemes that the parser is about to generate
@@ -146,7 +148,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
+		Tree *parseme = parse(*lexemeIter, stRoot, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (parseme == NULL || parseme->t.tokenType != TOKEN_Program) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
@@ -170,7 +172,7 @@ int main(int argc, char **argv) {
 
 	VERBOSE(printNotice("Merging parse trees...");)
 
-	// parsing is done now, so now concatenate the generated parsemes into one
+	// concatenate the generated parsemes into one
 	vector<Tree *>::iterator parsemeIter = parsemes.begin();
 	// log the root parseme as the Program node of the first parseme (which is guaranteed to exist)
 	Tree *rootParseme = *parsemeIter; // Program
@@ -195,26 +197,28 @@ int main(int argc, char **argv) {
 		print(""); // new line
 	)
 
-	// parse trees are generated and merged now, so move on to name analysis
+	// perform semantic analysis analysis
 
 	VERBOSE(printNotice("Mapping semantics...");)
 
-	int semmerErrorCode = 0; // error flag
-	SymbolTable *stRoot = sem(rootParseme, verboseOutput, optimizationLevel, eventuallyGiveUp);
-	// now, check if parsing failed and kill the system as appropriate
-	if (stRoot == NULL) {
+	// initialize the sysmbol table with the the default standard definitions
+	VERBOSE(printNotice("Merging standard/user definitions...");)
+	stRoot.push_front(genStdDefs());
+
+	int semmerErrorCode = sem(rootParseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
+	// now, check if semming failed and kill the system as appropriate
+	if (semmerErrorCode) {
 		VERBOSE(
 			printNotice("Semantic mapping generated inconsistencies");
 			print(""); // new line
 		)
-		semmerErrorCode = 1;
 	} else {
 		VERBOSE(
 			printNotice("Semantics successfully mapped");
 			print(""); // new line
 		)
 	}
-	// now, check if naming failed and kill the system as appropriate
+	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		die(1);
 	}

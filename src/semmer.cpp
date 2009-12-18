@@ -6,17 +6,17 @@
 // symbol table functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(string id, Tree *def, SymbolTable *parent) : id(id), def(def) {
-	if (parent != NULL) {
-		parent->children.push_back(this);
-	}
-}
+SymbolTable::SymbolTable(string id, Tree *def) : id(id), def(def) {}
 
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	children.push_back(st);
-	st->parent = this;
-	return *st;
+	if (st != NULL) {
+		st->parent = &children;
+		return *st;
+	} else {
+		return *this;
+	}
 }
 
 // generate an identifier structure (for the symbol table) from a string
@@ -49,49 +49,40 @@ vector<string> genId(char *s) {
 
 SymbolTable *genStdDefs() {
 	// standard root
-	SymbolTable *retVal = new SymbolTable(STANDARD_LIBRARY_PREFIX, NULL, NULL);
+	SymbolTable *retVal = new SymbolTable(STANDARD_LIBRARY_PREFIX, NULL);
 	// standard types
-	*retVal *= new SymbolTable("node", NULL, NULL);
-	*retVal *= new SymbolTable("byte", NULL, NULL);
-	*retVal *= new SymbolTable("int", NULL, NULL);
-	*retVal *= new SymbolTable("float", NULL, NULL);
-	*retVal *= new SymbolTable("bool", NULL, NULL);
-	*retVal *= new SymbolTable("char", NULL, NULL);
-	*retVal *= new SymbolTable("string", NULL, NULL);
+	*retVal *= new SymbolTable("node", NULL);
+	*retVal *= new SymbolTable("byte", NULL);
+	*retVal *= new SymbolTable("int", NULL);
+	*retVal *= new SymbolTable("float", NULL);
+	*retVal *= new SymbolTable("bool", NULL);
+	*retVal *= new SymbolTable("char", NULL);
+	*retVal *= new SymbolTable("string", NULL);
 	// standard streams
-	*retVal *= new SymbolTable("stdin", NULL, NULL);
-	*retVal *= new SymbolTable("stdout", NULL, NULL);
-	*retVal *= new SymbolTable("stderr", NULL, NULL);
+	*retVal *= new SymbolTable("stdin", NULL);
+	*retVal *= new SymbolTable("stdout", NULL);
+	*retVal *= new SymbolTable("stderr", NULL);
 	// standard library
 	// standard containers
-	*retVal *= new SymbolTable("stack", NULL, NULL);
-	*retVal *= new SymbolTable("map", NULL, NULL);
+	*retVal *= new SymbolTable("stack", NULL);
+	*retVal *= new SymbolTable("map", NULL);
 	// standard filters
-	*retVal *= new SymbolTable("filter", NULL, NULL);
-	*retVal *= new SymbolTable("sort", NULL, NULL);
+	*retVal *= new SymbolTable("filter", NULL);
+	*retVal *= new SymbolTable("sort", NULL);
 	// standard generators
-	*retVal *= new SymbolTable("gen", NULL, NULL);
+	*retVal *= new SymbolTable("gen", NULL);
 	// return the compiled standard list to the caller
 	return retVal;
 }
 
-SymbolTable *sem(Tree *rootParseme, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int sem(Tree *rootParseme, deque<SymbolTable *> &stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
 	int semmerErrorCode = 0;
-
-	// initialize the sysmbol table with the the default standard definitions
-	SymbolTable *stRoot = genStdDefs();
 
 	// perform main identifier analysis on the supplied root parse tree
 
 
 
 	// finally, return to the caller
-	if (semmerErrorCode) {
-		// deallocate the output vector, since we're just going to return null
-		delete stRoot;
-		return NULL;
-	} else {
-		return stRoot;
-	}
+	return semmerErrorCode ? 1 : 0;
 }

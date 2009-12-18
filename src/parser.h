@@ -6,6 +6,9 @@
 #include "lexer.h"
 #include "../var/lexerStruct.h"
 
+// forward declaration
+class SymbolTable;
+
 // action definitions
 #define ACTION_SHIFT 1
 #define ACTION_REDUCE 2
@@ -50,6 +53,6 @@ class Tree {
 		Tree *operator()(char *s);
 };
 
-Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+Tree *parse(vector<Token> *lexeme, deque<SymbolTable *> &stRoot, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

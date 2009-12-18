@@ -15,14 +15,15 @@ class SymbolTable {
 		// data members
 		string id;
 		Tree *def; // NULL means standard
-		SymbolTable *parent;
+		vector<SymbolTable *> *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators
-		SymbolTable(string id, Tree *def, SymbolTable *parent);
+		SymbolTable(string id, Tree *def);
 		// concatenators
 		SymbolTable &operator*=(SymbolTable *st);
 };
 
-SymbolTable *sem(Tree *rootParseme, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+SymbolTable *genStdDefs();
+int sem(Tree *rootParseme, deque<SymbolTable *> &stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <stack>
+#include <deque>
 
 #include <stdio.h>
 #include <limits.h>
@@ -20,5 +21,6 @@ using std::ostream;
 using std::string;
 using std::vector;
 using std::stack;
+using std::deque;
 
 #endif

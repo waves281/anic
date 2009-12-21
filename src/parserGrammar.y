@@ -81,15 +81,9 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : SimpleDeclPrefix StaticTerm
-	| ThroughDeclPrefix NonEmptyTerms
-	| ImportDecl
-	;
-SimpleDeclPrefix : ID EQUALS
-	;
-ThroughDeclPrefix : ID ERARROW
-	;
-ImportDecl : AT QualifiedIdentifier
+Declaration : ID EQUALS StaticTerm
+	| ID ERARROW NonEmptyTerms
+	| AT QualifiedIdentifier
 	;
 NonEmptyTerms : Term Terms
 	;

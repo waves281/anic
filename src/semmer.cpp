@@ -49,12 +49,19 @@ SymbolTable *genStdDefs() {
 	return retVal;
 }
 
+// populates the SymbolTable by recursively scanning the given parseme for Declaration nodes
+void populateDefs(Tree *parseme, SymbolTable *st) {
+	if (parseme->t.tokenType == TOKEN_Declaration) {
+
+	}
+}
+
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
 	int semmerErrorCode = 0;
 
-	// perform main identifier analysis on the supplied root parse tree
-
+	// populate the symbol table with definitions in the user parseme
+	populateDefs(rootParseme, stRoot);
 
 
 	// finally, return to the caller

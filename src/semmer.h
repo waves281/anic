@@ -14,7 +14,7 @@ class SymbolTable {
 	public:
 		// data members
 		string id;
-		Tree *def; // NULL means standard
+		Tree *def; // where the symbol is defined in the Tree; NULL if standard
 		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators

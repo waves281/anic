@@ -136,11 +136,6 @@ int main(int argc, char **argv) {
 	}
 
 	// parse lexemes
-	// allocate symbol table root (will be filled by user-level definitions during parsing)
-	SymbolTable *stRoot = new SymbolTable("root", NULL);
-	// also, populate the table with the default standard definitions
-	*stRoot *= genStdDefs();
-
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parsemes; // per-file vector of the parsemes that the parser is about to generate
@@ -151,7 +146,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		Tree *parseme = parse(*lexemeIter, stRoot, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
+		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (parseme == NULL || parseme->t.tokenType != TOKEN_Program) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
@@ -203,6 +198,11 @@ int main(int argc, char **argv) {
 	// perform semantic analysis analysis
 
 	VERBOSE(printNotice("Mapping semantics...");)
+
+	// allocate symbol table root (will be filled by user-level definitions during parsing)
+	SymbolTable *stRoot = new SymbolTable("root", NULL);
+	// also, populate the table with the default standard definitions
+	*stRoot *= genStdDefs();
 
 	int semmerErrorCode = sem(rootParseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if semming failed and kill the system as appropriate

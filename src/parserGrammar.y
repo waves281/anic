@@ -138,10 +138,10 @@ Node : QualifiedIdentifier
 	| NodeLiteral
 	| PrimNode
 	| PrimLiteral
-	| BlockNode
+	| Block
 	;
-QualifiedIdentifier : DefaultIdentifier
-	| DefaultIdentifier PERIOD QualifiedIdentifier
+QualifiedIdentifier : UNDERSCORE
+	| UNDERSCORE PERIOD QualifiedIdentifier
 	| ID
 	| ID PERIOD QualifiedIdentifier
 	;
@@ -155,8 +155,6 @@ IdentifierSlashSuffixList : SLASH
 	;
 IdentifierArraySuffixList : LSQUARE Exp RSQUARE
 	| LSQUARE Exp RSQUARE IdentifierArraySuffixList
-	;
-DefaultIdentifier : UNDERSCORE
 	;
 PrimNode : PrefixOp
 	| InfixOp
@@ -200,7 +198,7 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-NodeLiteral : NodeHeaderList BlockNode
+NodeLiteral : NodeHeaderList Block
 	;
 NodeHeaderList : NodeHeader
 	| NodeHeader COMMA NodeHeaderList
@@ -225,7 +223,7 @@ Type : Node
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
-BlockNode : LCURLY Pipes RCURLY
+Block : LCURLY Pipes RCURLY
 	;
 Access : SLASH Node
 	| DSLASH Node

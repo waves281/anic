@@ -116,6 +116,25 @@ Tree *Tree::operator()(char *s) {
 	}
 }
 
+// exported tree parsing functions
+
+string qi2String(Tree *t) {
+	string retVal;
+	Tree *cur = t; // invariant: cur is a QualifiedIdentifier
+	for(;;) {
+		// log this part of the name
+		retVal += cur->child->t.s;
+		// advance
+		if (cur->child->next != NULL) { // if we're not at the end yet
+			retVal += '.';
+			cur = cur->child->next->next; // QualifiedIdentifier
+		} else { // else if we're at the end
+			break;
+		}
+	}
+	return retVal;
+}
+
 // main parsing functions
 
 int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {

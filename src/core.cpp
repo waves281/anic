@@ -200,9 +200,7 @@ int main(int argc, char **argv) {
 	VERBOSE(printNotice("Mapping semantics...");)
 
 	// allocate symbol table root (will be filled by user-level definitions during parsing)
-	SymbolTable *stRoot = new SymbolTable("root", NULL);
-	// also, populate the table with the default standard definitions
-	*stRoot *= genStdDefs();
+	SymbolTable *stRoot;
 
 	int semmerErrorCode = sem(rootParseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if semming failed and kill the system as appropriate

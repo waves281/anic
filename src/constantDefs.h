@@ -3,7 +3,7 @@
 
 #define PROGRAM_STRING "anic"
 #define LANGUAGE_STRING "ANI"
-#define VERSION_STRING "0.60"
+#define VERSION_STRING "0.61"
 #define VERSION_YEAR "2009"
 #define HOME_PAGE "http://www.anic.googlecode.com/"
 
@@ -25,7 +25,9 @@
 
 #define STD_IN "stdin"
 
-#define STANDARD_LIBRARY_PREFIX "std"
+#define STANDARD_LIBRARY_STRING "std"
+#define BLOCK_NODE_STRING "_BLOCK_"
+#define IMPORT_DECL_STRING "_IMPORT_"
 
 #define ESCAPE_CHARACTER '\\'
 

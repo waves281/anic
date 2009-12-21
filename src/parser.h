@@ -54,6 +54,7 @@ class Tree {
 		Tree *operator()(char *s);
 };
 
+string qi2String(Tree *t);
 Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

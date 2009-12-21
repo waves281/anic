@@ -141,11 +141,10 @@ int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {
 	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
 	if (treeCur != NULL) { // if this is any subsequent token
 		*treeCur += treeToAdd;
-		treeCur = treeToAdd;
 	} else { // else if this is the first token
 		root = treeToAdd;
-		treeCur = root;
 	}
+	treeCur = treeToAdd; // update treeCur to point to the newly shifted node
 	// return normally
 	return 0;
 }
@@ -155,16 +154,26 @@ int promoteToken(Tree *&treeCur, Token &t, Tree *&root) {
 	if (treeCur != NULL) {
 		if (treeCur->parent != NULL) { // if this not the root (the parent pointer is non-null)
 			*(treeCur->parent) *= treeToAdd; // update treeCur's parent to point down to the new node
-			*treeCur &= treeToAdd; // update treeCur to point up to the new node
 		} else { // else if this is the root
-			root = treeToAdd;
-			*treeCur &= treeToAdd; // update treeCur to point up the new node
+			root = treeToAdd; // make the promoted node the new root
 		}
+		*treeCur &= treeToAdd; // update treeCur to point up to the new node
 	} else {
 		if (root == NULL) {
 			root = treeToAdd;
 		}
 	}
+	// finally, set treeCur to the newly allocated node
+	treeCur = treeToAdd;
+	// then, return normally
+	return 0;
+}
+
+// treeCur is guaranteed not to be NULL in this case
+int shiftPromoteNullToken(Tree *&treeCur, Token &t) {
+	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
+	// link in the newly allocated node
+	*treeCur += treeToAdd;
 	// finally, set treeCur to the newly allocated node
 	treeCur = treeToAdd;
 	// then, return normally
@@ -209,7 +218,9 @@ transitionParserState: ;
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleRhsLength[transition.n];
 			int tokenType = ruleLhsTokenType[transition.n];
-			treeCur = treeCur->goBack(numRhs-1);
+			if (numRhs > 1) {
+				treeCur = treeCur->goBack(numRhs-1);
+			}
 			for (unsigned int i=0; i<numRhs; i++) {
 				stateStack.pop();
 			}
@@ -220,7 +231,11 @@ transitionParserState: ;
 			t.row = treeCur != NULL ? treeCur->t.row : 0;
 			t.col = treeCur != NULL ? treeCur->t.col : 0;
 			// promote the current token, as appropriate
-			promoteToken(treeCur, t, root);
+			if (numRhs != 0 || treeCur == NULL) { // if it's not the NULL-shifting promotion case
+				promoteToken(treeCur, t, root);
+			} else { // else if it is the NULL-shifting promotion case
+				shiftPromoteNullToken(treeCur, t); // no need for root; the above case handles treeCur == NULL
+			}
 			// take the goto branch of the new transition
 			int tempState = stateStack.top();
 			stateStack.push(parserNode[tempState][tokenType].n);

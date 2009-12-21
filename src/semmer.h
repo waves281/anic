@@ -14,11 +14,11 @@ class SymbolTable {
 	public:
 		// data members
 		string id;
-		Tree *def; // where the symbol is defined in the Tree; NULL if standard
+		Tree *defSite; // where the symbol is defined in the Tree; NULL if standard
 		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators
-		SymbolTable(string id, Tree *def);
+		SymbolTable(string id, Tree *defSite);
 		// concatenators
 		SymbolTable &operator*=(SymbolTable *st);
 };

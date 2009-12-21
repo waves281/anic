@@ -6,7 +6,7 @@
 // symbol table functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(string id, Tree *def) : id(id), def(def) {}
+SymbolTable::SymbolTable(string id, Tree *def) : id(id), defSite(defSite) {}
 
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
@@ -50,9 +50,29 @@ SymbolTable *genStdDefs() {
 }
 
 // populates the SymbolTable by recursively scanning the given parseme for Declaration nodes
-void populateDefs(Tree *parseme, SymbolTable *st) {
-	if (parseme->t.tokenType == TOKEN_Declaration) {
+void getUserDefs(Tree *parseme, SymbolTable *st) {
+	// base case
+	if (parseme == NULL) {
+		return;
+	}
+	// recursive cases
+	if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
+		Token t = parseme->child->next->t;
+		if (t.tokenType == TOKEN_EQUALS) { // standard declaration
 
+			// recurse
+			getUserDefs(parseme->child->next->next->child, st); // child of StaticTerm
+		} else if (t.tokenType == TOKEN_ERARROW) {
+
+			// recurse
+			getUserDefs(parseme->child->next->next->child, st); // child of NonEmptyTerms
+		} else if (t.tokenType == TOKEN_QualifiedIdentifier) {
+
+			// don't recurse in this case, since there's nowhere deeper to go
+		}
+	} else { // else if it's not a declaration node, recurse normally
+		getUserDefs(parseme->child, st); // down
+		getUserDefs(parseme->next, st); // right
 	}
 }
 
@@ -61,7 +81,9 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	int semmerErrorCode = 0;
 
 	// populate the symbol table with definitions in the user parseme
-	populateDefs(rootParseme, stRoot);
+	getUserDefs(rootParseme, stRoot);
+
+	// bind identifier use sites to their definitions
 
 
 	// finally, return to the caller

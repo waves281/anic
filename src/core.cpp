@@ -136,7 +136,10 @@ int main(int argc, char **argv) {
 	}
 
 	// parse lexemes
-	deque<SymbolTable *> stRoot; // symbol table root (filled by user-level definitions during parsing)
+	// allocate symbol table root (will be filled by user-level definitions during parsing)
+	SymbolTable *stRoot = new SymbolTable("root", NULL);
+	// also, populate the table with the default standard definitions
+	*stRoot *= genStdDefs();
 
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
@@ -200,10 +203,6 @@ int main(int argc, char **argv) {
 	// perform semantic analysis analysis
 
 	VERBOSE(printNotice("Mapping semantics...");)
-
-	// initialize the sysmbol table with the the default standard definitions
-	VERBOSE(printNotice("Merging standard/user definitions...");)
-	stRoot.push_front(genStdDefs());
 
 	int semmerErrorCode = sem(rootParseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if semming failed and kill the system as appropriate

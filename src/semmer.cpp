@@ -12,37 +12,11 @@ SymbolTable::SymbolTable(string id, Tree *def) : id(id), def(def) {}
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	children.push_back(st);
 	if (st != NULL) {
-		st->parent = &children;
+		st->parent = this;
 		return *st;
 	} else {
 		return *this;
 	}
-}
-
-// generate an identifier structure (for the symbol table) from a string
-vector<string> genId(char *s) {
-	vector<string> retVal;
-
-	char *temp = MALLOC_STRING;
-	unsigned int tempIndex = 0;
-	for (unsigned int i=0; s[i] != '\0'; i++) {
-		if (s[i] != '.') { // if it's not a separator
-			// log the current character
-			temp[tempIndex] = s[i];
-			// advance in the temporary string
-			tempIndex++;
-		} else { // else if it *is* a separator
-			temp[tempIndex] = '\0';
-			retVal.push_back(temp);
-			tempIndex = 0;
-		}
-	}
-	if (tempIndex != 0) { // log the unterminated remains, if there are any
-		temp[tempIndex] = '\0';
-		retVal.push_back(temp);
-	}
-	free(temp);
-	return retVal;
 }
 
 // main semantic analysis functions
@@ -59,9 +33,9 @@ SymbolTable *genStdDefs() {
 	*retVal *= new SymbolTable("char", NULL);
 	*retVal *= new SymbolTable("string", NULL);
 	// standard streams
-	*retVal *= new SymbolTable("stdin", NULL);
-	*retVal *= new SymbolTable("stdout", NULL);
-	*retVal *= new SymbolTable("stderr", NULL);
+	*retVal *= new SymbolTable("in", NULL);
+	*retVal *= new SymbolTable("out", NULL);
+	*retVal *= new SymbolTable("err", NULL);
 	// standard library
 	// standard containers
 	*retVal *= new SymbolTable("stack", NULL);
@@ -75,7 +49,7 @@ SymbolTable *genStdDefs() {
 	return retVal;
 }
 
-int sem(Tree *rootParseme, deque<SymbolTable *> &stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
 	int semmerErrorCode = 0;
 

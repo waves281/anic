@@ -15,7 +15,7 @@ class SymbolTable {
 		// data members
 		string id;
 		Tree *def; // NULL means standard
-		vector<SymbolTable *> *parent;
+		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators
 		SymbolTable(string id, Tree *def);
@@ -24,6 +24,6 @@ class SymbolTable {
 };
 
 SymbolTable *genStdDefs();
-int sem(Tree *rootParseme, deque<SymbolTable *> &stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

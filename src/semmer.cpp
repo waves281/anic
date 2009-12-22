@@ -55,7 +55,6 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 	if (parseme == NULL) {
 		return;
 	}
-cerr << "DEBUG tokenType: " << parseme->t.tokenType << " child: " << flush << parseme->child << endl;
 	// recursive cases
 	if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node

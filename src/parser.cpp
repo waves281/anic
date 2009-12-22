@@ -121,7 +121,7 @@ string qi2String(Tree *t) {
 
 // main parsing functions
 
-int shiftToken(Tree *&treeCur, Token &t) {
+void shiftToken(Tree *&treeCur, Token &t) {
 	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
 	// link right from the current node
 	if (treeCur != NULL) {
@@ -129,15 +129,13 @@ int shiftToken(Tree *&treeCur, Token &t) {
 	}
 	// update treeCur to point to the newly shifted node
 	treeCur = treeToAdd;
-	// return normally
-	return 0;
 }
 
-int promoteToken(Tree *&treeCur, Token &t) {
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, (treeCur != NULL) ? treeCur->parent : NULL);
-	// delatch on the left
+void promoteToken(Tree *&treeCur, Token &t) {
+	Tree *treeToAdd = new Tree(t, NULL, (treeCur != NULL) ? treeCur->back : NULL, treeCur, (treeCur != NULL) ? treeCur->parent : NULL);
+	// relatch on the left
 	if (treeCur != NULL && treeCur->back != NULL) {
-		*(treeCur->back) += NULL;
+		*(treeCur->back) += treeToAdd;
 		*treeCur -= NULL;
 	}
 	// link down from parent above
@@ -150,24 +148,15 @@ int promoteToken(Tree *&treeCur, Token &t) {
 	}
 	// set the newly promoted node as the current one
 	treeCur = treeToAdd;
-	// finally, return normally
-	return 0;
 }
 
 // treeCur is guaranteed not to be NULL in this case
-int shiftPromoteNullToken(Tree *&treeCur, Token &t) {
+void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
-	// delatch on the left
-	if (treeCur != NULL && treeCur->back != NULL) {
-		*(treeCur->back) += NULL;
-		*treeCur -= NULL;
-	}
 	// link in the newly allocated node
 	*treeCur += treeToAdd;
 	// set treeCur to the newly allocated node
 	treeCur = treeToAdd;
-	// finally, return normally
-	return 0;
 }
 
 Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {

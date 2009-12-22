@@ -98,21 +98,27 @@ void printDefs(SymbolTable *&st, unsigned int depth) {
 	if (st == NULL) {
 		return;
 	}
-	if (st->id != BLOCK_NODE_STRING) {
-		cout << "\t";
-		for (unsigned int i = 0; i < depth; i++) {
+	cout << "\t";
+	for (unsigned int i = 0; i < depth; i++) {
+		if (i < (depth-1)) {
 			cout << "|";
+		} else {
+			cout << "-";
 		}
-		cout << st->id << "\n";
 	}
+	if (st->id != BLOCK_NODE_STRING) {
+		cout << st->id;
+	} else {
+		cout << "{}";
+	}
+	cout << "\n";
 	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
 		printDefs(*childIter, depth+1);
 	}
 }
 
 void printDefs(SymbolTable *&st) {
-	cout << "\troot\n";
-	printDefs(st, 0);
+	printDefs(st, 1);
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter

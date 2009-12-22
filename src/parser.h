@@ -42,14 +42,10 @@ class Tree {
 		Tree *goChild(unsigned int n);
 		Tree *goParent(unsigned int n);
 		// binary attatchers
-		Tree &operator+=(Tree *&next);
-		Tree &operator-=(Tree *&back);
-		Tree &operator*=(Tree *&child);
-		Tree &operator&=(Tree *&parent);
-		void operator+=(int x);
-		void operator-=(int x);
-		void operator*=(int x);
-		void operator&=(int x);
+		void operator+=(Tree *next);
+		void operator-=(Tree *back);
+		void operator*=(Tree *child);
+		void operator&=(Tree *parent);
 		// generalized traverser
 		Tree *operator()(char *s);
 };

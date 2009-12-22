@@ -64,33 +64,17 @@ Tree *Tree::goParent(unsigned int n) {
 	return cur;
 }
 // binary attatchers
-Tree &Tree::operator+=(Tree *&next) {
+void Tree::operator+=(Tree *next) {
 	this->next = next;
-	return *next;
 }
-Tree &Tree::operator-=(Tree *&back) {
+void Tree::operator-=(Tree *back) {
 	this->back = back;
-	return *back;
 }
-Tree &Tree::operator*=(Tree *&child) {
+void Tree::operator*=(Tree *child) {
 	this->child = child;
-	return *child;
 }
-Tree &Tree::operator&=(Tree *&parent) {
+void Tree::operator&=(Tree *parent) {
 	this->parent = parent;
-	return *parent;
-}
-void Tree::operator+=(int x) {
-	next = (Tree *)x;
-}
-void Tree::operator-=(int x) {
-	back = (Tree *)x;
-}
-void Tree::operator*=(int x) {
-	child = (Tree *)x;
-}
-void Tree::operator&=(int x) {
-	parent = (Tree *)x;
 }
 // generalized traverser
 Tree *Tree::operator()(char *s) {
@@ -137,46 +121,52 @@ string qi2String(Tree *t) {
 
 // main parsing functions
 
-int shiftToken(Tree *&treeCur, Token &t, Tree *&root) {
+int shiftToken(Tree *&treeCur, Token &t) {
 	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
-	if (treeCur != NULL) { // if this is any subsequent token
+	// link right from the current node
+	if (treeCur != NULL) {
 		*treeCur += treeToAdd;
-	} else { // else if this is the first token
-		root = treeToAdd;
 	}
-	treeCur = treeToAdd; // update treeCur to point to the newly shifted node
+	// update treeCur to point to the newly shifted node
+	treeCur = treeToAdd;
 	// return normally
 	return 0;
 }
 
-int promoteToken(Tree *&treeCur, Token &t, Tree *&root) {
-	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, treeCur != NULL ? treeCur->parent : NULL);
-	if (treeCur != NULL) {
-		if (treeCur->parent != NULL) { // if this not the root (the parent pointer is non-null)
-			*(treeCur->parent) *= treeToAdd; // update treeCur's parent to point down to the new node
-		} else { // else if this is the root
-			root = treeToAdd; // make the promoted node the new root
-		}
-		*treeCur &= treeToAdd; // update treeCur to point up to the new node
-	} else {
-		if (root == NULL) {
-			root = treeToAdd;
-		}
+int promoteToken(Tree *&treeCur, Token &t) {
+	Tree *treeToAdd = new Tree(t, NULL, NULL, treeCur, (treeCur != NULL) ? treeCur->parent : NULL);
+	// delatch on the left
+	if (treeCur != NULL && treeCur->back != NULL) {
+		*(treeCur->back) += NULL;
+		*treeCur -= NULL;
 	}
-	// finally, set treeCur to the newly allocated node
+	// link down from parent above
+	if (treeCur != NULL && treeCur->parent != NULL) {
+		*(treeCur->parent) *= treeToAdd;
+	}
+	// link up from the current node below
+	if (treeCur != NULL) {
+		*treeCur &= treeToAdd;
+	}
+	// set the newly promoted node as the current one
 	treeCur = treeToAdd;
-	// then, return normally
+	// finally, return normally
 	return 0;
 }
 
 // treeCur is guaranteed not to be NULL in this case
 int shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	Tree *treeToAdd = new Tree(t, NULL, treeCur, NULL, NULL);
+	// delatch on the left
+	if (treeCur != NULL && treeCur->back != NULL) {
+		*(treeCur->back) += NULL;
+		*treeCur -= NULL;
+	}
 	// link in the newly allocated node
 	*treeCur += treeToAdd;
-	// finally, set treeCur to the newly allocated node
+	// set treeCur to the newly allocated node
 	treeCur = treeToAdd;
-	// then, return normally
+	// finally, return normally
 	return 0;
 }
 
@@ -194,8 +184,7 @@ Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optim
 	stateStack.push(0);
 	// iterate through the lexemes
 
-	Tree *root = NULL; // tree root pointer, starts off as the first token in the input
-	Tree *treeCur = root; // the current bit of tree that we're examining
+	Tree *treeCur = NULL; // the current bit of tree that we're examining
 
 	for(vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
 
@@ -210,7 +199,7 @@ transitionParserState: ;
 
 		// branch based on the type of action dictated by the transition
 		if (transition.action == ACTION_SHIFT) {
-			shiftToken(treeCur, t, root);
+			shiftToken(treeCur, t);
 			stateStack.push(transition.n);
 
 			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << endl; )
@@ -232,9 +221,9 @@ transitionParserState: ;
 			t.col = treeCur != NULL ? treeCur->t.col : 0;
 			// promote the current token, as appropriate
 			if (numRhs != 0 || treeCur == NULL) { // if it's not the NULL-shifting promotion case
-				promoteToken(treeCur, t, root);
+				promoteToken(treeCur, t);
 			} else { // else if it is the NULL-shifting promotion case
-				shiftPromoteNullToken(treeCur, t); // no need for root; the above case handles treeCur == NULL
+				shiftPromoteNullToken(treeCur, t); // note: the above case handles treeCur == NULL
 			}
 			// take the goto branch of the new transition
 			int tempState = stateStack.top();
@@ -265,10 +254,10 @@ transitionParserState: ;
 
 	// finally, return to the caller
 	if (parserErrorCode) {
-		// deallocate the output vector, since we're just going to return null
-		delete root;
+		// deallocate the output tree, since we're just going to return null
+		delete treeCur;
 		return NULL;
 	} else {
-		return root;
+		return treeCur;
 	}
 }

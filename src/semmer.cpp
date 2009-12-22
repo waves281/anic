@@ -94,6 +94,27 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 	}
 }
 
+void printDefs(SymbolTable *&st, unsigned int depth) {
+	if (st == NULL) {
+		return;
+	}
+	if (st->id != BLOCK_NODE_STRING) {
+		cout << "\t";
+		for (unsigned int i = 0; i < depth; i++) {
+			cout << "|";
+		}
+		cout << st->id << "\n";
+	}
+	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
+		printDefs(*childIter, depth+1);
+	}
+}
+
+void printDefs(SymbolTable *&st) {
+	cout << "\troot\n";
+	printDefs(st, 0);
+}
+
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 	// local error code
@@ -104,9 +125,11 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	// populate the table with the default standard definitions
 	*stRoot *= genStdDefs();
 
-	// populate the symbol table with definitions in the user parseme
+	// populate the symbol table with definitions from the user parseme
 	vector<SymbolTable *> importList;
 	getUserDefs(rootParseme, stRoot, importList);
+
+	VERBOSE( printDefs(stRoot); )
 
 	// bind identifier use sites to their definitions
 

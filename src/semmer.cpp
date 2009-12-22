@@ -21,17 +21,9 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // main semantic analysis functions
 
-SymbolTable *genStdDefs() {
+SymbolTable *genStdLib() {
 	// standard root
 	SymbolTable *retVal = new SymbolTable(STANDARD_LIBRARY_STRING, NULL);
-	// standard types
-	*retVal *= new SymbolTable("node", NULL);
-	*retVal *= new SymbolTable("byte", NULL);
-	*retVal *= new SymbolTable("int", NULL);
-	*retVal *= new SymbolTable("float", NULL);
-	*retVal *= new SymbolTable("bool", NULL);
-	*retVal *= new SymbolTable("char", NULL);
-	*retVal *= new SymbolTable("string", NULL);
 	// standard streams
 	*retVal *= new SymbolTable("in", NULL);
 	*retVal *= new SymbolTable("out", NULL);
@@ -47,6 +39,19 @@ SymbolTable *genStdDefs() {
 	*retVal *= new SymbolTable("gen", NULL);
 	// return the compiled standard list to the caller
 	return retVal;
+}
+
+void catStdDefs(SymbolTable *&stRoot) {
+	// standard types
+	*stRoot *= new SymbolTable("node", NULL);
+	*stRoot *= new SymbolTable("byte", NULL);
+	*stRoot *= new SymbolTable("int", NULL);
+	*stRoot *= new SymbolTable("float", NULL);
+	*stRoot *= new SymbolTable("bool", NULL);
+	*stRoot *= new SymbolTable("char", NULL);
+	*stRoot *= new SymbolTable("string", NULL);
+	// standard library
+	*stRoot *= genStdLib();
 }
 
 // populates the SymbolTable by recursively scanning the given parseme for Declaration nodes
@@ -128,8 +133,8 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 
 	// initialize the symbol table root with a global block node
 	stRoot = new SymbolTable(BLOCK_NODE_STRING, NULL);
-	// populate the table with the default standard definitions
-	*stRoot *= genStdDefs();
+	// populate the table with the default definitions
+	catStdDefs(stRoot);
 
 	// populate the symbol table with definitions from the user parseme
 	vector<SymbolTable *> importList;

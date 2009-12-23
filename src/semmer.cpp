@@ -21,28 +21,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // main semantic analysis functions
 
-SymbolTable *genStdLib() {
-	// standard root
-	SymbolTable *retVal = new SymbolTable(STANDARD_LIBRARY_STRING, NULL);
-	// standard streams
-	*retVal *= new SymbolTable("in", NULL);
-	*retVal *= new SymbolTable("out", NULL);
-	*retVal *= new SymbolTable("err", NULL);
-	// standard library
-	// standard containers
-	*retVal *= new SymbolTable("stack", NULL);
-	*retVal *= new SymbolTable("map", NULL);
-	// standard filters
-	*retVal *= new SymbolTable("filter", NULL);
-	*retVal *= new SymbolTable("sort", NULL);
-	// standard generators
-	*retVal *= new SymbolTable("gen", NULL);
-	// return the compiled standard list to the caller
-	return retVal;
-}
-
-void catStdDefs(SymbolTable *&stRoot) {
-	// standard types
+void catStdTypes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable("node", NULL);
 	*stRoot *= new SymbolTable("byte", NULL);
 	*stRoot *= new SymbolTable("int", NULL);
@@ -50,8 +29,37 @@ void catStdDefs(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable("bool", NULL);
 	*stRoot *= new SymbolTable("char", NULL);
 	*stRoot *= new SymbolTable("string", NULL);
+}
+
+void catStdLib(SymbolTable *&stRoot) {
+	// standard root
+	SymbolTable *stdLib = new SymbolTable(STANDARD_LIBRARY_STRING, NULL);
+	// standard streams
+	*stdLib *= new SymbolTable("in", NULL);
+	*stdLib *= new SymbolTable("out", NULL);
+	*stdLib *= new SymbolTable("err", NULL);
 	// standard library
-	*stRoot *= genStdLib();
+	// standard containers
+	*stdLib *= new SymbolTable("stack", NULL);
+	*stdLib *= new SymbolTable("map", NULL);
+	// standard filters
+	*stdLib *= new SymbolTable("filter", NULL);
+	*stdLib *= new SymbolTable("sort", NULL);
+	// standard generators
+	*stdLib *= new SymbolTable("gen", NULL);
+	// concatenate the library to the root
+	*stRoot *= stdLib;
+}
+
+SymbolTable *&genDefaultDefs() {
+	// generate the root block node
+	SymbolTable *stRoot = new SymbolTable(BLOCK_NODE_STRING, NULL);
+	// concatenate in the standard types
+	catStdTypes(stRoot);
+	// concatenate in the standard library
+	catStdLib(stRoot);
+	// finally, return the genrated default symtable
+	return stRoot;
 }
 
 // populates the SymbolTable by recursively scanning the given parseme for Declaration nodes
@@ -60,6 +68,8 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 	if (parseme == NULL) {
 		return;
 	}
+	// link the current st node into the parseme
+	parseme->st = st;
 	// recursive cases
 	if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
@@ -67,7 +77,7 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 		// ... and link it in
 		*st *= newDef;
 		// recurse
-		getUserDefs(parseme->child->next->child, newDef, importList); // child of Pipes
+		getUserDefs(parseme->child, newDef, importList); // child of Block
 	} else if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
 		Token t = parseme->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard declaration
@@ -76,14 +86,14 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			getUserDefs(parseme->child->next->next->child, newDef, importList); // child of StaticTerm
+			getUserDefs(parseme->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			getUserDefs(parseme->child->next->next->child, newDef, importList); // child of NonEmptyTerms
+			getUserDefs(parseme->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_QualifiedIdentifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(qi2String(parseme->child->next), parseme);
@@ -93,7 +103,8 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 			importList.push_back(newDef);
 			// don't recurse in this case, since there's nowhere deeper to go
 		}
-	} else { // else if it's not a declaration node, recurse normally
+	} else { // else if it's not a declaration node
+		// recurse normally
 		getUserDefs(parseme->child, st, importList); // down
 		getUserDefs(parseme->next, st, importList); // right
 	}
@@ -132,9 +143,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	int semmerErrorCode = 0;
 
 	// initialize the symbol table root with a global block node
-	stRoot = new SymbolTable(BLOCK_NODE_STRING, NULL);
-	// populate the table with the default definitions
-	catStdDefs(stRoot);
+	stRoot = genDefaultDefs();
 
 	// populate the symbol table with definitions from the user parseme
 	vector<SymbolTable *> importList;

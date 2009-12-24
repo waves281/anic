@@ -4,6 +4,12 @@
 #include "lexer.h"
 #include "../var/lexerStruct.h"
 
+// lexer-global variables
+
+int lexerErrorCode;
+bool lexerEventuallyGiveUp;
+
+// main lexing functions
 
 int isWhiteSpace(unsigned char c) {
 	return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
@@ -67,8 +73,11 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 }
 
 vector<Token> *lex(ifstream *in, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
-	// local error code
-	int lexerErrorCode = 0;
+
+	// initialize error variables
+	lexerErrorCode = 0;
+	lexerEventuallyGiveUp = eventuallyGiveUp;
+
 	// initialize lexer structure
 	// LexerNode lexerNode[fromState][charSeen] is hereby defined and usable
 	LEXER_STRUCT;

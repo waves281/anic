@@ -71,13 +71,13 @@ int main(int argc, char **argv) {
 		} else { // default case; assume regular file argument
 			char *fileName = argv[i];
 			if (argv[i][0] == '-') {
-				fileName = STD_IN;
+				fileName = STD_IN_FILE_NAME;
 			}
 			if (containsString(inFileNames, fileName)) {
 				printWarning("including file '" << fileName << "' multiple times");
 				continue;
 			}
-			ifstream *inFile = (strcmp(fileName,STD_IN) == 0) ? NULL : new ifstream(fileName); // create a stream for this file
+			ifstream *inFile = (strcmp(fileName,STD_IN_FILE_NAME) == 0) ? NULL : new ifstream(fileName); // create a stream for this file
 			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
 				die();
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 		// check file arguments
 		char *fileName = inFileNames[i];
 		if (strcmp(fileName,"-") == 0) {
-			fileName = "stdin";
+			fileName = STD_IN_FILE_NAME;
 		}
 		VERBOSE(
 			cout << "\n";
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
 		char *fileName = inFileNames[fileIndex];
 		if (strcmp(fileName,"-") == 0) {
-			fileName = "stdin";
+			fileName = STD_IN_FILE_NAME;
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing

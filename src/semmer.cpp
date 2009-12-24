@@ -3,13 +3,50 @@
 
 #include "semmer.h"
 
+// semmer-global variables
+
+int semmerErrorCode;
+bool semmerEventuallyGiveUp;
+
 // symbol table functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(string id, Tree *def) : id(id), defSite(defSite) {}
+SymbolTable::SymbolTable(string id, Tree *defSite) : id(id), defSite(defSite), parent(NULL) {}
 
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
+	// first, check for conflicting bindings
+	if (st != NULL && st->id[0] != '_') { // if this is not a special system-level binding
+		// per-level loop
+		for (SymbolTable *stCur = this; stCur != NULL; stCur = stCur->parent) {
+			// per-symbol loop
+			for (vector<SymbolTable *>::iterator childIter = stCur->children.begin(); childIter != stCur->children.end(); childIter++) {
+				if ((*childIter)->id == st->id) { // if we've found a conflict
+					Token curDefToken;
+					if (st->defSite != NULL) { // if there is a definition site for the current symbol
+						curDefToken = st->defSite->t;
+					} else { // otherwise, it must be a standard definition, so make up the token as if it was
+						curDefToken.fileName = STANDARD_LIBRARY_STRING;
+						curDefToken.row = 0;
+						curDefToken.col = 0;
+					}
+					Token prevDefToken;
+					if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+						prevDefToken = (*childIter)->defSite->t;
+					} else { // otherwise, it must be a standard definition, so make up the token as if it was
+						prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+						prevDefToken.row = 0;
+						prevDefToken.col = 0;
+					}
+					printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'",*this);
+					printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)",*this);
+					return *this;
+				} // if there's a conflict
+			} // for per-symbol loop
+		} // for per-level loop
+	} // if this is not a special system-level binding
+
+	// binding is now known to be conflict-free, so log it normally
 	children.push_back(st);
 	if (st != NULL) {
 		st->parent = this;
@@ -63,7 +100,7 @@ SymbolTable *genDefaultDefs() {
 }
 
 // populates the SymbolTable by recursively scanning the given parseme for Declaration nodes
-void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList) {
+void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &instanceList) {
 	// base case
 	if (parseme == NULL) {
 		return;
@@ -71,13 +108,18 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 	// log the current symbol environment in the parseme
 	parseme->env = st;
 	// recursive cases
-	if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
+	// if it's a non-import QualifiedIdentifier
+	if (parseme->t.tokenType == TOKEN_QualifiedIdentifier && !(parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT)) {
+		// log this identifier use case
+		instanceList.push_back(parseme);
+		// *don't* recurse any deeper in this QualifiedIdentifier
+	} else if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
 		SymbolTable *newDef = new SymbolTable(BLOCK_NODE_STRING, parseme);
 		// ... and link it in
 		*st *= newDef;
 		// recurse
-		getUserDefs(parseme->child, newDef, importList); // child of Block
+		getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Block
 	} else if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
 		Token t = parseme->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard declaration
@@ -86,14 +128,14 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			getUserDefs(parseme->child, newDef, importList); // child of Declaration
+			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			getUserDefs(parseme->child, newDef, importList); // child of Declaration
+			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_QualifiedIdentifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(qi2String(parseme->child->next), parseme);
@@ -101,16 +143,21 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 			*st *= newDef;
 			// also, since it's an import declaration, log it to the import list
 			importList.push_back(newDef);
-			// don't recurse in this case, since there's nowhere deeper to go
+			// recurse
+			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		}
 	} else { // else if it's not a declaration node
 		// recurse normally
-		getUserDefs(parseme->child, st, importList); // down
-		getUserDefs(parseme->next, st, importList); // right
+		getUserIdentifiers(parseme->child, st, importList, instanceList); // down
+		getUserIdentifiers(parseme->next, st, importList, instanceList); // right
 	}
 }
 
-void printDefs(SymbolTable *&st, unsigned int depth) {
+void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
+
+}
+
+void printDefs(SymbolTable *st, unsigned int depth) {
 	if (st == NULL) {
 		return;
 	}
@@ -133,25 +180,31 @@ void printDefs(SymbolTable *&st, unsigned int depth) {
 	}
 }
 
-void printDefs(SymbolTable *&st) {
+void printDefs(SymbolTable *st) {
 	printDefs(st, 1);
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
-	// local error code
-	int semmerErrorCode = 0;
 
-	// initialize the symbol table root with a global block node
+	// initialize error code
+	semmerErrorCode = 0;
+	semmerEventuallyGiveUp = eventuallyGiveUp;
+
+	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
 
-	// populate the symbol table with definitions from the user parseme
+	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
 	vector<SymbolTable *> importList;
-	getUserDefs(rootParseme, stRoot, importList);
+	vector<Tree *> instanceList;
+	getUserIdentifiers(rootParseme, stRoot, importList, instanceList);
+
+	// substitute import declarations
+	subImportDecls(stRoot, importList);
 
 	VERBOSE( printDefs(stRoot); )
 
-	// bind identifier use sites to their definitions
+	// bind identifier use sites to their definitions, checking for errors
 
 
 	// finally, return to the caller

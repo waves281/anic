@@ -23,7 +23,7 @@
 #define MAX_STRING_LENGTH (sizeof(char)*4096)
 #define MALLOC_STRING ((char *)malloc(MAX_STRING_LENGTH))
 
-#define STD_IN "stdin"
+#define STD_IN_FILE_NAME "stdin"
 
 #define STANDARD_LIBRARY_STRING "std"
 #define BLOCK_NODE_STRING "_BLOCK_"

@@ -23,7 +23,6 @@ class SymbolTable {
 		SymbolTable &operator*=(SymbolTable *st);
 };
 
-SymbolTable *genStdDefs();
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

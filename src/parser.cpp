@@ -4,6 +4,11 @@
 #include "parser.h"
 #include "../var/parserStruct.h"
 
+// parser-global variables
+
+int parserErrorCode;
+bool parserEventuallyGiveUp;
+
 // tree functions
 
 // constructors
@@ -160,8 +165,11 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 }
 
 Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
-	// local error code
-	int parserErrorCode = 0;
+
+	// initialize error code
+	parserErrorCode = 0;
+	parserEventuallyGiveUp = eventuallyGiveUp;
+
 	// initialize lexer structure
 	// int ruleLength[NUM_RULES], ruleLhs[NUM_RULES], and ParserNode parserNode[NUM_RULES][NUM_TOKENS] are hereby defined and usable
 	PARSER_STRUCT;

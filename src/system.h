@@ -19,12 +19,12 @@ void die(void);
 
 #define printLexerError(fn,r,c,str) cerr << PROGRAM_STRING << ": ERROR: LEXER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
 	lexerErrorCode++; \
-	if (eventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
+	if (lexerEventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 #define printParserError(fn,r,c,str) cerr << PROGRAM_STRING << ": ERROR: PARSER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
 	parserErrorCode++; \
-	if (eventuallyGiveUp && parserErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
-#define printSemmerError(fn,r,c,str) cerr << PROGRAM_STRING << ": ERROR: NAMER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
+	if (parserEventuallyGiveUp && parserErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
+#define printSemmerError(fn,r,c,str,rv) cerr << PROGRAM_STRING << ": ERROR: SEMMER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; \
 	semmerErrorCode++; \
-	if (eventuallyGiveUp && semmerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
+	if (semmerEventuallyGiveUp && semmerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return rv; }
 
 #endif

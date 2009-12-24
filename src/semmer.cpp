@@ -17,33 +17,30 @@ SymbolTable::SymbolTable(string id, Tree *defSite) : id(id), defSite(defSite), p
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
 	if (st != NULL && st->id[0] != '_') { // if this is not a special system-level binding
-		// per-level loop
-		for (SymbolTable *stCur = this; stCur != NULL; stCur = stCur->parent) {
-			// per-symbol loop
-			for (vector<SymbolTable *>::iterator childIter = stCur->children.begin(); childIter != stCur->children.end(); childIter++) {
-				if ((*childIter)->id == st->id) { // if we've found a conflict
-					Token curDefToken;
-					if (st->defSite != NULL) { // if there is a definition site for the current symbol
-						curDefToken = st->defSite->t;
-					} else { // otherwise, it must be a standard definition, so make up the token as if it was
-						curDefToken.fileName = STANDARD_LIBRARY_STRING;
-						curDefToken.row = 0;
-						curDefToken.col = 0;
-					}
-					Token prevDefToken;
-					if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-						prevDefToken = (*childIter)->defSite->t;
-					} else { // otherwise, it must be a standard definition, so make up the token as if it was
-						prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-						prevDefToken.row = 0;
-						prevDefToken.col = 0;
-					}
-					printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'",*this);
-					printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)",*this);
-					return *this;
-				} // if there's a conflict
-			} // for per-symbol loop
-		} // for per-level loop
+		// per-symbol loop
+		for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+			if ((*childIter)->id == st->id) { // if we've found a conflict
+				Token curDefToken;
+				if (st->defSite != NULL) { // if there is a definition site for the current symbol
+					curDefToken = st->defSite->t;
+				} else { // otherwise, it must be a standard definition, so make up the token as if it was
+					curDefToken.fileName = STANDARD_LIBRARY_STRING;
+					curDefToken.row = 0;
+					curDefToken.col = 0;
+				}
+				Token prevDefToken;
+				if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+					prevDefToken = (*childIter)->defSite->t;
+				} else { // otherwise, it must be a standard definition, so make up the token as if it was
+					prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+					prevDefToken.row = 0;
+					prevDefToken.col = 0;
+				}
+				printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'",*this);
+				printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)",*this);
+				return *this;
+			} // if there's a conflict
+		} // for per-symbol loop
 	} // if this is not a special system-level binding
 
 	// binding is now known to be conflict-free, so log it normally

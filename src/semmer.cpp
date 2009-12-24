@@ -51,7 +51,7 @@ void catStdLib(SymbolTable *&stRoot) {
 	*stRoot *= stdLib;
 }
 
-SymbolTable *&genDefaultDefs() {
+SymbolTable *genDefaultDefs() {
 	// generate the root block node
 	SymbolTable *stRoot = new SymbolTable(BLOCK_NODE_STRING, NULL);
 	// concatenate in the standard types
@@ -68,8 +68,8 @@ void getUserDefs(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importLi
 	if (parseme == NULL) {
 		return;
 	}
-	// link the current st node into the parseme
-	parseme->st = st;
+	// log the current symbol environment in the parseme
+	parseme->env = st;
 	// recursive cases
 	if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node

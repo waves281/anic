@@ -30,7 +30,7 @@ class Tree {
 		Tree *back;
 		Tree *child;
 		Tree *parent;
-		SymbolTable *st; // the definition site if it's an identifier, else the enclosing scope's st node
+		SymbolTable *env; // the symbol environment in which this node occurs
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);

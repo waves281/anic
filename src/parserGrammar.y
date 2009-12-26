@@ -203,18 +203,18 @@ NodeLiteral : NodeHeaderList Block
 NodeHeaderList : NodeHeader
 	| NodeHeader COMMA NodeHeaderList
 	;
-NodeHeader : DLSQUARE DeclList RetList DRSQUARE
+NodeHeader : DLSQUARE ParamList RetList DRSQUARE
 	;
-DeclList : 
-	| NonEmptyDeclList
+ParamList : 
+	| NonEmptyParamList
 	;
-NonEmptyDeclList: Decl
-	| Decl COMMA NonEmptyDeclList
+NonEmptyParamList: Param
+	| Param COMMA NonEmptyParamList
 	;
 RetList : 
 	| DRARROW NonEmptyTypeList
 	;
-Decl : Type ID
+Param : Type ID
 	;
 Type : Node
 	| Node IdentifierSlashSuffixList

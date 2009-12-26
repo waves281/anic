@@ -185,8 +185,8 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	stRoot = genDefaultDefs();
 
 	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
-	vector<SymbolTable *> importList;
-	vector<Tree *> instanceList;
+	vector<SymbolTable *> importList; // import Declaration nodes
+	vector<Tree *> instanceList; // top-level non-import QualifiedIdentifier nodes
 	getUserIdentifiers(rootParseme, stRoot, importList, instanceList);
 
 	// substitute import declarations

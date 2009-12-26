@@ -115,33 +115,25 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(BLOCK_NODE_STRING, parseme);
 		// if there is a header attatched to this block, inject its definitions into the block node
-		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_NodeHeaderList) {
-			Tree *nh = parseme->back->child; // NodeHeader
-			for(;;) { // per-node header loop
-				if (nh->child->next->child != NULL) { // if there is a declaration list to process
-					Tree *param = nh->child->next->child->child; // Param
-					for (;;) { // per-param loop
-						// allocate the new parameter definition node
-						SymbolTable *paramDef = new SymbolTable(param->child->next->t.s, param);
-						// ... and link it into the block node
-						*blockDef *= paramDef;
-						// advance
-						if (param->next != NULL) {
-							param = param->next->next->child; // Param
-						} else {
-							break;
-						}
-					} // per-param loop
-				}
-				// advance
-				if (nh->next != NULL) {
-					nh = nh->next->next->child; // NodeHeader
-				} else {
-					break;
-				}
-			} // per-node header loop
-		}
-		// ... and link it in
+		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_NodeHeader) {
+			Tree *nh = parseme->back; // NodeHeader
+			if (nh->child->next->child != NULL) { // if there is a parameter list to process
+				Tree *param = nh->child->next->child->child; // Param
+				for (;;) { // per-param loop
+					// allocate the new parameter definition node
+					SymbolTable *paramDef = new SymbolTable(param->child->next->t.s, param);
+					// ... and link it into the block node
+					*blockDef *= paramDef;
+					// advance
+					if (param->next != NULL) {
+						param = param->next->next->child; // Param
+					} else {
+						break;
+					}
+				} // per-param loop
+			}
+		} // if there is a header attatched to this block
+		// finally, link the block node into the main trunk
 		*st *= blockDef;
 		// recurse
 		getUserIdentifiers(parseme->child, blockDef, importList, instanceList); // child of Block

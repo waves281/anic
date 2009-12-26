@@ -138,7 +138,6 @@ Node : QualifiedIdentifier
 	| NodeLiteral
 	| PrimNode
 	| PrimLiteral
-	| Block
 	;
 QualifiedIdentifier : UNDERSCORE
 	| UNDERSCORE PERIOD QualifiedIdentifier
@@ -198,10 +197,8 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-NodeLiteral : NodeHeaderList Block
-	;
-NodeHeaderList : NodeHeader
-	| NodeHeader COMMA NodeHeaderList
+NodeLiteral : NodeHeader Block
+	| Block
 	;
 NodeHeader : DLSQUARE ParamList RetList DRSQUARE
 	;

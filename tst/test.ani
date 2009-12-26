@@ -1,3 +1,4 @@
+@std;
 @Some.Package.Subpackage;
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {

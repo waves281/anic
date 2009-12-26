@@ -19,6 +19,10 @@ class SymbolTable {
 		vector<SymbolTable *> children;
 		// allocators/deallocators
 		SymbolTable(string id, Tree *defSite);
+		SymbolTable(SymbolTable &st);
+		~SymbolTable();
+		// deep-copy assignment operator
+		SymbolTable &operator=(SymbolTable &st);
 		// concatenators
 		SymbolTable &operator*=(SymbolTable *st);
 };

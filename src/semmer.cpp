@@ -14,6 +14,33 @@ bool semmerEventuallyGiveUp;
 // allocators/deallocators
 SymbolTable::SymbolTable(string id, Tree *defSite) : id(id), defSite(defSite), parent(NULL) {}
 
+SymbolTable::SymbolTable(SymbolTable &st) {
+	*this = st;
+}
+
+SymbolTable::~SymbolTable() {
+	// delete all of the child nodes
+	for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+		delete *childIter;
+	}
+}
+
+// deep-copy assignment operator
+SymbolTable &SymbolTable::operator=(SymbolTable &st) {
+	id = st.id;
+	defSite = st.defSite;
+	parent = st.parent;
+	for (vector<SymbolTable *>::iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
+		// copy the child node
+		SymbolTable *child = new SymbolTable(**childIter);
+		// fix the child's parent pointer to point up to this node
+		child->parent = this;
+		// finally, log the child in the copied child into the children list
+		children.push_back(child);
+	}
+	return *this;
+}
+
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
@@ -39,6 +66,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 				}
 				printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'",*this);
 				printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)",*this);
+				delete st;
 				return *this;
 			} // if there's a conflict
 		} // for per-symbol loop
@@ -155,7 +183,7 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_QualifiedIdentifier) { // import declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(qi2String(parseme->child->next), parseme);
+			SymbolTable *newDef = new SymbolTable(IMPORT_DECL_STRING, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// also, since it's an import declaration, log it to the import list
@@ -170,8 +198,36 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 	}
 }
 
-void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
+// binds qualified identifiers in the given symtable environment
+// returns NULL if no binding can be found
+SymbolTable *bindQI(string qi, SymbolTable *env) {
 
+
+	// we did not manage to find a binding, so return NULL
+	return NULL;
+}
+
+void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
+	bool stdExplicitlyImported = false;
+	for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
+		// extract the import path out of the iterator
+		string importPath = qi2String((*importIter)->defSite->child->next);
+		// standard import special-casing
+		if (importPath == "std") { // if it's the standard import
+			if (!stdExplicitlyImported) { // if it's the first standard import, let it slide
+				stdExplicitlyImported = true;
+				continue;
+			}
+		}
+		// try to find a binding for this import
+		SymbolTable *binding = bindQI(importPath, *importIter);
+		if (binding != NULL) { // if we found a binding, deep-copy the binding in place of the import node
+			**importIter = *binding;
+		} else { // else if no binding could be found
+			Token t = (*importIter)->defSite->t;
+			printSemmerError(t.fileName,t.row,t.col,"cannot find import path '"<<importPath<<"'",);
+		}
+	}
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter

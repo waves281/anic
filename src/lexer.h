@@ -1,7 +1,7 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
-#include "customOperators.h"
+#include "mainDefs.h"
 #include "constantDefs.h"
 
 struct lexerNodeStruct {

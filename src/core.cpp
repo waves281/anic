@@ -2,6 +2,7 @@
 #include "constantDefs.h"
 #include "globalVars.h"
 #include "system.h"
+#include "customOperators.h"
 
 #include "lexer.h"
 #include "../var/lexerStruct.h"
@@ -115,13 +116,6 @@ int main(int argc, char **argv) {
 		}
 		// print out the tokens if we're in verbose mode
 		VERBOSE(
-			if (lexeme != NULL) {
-				for (unsigned int tokenIndex = 0; tokenIndex < lexeme->size(); tokenIndex++) {
-					Token tokenCur = (*lexeme)[tokenIndex];
-					cout << "[" << tokenType2String(tokenCur.tokenType) << " " << tokenCur.s << " (" << tokenCur.row << "," << tokenCur.col << ")] " ;
-				} // per-token loop
-				cout << "\n";
-			}
 			if (!lexerError) {
 				printNotice("successfully lexed file \'" << fileName << "\'");
 			} else {

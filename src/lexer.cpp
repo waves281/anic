@@ -1,5 +1,6 @@
 #include "mainDefs.h"
 #include "system.h"
+#include "customOperators.h"
 
 #include "lexer.h"
 #include "../var/lexerStruct.h"
@@ -44,15 +45,15 @@ void commitToken(string &s, int &state, int &tokenType, char *fileName, int rowS
 	return;
 }
 
-vector<char> hex(unsigned char c) {
-	vector<char> retVal;
+string hex(unsigned char c) {
+	string retVal;
 	char hexDigits[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
-	retVal.push_back(hexDigits[(c>>4)&0xF]);
-	retVal.push_back(hexDigits[c&0xF]);
+	retVal += (hexDigits[(c>>4)&0xF]);
+	retVal += (hexDigits[c&0xF]);
 	return retVal;
 }
 
-// discared input up until the end of the current token
+// discard input up until the end of the current token
 void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 	for(;;) {
 		bool retVal = (in == NULL ? cin.get(c) : in->get(c));
@@ -336,6 +337,13 @@ lexerLoopTop: ;
 		termToken.row = 0;
 		termToken.col = 0;
 		outputVector->push_back(termToken);
+		// print out the lexeme if we're in verbose mode
+		VERBOSE(
+			for (unsigned int tokenIndex = 0; tokenIndex < outputVector->size(); tokenIndex++) {
+				cout << (*outputVector)[tokenIndex] << " " ;
+			} // per-token loop
+			cout << "\n";
+		)
 		// finally, return the vector to the caller
 		return outputVector;
 	}

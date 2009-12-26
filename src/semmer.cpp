@@ -1,5 +1,6 @@
 #include "mainDefs.h"
 #include "system.h"
+#include "customOperators.h"
 
 #include "semmer.h"
 
@@ -154,33 +155,6 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 
 }
 
-void printDefs(SymbolTable *st, unsigned int depth) {
-	if (st == NULL) {
-		return;
-	}
-	cout << "\t";
-	for (unsigned int i = 0; i < depth; i++) {
-		if (i < (depth-1)) {
-			cout << "|";
-		} else {
-			cout << "-";
-		}
-	}
-	if (st->id != BLOCK_NODE_STRING) {
-		cout << st->id;
-	} else {
-		cout << "{}";
-	}
-	cout << "\n";
-	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
-		printDefs(*childIter, depth+1);
-	}
-}
-
-void printDefs(SymbolTable *st) {
-	printDefs(st, 1);
-}
-
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
@@ -199,7 +173,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	// substitute import declarations
 	subImportDecls(stRoot, importList);
 
-	VERBOSE( printDefs(stRoot); )
+	VERBOSE( cout << stRoot; )
 
 	// bind identifier use sites to their definitions, checking for errors
 

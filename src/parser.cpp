@@ -124,6 +124,18 @@ string qi2String(Tree *t) {
 	return retVal;
 }
 
+string qiTip(string &qi) {
+	string retVal;
+	for (unsigned int i=0; i<qi.size(); i++) {
+		if (qi[i] == '.') {
+			break;
+		} else {
+			retVal += qi[i];
+		}
+	}
+	return retVal;
+}
+
 // main parsing functions
 
 void shiftToken(Tree *&treeCur, Token &t) {

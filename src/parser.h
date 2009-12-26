@@ -51,6 +51,7 @@ class Tree {
 };
 
 string qi2String(Tree *t);
+string qiTip(string &qi);
 Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

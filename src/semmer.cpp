@@ -221,7 +221,29 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 		}
 		// try to find a binding for this import
 		SymbolTable *binding = bindQI(importPath, *importIter);
-		if (binding != NULL) { // if we found a binding, deep-copy the binding in place of the import node
+		if (binding != NULL) { // if we found a binding
+			// check to make sure that this import doesn't cause a binding conflict
+			string importPathTip = qiTip(importPath);
+			// per-parent's children loop (parent must exist, since the root is a block st node)
+			vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
+			while (childIter != (*importIter)->parent->children.end()) {
+				if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
+				Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of QualifiedIdentifier
+				Token prevDefToken;
+				if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+					prevDefToken = (*childIter)->defSite->t;
+				} else { // otherwise, it must be a standard definition, so make up the token as if it was
+					prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+					prevDefToken.row = 0;
+					prevDefToken.col = 0;
+				}
+				printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'",);
+				printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)",);
+				}
+				// advance
+				childIter++;
+			}
+			// there was no conflict, so just deep-copy the binding in place of the import placeholder node
 			**importIter = *binding;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;

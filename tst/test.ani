@@ -3,15 +3,15 @@
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
-	x = { (- 500e-100 *80+10 - "\\lol !!!\'\"" ) lol.filter.X };
+	y = {z = 10; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
 	retVal = {int, int};
 	
-	argc ? { loop =>
-			argv ?
-				{1,2}
+	y ? { loop =>
+			y.z ?
+				{1,2 loop}
 			:
-				{3,4}
+				{3,4 loop}
 		} : 5,6 -->;
 	retVal -->;
 	// okay, we're done now!
@@ -20,9 +20,10 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 /* name resolution testing */
 
 nameRes = {
-	x = [[int y --> int]] {
+	x = [[int z --> int]] {
 		100 -->;
-		@main.x;
+		@main.y;
+		y -->;
 	};
 };
 

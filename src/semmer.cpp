@@ -85,6 +85,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // main semantic analysis functions
 
 void catStdTypes(SymbolTable *&stRoot) {
+	*stRoot *= new SymbolTable("_", NULL);
 	*stRoot *= new SymbolTable("node", NULL);
 	*stRoot *= new SymbolTable("byte", NULL);
 	*stRoot *= new SymbolTable("int", NULL);
@@ -97,19 +98,26 @@ void catStdTypes(SymbolTable *&stRoot) {
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
 	SymbolTable *stdLib = new SymbolTable(STANDARD_LIBRARY_STRING, NULL);
-	// standard streams
+
+	// system nodes
+	// streams
 	*stdLib *= new SymbolTable("in", NULL);
 	*stdLib *= new SymbolTable("out", NULL);
 	*stdLib *= new SymbolTable("err", NULL);
+	// control nodes
+	*stdLib *= new SymbolTable("rand", NULL);
+	*stdLib *= new SymbolTable("delay", NULL);
+
 	// standard library
-	// standard containers
+	// containers
 	*stdLib *= new SymbolTable("stack", NULL);
 	*stdLib *= new SymbolTable("map", NULL);
-	// standard filters
+	// filters
 	*stdLib *= new SymbolTable("filter", NULL);
 	*stdLib *= new SymbolTable("sort", NULL);
-	// standard generators
+	// generators
 	*stdLib *= new SymbolTable("gen", NULL);
+
 	// concatenate the library to the root
 	*stRoot *= stdLib;
 }
@@ -134,11 +142,16 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 	// log the current symbol environment in the parseme
 	parseme->env = st;
 	// recursive cases
-	// if it's a non-import QualifiedIdentifier
-	if (parseme->t.tokenType == TOKEN_QualifiedIdentifier && !(parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT)) {
-		// log this identifier use case
-		instanceList.push_back(parseme);
-		// *don't* recurse any deeper in this QualifiedIdentifier
+	// if it's a QualifiedIdentifier
+	if (parseme->t.tokenType == TOKEN_QualifiedIdentifier) {
+		if (!(parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT)) { // if it's non-import
+			// log this identifier use case
+			instanceList.push_back(parseme);
+			// *don't* recurse any deeper in this QualifiedIdentifier
+		} else { // else if it's an import QualifiedIdentifier
+			// recurse on the right only; i.e. don't log import subidentifiers as use cases
+			getUserIdentifiers(parseme->next, st, importList, instanceList); // right
+		}
 	} else if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(BLOCK_NODE_STRING, parseme);
@@ -198,9 +211,9 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 	}
 }
 
-// binds qualified identifiers in the given symtable environment; returns the head, tail is an extra parameter
+// binds qualified identifiers in the given symtable environment; returns the tail of the binding
 // returns NULL if no binding can be found
-SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
+SymbolTable *bindQI(string qi, SymbolTable *env) {
 	// base case
 	if (env == NULL) {
 		return NULL;
@@ -209,7 +222,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 	string tip = qiTip(qi);
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
-		if ((*latchIter)->id[0] != '_' && (*latchIter)->id == tip) { // if we've found a latch point
+		if ((*latchIter)->id == tip) { // if we've found a latch point
 
 			// verify that the latching holds for the rest of the identifier
 			SymbolTable *stCur = *latchIter;
@@ -220,12 +233,12 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 				SymbolTable *match = NULL;
 				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
 
-					if ((*stcIter)->id[0] != '_' && (*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
+					if ((*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 						match = *stcIter;
 						goto doneMatching;
 
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
-					} else if ((*stcIter)->id == BLOCK_NODE_STRING) {
+					} else if (stCur->id != BLOCK_NODE_STRING && (*stcIter)->id == BLOCK_NODE_STRING) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
 							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 								match = *blockIter;
@@ -246,10 +259,9 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 				}
 
 			}
-			// if we've verified the entire qi, set the tail and return the head of the latch point
-			if (i==choppedQI.size()) {
-				tail = stCur;
-				return *latchIter;
+			// if we've verified the entire qi, return the tail of the latch point
+			if (i == choppedQI.size()) {
+				return stCur;
 			}
 			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
 			break;
@@ -257,11 +269,17 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 	} // per-latch point loop
 
 	// otherwise, recursively try to find a binding starting one level higher
-	return bindQI(qi, env->parent, tail);
+	// but first, scan up to the next block level, since jumping to the enclosing identifier is a waste of time
+	SymbolTable *recurseSt = env->parent;
+	while (recurseSt != NULL && recurseSt->id != BLOCK_NODE_STRING) {
+		recurseSt = recurseSt->parent;
+	}
+	return bindQI(qi, recurseSt);
 }
 
-void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
+void subImportDecls(vector<SymbolTable *> &importList) {
 	bool stdExplicitlyImported = false;
+	// per-import loop
 	for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 		// extract the import path out of the iterator
 		string importPath = qi2String((*importIter)->defSite->child->next);
@@ -274,35 +292,51 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 			}
 		}
 		// try to find a binding for this import
-		SymbolTable *tail;
-		SymbolTable *binding = bindQI(importPath, *importIter, tail);
+		SymbolTable *binding = bindQI(importPath, *importIter);
 		if (binding != NULL) { // if we found a binding
 			// check to make sure that this import doesn't cause a binding conflict
-			string importPathTip = tail->id; // must exist if binding succeeed
+			string importPathTip = binding->id; // must exist if binding succeeed
 			// per-parent's children loop (parent must exist, since the root is a block st node)
 			vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 			while (childIter != (*importIter)->parent->children.end()) {
 				if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
-				Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of QualifiedIdentifier
-				Token prevDefToken;
-				if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-					prevDefToken = (*childIter)->defSite->t;
-				} else { // otherwise, it must be a standard definition, so make up the token as if it was
-					prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-					prevDefToken.row = 0;
-					prevDefToken.col = 0;
-				}
-				printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'",);
-				printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)",);
+					Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of QualifiedIdentifier
+					Token prevDefToken;
+					if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+						prevDefToken = (*childIter)->defSite->t;
+					} else { // otherwise, it must be a standard definition, so make up the token as if it was
+						prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+						prevDefToken.row = 0;
+						prevDefToken.col = 0;
+					}
+					printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'",);
+					printSemmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)",);
+					goto nextImport;
 				}
 				// advance
 				childIter++;
 			}
-			// there was no conflict, so just deep-copy the tail in place of the import placeholder node
-			**importIter = *tail;
+			// there was no conflict, so just deep-copy the binding in place of the import placeholder node
+			**importIter = *binding;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;
 			printSemmerError(t.fileName,t.row,t.col,"cannot resolve import path '"<<importPath<<"'",);
+		}
+		nextImport: ;
+	} // per-import loop
+}
+
+void bindInstances(vector<Tree *> &instanceList) {
+	// per-instance loop
+	for (vector<Tree *>::iterator instanceIter = instanceList.begin(); instanceIter != instanceList.end(); instanceIter++) {
+		Tree *qi = *instanceIter;
+		string qiString = qi2String(qi);
+		SymbolTable *binding = bindQI(qiString, qi->env);
+		if (binding != NULL) { // if we found a binding for this identifier, latch it
+			qi->env = binding;
+		} else { // else if we couldn't find a binding
+			Token curQIToken = qi->child->t;
+			printSemmerError(curQIToken.fileName,curQIToken.row,curQIToken.col,"cannot resolve identifier '"<<qiString<<"'",);
 		}
 	}
 }
@@ -323,12 +357,12 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	getUserIdentifiers(rootParseme, stRoot, importList, instanceList);
 
 	// substitute import declarations
-	subImportDecls(stRoot, importList);
+	subImportDecls(importList);
 
 	VERBOSE( cout << stRoot; )
 
 	// bind identifier use sites to their definitions, checking for errors
-
+	bindInstances(instanceList);
 
 	// finally, return to the caller
 	return semmerErrorCode ? 1 : 0;

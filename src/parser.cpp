@@ -136,6 +136,20 @@ string qiTip(string &qi) {
 	return retVal;
 }
 
+vector<string> qiChop(string &qi) {
+	vector<string> retVal;
+	string s;
+	for (unsigned int i=0; i<qi.size(); i++) {
+		if (qi[i] == '.') {
+			retVal.push_back(s);
+			s.clear();
+		} else {
+			s += qi[i];
+		}
+	}
+	return retVal;
+}
+
 // main parsing functions
 
 void shiftToken(Tree *&treeCur, Token &t) {

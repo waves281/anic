@@ -201,10 +201,47 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 // binds qualified identifiers in the given symtable environment
 // returns NULL if no binding can be found
 SymbolTable *bindQI(string qi, SymbolTable *env) {
-
-
-	// we did not manage to find a binding, so return NULL
-	return NULL;
+	// base case
+	if (env == NULL) {
+		return NULL;
+	}
+	// recursive case
+	string tip = qiTip(qi);
+	// scan the current environment's children for a latch point
+	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
+		if ((*latchIter)->id[0] != '_' && (*latchIter)->id == tip) { // if we've found a latch point
+			// verify that the latching holds for the rest of the identifier
+			SymbolTable *stCur = *latchIter;
+			vector<string> choppedQI = qiChop(qi);
+			unsigned int i = 1; // start at 1, since we've aleady matched the tip (index 0)
+			while (i < choppedQI.size()) {
+				// find a match in the current st node's children
+				SymbolTable *match = NULL;
+				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
+					if ((*stcIter)->id[0] != '_' && (*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
+						match = *stcIter;
+						break;
+					}
+				}
+				if (match != NULL) { // if we do have a match, advance
+					// advance to the matched st node
+					stCur = match;
+					// advance to the next token in the qi
+					i++;
+				} else { // else if we don't have a match, fail
+					break;
+				}
+			}
+			// if we've verified the entire qi, return the head of the latch point
+			if (i==choppedQI.size()) {
+				return *latchIter;
+			}
+			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
+			break;
+		}
+	}
+	// otherwise, recursively try to find a binding starting one level higher
+	return bindQI(qi, env->parent);
 }
 
 void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {

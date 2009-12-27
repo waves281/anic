@@ -136,6 +136,18 @@ string qiTip(string &qi) {
 	return retVal;
 }
 
+string qiEnd(string &qi) {
+	string retVal;
+	for (unsigned int i=0; i<qi.size(); i++) {
+		if (qi[i] == '.') {
+			retVal.clear();
+		} else {
+			retVal += qi[i];
+		}
+	}
+	return retVal;
+}
+
 vector<string> qiChop(string &qi) {
 	vector<string> retVal;
 	string s;
@@ -146,6 +158,10 @@ vector<string> qiChop(string &qi) {
 		} else {
 			s += qi[i];
 		}
+	}
+	// push back the last part of the qi if necessary
+	if (!s.empty()) {
+		retVal.push_back(s);
 	}
 	return retVal;
 }

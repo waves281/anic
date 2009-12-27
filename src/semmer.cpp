@@ -198,9 +198,9 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 	}
 }
 
-// binds qualified identifiers in the given symtable environment
+// binds qualified identifiers in the given symtable environment; returns the head, tail is an extra parameter
 // returns NULL if no binding can be found
-SymbolTable *bindQI(string qi, SymbolTable *env) {
+SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 	// base case
 	if (env == NULL) {
 		return NULL;
@@ -232,8 +232,9 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 					break;
 				}
 			}
-			// if we've verified the entire qi, return the head of the latch point
+			// if we've verified the entire qi, set the tail and return the head of the latch point
 			if (i==choppedQI.size()) {
+				tail = stCur;
 				return *latchIter;
 			}
 			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
@@ -241,7 +242,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 		}
 	}
 	// otherwise, recursively try to find a binding starting one level higher
-	return bindQI(qi, env->parent);
+	return bindQI(qi, env->parent, tail);
 }
 
 void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
@@ -257,10 +258,11 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 			}
 		}
 		// try to find a binding for this import
-		SymbolTable *binding = bindQI(importPath, *importIter);
+		SymbolTable *tail;
+		SymbolTable *binding = bindQI(importPath, *importIter, tail);
 		if (binding != NULL) { // if we found a binding
 			// check to make sure that this import doesn't cause a binding conflict
-			string importPathTip = qiTip(importPath);
+			string importPathTip = tail->id; // must exist if binding succeeed
 			// per-parent's children loop (parent must exist, since the root is a block st node)
 			vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 			while (childIter != (*importIter)->parent->children.end()) {
@@ -280,8 +282,8 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 				// advance
 				childIter++;
 			}
-			// there was no conflict, so just deep-copy the binding in place of the import placeholder node
-			**importIter = *binding;
+			// there was no conflict, so just deep-copy the tail in place of the import placeholder node
+			**importIter = *tail;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;
 			printSemmerError(t.fileName,t.row,t.col,"cannot find import path '"<<importPath<<"'",);

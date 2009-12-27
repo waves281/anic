@@ -1,5 +1,5 @@
 @std;
-@Some.Package.Subpackage;
+@std.gen2;
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 

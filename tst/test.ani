@@ -21,9 +21,12 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
 nameRes = {
 	x = [[int y --> int]] {
-		100 -->
+		100 -->;
+		@main.x;
 	};
 };
+
+x=10e-1;
 
 @nameRes.x.y;
 

@@ -1,5 +1,5 @@
 @std;
-@std.gen2;
+@std.gen;
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 

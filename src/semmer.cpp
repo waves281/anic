@@ -210,6 +210,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
 		if ((*latchIter)->id[0] != '_' && (*latchIter)->id == tip) { // if we've found a latch point
+
 			// verify that the latching holds for the rest of the identifier
 			SymbolTable *stCur = *latchIter;
 			vector<string> choppedQI = qiChop(qi);
@@ -218,11 +219,23 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 				// find a match in the current st node's children
 				SymbolTable *match = NULL;
 				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
+
 					if ((*stcIter)->id[0] != '_' && (*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 						match = *stcIter;
-						break;
+						goto doneMatching;
+
+					// as a special case, look one block level deeper, since nested defs must be block-delimited
+					} else if ((*stcIter)->id == BLOCK_NODE_STRING) {
+						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
+							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
+								match = *blockIter;
+								goto doneMatching;
+							}
+						}
 					}
-				}
+
+				} doneMatching: ; // match verification loop
+
 				if (match != NULL) { // if we do have a match, advance
 					// advance to the matched st node
 					stCur = match;
@@ -231,6 +244,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 				} else { // else if we don't have a match, fail
 					break;
 				}
+
 			}
 			// if we've verified the entire qi, set the tail and return the head of the latch point
 			if (i==choppedQI.size()) {
@@ -240,7 +254,8 @@ SymbolTable *bindQI(string qi, SymbolTable *env, SymbolTable *&tail) {
 			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
 			break;
 		}
-	}
+	} // per-latch point loop
+
 	// otherwise, recursively try to find a binding starting one level higher
 	return bindQI(qi, env->parent, tail);
 }
@@ -252,7 +267,8 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 		string importPath = qi2String((*importIter)->defSite->child->next);
 		// standard import special-casing
 		if (importPath == "std") { // if it's the standard import
-			if (!stdExplicitlyImported) { // if it's the first standard import, let it slide
+			if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
+				(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
 				stdExplicitlyImported = true;
 				continue;
 			}
@@ -286,7 +302,7 @@ void subImportDecls(SymbolTable *stRoot, vector<SymbolTable *> importList) {
 			**importIter = *tail;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;
-			printSemmerError(t.fileName,t.row,t.col,"cannot find import path '"<<importPath<<"'",);
+			printSemmerError(t.fileName,t.row,t.col,"cannot resolve import path '"<<importPath<<"'",);
 		}
 	}
 }

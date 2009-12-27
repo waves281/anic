@@ -17,6 +17,18 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 	// okay, we're done now!
 };
 
+/* name resolution testing */
+
+nameRes = {
+	x = [[int y --> int]] {
+		100 -->
+	};
+};
+
+@nameRes.x.y;
+
+/* end name resolution testing */
+
 table = [[int numChopsticks]] {
 	chopsticks = [[ int[numChopsticks] ]];
 	getChopsticks = [[--> int\, int\]] {

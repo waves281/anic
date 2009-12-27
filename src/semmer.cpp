@@ -230,27 +230,39 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 			vector<string> choppedQI = qiChop(qi);
 			unsigned int i = 1; // start at 1, since we've aleady matched the tip (index 0)
 			while (i < choppedQI.size()) {
-				// find a match in the current st node's children
+
+				// find a static match in the current st node's children
 				SymbolTable *match = NULL;
 				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
 
 					if ((*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 						match = *stcIter;
-						goto doneMatching;
+						goto matchOK;
 
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
 					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
 							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 								match = *blockIter;
-								goto doneMatching;
+								goto matchOK;
 							}
 						}
 					}
 
-				} doneMatching: ; // match verification loop
+				} matchOK: ; // match verification loop
 
-				if (match != NULL) { // if we do have a match, advance
+				// if we don't have a static match, look for a dynamic match stemming from stCur
+				if (match == NULL) {
+					if (stCur->kind == KIND_STATIC_DECL) {
+
+					} else if (stCur->kind == KIND_THROUGH_DECL) {
+
+					} else if (stCur->kind == KIND_PARAM) {
+
+					}
+				}
+
+				if (match != NULL) { // if we ultimately do have a match, advance
 					// advance to the matched st node
 					stCur = match;
 					// advance to the next token in the qi

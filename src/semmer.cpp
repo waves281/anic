@@ -181,16 +181,16 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 		getUserIdentifiers(parseme->child, blockDef, importList, instanceList); // child of Block
 	} else if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
 		Token t = parseme->child->next->t;
-		if (t.tokenType == TOKEN_EQUALS) { // standard declaration
+		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_DECL, parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_DECL, parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse

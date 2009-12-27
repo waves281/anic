@@ -25,14 +25,14 @@
 
 #define STD_IN_FILE_NAME "stdin"
 
+#define MAX_TOKEN_LENGTH INT_MAX
+#define ESCAPE_CHARACTER '\\'
+
 #define STANDARD_LIBRARY_STRING "std"
+
 #define BLOCK_NODE_STRING "_BLOCK_"
 #define IMPORT_DECL_STRING "_UNRESOLVED_IMPORT_"
 #define STANDARD_IMPORT_DECL_STRING "_STD_IMPORT_"
-
-#define ESCAPE_CHARACTER '\\'
-
-#define MAX_TOKEN_LENGTH INT_MAX
 
 #define VERBOSE(s) if (verboseOutput) {s}
 

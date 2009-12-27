@@ -12,7 +12,7 @@ bool semmerEventuallyGiveUp;
 // symbol table functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(string id, Tree *defSite) : id(id), defSite(defSite), parent(NULL) {}
+SymbolTable::SymbolTable(int kind, string id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
 
 SymbolTable::SymbolTable(SymbolTable &st) {
 	*this = st;
@@ -27,6 +27,7 @@ SymbolTable::~SymbolTable() {
 
 // deep-copy assignment operator
 SymbolTable &SymbolTable::operator=(SymbolTable &st) {
+	kind = st.kind;
 	id = st.id;
 	defSite = st.defSite;
 	parent = st.parent;
@@ -84,39 +85,39 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // main semantic analysis functions
 
-void catStdTypes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable("_", NULL);
-	*stRoot *= new SymbolTable("node", NULL);
-	*stRoot *= new SymbolTable("byte", NULL);
-	*stRoot *= new SymbolTable("int", NULL);
-	*stRoot *= new SymbolTable("float", NULL);
-	*stRoot *= new SymbolTable("bool", NULL);
-	*stRoot *= new SymbolTable("char", NULL);
-	*stRoot *= new SymbolTable("string", NULL);
+void catStdNodes(SymbolTable *&stRoot) {
+	*stRoot *= new SymbolTable(KIND_STD, "_", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "node", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "byte", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "int", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "float", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "bool", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "char", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "string", NULL);
 }
 
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
-	SymbolTable *stdLib = new SymbolTable(STANDARD_LIBRARY_STRING, NULL);
+	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, NULL);
 
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable("in", NULL);
-	*stdLib *= new SymbolTable("out", NULL);
-	*stdLib *= new SymbolTable("err", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "in", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "out", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "err", NULL);
 	// control nodes
-	*stdLib *= new SymbolTable("rand", NULL);
-	*stdLib *= new SymbolTable("delay", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "rand", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "delay", NULL);
 
 	// standard library
 	// containers
-	*stdLib *= new SymbolTable("stack", NULL);
-	*stdLib *= new SymbolTable("map", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "stack", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "map", NULL);
 	// filters
-	*stdLib *= new SymbolTable("filter", NULL);
-	*stdLib *= new SymbolTable("sort", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "filter", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "sort", NULL);
 	// generators
-	*stdLib *= new SymbolTable("gen", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "gen", NULL);
 
 	// concatenate the library to the root
 	*stRoot *= stdLib;
@@ -124,9 +125,9 @@ void catStdLib(SymbolTable *&stRoot) {
 
 SymbolTable *genDefaultDefs() {
 	// generate the root block node
-	SymbolTable *stRoot = new SymbolTable(BLOCK_NODE_STRING, NULL);
+	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, NULL);
 	// concatenate in the standard types
-	catStdTypes(stRoot);
+	catStdNodes(stRoot);
 	// concatenate in the standard library
 	catStdLib(stRoot);
 	// finally, return the genrated default symtable
@@ -154,7 +155,7 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 		}
 	} else if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
-		SymbolTable *blockDef = new SymbolTable(BLOCK_NODE_STRING, parseme);
+		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, parseme);
 		// if there is a header attatched to this block, inject its definitions into the block node
 		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_NodeHeader) {
 			Tree *nh = parseme->back; // NodeHeader
@@ -162,7 +163,7 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 				Tree *param = nh->child->next->child->child; // Param
 				for (;;) { // per-param loop
 					// allocate the new parameter definition node
-					SymbolTable *paramDef = new SymbolTable(param->child->next->t.s, param);
+					SymbolTable *paramDef = new SymbolTable(KIND_PARAM, param->child->next->t.s, param);
 					// ... and link it into the block node
 					*blockDef *= paramDef;
 					// advance
@@ -182,21 +183,21 @@ void getUserIdentifiers(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &i
 		Token t = parseme->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_DECL, parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_DECL, parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			getUserIdentifiers(parseme->child, newDef, importList, instanceList); // child of Declaration
 		} else if (t.tokenType == TOKEN_QualifiedIdentifier) { // import declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(IMPORT_DECL_STRING, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// also, since it's an import declaration, log it to the import list
@@ -238,7 +239,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 						goto doneMatching;
 
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
-					} else if (stCur->id != BLOCK_NODE_STRING && (*stcIter)->id == BLOCK_NODE_STRING) {
+					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
 							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
 								match = *blockIter;
@@ -271,7 +272,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 	// otherwise, recursively try to find a binding starting one level higher
 	// but first, scan up to the next block level, since jumping to the enclosing identifier is a waste of time
 	SymbolTable *recurseSt = env->parent;
-	while (recurseSt != NULL && recurseSt->id != BLOCK_NODE_STRING) {
+	while (recurseSt != NULL && recurseSt->kind != KIND_BLOCK) {
 		recurseSt = recurseSt->parent;
 	}
 	return bindQI(qi, recurseSt);

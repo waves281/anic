@@ -7,7 +7,7 @@
 int semmerErrorCode;
 bool semmerEventuallyGiveUp;
 
-// symbol table functions
+// SymbolTable functions
 
 // allocators/deallocators
 SymbolTable::SymbolTable(int kind, string id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
@@ -81,7 +81,17 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	}
 }
 
-// main semantic analysis functions
+// Type functions
+
+// allocators/deallocators
+
+Type::Type(Tree *base, int suffix) : base(base), suffix(suffix), next(NULL) {}
+
+Type::~Type() {
+	delete next;
+}
+
+// Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "_", NULL);

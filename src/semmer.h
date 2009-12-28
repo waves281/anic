@@ -41,9 +41,14 @@ class SymbolTable {
 #define SUFFIX_LATCH -1
 
 class Type {
-	Tree *base; // the Node that defines this type
-	int suffix; // positive values indicate stream level
-	Type *next; // the next part of the type's compounding
+	public:
+		// data members
+		Tree *base; // the Node that defines this type
+		int suffix; // positive values indicate stream level
+		Type *next; // the next part of the type's compounding
+		// allocators/deallocators
+		Type(Tree *base, int suffix);
+		~Type();
 };
 
 // main semantic analysis function

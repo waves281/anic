@@ -8,14 +8,15 @@ bool parserEventuallyGiveUp;
 // tree functions
 
 // constructors
-Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL) {}
-Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL) {}
-Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent) {}
+Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL), type(NULL) {}
+Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), type(NULL) {}
+Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), type(NULL) {}
 
 // destructor
 Tree::~Tree() {
 	delete next;
 	delete child;
+	delete type;
 }
 
 // traversal operators

@@ -7,8 +7,9 @@
 
 #include "lexer.h"
 
-// forward declaration
+// forward declarations
 class SymbolTable;
+class Type;
 
 // action definitions
 #define ACTION_SHIFT 1
@@ -32,6 +33,7 @@ class Tree {
 		Tree *child;
 		Tree *parent;
 		SymbolTable *env; // the symbol environment in which this node occurs
+		Type *type; // the Type assigned to this node; NULL if it hasn't been traced yet
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);
@@ -60,5 +62,6 @@ Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optim
 // post-includes
 
 #include "../var/parserStruct.h"
+#include "semmer.h"
 
 #endif

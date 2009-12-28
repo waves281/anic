@@ -81,7 +81,7 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : ID EQUALS StaticTerm
+Declaration : ID EQUALS NonEmptyTerms
 	| ID ERARROW NonEmptyTerms
 	| AT QualifiedIdentifier
 	;

@@ -359,6 +359,8 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	semmerErrorCode = 0;
 	semmerEventuallyGiveUp = eventuallyGiveUp;
 
+	VERBOSE( print("Binding identifiers..."); )
+
 	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
 
@@ -374,6 +376,11 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 
 	// bind identifier use sites to their definitions, checking for errors
 	bindInstances(instanceList);
+
+	VERBOSE( print("Tracing type flow..."); )
+
+	// assign types to all pipe nodes
+
 
 	// finally, return to the caller
 	return semmerErrorCode ? 1 : 0;

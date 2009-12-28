@@ -120,14 +120,14 @@ Exp : ExpLeft ExpRight
 NonCastExp : NonCastExpLeft ExpRight
 	;
 ExpLeft : QualifiedIdentifier
-	| QualifiedIdentifier IdentifierArraySuffixList
+	| QualifiedIdentifier ArraySuffix
 	| NonCastExpLeft
 	;
 NonCastExpLeft : PrimLiteral
 	| PrefixOrMultiOp ExpLeft
 	| LBRACKET NonCastExp RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET
-	| LBRACKET QualifiedIdentifier IdentifierArraySuffixList RBRACKET
+	| LBRACKET QualifiedIdentifier ArraySuffix RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
 	;
 ExpRight : 
@@ -147,13 +147,15 @@ QualifiedIdentifier : UNDERSCORE
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
 	;
-IdentifierSlashSuffixList : SLASH
-	| DSLASH
-	| SLASH IdentifierSlashSuffixList
-	| DSLASH IdentifierSlashSuffixList
+LatchSuffix : SLASH
 	;
-IdentifierArraySuffixList : LSQUARE Exp RSQUARE
-	| LSQUARE Exp RSQUARE IdentifierArraySuffixList
+StreamSuffix : DSLASH
+	| DSLASH StreamSuffix
+	| LSQUARE Exp RSQUARE
+	| LSQUARE Exp RSQUARE StreamSuffix
+	;
+ArraySuffix : LSQUARE Exp RSQUARE
+	| LSQUARE Exp RSQUARE ArraySuffix
 	;
 PrimNode : PrefixOp
 	| InfixOp
@@ -214,8 +216,8 @@ RetList :
 Param : Type ID
 	;
 Type : Node
-	| Node IdentifierSlashSuffixList
-	| Node IdentifierArraySuffixList
+	| Node LatchSuffix
+	| Node StreamSuffix
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

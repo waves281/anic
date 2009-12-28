@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 		print(""); // new line
 	)
 
-	// perform semantic analysis analysis
+	// perform semantic analysis
 
 	VERBOSE(printNotice("Mapping semantics...");)
 

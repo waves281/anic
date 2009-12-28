@@ -35,6 +35,19 @@ class SymbolTable {
 		SymbolTable &operator*=(SymbolTable *st);
 };
 
+// Type suffix classifiers
+
+#define SUFFIX_NONE 0
+#define SUFFIX_LATCH -1
+
+class Type {
+	Tree *base; // the Node that defines this type
+	int suffix; // positive values indicate stream level
+	Type *next; // the next part of the type's compounding
+};
+
+// main semantic analysis function
+
 int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

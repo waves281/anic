@@ -1,16 +1,19 @@
 #include "mainDefs.h"
 #include "constantDefs.h"
-#include "globalVars.h"
 #include "system.h"
 #include "customOperators.h"
 
 #include "lexer.h"
-#include "../var/lexerStruct.h"
-
 #include "parser.h"
-#include "../var/parserStruct.h"
-
 #include "semmer.h"
+
+// global variables
+
+bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
+int optimizationLevel = OPTIMIZATION_LEVEL_DEFAULT;
+bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
+
+// core helper functions
 
 int containsString(vector<char *>inFileNames, char *s) {
 	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
@@ -21,6 +24,8 @@ int containsString(vector<char *>inFileNames, char *s) {
 	// else if we did not find any matches, return false
 	return 0;
 }
+
+// main driver function
 
 int main(int argc, char **argv) {
 	// verify arguments

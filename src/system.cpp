@@ -1,5 +1,7 @@
 #include "system.h"
 
+// header print functions
+
 void printHeader(void) {
 	cerr << HEADER_LITERAL;
 }
@@ -17,6 +19,8 @@ void printHelp(void) {
 	printUsage();
 	printLink();
 }
+
+// system termination functions
 
 void die(int errorCode) {
 	if (errorCode) {

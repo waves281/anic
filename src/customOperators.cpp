@@ -1,8 +1,5 @@
 #include "customOperators.h"
 
-#include "mainDefs.h"
-#include "constantDefs.h"
-
 // operator definitions
 
 ostream &operator<< (ostream &os, Token &t) {

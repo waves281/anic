@@ -1,8 +1,6 @@
-#include "mainDefs.h"
-#include "system.h"
-#include "customOperators.h"
-
 #include "semmer.h"
+
+#include "customOperators.h"
 
 // semmer-global variables
 

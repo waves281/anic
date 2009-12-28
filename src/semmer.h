@@ -2,13 +2,11 @@
 #define _SEMMER_H_
 
 #include "mainDefs.h"
+#include "system.h"
 #include "constantDefs.h"
 
 #include "lexer.h"
-#include "../var/lexerStruct.h"
-
 #include "parser.h"
-#include "../var/parserStruct.h"
 
 // SymbolTable node kinds
 

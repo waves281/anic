@@ -1,9 +1,6 @@
-#include "mainDefs.h"
-#include "system.h"
-#include "customOperators.h"
-
 #include "lexer.h"
-#include "../var/lexerStruct.h"
+
+#include "customOperators.h"
 
 // lexer-global variables
 

@@ -3,6 +3,7 @@
 
 #include "mainDefs.h"
 #include "constantDefs.h"
+#include "system.h"
 
 struct lexerNodeStruct {
 	int valid;
@@ -21,5 +22,9 @@ class Token {
 };
 
 vector<Token> *lex(ifstream *in, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+
+// post-includes
+
+#include "../var/lexerStruct.h"
 
 #endif

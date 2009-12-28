@@ -1,10 +1,11 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
+#include "mainDefs.h"
 #include "constantDefs.h"
+#include "system.h"
 
 #include "lexer.h"
-#include "../var/lexerStruct.h"
 
 // forward declaration
 class SymbolTable;
@@ -55,5 +56,9 @@ string qiTip(string &qi);
 string qiEnd(string &qi);
 vector<string> qiChop(string &qi);
 Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+
+// post-includes
+
+#include "../var/parserStruct.h"
 
 #endif

@@ -345,7 +345,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 			**importIter = *binding;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;
-			printSemmerError(t.fileName,t.row,t.col,"cannot resolve import path '"<<importPath<<"'",);
+			printSemmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'",);
 		}
 		nextImport: ;
 	} // per-import loop
@@ -361,7 +361,7 @@ void bindInstances(vector<Tree *> &instanceList) {
 			qi->env = binding;
 		} else { // else if we couldn't find a binding
 			Token curQIToken = qi->child->t;
-			printSemmerError(curQIToken.fileName,curQIToken.row,curQIToken.col,"cannot resolve identifier '"<<qiString<<"'",);
+			printSemmerError(curQIToken.fileName,curQIToken.row,curQIToken.col,"cannot resolve '"<<qiString<<"'",);
 		}
 	}
 }

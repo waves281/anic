@@ -139,10 +139,10 @@ Node : QualifiedIdentifier
 	| PrimNode
 	| PrimLiteral
 	;
-QualifiedIdentifier : DPERIOD
-	| DPERIOD PERIOD QualifiedIdentifier
-	| ID
+QualifiedIdentifier : ID
 	| ID PERIOD QualifiedIdentifier
+	| DPERIOD
+	| DPERIOD PERIOD QualifiedIdentifier
 	;
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm

@@ -230,6 +230,10 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 	if (env == NULL) {
 		return NULL;
 	}
+	// this-reference case
+	if (qi[0] == '.' && qi[1] == '.') {
+// LOL
+	}
 	// recursive case
 	string tip = qiTip(qi);
 	// scan the current environment's children for a latch point
@@ -265,11 +269,11 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 				// if we don't have a static match, look for a dynamic match stemming from stCur
 				if (match == NULL) {
 					if (stCur->kind == KIND_STATIC_DECL) {
-
+// LOL
 					} else if (stCur->kind == KIND_THROUGH_DECL) {
-
+// LOL
 					} else if (stCur->kind == KIND_PARAM) {
-
+// LOL
 					}
 				}
 

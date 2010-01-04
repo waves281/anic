@@ -51,7 +51,9 @@ philosopher = [[table\ t, int id]] {
 	loopback => std.rand std.delay \t.getChopSticks eat ->t.returnChopsticks loopback;
 };
 
-t = [[ table\ ]] <- 5;
-[[ philosopher[5] ]] <- {t, ..};
+numPhilosophers = 5;
+
+t = [[table\]] <- numPhilosophers;
+\\[[std.gen]] <- numPhilosophers [[philosopher]] <- {t, ..};
 
 // EOF comment

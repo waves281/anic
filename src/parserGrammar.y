@@ -1,9 +1,9 @@
 /* core tokens */
 %token ID
-%token UNDERSCORE
 %token INUM
 %token FNUM
 %token PERIOD
+%token DPERIOD
 %token LBRACKET
 %token RBRACKET
 %token LSLASH
@@ -105,7 +105,7 @@ SimpleTerm : StaticTerm
 	;
 StaticTerm : Node
 	| BracketedExp
-	| Access
+	| Delatch
 	;
 SimpleCond : QUESTION Term
 	;
@@ -139,8 +139,8 @@ Node : QualifiedIdentifier
 	| PrimNode
 	| PrimLiteral
 	;
-QualifiedIdentifier : UNDERSCORE
-	| UNDERSCORE PERIOD QualifiedIdentifier
+QualifiedIdentifier : DPERIOD
+	| DPERIOD PERIOD QualifiedIdentifier
 	| ID
 	| ID PERIOD QualifiedIdentifier
 	;
@@ -224,7 +224,7 @@ NonEmptyTypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
-Access : SLASH Node
+Delatch : SLASH Node
 	| DSLASH Node
 	;
 Compound : COMMA StaticTerm

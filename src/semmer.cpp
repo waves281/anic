@@ -94,7 +94,6 @@ Type::~Type() {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "_", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "node", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "byte", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "int", NULL);
@@ -377,7 +376,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	semmerErrorCode = 0;
 	semmerEventuallyGiveUp = eventuallyGiveUp;
 
-	VERBOSE( printNotice("\tBinding identifiers..."); )
+	VERBOSE( printNotice("Binding identifiers..."); )
 
 	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
@@ -396,7 +395,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	// bind identifier use sites to their definitions, checking for errors
 	bindInstances(instanceList);
 
-	VERBOSE( printNotice("\tTracing type flow..."); )
+	VERBOSE( printNotice("Tracing type flow..."); )
 
 	// assign types to all node streams
 	traceTypes(netsList);

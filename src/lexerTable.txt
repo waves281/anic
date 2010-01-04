@@ -72,7 +72,7 @@
 0 { LCURLY -1
 0 } RCURLY -1
 0 = EQUALS 10
-0 . PERIOD -1
+0 . PERIOD 113
 0 , COMMA -1
 0 \ SLASH 102
 0 ; SEMICOLON -1
@@ -100,8 +100,6 @@
 0 @ AT -1
 // stream operators
 0 $ DOLLAR -1
-// miscellaneous name chars
-0 _ UNDERSCORE -1
 
 // state 1 (continuing id)
 // lowercase letters
@@ -348,3 +346,6 @@
 
 // state 112 (: seen)
 112 : DCOLON -1
+
+// state 113 (. seen)
+113 . DPERIOD -1

@@ -203,7 +203,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -266,7 +266,7 @@ transitionParserState: ;
 			stateStack.push(parserNode[tempState][tokenType].n);
 
 			VERBOSE(
-				char *tokenString = ruleLhsTokenString[transition.n];
+				const char *tokenString = ruleLhsTokenString[transition.n];
 				cout << "\tREDUCE\t" << curState << "\t->\t" << stateStack.top() << "\t[ " << tokenString << " ]\n";
 			)
 

@@ -57,7 +57,7 @@ string qi2String(Tree *t);
 string qiTip(string &qi);
 string qiEnd(string &qi);
 vector<string> qiChop(string &qi);
-Tree *parse(vector<Token> *lexeme, char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 // post-includes
 

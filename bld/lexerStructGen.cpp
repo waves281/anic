@@ -87,10 +87,10 @@ int main() {
 	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
 	fprintf(out, "\n");
 	// print out the tokenType2String forward declaration to the .h
-	fprintf(out, "char *tokenType2String(int tokenType);\n\n");
+	fprintf(out, "const char *tokenType2String(int tokenType);\n\n");
 	// print out tokenType2String to the .cpp
 	fprintf(out2, "#include \"lexerStruct.h\"\n\n");
-	fprintf(out2, "char *tokenType2String(int tokenType) {\n");
+	fprintf(out2, "const char *tokenType2String(int tokenType) {\n");
 	fprintf(out2, "\tswitch(tokenType) {\n");
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
 		fprintf(out2, "\t\tcase TOKEN_%s:\n", queryBuf->first.c_str());

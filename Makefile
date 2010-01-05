@@ -88,7 +88,7 @@ tmp/hyacc.exe: bld/hyacc/makefile
 var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 	@echo Generating parser table...
 	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
-	@mv y.OUTPUT var/parserTable.txt
+	@mv y.output var/parserTable.txt
 
 
 

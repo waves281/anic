@@ -95,7 +95,7 @@ int main() {
 	fprintf(out, "#define PARSER_STRUCT \\\n");
 	fprintf(out, "static unsigned int ruleRhsLength[NUM_RULES]; \\\n", NUM_RULES);
 	fprintf(out, "static int ruleLhsTokenType[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static char *ruleLhsTokenString[NUM_RULES]; \\\n", NUM_RULES);
+	fprintf(out, "static const char *ruleLhsTokenString[NUM_RULES]; \\\n", NUM_RULES);
 	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS + %d]; \\\n", NUM_RULES, 1 + nonTermCount);
 	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
 	fprintf(out, "if (!parserNodesInitialized) { \\\n");

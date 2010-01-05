@@ -15,7 +15,7 @@ bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
 
-int containsString(vector<char *>inFileNames, char *s) {
+int containsString(vector<const char *>inFileNames, const char *s) {
 	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
 		if (strcmp(inFileNames[i], s) == 0) { // if we have a match at this index, return true
 			return 1;
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 	}
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
-	vector<char *> inFileNames; // source file name vector
+	vector<const char *> inFileNames; // source file name vector
 	// handled flags for each option
 	bool vHandled = false;
 	bool pHandled = false;
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 			}
 
 		} else { // default case; assume regular file argument
-			char *fileName = argv[i];
+			const char *fileName = argv[i];
 			if (argv[i][0] == '-') {
 				fileName = STD_IN_FILE_NAME;
 			}
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
 		// check file arguments
-		char *fileName = inFileNames[i];
+		const char *fileName = inFileNames[i];
 		if (strcmp(fileName,"-") == 0) {
 			fileName = STD_IN_FILE_NAME;
 		}
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parsemes; // per-file vector of the parsemes that the parser is about to generate
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
-		char *fileName = inFileNames[fileIndex];
+		const char *fileName = inFileNames[fileIndex];
 		if (strcmp(fileName,"-") == 0) {
 			fileName = STD_IN_FILE_NAME;
 		}

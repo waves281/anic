@@ -3,9 +3,9 @@
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
-	y = {z = 10; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
+	y => {z = 10; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
-	retVal = {int, int};
+	retVal = [[int, int]];
 	
 	y ? { loop =>
 			y.z ?
@@ -19,7 +19,7 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
 /* name resolution testing */
 
-nameRes = {
+nameRes = [[]] {
 	x = [[int z --> int]] {
 		100 -->;
 		@main.y;

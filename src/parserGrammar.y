@@ -81,7 +81,7 @@ Pipes :
 Pipe : Declaration
 	| NonEmptyTerms
 	;
-Declaration : ID EQUALS NonEmptyTerms
+Declaration : ID EQUALS TypedStaticTerm
 	| ID ERARROW NonEmptyTerms
 	| AT QualifiedIdentifier
 	;
@@ -104,6 +104,11 @@ SimpleTerm : StaticTerm
 	| Send
 	;
 StaticTerm : Node
+	| Block
+	| BracketedExp
+	| Delatch
+	;
+TypedStaticTerm : Node
 	| BracketedExp
 	| Delatch
 	;
@@ -200,7 +205,6 @@ PrimLiteral : INUM
 	| SQUOTE
 	;
 NodeLiteral : NodeHeader Block
-	| Block
 	;
 NodeHeader : DLSQUARE ParamList RetList DRSQUARE
 	;

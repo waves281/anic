@@ -13,6 +13,7 @@
 %token SEMICOLON
 %token QUESTION
 %token COLON
+%token DCOLON
 %token LCURLY
 %token RCURLY
 %token LSQUARE
@@ -28,7 +29,6 @@
 %token SLASH
 %token DSLASH
 %token AT
-%token DCOLON
 
 /* arithmetic tokens */
 %token DOR
@@ -155,8 +155,8 @@ LatchTypeSuffix : SLASH
 	;
 StreamTypeSuffix : DSLASH
 	| DSLASH StreamTypeSuffix
-	| ArrayAccess
-	| ArrayAccess StreamTypeSuffix
+	| LSQUARE Exp RSQUARE
+	| LSQUARE Exp RSQUARE StreamTypeSuffix
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp DCOLON Exp RSQUARE

@@ -1,6 +1,16 @@
 @std;
 @std.gen;
 
+// real-time parallel clock + calculator hybrid program
+{
+	@std.in;
+	a=[[0\]]; op=[[' '\]]; b=[[0\]]; r=[[0\]];
+	0 { clock => [[int ms]] { ("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->std.out; 1 std.delay (ms+1) clock} };
+	inLoop => {\in->a \in->op \in->b inLoop};
+	\\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r;
+};
+
+
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
 	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};

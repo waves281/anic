@@ -12,6 +12,7 @@
 %token EQUALS
 %token SEMICOLON
 %token QUESTION
+%token DQUESTION
 %token COLON
 %token DCOLON
 %token LCURLY
@@ -77,6 +78,10 @@ Pipes :
 	| Pipe
 	| Pipe SEMICOLON Pipes
 	;
+LabeledPipes : StaticTerm COLON SimpleTerm
+	| StaticTerm COLON SimpleTerm LabeledPipes
+	| COLON SimpleTerm
+	;
 Pipe : Declaration
 	| NonEmptyTerms
 	;
@@ -92,13 +97,16 @@ Terms :
 Term : OpenTerm
 	| ClosedTerm
 	;
-OpenTerm : SimpleCond
-	| OpenCond
+OpenTerm : SimpleCondTerm
+	| OpenCondTerm
 	;
 ClosedTerm : SimpleTerm
-	| ClosedCond
+	| ClosedCondTerm
 	;
-SimpleTerm : StaticTerm
+SimpleTerm : DynamicTerm
+	| SwitchTerm
+	;
+DynamicTerm : StaticTerm
 	| Compound
 	| Link
 	| ArrayAccess
@@ -111,11 +119,13 @@ TypedStaticTerm : Node
 	| BracketedExp
 	| Delatch
 	;
-SimpleCond : QUESTION Term
+SwitchTerm : DQUESTION SwitchBlock
 	;
-OpenCond : QUESTION ClosedTerm COLON OpenTerm
+SimpleCondTerm : QUESTION Term
 	;
-ClosedCond : QUESTION ClosedTerm COLON ClosedTerm
+OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
+	;
+ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
 	;
 BracketedExp : LBRACKET Exp RBRACKET
 	;
@@ -124,6 +134,7 @@ Exp : ExpLeft ExpRight
 NonCastExp : NonCastExpLeft ExpRight
 	;
 ExpLeft : QualifiedIdentifier
+	| SLASH QualifiedIdentifier
 	| QualifiedIdentifier ArraySuffix
 	| NonCastExpLeft
 	;
@@ -131,6 +142,7 @@ NonCastExpLeft : PrimLiteral
 	| PrefixOrMultiOp ExpLeft
 	| LBRACKET NonCastExp RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET
+	| LBRACKET SLASH QualifiedIdentifier RBRACKET
 	| LBRACKET QualifiedIdentifier ArraySuffix RBRACKET
 	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
 	;
@@ -228,6 +240,8 @@ NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
 Block : LCURLY Pipes RCURLY
+	;
+SwitchBlock : LCURLY LabeledPipes RCURLY
 	;
 Delatch : SLASH Node
 	| DSLASH Node

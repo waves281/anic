@@ -72,12 +72,12 @@
 0 { LCURLY -1
 0 } RCURLY -1
 0 = EQUALS 10
-0 . PERIOD 113
+0 . PERIOD 114
 0 , COMMA -1
 0 \ SLASH 102
 0 ; SEMICOLON -1
-0 ? QUESTION -1
-0 : COLON 112
+0 ? QUESTION 112
+0 : COLON 113
 // arithmetic characters
 0 + PLUS 103
 0 - MINUS 104
@@ -342,8 +342,11 @@
 // state 111 (-- seen)
 111 > DRARROW -1
 
-// state 112 (: seen)
-112 : DCOLON -1
+// state 112 (? seen)
+112 ? DQUESTION -1
 
-// state 113 (. seen)
-113 . DPERIOD -1
+// state 113 (: seen)
+113 : DCOLON -1
+
+// state 114 (. seen)
+114 . DPERIOD -1

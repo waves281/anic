@@ -3,7 +3,7 @@
 
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
 
-	y => {z = 10; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
+	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
 	retVal = [[int, int]];
 	
@@ -39,7 +39,7 @@ table = [[int numChopsticks]] {
 		\chopsticks, \chopsticks -->;
 	};
 	returnChopsticks = [[int\ cs1, int\ cs2]] {
-		\cs1 $ \cs2 ->chopsticks;
+		\cs1 :: \cs2 ->chopsticks;
 	};
 };
 

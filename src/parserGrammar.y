@@ -28,7 +28,7 @@
 %token SLASH
 %token DSLASH
 %token AT
-%token DOLLAR
+%token DCOLON
 
 /* arithmetic tokens */
 %token DOR
@@ -70,7 +70,6 @@
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
 
-
 %%
 Program : Pipes
 	;
@@ -101,12 +100,12 @@ ClosedTerm : SimpleTerm
 	;
 SimpleTerm : StaticTerm
 	| Compound
+	| Link
+	| ArrayAccess
 	| Send
 	;
-StaticTerm : Node
+StaticTerm : TypedStaticTerm
 	| Block
-	| BracketedExp
-	| Delatch
 	;
 TypedStaticTerm : Node
 	| BracketedExp
@@ -140,7 +139,7 @@ ExpRight :
 	;
 Node : QualifiedIdentifier
 	| NodeInstantiation
-	| NodeLiteral
+	| TypedNodeLiteral
 	| PrimNode
 	| PrimLiteral
 	;
@@ -152,15 +151,18 @@ QualifiedIdentifier : ID
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
 	;
-LatchSuffix : SLASH
+LatchTypeSuffix : SLASH
 	;
-StreamSuffix : DSLASH
-	| DSLASH StreamSuffix
-	| LSQUARE Exp RSQUARE
-	| LSQUARE Exp RSQUARE StreamSuffix
+StreamTypeSuffix : DSLASH
+	| DSLASH StreamTypeSuffix
+	| ArrayAccess
+	| ArrayAccess StreamTypeSuffix
 	;
-ArraySuffix : LSQUARE Exp RSQUARE
-	| LSQUARE Exp RSQUARE ArraySuffix
+ArrayAccess : LSQUARE Exp RSQUARE
+	| LSQUARE Exp DCOLON Exp RSQUARE
+	;
+ArraySuffix : ArrayAccess
+	| ArrayAccess ArraySuffix
 	;
 PrimNode : PrefixOp
 	| InfixOp
@@ -188,7 +190,6 @@ InfixOp : DOR
 	| DIVIDE
 	| MOD
 	| DTIMES
-	| DOLLAR
 	;
 MultiOp : PLUS
 	| MINUS
@@ -204,7 +205,7 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-NodeLiteral : NodeHeader Block
+TypedNodeLiteral : NodeHeader Block
 	;
 NodeHeader : DLSQUARE ParamList RetList DRSQUARE
 	;
@@ -220,8 +221,8 @@ RetList :
 Param : Type ID
 	;
 Type : Node
-	| Node LatchSuffix
-	| Node StreamSuffix
+	| Node LatchTypeSuffix
+	| Node StreamTypeSuffix
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
@@ -232,6 +233,8 @@ Delatch : SLASH Node
 	| DSLASH Node
 	;
 Compound : COMMA StaticTerm
+	;
+Link : DCOLON StaticTerm
 	;
 Send : RARROW Node
 	| DRARROW

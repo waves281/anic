@@ -38,19 +38,16 @@ int main() {
 		if (out2 == NULL) { // if file open failed, return an error
 			return -1;
 	}
-	// print the necessary prologue into the output file
-	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
-	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
-	fprintf(out, "#include \"../src/lexer.h\"\n\n");
-	fprintf(out, "#define LEXER_STRUCT \\\n");
-	fprintf(out, "static LexerNode lexerNode[256][256]; \\\n");
-	fprintf(out, "static bool lexerNodesInitialized = false; \\\n");
-	fprintf(out, "if (!lexerNodesInitialized) { \\\n");
-	fprintf(out, "\tfor (int i = 0; i<256; i++) { \\\n");
-	fprintf(out, "\t\tfor (int j = 0; j<256; j++) { \\\n");
-	fprintf(out, "\t\t\tlexerNode[i][j].valid = 0; \\\n");
-	fprintf(out, "\t\t} \\\n");
-	fprintf(out, "\t} \\\n");
+
+	// print the necessary prologue into the .cpp
+	fprintf(out2, "#include \"lexerStruct.h\"\n\n");
+	// print out lexerInit to the .cpp
+	fprintf(out2, "void lexerInit(LexerNode lexerNode[256][256]) {\n");
+	fprintf(out2, "\tfor (int i = 0; i<256; i++) {\n");
+	fprintf(out2, "\t\tfor (int j = 0; j<256; j++) {\n");
+	fprintf(out2, "\t\t\tlexerNode[i][j].valid = 0;\n");
+	fprintf(out2, "\t\t}\n");
+	fprintf(out2, "\t}\n");
 	// now, process the input file
 	// data buffers
 	char lineBuf[MAX_STRING_LENGTH];
@@ -71,25 +68,12 @@ int main() {
 			continue;
 		} else if (retVal2 == 4) { // else if it was a valid data line, process it normally
 			int tokenType = mapToken(tokenTypeString); // get the token mapping
-			fprintf(out, "\tlexerNode[%d][%d] = (LexerNode){ 1, %d, %d }; \\\n", fromState, c, tokenType, toState);
+			fprintf(out2, "\tlexerNode[%d][%d] = (LexerNode){ 1, %d, %d };\n", fromState, c, tokenType, toState);
 		}
 	}
-	// terminate the structure definition
-	fprintf(out, "\t\\\n");
-	fprintf(out, "\tlexerNodesInitialized = true; \\\n");
-	fprintf(out, "} \n\n");
-	// print out token definitions
-	fprintf(out, "#define NUM_TOKENS %d\n\n", tokenMap.size());
-	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
-		fprintf(out, "#define TOKEN_%s %d\n", queryBuf->first.c_str(), queryBuf->second);
-	}
-	// print out additional $end token definition
-	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
-	fprintf(out, "\n");
-	// print out the tokenType2String forward declaration to the .h
-	fprintf(out, "const char *tokenType2String(int tokenType);\n\n");
+	// terminate the lexerInit definition
+	fprintf(out2, "}\n\n");
 	// print out tokenType2String to the .cpp
-	fprintf(out2, "#include \"lexerStruct.h\"\n\n");
 	fprintf(out2, "const char *tokenType2String(int tokenType) {\n");
 	fprintf(out2, "\tswitch(tokenType) {\n");
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
@@ -105,6 +89,23 @@ int main() {
 	fprintf(out2, "\t}\n");
 	fprintf(out2, "\treturn NULL; // can't happen if the above covers all cases, which it should\n");
 	fprintf(out2, "}\n");
+
+	// print the necessary prologue into the .h
+	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
+	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
+	fprintf(out, "#include \"../src/lexer.h\"\n\n");
+	// print out token definitions to the .h
+	fprintf(out, "#define NUM_TOKENS %d\n\n", tokenMap.size());
+	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
+		fprintf(out, "#define TOKEN_%s %d\n", queryBuf->first.c_str(), queryBuf->second);
+	}
+	// print out additional $end token definition
+	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
+	fprintf(out, "\n");
+	// print out the forward declarations to the .h
+	fprintf(out, "void lexerInit(LexerNode lexerNode[256][256]);\n\n");
+	fprintf(out, "const char *tokenType2String(int tokenType);\n\n");
+
 	fprintf(out, "#endif\n");
 	// finally, return normally
 	return 0;

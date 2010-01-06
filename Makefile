@@ -1,6 +1,8 @@
 TARGET = anic.exe
 INSTALL_PATH = /usr/bin
 
+CFLAGS = -O3 -static -s -fomit-frame-pointer -ffast-math -pipe -Wall
+
 TEST_FILES = tst/test.ani
 
 
@@ -61,6 +63,11 @@ tmp/version.exe: bld/version.c
 	@mkdir -p tmp
 	@gcc bld/version.c -o tmp/version.exe
 
+tmp/lexerStruct.o: src/lexer.h var/lexerStruct.h var/lexerStruct.cpp
+	@echo Compiling lexer structure object...
+	@mkdir -p tmp
+	@g++ var/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
+
 var/lexerStruct.h var/lexerStruct.cpp: tmp/lexerStructGen.exe src/lexerTable.txt
 	@echo Generating lexer structures...
 	@mkdir -p var
@@ -70,6 +77,11 @@ tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
 	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen.exe
+	
+tmp/parserStruct.o: src/parser.h var/parserStruct.h var/parserStruct.cpp
+	@echo Compiling parser structure object...
+	@mkdir -p tmp
+	@g++ var/parserStruct.cpp $(CFLAGS) -c -o tmp/parserStruct.o
 
 var/parserStruct.h: tmp/parserStructGen.exe var/parserTable.txt
 	@echo Generating parser structure...
@@ -94,20 +106,14 @@ var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 
 ### CORE APPLICATION
 
-$(TARGET): tmp/version.exe var/lexerStruct.h var/parserStruct.h bld/hexTruncate.awk \
+$(TARGET): tmp/version.exe var/parserStruct.h bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 		src/lexer.h src/parser.h src/semmer.h \
-		src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp src/semmer.cpp
+		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
 	@echo Building main executable...
-	@g++ src/core.cpp src/system.cpp src/customOperators.cpp var/lexerStruct.cpp src/lexer.cpp src/parser.cpp src/semmer.cpp \
+	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | shasum | awk -f bld/hexTruncate.awk `\"" \
-	-o $(TARGET) \
-	-O3 \
-	-static \
-	-s \
-	-fomit-frame-pointer \
-	-ffast-math \
-	-pipe \
-	-Wall
+	$(CFLAGS) \
+	-o $(TARGET)
 	@echo Done building main executable.

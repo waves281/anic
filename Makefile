@@ -67,27 +67,28 @@ tmp/version.exe: bld/version.c
 	
 # LEXER
 
-var/lexerStruct.h var/lexerStruct.cpp: tmp/lexerStructGen.exe src/lexerTable.txt
+var/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen.exe src/lexerTable.txt src/lexer.h
 	@echo Generating lexer structures...
 	@mkdir -p var
 	@./tmp/lexerStructGen.exe
+	@echo Compiling lexer structure object...
+	@mkdir -p tmp
+	@g++ var/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
 tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
 	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen.exe
-	
-tmp/lexerStruct.o: src/lexer.h var/lexerStruct.h var/lexerStruct.cpp
-	@echo Compiling lexer structure object...
-	@mkdir -p tmp
-	@g++ var/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
-	
+
 # PARSER
 
-var/parserStruct.h: tmp/parserStructGen.exe var/parserTable.txt
+var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen.exe var/parserTable.txt src/parser.h
 	@echo Generating parser structure...
 	@mkdir -p var
 	@./tmp/parserStructGen.exe
+	@echo Compiling parser structure object...
+	@mkdir -p tmp
+	@g++ var/parserStruct.cpp $(CFLAGS) -O1 -c -o tmp/parserStruct.o
 
 tmp/parserStructGen.exe: bld/parserStructGen.cpp
 	@echo Building parser structure generator...
@@ -102,11 +103,6 @@ var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 	@echo Generating parser table...
 	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.output var/parserTable.txt
-	
-tmp/parserStruct.o: src/parser.h var/parserStruct.h var/parserStruct.cpp
-	@echo Compiling parser structure object...
-	@mkdir -p tmp
-	@g++ var/parserStruct.cpp $(CFLAGS) -O1 -c -o tmp/parserStruct.o
 
 
 

@@ -209,9 +209,12 @@ Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int
 	parserErrorCode = 0;
 	parserEventuallyGiveUp = eventuallyGiveUp;
 
-	// initialize lexer structure
-	// int ruleLength[NUM_RULES], ruleLhs[NUM_RULES], and ParserNode parserNode[NUM_RULES][NUM_TOKENS] are hereby defined and usable
-	PARSER_STRUCT;
+	// initialize parser structures
+	static unsigned int ruleRhsLength[NUM_RULES];
+	static int ruleLhsTokenType[NUM_RULES];
+	static const char *ruleLhsTokenString[NUM_RULES];
+	static ParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS];
+	parserInit(ruleRhsLength, ruleLhsTokenType, ruleLhsTokenString, parserNode); // defined in the generated structure
 
 	// iterate through the lexemes and do the actual parsing
 

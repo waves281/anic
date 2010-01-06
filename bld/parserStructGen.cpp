@@ -18,13 +18,18 @@ int main() {
 	if (in == NULL) { // if file open failed, return an error
 		return -1;
 	}
-	// output file
+	// output files
 	FILE *out;
 	out = fopen("./var/parserStruct.h","w");
 	if (out == NULL) { // if file open failed, return an error
 		return -1;
 	}
-	// print the necessary prologue into the output file
+	FILE *out2;
+		out2 = fopen("./var/parserStruct.cpp","w");
+		if (out2 == NULL) { // if file open failed, return an error
+			return -1;
+	}
+	// print the necessary prologue into the .h
 	fprintf(out, "#ifndef _PARSER_STRUCT_H_\n");
 	fprintf(out, "#define _PARSER_STRUCT_H_\n\n");
 	fprintf(out, "#include \"../src/parser.h\"\n\n");
@@ -83,29 +88,36 @@ int main() {
 			parsingNonTerms = true;
 		}
 		if (parsingNonTerms) {
-			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), 1 + nonTermCount);
+			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), (1 + nonTermCount));
 			nonTermCount++;
 		}
 		// push the string to the token ordering map
 		tokenOrder.insert( make_pair(tokenOrder.size(), token) );
 	}
+	// print out the definition of the number of nonterminals
 	fprintf(out, "\n");
+	fprintf(out, "#define NUM_NONTERMS %d\n\n", (1 + nonTermCount));
+	// print out the epilogue into the .h
+	fprintf(out, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
+	fprintf(out, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
+	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
+	fprintf(out, "\t\tParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS] );\n\n");
+	fprintf(out, "#endif\n");
 
-	// print struct header
-	fprintf(out, "#define PARSER_STRUCT \\\n");
-	fprintf(out, "static unsigned int ruleRhsLength[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static int ruleLhsTokenType[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static const char *ruleLhsTokenString[NUM_RULES]; \\\n", NUM_RULES);
-	fprintf(out, "static ParserNode parserNode[NUM_RULES][NUM_TOKENS + %d]; \\\n", NUM_RULES, 1 + nonTermCount);
-	fprintf(out, "static bool parserNodesInitialized = false; \\\n");
-	fprintf(out, "if (!parserNodesInitialized) { \\\n");
+	// print the necessary prologue into the .cpp
+	fprintf(out2, "#include \"parserStruct.h\"\n\n");
+	// print out parserInit to the .cpp
+	fprintf(out2, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
+	fprintf(out2, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
+	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
+	fprintf(out2, "\t\tParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS] ) {\n\n");
 	// initialize all parser nodes to error conditions
-	fprintf(out, "\tfor (unsigned int i=0; i < NUM_RULES; i++) { \\\n");
-	fprintf(out, "\t\tfor (unsigned int j=0; j < (NUM_TOKENS + %d); j++) { \\\n", 1 + nonTermCount);
-	fprintf(out, "\t\t\tparserNode[i][j].action = ACTION_ERROR; \\\n");
-	fprintf(out, "\t\t} \\\n");
-	fprintf(out, "\t} \\\n");
-	fprintf(out, "\t\\\n");
+	fprintf(out2, "\tfor (unsigned int i=0; i < NUM_RULES; i++) {\n");
+	fprintf(out2, "\t\tfor (unsigned int j=0; j < (NUM_TOKENS + NUM_NONTERMS); j++) {\n");
+	fprintf(out2, "\t\t\tparserNode[i][j].action = ACTION_ERROR;\n");
+	fprintf(out2, "\t\t}\n");
+	fprintf(out2, "\t}\n");
+	fprintf(out2, "\t\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);
@@ -173,12 +185,12 @@ int main() {
 		}
 		// then, log the lhs tokenType, lhs tokenString and rhs size of the rule in the corresponding arrays
 		if (lhs != "$accept") {
-			fprintf(out, "\truleLhsTokenType[%d] = TOKEN_%s; \\\n", i, lhs.c_str());
-			fprintf(out, "\truleLhsTokenString[%d] = \"%s\"; \\\n", i, lhs.c_str());
+			fprintf(out2, "\truleLhsTokenType[%d] = TOKEN_%s;\n", i, lhs.c_str());
+			fprintf(out2, "\truleLhsTokenString[%d] = \"%s\";\n", i, lhs.c_str());
 		}
-		fprintf(out, "\truleRhsLength[%d] = %d; \\\n", i, rhsElements);
+		fprintf(out2, "\truleRhsLength[%d] = %d;\n", i, rhsElements);
 	}
-	fprintf(out, "\t\\\n");
+	fprintf(out2, "\n");
 
 	// now, scan ahead to the parse table
 	tableFound = false;
@@ -229,22 +241,19 @@ int main() {
 			}
 			// branch based on the type of transition action it is
 			if (junk[0] == 's') { // shift action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_SHIFT", atoi(junk+1) );
+				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_SHIFT", atoi(junk+1) );
 			} else if (junk[0] == 'r') { // reduce action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_REDUCE", atoi(junk+1) );
+				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_REDUCE", atoi(junk+1) );
 			} else if (junk[0] == 'a') { // accept action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", 0 );
+				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", 0 );
 			} else if (junk[0] == 'g') { // goto action
-				fprintf(out, "\tparserNode[%d][%s] = (ParserNode){ %s, %d }; \\\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", atoi(junk+1) );
+				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", atoi(junk+1) );
 			}
 			// do nothing on error states; all states have been defaulted to ACTION_ERROR already
 		}
 	}
-	// print out the epilogue
-	fprintf(out, "\t\\\n");
-	fprintf(out, "\tparserNodesInitialized = true; \\\n");
-	fprintf(out, "} \n\n");
-	fprintf(out, "#endif\n");
+	// print out the epilogue into the .cpp
+	fprintf(out2, "}\n");
 	// finally, return normally
 	return 0;
 }

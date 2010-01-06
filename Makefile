@@ -83,7 +83,7 @@ tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 # PARSER
 
 var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen.exe var/parserTable.txt src/parser.h
-	@echo Generating parser structure...
+	@echo Generating parser structures...
 	@mkdir -p var
 	@./tmp/parserStructGen.exe
 	@echo Compiling parser structure object...
@@ -100,7 +100,7 @@ tmp/hyacc.exe: bld/hyacc/makefile
 	@make --directory=bld/hyacc --makefile=makefile -s
 
 var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
-	@echo Generating parser table...
+	@echo Constructing parser table...
 	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.output var/parserTable.txt
 

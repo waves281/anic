@@ -50,6 +50,8 @@ u: uninstall
 
 c: clean
 
+p: purge
+
 
 
 ### WRAPPER RULES

@@ -13,6 +13,9 @@ main: start $(TARGET)
 
 all: start cleanout test install
 
+test: start $(TARGET)
+	@bld/runTests.sh anic -v $(TEST_FILES)
+
 install: start $(TARGET)
 	@bld/installBinary.sh $(TARGET) $(INSTALL_PATH)
 
@@ -59,9 +62,6 @@ p: purge
 start: 
 	@echo anic ANI Compiler Makefile
 	@echo
-
-test: start $(TARGET)
-	@bld/runTests.sh anic -v $(TEST_FILES)
 
 
 

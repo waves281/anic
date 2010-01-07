@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 				}
 				int n;
 				if (sscanf(argv[i], "%d", &n) < 1) { // unsuccessful attempt to extract a number out of the argument
-					printError("-p got illegal optimization level '" << n << "'");
+					printError("-p got illegal optimization level '" << argv[i] << "'");
 					die();
 				} else { // else attempt was successful
 					if (n >= MIN_OPTIMIZATION_LEVEL && n <= MAX_OPTIMIZATION_LEVEL) {

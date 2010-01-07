@@ -103,7 +103,7 @@ int main() {
 	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
 	fprintf(out, "\n");
 	// print out the forward declarations to the .h
-	fprintf(out, "void lexerInit(LexerNode lexerNode[256][256]);\n\n");
+	fprintf(out, "void lexerInit(LexerNode lexerNode[256][256]);\n");
 	fprintf(out, "const char *tokenType2String(int tokenType);\n\n");
 
 	fprintf(out, "#endif\n");

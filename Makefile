@@ -92,7 +92,7 @@ tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 
 # PARSER
 
-var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen.exe var/parserTable.txt src/parser.h
+var/parserStruct.h tmp/parserStruct.o: var/lexerStruct.h tmp/parserStructGen.exe var/parserTable.txt src/parser.h
 	@echo Generating parser structures...
 	@mkdir -p var
 	@./tmp/parserStructGen.exe

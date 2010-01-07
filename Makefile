@@ -13,13 +13,8 @@ main: start $(TARGET)
 
 all: start cleanout test install
 
-test: $(TARGET)
-	@bld/runTests.sh anic -v $(TEST_FILES)
-
 install: start $(TARGET)
-	@echo Installing...
-	@cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)
-	@echo Done installing.
+	@bld/installBinary.sh $(TARGET) $(INSTALL_PATH)
 
 uninstall: start
 	@echo Uninstalling...
@@ -36,6 +31,7 @@ cleanout: start
 	@rm -f tmp/version.exe
 	@rm -f tmp/lexerStructGen.exe
 	@rm -f tmp/parserStructGen.exe
+	@rm -f var/testCertificate.dat
 	@make --directory=bld/hyacc --makefile=makefile clean -s
 
 purge: start uninstall clean
@@ -58,9 +54,12 @@ c: clean
 
 ### WRAPPER RULES
 
-start:
+start: 
 	@echo anic ANI Compiler Makefile
 	@echo
+
+test: start $(TARGET)
+	@bld/runTests.sh anic -v $(TEST_FILES)
 
 
 
@@ -122,6 +121,7 @@ $(TARGET): tmp/version.exe bld/hexTruncate.awk \
 		src/lexer.h src/parser.h src/semmer.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
 	@echo Building main executable...
+	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
 	-D BUILD_NUMBER_SUB="\"` date | shasum | awk -f bld/hexTruncate.awk `\"" \

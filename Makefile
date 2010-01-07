@@ -13,6 +13,9 @@ main: start $(TARGET)
 
 all: start cleanout test install
 
+test: $(TARGET)
+	@bld/runTests.sh anic -v $(TEST_FILES)
+
 install: start $(TARGET)
 	@echo Installing...
 	@cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)
@@ -39,19 +42,25 @@ purge: start uninstall clean
 
 
 
+### SHORTCUT ALIASES
+
+a: all
+
+t: test
+
+i: install
+
+u: uninstall
+
+c: clean
+
+
+
 ### WRAPPER RULES
 
 start:
 	@echo anic ANI Compiler Makefile
 	@echo
-
-test: $(TARGET)
-	@echo
-	@echo ...Running default test cases...
-	@echo --------------------------------
-	./$(TARGET) -v $(TEST_FILES)
-	@echo --------------------------------
-	@echo Done running default test cases.
 
 
 

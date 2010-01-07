@@ -44,7 +44,10 @@ int main(int argc, char **argv) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
 				verboseOutput = true;
-				VERBOSE(printNotice("verbose output enabled");)
+				VERBOSE (
+					printNotice("verbose output enabled");
+					print("");
+				)
 				// flag this option as handled
 				vHandled = true;
 			} else if (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
@@ -109,25 +112,29 @@ int main(int argc, char **argv) {
 			fileName = STD_IN_FILE_NAME;
 		}
 		VERBOSE(
-			cout << "\n";
 			printNotice("lexing file \'" << fileName << "\'...");
 		)
 		// do the actual lexing
+		int thisLexError = 0; // one-shot error flag
 		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
-			lexerError = 1;
+			thisLexError = 1;
 		} else { // else if lexing was successful, log the lexeme to the vector
 			lexemes.push_back(lexeme);
 		}
 		// print out the tokens if we're in verbose mode
 		VERBOSE(
-			if (!lexerError) {
+			if (!thisLexError) {
 				printNotice("successfully lexed file \'" << fileName << "\'");
 			} else {
 				printNotice("failed to lex file \'" << fileName << "\'");
 			}
 			print(""); // new line
 		)
+		// log the highest error code that occured
+		if (thisLexError > lexerError) {
+			lexerError = thisLexError;
+		}
 	}
 	// now, check if lexing failed and kill the system as appropriate
 	if (lexerError) {
@@ -145,19 +152,24 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
+		int thisParseError = 0; // one-shot error flag
 		Tree *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
 		if (parseme == NULL || parseme->t.tokenType != TOKEN_Program) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
 				print(""); // new line
 			)
-			parserError = 1;
+			thisParseError = 1;
 		} else { // else if parsing was successful, log the parseme to the vector
 			VERBOSE(
 				printNotice("successfully parsed file \'" << fileName << "\'");
 				print(""); // new line
 			)
 			parsemes.push_back(parseme);
+		}
+		// log the highest error code that occured
+		if (thisParseError > parserError) {
+			parserError = thisParseError;
 		}
 		// advance file name index
 		fileIndex++;

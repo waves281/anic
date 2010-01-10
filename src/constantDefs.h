@@ -3,8 +3,6 @@
 
 #define PROGRAM_STRING "anic"
 #define LANGUAGE_STRING "ANI"
-#define VERSION_STRING "0.62"
-#define VERSION_YEAR "2009"
 #define HOME_PAGE "http://anic.googlecode.com/"
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" v.["<<VERSION_STRING<<"."<<BUILD_NUMBER_MAIN<<"."<<BUILD_NUMBER_SUB<<"] Compiler (c) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" /* compiler header */

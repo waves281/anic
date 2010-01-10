@@ -1,9 +1,13 @@
 TARGET = ./anic
-MAKE_PROGRAM = make
-CHECKSUM_PROGRAM = sha256sum
 INSTALL_PATH = /usr/bin
 
-CFLAGS = -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
+VERSION_STRING = "0.63"
+VERSION_YEAR = "2009"
+
+MAKE_PROGRAM = make
+CHECKSUM_PROGRAM = sha256sum
+
+CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
 
 TEST_FILES = tst/test.ani
 
@@ -120,14 +124,15 @@ var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 
 ### CORE APPLICATION
 
-$(TARGET): tmp/version.exe bld/hexTruncate.awk \
+$(TARGET): Makefile \
+		tmp/version.exe bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 		src/lexer.h src/parser.h src/semmer.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
-	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
+	-D BUILD_NUMBER_MAIN="\"` ./tmp/version.exe $(VERSION_STRING) `\"" \
 	-D BUILD_NUMBER_SUB="\"` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `\"" \
 	$(CFLAGS) \
 	-o $(TARGET)

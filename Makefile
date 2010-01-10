@@ -1,4 +1,4 @@
-TARGET = anic.exe
+TARGET = "./anic.exe"
 INSTALL_PATH = /usr/bin
 
 CFLAGS = -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
@@ -14,7 +14,7 @@ main: start $(TARGET)
 all: start cleanout test install
 
 test: start $(TARGET)
-	@bld/runTests.sh anic -v $(TEST_FILES)
+	@bld/runTests.sh $(TARGET) -v $(TEST_FILES)
 
 install: start $(TARGET)
 	@bld/installBinary.sh $(TARGET) $(INSTALL_PATH)
@@ -92,7 +92,7 @@ tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
 
 # PARSER
 
-var/parserStruct.h tmp/parserStruct.o: var/lexerStruct.h tmp/parserStructGen.exe var/parserTable.txt src/parser.h
+var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen.exe var/parserTable.txt src/parser.h
 	@echo Generating parser structures...
 	@mkdir -p var
 	@./tmp/parserStructGen.exe

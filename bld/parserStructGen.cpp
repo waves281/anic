@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <map>
-using std::map;
-#include <string>
-using std::string;
-
 #include "../src/mainDefs.h"
 #include "../src/constantDefs.h"
 

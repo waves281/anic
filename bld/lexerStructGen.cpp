@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <string>
-using std::string;
-#include <map>
-using std::map;
-
+#include "../src/mainDefs.h"
 #include "../src/constantDefs.h"
 
 map<string,int> tokenMap;

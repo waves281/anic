@@ -87,7 +87,7 @@ Pipe : Declaration
 	;
 Declaration : ID EQUALS TypedStaticTerm
 	| ID ERARROW NonEmptyTerms
-	| AT QualifiedIdentifier
+	| AT Identifier
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -109,7 +109,6 @@ SimpleTerm : DynamicTerm
 DynamicTerm : StaticTerm
 	| Compound
 	| Link
-	| ArrayAccess
 	| Send
 	;
 StaticTerm : TypedStaticTerm
@@ -129,36 +128,40 @@ ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
 	;
 BracketedExp : LBRACKET Exp RBRACKET
 	;
-Exp : ExpLeft ExpRight
+Exp : ExpLeft
+	| ExpLeft ExpRight
 	;
 NonCastExp : NonCastExpLeft ExpRight
 	;
-ExpLeft : QualifiedIdentifier
-	| SLASH QualifiedIdentifier
-	| QualifiedIdentifier ArraySuffix
+ExpLeft : Identifier
+	| SLASH Identifier
 	| NonCastExpLeft
 	;
 NonCastExpLeft : PrimLiteral
 	| PrefixOrMultiOp ExpLeft
 	| LBRACKET NonCastExp RBRACKET
-	| LBRACKET QualifiedIdentifier RBRACKET
-	| LBRACKET SLASH QualifiedIdentifier RBRACKET
-	| LBRACKET QualifiedIdentifier ArraySuffix RBRACKET
-	| LBRACKET QualifiedIdentifier RBRACKET ExpLeft
+	| LBRACKET Identifier RBRACKET
+	| LBRACKET SLASH Identifier RBRACKET
+	| LBRACKET Identifier ExpRight RBRACKET
+	| LBRACKET SLASH Identifier ExpRight RBRACKET
+	| LBRACKET Identifier RBRACKET ExpLeft
 	;
-ExpRight : 
-	| InfixOrMultiOp Exp
+ExpRight : InfixOrMultiOp Exp
 	;
-Node : QualifiedIdentifier
+Node : Identifier
 	| NodeInstantiation
 	| TypedNodeLiteral
 	| PrimNode
 	| PrimLiteral
 	;
-QualifiedIdentifier : ID
-	| ID PERIOD QualifiedIdentifier
+Identifier : ID
+	| ID PERIOD Identifier
+	| ID ArraySuffix
+	| ID ArraySuffix PERIOD Identifier
 	| DPERIOD
-	| DPERIOD PERIOD QualifiedIdentifier
+	| DPERIOD PERIOD Identifier
+	| DPERIOD ArraySuffix
+	| DPERIOD ArraySuffix PERIOD Identifier
 	;
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
@@ -167,8 +170,6 @@ LatchTypeSuffix : SLASH
 	;
 StreamTypeSuffix : DSLASH
 	| DSLASH StreamTypeSuffix
-	| LSQUARE Exp RSQUARE
-	| LSQUARE Exp RSQUARE StreamTypeSuffix
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp DCOLON Exp RSQUARE

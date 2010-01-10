@@ -150,12 +150,12 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 	// log the current symbol environment in the parseme
 	parseme->env = st;
 	// recursive cases
-	if (parseme->t.tokenType == TOKEN_QualifiedIdentifier) { // if it's a QualifiedIdentifier
+	if (parseme->t.tokenType == TOKEN_Identifier) { // if it's an Identifier
 		if (!(parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT)) { // if it's non-import
 			// log this identifier use case
 			instanceList.push_back(parseme);
-			// *don't* recurse any deeper in this QualifiedIdentifier
-		} else { // else if it's an import QualifiedIdentifier
+			// *don't* recurse any deeper in this Identifier
+		} else { // else if it's an import Identifier
 			// recurse on the right only; i.e. don't log import subidentifiers as use cases
 			extractNodes(parseme->next, st, importList, instanceList, netsList, netsHandled); // right
 		}
@@ -206,7 +206,7 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 			*st *= newDef;
 			// recurse
 			extractNodes(parseme->child, newDef, importList, instanceList, netsList, netsHandled); // child of Declaration
-		} else if (t.tokenType == TOKEN_QualifiedIdentifier) { // import declaration
+		} else if (t.tokenType == TOKEN_Identifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, parseme);
 			// ... and link it in
@@ -225,7 +225,7 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
 // returns NULL if no binding can be found
-SymbolTable *bindQI(string qi, SymbolTable *env) {
+SymbolTable *bindId(string qi, SymbolTable *env) {
 	// base case
 	if (env == NULL) {
 		return NULL;
@@ -235,7 +235,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 // LOL
 	}
 	// recursive case
-	string tip = qiTip(qi);
+	string tip = idTip(qi);
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
 		if ((*latchIter)->id == tip) { // if we've found a latch point
@@ -302,7 +302,7 @@ SymbolTable *bindQI(string qi, SymbolTable *env) {
 	while (recurseSt != NULL && recurseSt->kind != KIND_BLOCK) {
 		recurseSt = recurseSt->parent;
 	}
-	return bindQI(qi, recurseSt);
+	return bindId(qi, recurseSt);
 }
 
 void subImportDecls(vector<SymbolTable *> &importList) {
@@ -310,7 +310,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 	// per-import loop
 	for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 		// extract the import path out of the iterator
-		string importPath = qi2String((*importIter)->defSite->child->next);
+		string importPath = id2String((*importIter)->defSite->child->next);
 		// standard import special-casing
 		if (importPath == "std") { // if it's the standard import
 			if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -320,7 +320,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 			}
 		}
 		// try to find a binding for this import
-		SymbolTable *binding = bindQI(importPath, *importIter);
+		SymbolTable *binding = bindId(importPath, *importIter);
 		if (binding != NULL) { // if we found a binding
 			// check to make sure that this import doesn't cause a binding conflict
 			string importPathTip = binding->id; // must exist if binding succeeed
@@ -328,7 +328,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 			vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 			while (childIter != (*importIter)->parent->children.end()) {
 				if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
-					Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of QualifiedIdentifier
+					Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
 					Token prevDefToken;
 					if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
 						prevDefToken = (*childIter)->defSite->t;
@@ -358,8 +358,8 @@ void bindInstances(vector<Tree *> &instanceList) {
 	// per-instance loop
 	for (vector<Tree *>::iterator instanceIter = instanceList.begin(); instanceIter != instanceList.end(); instanceIter++) {
 		Tree *qi = *instanceIter;
-		string qiString = qi2String(qi);
-		SymbolTable *binding = bindQI(qiString, qi->env);
+		string qiString = id2String(qi);
+		SymbolTable *binding = bindId(qiString, qi->env);
 		if (binding != NULL) { // if we found a binding for this identifier, latch it
 			qi->env = binding;
 		} else { // else if we couldn't find a binding
@@ -387,7 +387,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 
 	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
 	vector<SymbolTable *> importList; // import Declaration nodes
-	vector<Tree *> instanceList; // top-level non-import QualifiedIdentifier nodes
+	vector<Tree *> instanceList; // top-level non-import Identifier nodes
 	vector<Tree *> netsList; // list of top-level Term nodes
 	extractNodes(rootParseme, stRoot, importList, instanceList, netsList, false);
 

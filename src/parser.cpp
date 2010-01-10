@@ -104,16 +104,21 @@ Tree *Tree::operator()(char *s) {
 
 // exported tree parsing functions
 
-string qi2String(Tree *t) {
+string id2String(Tree *t) {
 	string retVal;
-	Tree *cur = t; // invariant: cur is a QualifiedIdentifier
+	Tree *cur = t; // invariant: cur is an Identifier
 	for(;;) {
 		// log this part of the name
 		retVal += cur->child->t.s;
 		// advance
-		if (cur->child->next != NULL) { // if we're not at the end yet
+		cur = cur->child->next;
+		if (cur != NULL && cur->t.tokenType == TOKEN_ArraySuffix) { // move past a potential ArraySuffix
+			cur = cur->next;
+		}
+		// we're now at a PERIOD or NULL
+		if (cur != NULL) { // if we're not at the end yet
 			retVal += '.';
-			cur = cur->child->next->next; // QualifiedIdentifier
+			cur = cur->next; // Identifier
 		} else { // else if we're at the end
 			break;
 		}
@@ -121,7 +126,7 @@ string qi2String(Tree *t) {
 	return retVal;
 }
 
-string qiTip(string &qi) {
+string idTip(string &qi) {
 	string retVal;
 	for (unsigned int i=0; i<qi.size(); i++) {
 		if (qi[i] == '.') {
@@ -133,7 +138,7 @@ string qiTip(string &qi) {
 	return retVal;
 }
 
-string qiEnd(string &qi) {
+string idEnd(string &qi) {
 	string retVal;
 	for (unsigned int i=0; i<qi.size(); i++) {
 		if (qi[i] == '.') {

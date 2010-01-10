@@ -53,9 +53,9 @@ class Tree {
 		Tree *operator()(char *s);
 };
 
-string qi2String(Tree *t);
-string qiTip(string &qi);
-string qiEnd(string &qi);
+string id2String(Tree *t);
+string idTip(string &qi);
+string idEnd(string &qi);
 vector<string> qiChop(string &qi);
 Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 

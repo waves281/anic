@@ -1,4 +1,6 @@
-TARGET = "./anic.exe"
+TARGET = ./anic
+MAKE_PROGRAM = make
+CHECKSUM_PROGRAM = sha256sum
 INSTALL_PATH = /usr/bin
 
 CFLAGS = -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
@@ -35,7 +37,7 @@ cleanout: start
 	@rm -f tmp/lexerStructGen.exe
 	@rm -f tmp/parserStructGen.exe
 	@rm -f var/testCertificate.dat
-	@make --directory=bld/hyacc --makefile=makefile clean -s
+	@$(MAKE_PROGRAM) --directory=bld/hyacc --makefile=makefile clean -s
 
 purge: start uninstall clean
 
@@ -107,7 +109,7 @@ tmp/parserStructGen.exe: bld/parserStructGen.cpp
 
 tmp/hyacc.exe: bld/hyacc/makefile
 	@echo Building parser table generator...
-	@make --directory=bld/hyacc --makefile=makefile -s
+	@$(MAKE_PROGRAM) --directory=bld/hyacc --makefile=makefile -s
 
 var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 	@echo Constructing parser table...
@@ -126,8 +128,7 @@ $(TARGET): tmp/version.exe bld/hexTruncate.awk \
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 	-D BUILD_NUMBER_MAIN="\"`./tmp/version.exe`\"" \
-	-D BUILD_NUMBER_SUB="\"` date | shasum | awk -f bld/hexTruncate.awk `\"" \
+	-D BUILD_NUMBER_SUB="\"` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `\"" \
 	$(CFLAGS) \
-	-static \
 	-o $(TARGET)
 	@echo Done building main executable.

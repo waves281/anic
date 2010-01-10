@@ -45,27 +45,28 @@ x=10e-1;
 
 // Dining philosophers problem
 
-table = [[int numChopsticks]] {
-	chopsticks = [[ int[numChopsticks] ]];
-	getChopsticks = [[--> int\, int\]] {
-		\chopsticks, \chopsticks -->;
-	};
-	returnChopsticks = [[int\ cs1, int\ cs2]] {
-		\cs1 :: \cs2 ->chopsticks;
-	};
-};
-
-philosopher = [[table\ t, int id]] {
+philosopher = [[int id]] {
+	chopstick = [[int\]] <- 0;
+	leftPhil = [[philosopher]];
+	rightPhil = [[philosopher]];
+	
+	getChopsticks = [[--> int\, int\]] { \leftPhil.chopstick, \rightPhil.chopstick --> };
+	returnChopsticks = [[int\ cs1, int\ cs2]] { \cs1 ->leftPhil.chopStick; \cs2 ->rightPhil.chopStick; };
 	eat = [[int\ cs1, int\ cs2 --> int\, int\]] {
 		"Philosopher " + id + " eating...\n" ->std.out;
 		\cs1, \cs2 -->;
 	};
-	loopback => std.rand std.delay \t.getChopSticks eat ->t.returnChopsticks loopback;
+	
+	loopback => std.rand std.delay \getChopsticks eat ->returnChopsticks loopback;
 };
 
-numPhilosophers = 5;
+numPhils = 5;
 
-t = [[table\]] <- numPhilosophers;
-\\[[std.gen]] <- numPhilosophers [[philosopher]] <- {t, ..};
+philStream = [[philosopher\\]];
+\\[[std.gen]] <- numPhils {
+	[[philosopher]] <- {..} ->philStream;
+	philStream[(.. - 1) % numPhils] ->philStream[..].leftPhil;
+	philStream[(.. + 1) % numPhils] ->philStream[..].rightPhil;
+};
 
 // EOF comment

@@ -2,7 +2,7 @@ TARGET = ./anic
 INSTALL_PATH = /usr/local/bin
 
 VERSION_STRING = "0.63"
-VERSION_YEAR = "2009"
+VERSION_YEAR = "2010"
 
 MAKE_PROGRAM = /usr/bin/make
 CHECKSUM_PROGRAM = sha256sum

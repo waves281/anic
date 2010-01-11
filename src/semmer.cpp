@@ -230,7 +230,7 @@ SymbolTable *bindId(string qi, SymbolTable *env) {
 	if (env == NULL) {
 		return NULL;
 	}
-	// this-reference case
+	// recall identifier case
 	if (qi[0] == '.' && qi[1] == '.') {
 // LOL
 	}
@@ -369,8 +369,50 @@ void bindInstances(vector<Tree *> &instanceList) {
 	}
 }
 
-void traceTypes(vector<Tree *> &netsList) {
+void traceType(Tree *term, Type *inType) {
+	Tree *tc2 = term->child->child;
+	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
 
+	} else if (tc2->t.tokenType == TOKEN_OpenCondTerm) {
+
+	} else if (tc2->t.tokenType == TOKEN_SimpleTerm) {
+		Tree *tc3 = tc2->child;
+		if (tc3->t.tokenType == TOKEN_DynamicTerm) {
+			Tree *tc4 = tc3->child;
+			if (tc4->t.tokenType == TOKEN_StaticTerm) {
+				Tree *tc5 = tc4->child;
+				if (tc5->t.tokenType == TOKEN_TypedStaticTerm) {
+					Tree *tc6 = tc5->child;
+					if (tc6->t.tokenType == TOKEN_Node) {
+
+					} else if (tc6->t.tokenType == TOKEN_LBRACKET) {
+
+					}
+				} else if (tc5->t.tokenType == TOKEN_Delatch) {
+
+				} else if (tc5->t.tokenType == TOKEN_Block) {
+
+				}
+			} else if (tc4->t.tokenType == TOKEN_Compound) {
+
+			} else if (tc4->t.tokenType == TOKEN_Link) {
+
+			} else if (tc4->t.tokenType == TOKEN_Send) {
+
+			}
+		} else if (tc3->t.tokenType == TOKEN_SwitchTerm) {
+
+		}
+	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
+
+	}
+}
+
+void traceTypes(vector<Tree *> &netsList) {
+	// simply iterate through the list of NonEmptyTerms and trace the types for each one, starting with nullity
+	for (unsigned int i=0; i < netsList.size(); i++) {
+		traceType(netsList[i]->child, NULL);
+	}
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter

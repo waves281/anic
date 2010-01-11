@@ -113,6 +113,7 @@ string id2String(Tree *t) {
 		// advance
 		cur = cur->child->next;
 		if (cur != NULL && cur->t.tokenType == TOKEN_ArraySuffix) { // move past a potential ArraySuffix
+			retVal += ".[]"; // note the array dereference in the identifier string
 			cur = cur->next;
 		}
 		// we're now at a PERIOD or NULL

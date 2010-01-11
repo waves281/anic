@@ -103,6 +103,14 @@ OpenTerm : SimpleCondTerm
 ClosedTerm : SimpleTerm
 	| ClosedCondTerm
 	;
+SimpleCondTerm : QUESTION Term
+	;
+SwitchTerm : DQUESTION SwitchBlock
+	;
+OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
+	;
+ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
+	;
 SimpleTerm : DynamicTerm
 	| SwitchTerm
 	;
@@ -112,21 +120,11 @@ DynamicTerm : StaticTerm
 	| Send
 	;
 StaticTerm : TypedStaticTerm
+	| Delatch
 	| Block
 	;
 TypedStaticTerm : Node
-	| BracketedExp
-	| Delatch
-	;
-SwitchTerm : DQUESTION SwitchBlock
-	;
-SimpleCondTerm : QUESTION Term
-	;
-OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
-	;
-ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
-	;
-BracketedExp : LBRACKET Exp RBRACKET
+	| LBRACKET Exp RBRACKET
 	;
 Exp : ExpLeft
 	| ExpLeft ExpRight

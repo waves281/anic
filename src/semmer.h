@@ -44,7 +44,7 @@ class Type {
 	public:
 		// data members
 		Tree *base; // the Node that defines this type
-		int suffix; // positive values indicate stream level
+		int suffix; // positive values indicate stream depth
 		Type *next; // the next part of the type's compounding
 		// allocators/deallocators
 		Type(Tree *base, int suffix);

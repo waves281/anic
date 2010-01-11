@@ -49,7 +49,7 @@ OBJS = y.o get_yacc_grammar.o gen_compiler.o get_options.o \
 PACK_SRC = $(SRC) $(SRC_HEADER) inst.c hyacc_path_dos.c makefile \
            hyaccpar hyaccmanpage hyaccmanpage.html \
            hyacc.1 GPL_license readme.pdf readme.txt calc.y
-TARGET = ../../tmp/hyacc.exe
+TARGET = ../../tmp/hyacc
 CC = gcc
 DATE = `date '+%m-%d-%y'`
 PACK_NAME = hyacc_$(DATE).tar

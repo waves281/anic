@@ -51,7 +51,7 @@ philosopher = [[int id]] {
 	rightPhil = [[philosopher]];
 	
 	getChopsticks = [[--> int\, int\]] { \leftPhil.chopstick, \rightPhil.chopstick --> };
-	returnChopsticks = [[int\ cs1, int\ cs2]] { \cs1 ->leftPhil.chopStick; \cs2 ->rightPhil.chopStick; };
+	returnChopsticks = [[int\ cs1, int\ cs2]] { \cs1 ->leftPhil.chopstick; \cs2 ->rightPhil.chopstick; };
 	eat = [[int\ cs1, int\ cs2 --> int\, int\]] {
 		"Philosopher " + id + " eating...\n" ->std.out;
 		\cs1, \cs2 -->;
@@ -65,7 +65,7 @@ numPhils = 5;
 philStream = [[philosopher\\]];
 \\[[std.gen]] <- numPhils {
 	[[philosopher]] <- {..} ->philStream;
-	philStream[(.. - 1) % numPhils] ->philStream[..].leftPhil;
+	philStream[..] ->philStream[..].leftPhil;
 	philStream[(.. + 1) % numPhils] ->philStream[..].rightPhil;
 };
 

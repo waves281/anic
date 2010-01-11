@@ -15,6 +15,7 @@ if [ $? == 0 ]; then
 else
 	echo --------------------------------
 	echo Failed default test cases!
+	echo "NOTE: This is the expected behaviour for now; there's still work to be done."
 	echo
 	rm -f var/testCertificate.dat
 fi

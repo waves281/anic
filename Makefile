@@ -1,10 +1,10 @@
 TARGET = ./anic
-INSTALL_PATH = /usr/bin
+INSTALL_PATH = /usr/local/bin
 
 VERSION_STRING = "0.63"
 VERSION_YEAR = "2009"
 
-MAKE_PROGRAM = make
+MAKE_PROGRAM = /usr/bin/make
 CHECKSUM_PROGRAM = sha256sum
 
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
@@ -37,11 +37,11 @@ clean: start cleanout
 cleanout: start
 	@echo Cleaning output...
 	@rm -f $(TARGET)
-	@rm -f tmp/version.exe
-	@rm -f tmp/lexerStructGen.exe
-	@rm -f tmp/parserStructGen.exe
+	@rm -f tmp/version
+	@rm -f tmp/lexerStructGen
+	@rm -f tmp/parserStructGen
 	@rm -f var/testCertificate.dat
-	@$(MAKE_PROGRAM) --directory=bld/hyacc --makefile=makefile clean -s
+	@$(MAKE_PROGRAM) -C bld/hyacc -f makefile clean -s
 
 purge: start uninstall clean
 
@@ -75,49 +75,49 @@ start:
 
 # VERSION CONTROLLER
 
-tmp/version.exe: bld/version.c
+tmp/version: bld/version.c
 	@echo Building version controller...
 	@mkdir -p var
 	@mkdir -p tmp
-	@gcc bld/version.c -o tmp/version.exe
+	@gcc bld/version.c -o tmp/version
 	
 # LEXER
 
-var/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen.exe src/lexerTable.txt src/lexer.h
+var/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen src/lexerTable.txt src/lexer.h
 	@echo Generating lexer structures...
 	@mkdir -p var
-	@./tmp/lexerStructGen.exe
+	@./tmp/lexerStructGen
 	@echo Compiling lexer structure object...
 	@mkdir -p tmp
 	@g++ var/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
-tmp/lexerStructGen.exe: bld/lexerStructGen.cpp
+tmp/lexerStructGen: bld/lexerStructGen.cpp
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
-	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen.exe
+	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen
 
 # PARSER
 
-var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen.exe var/parserTable.txt src/parser.h
+var/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen var/parserTable.txt src/parser.h
 	@echo Generating parser structures...
 	@mkdir -p var
-	@./tmp/parserStructGen.exe
+	@./tmp/parserStructGen
 	@echo Compiling parser structure object...
 	@mkdir -p tmp
 	@g++ var/parserStruct.cpp $(CFLAGS) -O1 -c -o tmp/parserStruct.o
 
-tmp/parserStructGen.exe: bld/parserStructGen.cpp
+tmp/parserStructGen: bld/parserStructGen.cpp
 	@echo Building parser structure generator...
 	@mkdir -p tmp
-	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen.exe
+	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen
 
-tmp/hyacc.exe: bld/hyacc/makefile
+tmp/hyacc: bld/hyacc/makefile
 	@echo Building parser table generator...
 	@$(MAKE_PROGRAM) --directory=bld/hyacc --makefile=makefile -s
 
-var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
+var/parserTable.txt: tmp/hyacc src/parserGrammar.y
 	@echo Constructing parser table...
-	@./tmp/hyacc.exe -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
+	@./tmp/hyacc -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.output var/parserTable.txt
 
 
@@ -125,14 +125,14 @@ var/parserTable.txt: tmp/hyacc.exe src/parserGrammar.y
 ### CORE APPLICATION
 
 $(TARGET): Makefile \
-		tmp/version.exe bld/hexTruncate.awk \
+		tmp/version bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 		src/lexer.h src/parser.h src/semmer.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
-	-D BUILD_NUMBER_MAIN="\"` ./tmp/version.exe $(VERSION_STRING) `\"" \
+	-D BUILD_NUMBER_MAIN="\"` ./tmp/version $(VERSION_STRING) `\"" \
 	-D BUILD_NUMBER_SUB="\"` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `\"" \
 	$(CFLAGS) \
 	-o $(TARGET)

@@ -35,7 +35,24 @@ class SymbolTable {
 		SymbolTable &operator*=(SymbolTable *st);
 };
 
-// Type suffix classifiers
+// Type kind specifiers
+
+#define USR 0
+
+#define STD_NODE 1
+#define STD_INT 2
+#define STD_FLOAT 3
+#define STD_BOOL 4
+#define STD_CHAR 5
+#define STD_STRING 6
+
+// for the following, base will point to the actual operator token
+
+#define STD_PREFIX_OP 7
+#define STD_INFIX_OP 8
+#define STD_MULTI_OP 9
+
+// Type suffix specifiers
 
 #define SUFFIX_NONE 0
 #define SUFFIX_LATCH -1
@@ -43,11 +60,14 @@ class SymbolTable {
 class Type {
 	public:
 		// data members
+		int kind; // the class of type that this is
 		Tree *base; // the Node that defines this type
 		int suffix; // positive values indicate stream depth
 		Type *next; // the next part of the type's compounding
 		// allocators/deallocators
-		Type(Tree *base, int suffix);
+		Type(int kind);
+		Type(int kind, int suffix);
+		Type(int kind, Tree *base, int suffix);
 		~Type();
 };
 

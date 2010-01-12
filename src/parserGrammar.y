@@ -149,7 +149,7 @@ ExpRight : InfixOrMultiOp Exp
 Node : Identifier
 	| NodeInstantiation
 	| TypedNodeLiteral
-	| PrimNode
+	| PrimOpNode
 	| PrimLiteral
 	;
 Identifier : ID
@@ -175,7 +175,7 @@ ArrayAccess : LSQUARE Exp RSQUARE
 ArraySuffix : ArrayAccess
 	| ArrayAccess ArraySuffix
 	;
-PrimNode : PrefixOp
+PrimOpNode : PrefixOp
 	| InfixOp
 	| MultiOp
 	;

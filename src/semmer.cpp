@@ -85,7 +85,9 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // allocators/deallocators
 
-Type::Type(Tree *base, int suffix) : base(base), suffix(suffix), next(NULL) {}
+Type::Type(int kind) : kind(kind), suffix(SUFFIX_NONE), base(NULL), next(NULL) {}
+Type::Type(int kind, Tree *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL) {}
+Type::Type(int kind, Tree *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL) {}
 
 Type::~Type() {
 	delete next;
@@ -95,7 +97,6 @@ Type::~Type() {
 
 void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "node", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "byte", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "int", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "float", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "bool", NULL);
@@ -369,6 +370,10 @@ void bindInstances(vector<Tree *> &instanceList) {
 	}
 }
 
+Type *getExpType(Tree *exp) {
+	return (Tree *)0x4; // obviously this is wrong; it's jsut a stub for now
+}
+
 void traceType(Tree *term, Type *inType) {
 	Tree *tc2 = term->child->child;
 	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
@@ -384,9 +389,43 @@ void traceType(Tree *term, Type *inType) {
 				if (tc5->t.tokenType == TOKEN_TypedStaticTerm) {
 					Tree *tc6 = tc5->child;
 					if (tc6->t.tokenType == TOKEN_Node) {
+						Tree *tc7 = tc6->child;
+						if (tc7->t.tokenType == TOKEN_Identifier) {
 
-					} else if (tc6->t.tokenType == TOKEN_LBRACKET) {
+						} else if (tc7->t.tokenType == TOKEN_NodeInstantiation) {
 
+						} else if (tc7->t.tokenType == TOKEN_TypedNodeLiteral) {
+
+						} else if (tc7->t.tokenType == TOKEN_PrimOpNode) {
+							Tree *tc8 = tc7->child; // type of operator
+							Tree *tc9 = tc8->child; // the operator token itself
+							if (tc8->t.tokenType == TOKEN_PrefixOp) {
+								term->type = new Type(STD_PREFIX_OP, SUFFIX_NONE, tc9);
+							} else if (tc8->t.tokenType == TOKEN_InfixOp) {
+								term->type = new Type(STD_INFIX_OP, SUFFIX_NONE, tc9);
+							} else if (tc8->t.tokenType == TOKEN_MultiOp) {
+								term->type = new Type(STD_MULTI_OP, SUFFIX_NONE, tc9);
+							}
+						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
+							Tree *tc8 = tc7->child;
+							if (tc8->t.tokenType == TOKEN_INUM) {
+								term->type = new Type(STD_INT);
+							} else if (tc8->t.tokenType == TOKEN_FNUM) {
+								term->type = new Type(STD_FLOAT);
+							} else if (tc8->t.tokenType == TOKEN_CQUOTE) {
+								term->type = new Type(STD_CHAR);
+							} else if (tc8->t.tokenType == TOKEN_SQUOTE) {
+								term->type = new Type(STD_STRING);
+							}
+						}
+					} else if (tc6->t.tokenType == TOKEN_LBRACKET) { // it's an expression
+						Type *expType = getExpType(tc6->next);
+						if (expType != NULL) { // if the expression is well-typed
+							term->type = expType; // Exp
+						} else { // else if typing the expression failed
+							Token curDefToken = tc6->next->t;
+							printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"could not resolve type of expression",);
+						}
 					}
 				} else if (tc5->t.tokenType == TOKEN_Delatch) {
 

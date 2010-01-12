@@ -33,7 +33,7 @@ class Tree {
 		Tree *child;
 		Tree *parent;
 		SymbolTable *env; // the symbol environment in which this node occurs
-		Type *type; // the Type assigned to this node; NULL if it hasn't been traced yet
+		Type *type; // the Type assigned to this Term; NULL if it hasn't been traced yet
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);

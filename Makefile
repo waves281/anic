@@ -9,6 +9,12 @@ CHECKSUM_PROGRAM = sha256sum
 
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
 
+CORE_DEPENDENCIES = Makefile \
+	tmp/version bld/hexTruncate.awk \
+	src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
+	src/lexer.h src/parser.h src/semmer.h \
+	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
+
 TEST_FILES = tst/test.ani
 
 
@@ -93,10 +99,10 @@ tmp/version: bld/version.c
 
 # VERSION STAMP
 
-var/versionStamp.txt: tmp/version Makefile
+var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 	@echo Generating version stamp...
 	@mkdir -p var
-	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `"
+	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk`"
 
 # LEXER
 
@@ -141,11 +147,7 @@ var/parserTable.txt: tmp/hyacc src/parserGrammar.y
 
 ### CORE APPLICATION
 
-$(TARGET): tmp/version bld/hexTruncate.awk \
-		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
-		src/lexer.h src/parser.h src/semmer.h \
-		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
-		var/versionStamp.txt
+$(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \

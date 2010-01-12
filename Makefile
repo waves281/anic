@@ -90,7 +90,14 @@ tmp/version: bld/version.c
 	@mkdir -p var
 	@mkdir -p tmp
 	@gcc bld/version.c -o tmp/version
-	
+
+# VERSION STAMP
+
+var/versionStamp.txt: tmp/version Makefile
+	@echo Generating version stamp...
+	@mkdir -p var
+	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `"
+
 # LEXER
 
 var/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen src/lexerTable.txt src/lexer.h
@@ -134,14 +141,11 @@ var/parserTable.txt: tmp/hyacc src/parserGrammar.y
 
 ### CORE APPLICATION
 
-$(TARGET): Makefile \
-		tmp/version bld/hexTruncate.awk \
+$(TARGET): tmp/version bld/hexTruncate.awk \
 		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 		src/lexer.h src/parser.h src/semmer.h \
-		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
-	@echo Generating version stamp...
-	@mkdir -p var
-	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `"
+		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
+		var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \

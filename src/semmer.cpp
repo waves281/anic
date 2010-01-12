@@ -85,7 +85,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // allocators/deallocators
 
-Type::Type(int kind) : kind(kind), suffix(SUFFIX_NONE), base(NULL), next(NULL) {}
+Type::Type(int kind) : kind(kind), base(NULL), suffix(SUFFIX_NONE), next(NULL) {}
 Type::Type(int kind, Tree *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL) {}
 Type::Type(int kind, Tree *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL) {}
 
@@ -371,7 +371,7 @@ void bindInstances(vector<Tree *> &instanceList) {
 }
 
 Type *getExpType(Tree *exp) {
-	return (Tree *)0x4; // obviously this is wrong; it's jsut a stub for now
+	return (Type *)0x4; // obviously this is meaningless; it's just a stub for now
 }
 
 void traceType(Tree *term, Type *inType) {
@@ -400,11 +400,11 @@ void traceType(Tree *term, Type *inType) {
 							Tree *tc8 = tc7->child; // type of operator
 							Tree *tc9 = tc8->child; // the operator token itself
 							if (tc8->t.tokenType == TOKEN_PrefixOp) {
-								term->type = new Type(STD_PREFIX_OP, SUFFIX_NONE, tc9);
+								term->type = new Type(STD_PREFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_InfixOp) {
-								term->type = new Type(STD_INFIX_OP, SUFFIX_NONE, tc9);
+								term->type = new Type(STD_INFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_MultiOp) {
-								term->type = new Type(STD_MULTI_OP, SUFFIX_NONE, tc9);
+								term->type = new Type(STD_MULTI_OP, tc9);
 							}
 						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
 							Tree *tc8 = tc7->child;

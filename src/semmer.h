@@ -66,7 +66,7 @@ class Type {
 		Type *next; // the next part of the type's compounding
 		// allocators/deallocators
 		Type(int kind);
-		Type(int kind, int suffix);
+		Type(int kind, Tree *base);
 		Type(int kind, Tree *base, int suffix);
 		~Type();
 };

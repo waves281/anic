@@ -7,7 +7,7 @@ VERSION_YEAR = "2010"
 MAKE_PROGRAM = /usr/bin/make
 CHECKSUM_PROGRAM = sha256sum
 
-PRINT_VERSION = echo Version stamp is
+PRINT_VERSION = @echo Version stamp is
 
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
 

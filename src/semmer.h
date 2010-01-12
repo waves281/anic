@@ -39,18 +39,19 @@ class SymbolTable {
 
 #define USR 0
 
-#define STD_NODE 1
-#define STD_INT 2
-#define STD_FLOAT 3
-#define STD_BOOL 4
-#define STD_CHAR 5
-#define STD_STRING 6
+#define STD_NULL 1
+#define STD_NODE 2
+#define STD_INT 3
+#define STD_FLOAT 4
+#define STD_BOOL 5
+#define STD_CHAR 6
+#define STD_STRING 7
 
 // for the following, base will point to the actual operator token
 
-#define STD_PREFIX_OP 7
-#define STD_INFIX_OP 8
-#define STD_MULTI_OP 9
+#define STD_PREFIX_OP 8
+#define STD_INFIX_OP 9
+#define STD_MULTI_OP 10
 
 // Type suffix specifiers
 

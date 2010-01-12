@@ -370,11 +370,15 @@ void bindInstances(vector<Tree *> &instanceList) {
 	}
 }
 
-Type *getExpType(Tree *exp) {
-	return (Type *)0x4; // obviously this is meaningless; it's just a stub for now
+string type2String(Type *t) {
+	return ""; // stub
 }
 
-void traceType(Tree *term, Type *inType) {
+Type *getExpType(Type *inType, Tree *exp) {
+	return (Type *)0x4; // stub
+}
+
+Type *getTermType(Type *inType, Tree *term) {
 	Tree *tc2 = term->child->child;
 	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
 
@@ -400,32 +404,28 @@ void traceType(Tree *term, Type *inType) {
 							Tree *tc8 = tc7->child; // type of operator
 							Tree *tc9 = tc8->child; // the operator token itself
 							if (tc8->t.tokenType == TOKEN_PrefixOp) {
-								term->type = new Type(STD_PREFIX_OP, tc9);
+								return new Type(STD_PREFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_InfixOp) {
-								term->type = new Type(STD_INFIX_OP, tc9);
+								return new Type(STD_INFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_MultiOp) {
-								term->type = new Type(STD_MULTI_OP, tc9);
+								return new Type(STD_MULTI_OP, tc9);
 							}
 						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
 							Tree *tc8 = tc7->child;
 							if (tc8->t.tokenType == TOKEN_INUM) {
-								term->type = new Type(STD_INT);
+								return new Type(STD_INT);
 							} else if (tc8->t.tokenType == TOKEN_FNUM) {
-								term->type = new Type(STD_FLOAT);
+								return new Type(STD_FLOAT);
 							} else if (tc8->t.tokenType == TOKEN_CQUOTE) {
-								term->type = new Type(STD_CHAR);
+								return new Type(STD_CHAR);
 							} else if (tc8->t.tokenType == TOKEN_SQUOTE) {
-								term->type = new Type(STD_STRING);
+								return new Type(STD_STRING);
 							}
 						}
 					} else if (tc6->t.tokenType == TOKEN_LBRACKET) { // it's an expression
-						Type *expType = getExpType(tc6->next);
-						if (expType != NULL) { // if the expression is well-typed
-							term->type = expType; // Exp
-						} else { // else if typing the expression failed
-							Token curDefToken = tc6->next->t;
-							printSemmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"could not resolve type of expression",);
-						}
+						Type *expType = getExpType(inType, tc6->next);
+						tc6->type = expType;
+						return expType;
 					}
 				} else if (tc5->t.tokenType == TOKEN_Delatch) {
 
@@ -445,12 +445,31 @@ void traceType(Tree *term, Type *inType) {
 	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
 
 	}
+	return (Type *)0x4;
 }
 
 void traceTypes(vector<Tree *> &netsList) {
 	// simply iterate through the list of NonEmptyTerms and trace the types for each one, starting with nullity
 	for (unsigned int i=0; i < netsList.size(); i++) {
-		traceType(netsList[i]->child, NULL);
+		// temporaily allocate the null type
+		Type *nullType = new Type(STD_NULL);
+		// scan the pipe left to right
+		Tree *curTerm = netsList[i]->child;
+		Type *inType = nullType;
+		while (curTerm != NULL) {
+			Type *outType = getTermType(inType, curTerm);
+			if (outType != NULL) { // if we found a proper typing for this term, log it
+				curTerm->type = outType;
+			} else { // otherwise, if we were unable to assign a type to the term, flag an error
+				Token curToken = curTerm->t;
+				printSemmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve output type for this term",);
+				printSemmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")",);
+				// skip typing this pipe and move on to the next one
+				break;
+			}
+			// advance
+			curTerm = curTerm->next->child; // Term
+		}
 	}
 }
 

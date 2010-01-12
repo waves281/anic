@@ -1,11 +1,13 @@
 TARGET = anic
 INSTALL_PATH = /usr/local/bin
 
-VERSION_STRING = "0.63"
+VERSION_STRING = "0.64"
 VERSION_YEAR = "2010"
 
 MAKE_PROGRAM = /usr/bin/make
 CHECKSUM_PROGRAM = sha256sum
+
+PRINT_VERSION = @echo Version stamp is
 
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
 
@@ -34,6 +36,9 @@ install: start $(TARGET)
 uninstall: start
 	@echo Uninstalling...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
+
+version: start var/versionStamp.txt
+	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
 dist: start $(TARGET)
 	@echo Packing redistributable...
@@ -71,6 +76,8 @@ i: install
 
 u: uninstall
 
+v: version
+
 d: dist
 
 c: clean
@@ -103,6 +110,7 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 	@echo Generating version stamp...
 	@mkdir -p var
 	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk`"
+	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
 # LEXER
 

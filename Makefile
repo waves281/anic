@@ -1,4 +1,4 @@
-TARGET = ./anic
+TARGET = anic
 INSTALL_PATH = /usr/local/bin
 
 VERSION_STRING = "0.63"
@@ -29,6 +29,12 @@ uninstall: start
 	@echo Uninstalling...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
 
+dist: start $(TARGET)
+	@echo Packing redistributable...
+	@tar cf $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar $(TARGET)
+	@gzip $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar
+	@echo Done packing to $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar.gz
+
 clean: start cleanout
 	@echo Cleaning temporary files...
 	@rm -R -f var
@@ -37,9 +43,11 @@ clean: start cleanout
 cleanout: start
 	@echo Cleaning output...
 	@rm -f $(TARGET)
+	@rm -f *.gz
 	@rm -f tmp/version
 	@rm -f tmp/lexerStructGen
 	@rm -f tmp/parserStructGen
+	@rm -f var/versionStamp.txt
 	@rm -f var/testCertificate.dat
 	@$(MAKE_PROGRAM) -C bld/hyacc -f makefile clean -s
 
@@ -56,6 +64,8 @@ t: test
 i: install
 
 u: uninstall
+
+d: dist
 
 c: clean
 
@@ -129,11 +139,13 @@ $(TARGET): Makefile \
 		src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 		src/lexer.h src/parser.h src/semmer.h \
 		src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
+	@echo Generating version stamp...
+	@mkdir -p var
+	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `"
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
-	-D BUILD_NUMBER_MAIN="\"` ./tmp/version $(VERSION_STRING) `\"" \
-	-D BUILD_NUMBER_SUB="\"` date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk `\"" \
+	-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
 	$(CFLAGS) \
 	-o $(TARGET)
 	@echo Done building main executable.

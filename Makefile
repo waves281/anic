@@ -1,4 +1,7 @@
 TARGET = anic
+MAN_PAGE = $(TARGET).1
+INSTALL_SCRIPT = $(TARGET)-install
+
 INSTALL_PATH = /usr/local/bin
 
 VERSION_STRING = "0.64"
@@ -26,11 +29,14 @@ main: start $(TARGET)
 
 all: start cleanout test install
 
+version: start var/versionStamp.txt
+	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
+
 test: start $(TARGET)
 	@bld/runTests.sh $(TARGET) -v $(TEST_FILES)
 
-install: start $(TARGET) man
-	@./bld/install.sh $(TARGET) $(INSTALL_PATH) tmp/anic.1.gz
+install: start $(TARGET) man bld/authenticatedInstall.sh $(INSTALL_SCRIPT)
+	@./bld/authenticatedInstall.sh $(INSTALL_SCRIPT)
 
 uninstall: start
 	@echo Uninstalling man page...
@@ -38,14 +44,11 @@ uninstall: start
 	@echo Uninstalling binary...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
 
-man: start tmp/$(TARGET).1.gz
+man: start $(MAN_PAGE).gz
 
-version: start var/versionStamp.txt
-	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
-
-dist: start $(TARGET)
+dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT)
 	@echo Packing redistributable...
-	@tar cf $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar $(TARGET)
+	@tar cf $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT)
 	@gzip -f $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar
 	@echo Done packing to $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar.gz
 
@@ -59,10 +62,10 @@ cleanout: start
 	@rm -f $(TARGET)
 	@rm -f *.gz
 	@rm -f tmp/version
-	@rm -f tmp/$(TARGET).1
-	@rm -f tmp/$(TARGET).1.gz
+	@rm -f $(MAN_PAGE).gz
 	@rm -f tmp/lexerStructGen
 	@rm -f tmp/parserStructGen
+	@rm -f $(INSTALL_SCRIPT)
 	@rm -f var/versionStamp.txt
 	@rm -f var/testCertificate.dat
 	@$(MAKE_PROGRAM) -C bld/hyacc -f makefile clean -s
@@ -75,6 +78,8 @@ purge: start uninstall clean
 
 a: all
 
+v: version
+
 t: test
 
 i: install
@@ -82,8 +87,6 @@ i: install
 u: uninstall
 
 m: man
-
-v: version
 
 d: dist
 
@@ -96,7 +99,7 @@ p: purge
 ### WRAPPER RULES
 
 start: 
-	@echo anic ANI Compiler Makefile
+	@echo $(TARGET) ANI Compiler Makefile
 	@echo
 
 
@@ -119,11 +122,25 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
 	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
+# INSTALLER
+
+$(INSTALL_SCRIPT): Makefile var/versionStamp.txt
+	@echo Generating installer script...
+	@mkdir -p tmp
+	@echo -e "#!/bin/sh\n\n\
+### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
+echo Installing binary...\n\
+cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)\n\
+echo Installing manpage...\n\
+cp -f $(MAN_PAGE).gz /usr/share/man/man1\n\
+echo Installation complete.\n\
+exit" > $(INSTALL_SCRIPT)
+
 # MANPAGE
 
-tmp/$(TARGET).1.gz: man/$(TARGET).1
+$(MAN_PAGE).gz: man/$(MAN_PAGE)
 	@echo Packaging man page...
-	@gzip -9 man/$(TARGET).1 -c > tmp/$(TARGET).1.gz
+	@gzip -9 man/$(MAN_PAGE) -c > $(MAN_PAGE).gz
 
 
 

@@ -6,7 +6,8 @@
 #define HOME_PAGE "http://anic.googlecode.com/"
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" v.["<<VERSION_STRING<<"."<<VERSION_STAMP<<"] Compiler (c) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" /* compiler header */
-#define USAGE_LITERAL "\tusage: "<<PROGRAM_STRING<<" {<sourceFile>} [-] [-o <outputFile>] [-p <optimizationLevel>] [-s] [-v] [-e] [-h]\n" /* info literal */
+#define USAGE_LITERAL "\n\tusage:\t"<<PROGRAM_STRING<<" sourceFile... [-] [-o outputFile] [-p optimizationLevel]\n\t\t[-s] [-v] [-e] [-h]\n" /* info literal */
+#define SEE_ALSO_LITERAL "\n\tFor more information, type 'anic -h'.\n" /* see also literal */
 #define LINK_LITERAL "\thome page: "<<HOME_PAGE<<"\n" /* link literal */
 
 #define VERBOSE_OUTPUT_DEFAULT false

@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	bool eHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
-			if (strcmp((argv[i] + 1),"v") == 0 && !vHandled) { // verbose output option
+			if (argv[i][1] == 'v' && !vHandled) { // verbose output option
 				verboseOutput = true;
 				VERBOSE (
 					printNotice("verbose output enabled");
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 				)
 				// flag this option as handled
 				vHandled = true;
-			} else if (strcmp((argv[i] + 1),"p") == 0 && !pHandled) { // optimization level option
+			} else if (argv[i][1] == 'p' && !pHandled) { // optimization level option
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-p expected optimization level");
 					die();
@@ -69,10 +69,14 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				pHandled = true;
-			} else if (strcmp((argv[i] + 1),"e") == 0 && !eHandled) {
+			} else if (argv[i][1] == 'e' && !eHandled) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
 				eHandled = true;
+			} else if (argv[i][1] == 'h' && i == 1) {
+				// invoke the program's man page
+				system("/usr/bin/man anic");
+				die(0);
 			} else {
 				printWarning("confused by option '" << argv[i] << "', skipping");
 			}

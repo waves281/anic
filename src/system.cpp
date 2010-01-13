@@ -10,6 +10,10 @@ void printUsage(void) {
 	cerr << USAGE_LITERAL;
 }
 
+void printSeeAlso(void) {
+	cerr << SEE_ALSO_LITERAL;
+}
+
 void printLink(void) {
 	cerr << LINK_LITERAL;
 }
@@ -17,6 +21,7 @@ void printLink(void) {
 void printHelp(void) {
 	printHeader();
 	printUsage();
+	printSeeAlso();
 	printLink();
 }
 

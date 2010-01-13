@@ -33,7 +33,7 @@ install: start $(TARGET) man
 	@./bld/install.sh $(TARGET) $(INSTALL_PATH) tmp/anic.1.gz
 
 uninstall: start
-	@echo Uninstalling manpage...
+	@echo Uninstalling man page...
 	@rm -f /usr/share/man/man1/anic.1.gz
 	@echo Uninstalling binary...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
@@ -122,7 +122,7 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 # MANPAGE
 
 tmp/$(TARGET).1.gz: man/$(TARGET).1
-	@echo Packaging manpage...
+	@echo Packaging man page...
 	@gzip -9 man/$(TARGET).1 -c > tmp/$(TARGET).1.gz
 
 

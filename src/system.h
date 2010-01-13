@@ -6,6 +6,7 @@
 
 void printHeader(void);
 void printUsage(void);
+void printSeeAlso(void);
 void printHelp(void);
 void printLink(void);
 void die(int errorCode);

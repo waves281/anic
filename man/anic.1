@@ -13,13 +13,13 @@ Compile, assemble, and link ANI programs into standalone binaries.
 \fB\-\fR
 read standard input as if it were a source file
 .TP
-\fB\-o\fR
-specify the path to output the resulting binary to
+\fB\-o \fR\fIfilename\fR
+output the resulting binary to \fR\fIfilename\fR
 .IP
 If this option is not specified, the default is \fBa.out\fR.
 .TP
-\fB\-p\fR
-specify the level of code optimization applied during compilation
+\fB\-p \fR\fIn\fR
+use level \fR\fIn\fR optimizations when compiling the code
 .IP
 The valid range is \fB0\fR to \fB3\fR inclusive, with larger numbers specifying increasingly more powerful (but also time-consuming) optimizations.
 If this option is not specified, the default is \fB1\fR.

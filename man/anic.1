@@ -19,9 +19,9 @@ output the resulting binary to \fR\fIfilename\fR
 If this option is not specified, the default is \fBa.out\fR.
 .TP
 \fB\-p \fR\fIn\fR
-use level \fR\fIn\fR optimizations when compiling the code
+use level \fR\fIn\fR code optimizations during compilation
 .IP
-The valid range is \fB0\fR to \fB3\fR inclusive, with larger numbers specifying increasingly more powerful (but also time-consuming) optimizations.
+The valid range is \fB0\fR to \fB3\fR inclusive, with larger numbers specifying increasingly more powerful (but also more time-consuming) optimizations.
 If this option is not specified, the default is \fB1\fR.
 .TP
 \fB\-s\fR
@@ -54,26 +54,31 @@ program help; display this man page
 Must be the only argument.
 .SH EXAMPLES
 .TP
-\fBanic program.ani\fR
-Compile, assemble, and link the ANI program in source file \fIprogram.ani\fR and output the resulting binary as \fIa.out\fR.
+\fBanic \fR\fIprogram.ani\fR
+Compile, assemble, and link the ANI program in source file
+.br
+\fIprogram.ani\fR and output the resulting binary as \fIa.out\fR.
 .TP
-\fBanic program.ani \-o program\fR
-Compile, assemble, and link the ANI program in source file \fIprogram.ani\fR and output the resulting binary as \fIprogram\fR.
+\fBanic \fR\fIprogram.ani\fR\fB \-o \fR\fIprogram\fR
+Compile, assemble, and link the ANI program in source file
+.br
+\fIprogram.ani\fR and output the resulting binary as \fIprogram\fR.
 .TP
-\fBanic \- \-o program\fR
+\fBanic \- \-o \fR\fIprogram\fR
 Same as above, except read program source from standard input.
 .TP
-\fBanic program.ani \-v\fR
+\fBanic \fR\fIprogram.ani\fR\fB \-v\fR
 Compile \fIprogram.ani\fR to \fIa.out\fR and additionally dump verbose compilation details to standard output.
 .TP
-\fBanic program.ani \-p 3 \-e \-o program\fR
-Compile \fIprogram.ani\fR to \fIprogram\fR using level 3 optimizations and no limits on the amount of errors printed.
+\fBanic \fR\fIprogram.ani\fR\fB \-p \fR\fI3\fr\fB \-e \-o \fR\fIprogram\fR
+Compile \fIprogram.ani\fR to \fIprogram\fR using level \fI3\fR optimizations and no limits on the amount of errors printed.
 .SH AUTHOR
 Written by Kajetan "Adrian" Biedrzycki.
 .SH "REPORTING BUGS"
 Report bugs to <ani\-compiler@googlegroups.com>.
 .SH COPYRIGHT
 Copyright (c) 2010 Kajetan "Adrian" Biedrzycki.
+.PP
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 .br
 This is free software: you are free to change and redistribute it.

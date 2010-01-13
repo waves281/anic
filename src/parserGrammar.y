@@ -126,25 +126,32 @@ StaticTerm : TypedStaticTerm
 TypedStaticTerm : Node
 	| LBRACKET Exp RBRACKET
 	;
-Exp : ExpLeft
-	| ExpLeft ExpRight
+Exp : Primary
+	| Exp DOR Exp
+	| Exp DAND Exp
+	| Exp OR Exp
+	| Exp XOR Exp
+	| Exp AND Exp
+	| Exp DEQUALS Exp
+	| Exp NEQUALS Exp
+	| Exp LT Exp
+	| Exp GT Exp
+	| Exp LE Exp
+	| Exp GE Exp
+	| Exp LS Exp
+	| Exp RS Exp
+	| Exp TIMES Exp
+	| Exp DIVIDE Exp
+	| Exp MOD Exp
+	| Exp DTIMES Exp
+	| Exp PLUS Exp
+	| Exp MINUS Exp
 	;
-NonCastExp : NonCastExpLeft ExpRight
-	;
-ExpLeft : Identifier
+Primary : Identifier
 	| SLASH Identifier
-	| NonCastExpLeft
-	;
-NonCastExpLeft : PrimLiteral
-	| PrefixOrMultiOp ExpLeft
-	| LBRACKET NonCastExp RBRACKET
-	| LBRACKET Identifier RBRACKET
-	| LBRACKET SLASH Identifier RBRACKET
-	| LBRACKET Identifier ExpRight RBRACKET
-	| LBRACKET SLASH Identifier ExpRight RBRACKET
-	| LBRACKET Identifier RBRACKET ExpLeft
-	;
-ExpRight : InfixOrMultiOp Exp
+	| PrimLiteral
+	| PrefixOrMultiOp Primary
+	| LBRACKET Exp RBRACKET
 	;
 Node : Identifier
 	| NodeInstantiation
@@ -181,6 +188,8 @@ PrimOpNode : PrefixOp
 	;
 PrefixOp : NOT
 	| COMPLEMENT
+	| DPLUS
+	| DMINUS
 	;
 InfixOp : DOR
 	| DAND
@@ -195,8 +204,6 @@ InfixOp : DOR
 	| GE
 	| LS
 	| RS
-	| DPLUS
-	| DMINUS
 	| TIMES
 	| DIVIDE
 	| MOD

@@ -5,7 +5,6 @@ VERSION_STRING = "0.64"
 VERSION_YEAR = "2010"
 
 MAKE_PROGRAM = /usr/bin/make
-CHECKSUM_PROGRAM = sha256sum
 
 PRINT_VERSION = @echo Version stamp is
 
@@ -109,7 +108,7 @@ tmp/version: bld/version.c
 var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 	@echo Generating version stamp...
 	@mkdir -p var
-	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | $(CHECKSUM_PROGRAM) | awk -f bld/hexTruncate.awk`"
+	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
 	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
 # LEXER

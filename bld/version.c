@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 	if ((f = fopen("var/version.cfg","r")) == NULL) { // if no version file exists, create one
 		f = fopen("var/version.cfg","w");
 		buildNumber = 1;
-		fprintf(f,"%s %d\n", versionString, buildNumber);
+		fprintf(f,"%s %lu\n", versionString, buildNumber);
 		fclose(f);
 	} else { // a version file exists, so use it
 		char *version = MALLOC_STRING;
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 		} else { // else if we've moved on to a new version
 			buildNumber = 1;
 		}
-		fprintf(f,"%s %d\n", versionString, buildNumber);
+		fprintf(f,"%s %lu\n", versionString, buildNumber);
 		fclose(f);
 	}
 

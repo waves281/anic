@@ -90,12 +90,12 @@ int main() {
 	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
 	fprintf(out, "#include \"../src/lexer.h\"\n\n");
 	// print out token definitions to the .h
-	fprintf(out, "#define NUM_TOKENS %d\n\n", tokenMap.size());
+	fprintf(out, "#define NUM_TOKENS %u\n\n", (unsigned int)tokenMap.size());
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
 		fprintf(out, "#define TOKEN_%s %d\n", queryBuf->first.c_str(), queryBuf->second);
 	}
 	// print out additional $end token definition
-	fprintf(out, "#define TOKEN_END %d\n", tokenMap.size());
+	fprintf(out, "#define TOKEN_END %u\n", (unsigned int)tokenMap.size());
 	fprintf(out, "\n");
 	// print out the forward declarations to the .h
 	fprintf(out, "void lexerInit(LexerNode lexerNode[256][256]);\n");

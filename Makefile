@@ -117,7 +117,7 @@ tmp/version: bld/version.c
 # VERSION STAMP
 
 var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
-	@echo Generating version stamp...
+	@echo Stamping version...
 	@mkdir -p var
 	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
 	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
@@ -126,7 +126,6 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 
 $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
 	@echo Generating installer script...
-	@mkdir -p tmp
 	@echo -e "#!/bin/sh\n\n\
 ### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
 echo Installing binary...\n\

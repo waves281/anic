@@ -1,0 +1,47 @@
+.TH ANIC "1" "January 2010" "ANI Tools" "ANI"
+.SH NAME
+\fBanic\fR \- ANI programming language compiler
+.SH SYNOPSIS
+.B anic
+\fIsourceFile\fR... [-] [-o \fIoutputFile\fR] [-p \fIoptimizationLevel\fR] [-s] [-v] [-e] [-h]
+.SH DESCRIPTION
+.PP
+Compile, assemble, and link ANI programs into standalone binaries.
+.SH OPTIONS
+.PP
+.TP
+\fB\-\fR
+read standard input as if it were an additional source file
+.TP
+\fB\-o\fR
+specify the path to output the resulting binary to
+.PP
+If this is not specified, the default is \fBa.out\fR.
+.SH EXAMPLES
+.TP
+\fBanic program.ani\fR
+Compile, assemble, and link the ANI program in source file \fIprogram.ani\fR and output the resulting binary as \fIa.out\fR.
+.TP
+\fBanic program.ani \-o program\fR
+Compile, assemble, and link the ANI program in source file \fIprogram.ani\fR and output the resulting binary as \fIprogram\fR.
+.TP
+\fBanic \- \-o program\fR
+Same as above, except read program source from standard input.
+.TP
+\fBanic program.ani \-v\fR
+Compile \fIprogram.ani\fR to \fIa.out\fR and additionally dump verbose compilation details to standard output.
+.TP
+\fBanic program.ani \-p 3 \-e \-o program\fR
+Compile \fIprogram.ani\fR to \fIprogram\fR using level 3 optimizations and no limits on the amount of errors printed.
+.SH AUTHOR
+Written by Kajetan "Adrian" Biedrzycki.
+.SH "REPORTING BUGS"
+Report bugs to <ani\-compiler@googlegroups.com>.
+.SH COPYRIGHT
+Copyright (c) 2010 Kajetan "Adrian" Biedrzycki.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.SH "SEE ALSO"
+The full documentation for \fBanic\fR and the \fBANI\fR programming language is provided on the project home page at <http://anic.googlecode.com>.

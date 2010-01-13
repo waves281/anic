@@ -29,12 +29,16 @@ all: start cleanout test install
 test: start $(TARGET)
 	@bld/runTests.sh $(TARGET) -v $(TEST_FILES)
 
-install: start $(TARGET)
-	@bld/installBinary.sh $(TARGET) $(INSTALL_PATH)
+install: start $(TARGET) man
+	@./bld/install.sh $(TARGET) $(INSTALL_PATH) tmp/anic.1.gz
 
 uninstall: start
-	@echo Uninstalling...
+	@echo Uninstalling manpage...
+	@rm -f /usr/share/man/man1/anic.1.gz
+	@echo Uninstalling binary...
 	@rm -f $(INSTALL_PATH)/$(TARGET)
+
+man: start tmp/$(TARGET).1.gz
 
 version: start var/versionStamp.txt
 	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
@@ -42,7 +46,7 @@ version: start var/versionStamp.txt
 dist: start $(TARGET)
 	@echo Packing redistributable...
 	@tar cf $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar $(TARGET)
-	@gzip $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar
+	@gzip -f $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar
 	@echo Done packing to $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar.gz
 
 clean: start cleanout
@@ -55,6 +59,8 @@ cleanout: start
 	@rm -f $(TARGET)
 	@rm -f *.gz
 	@rm -f tmp/version
+	@rm -f tmp/$(TARGET).1
+	@rm -f tmp/$(TARGET).1.gz
 	@rm -f tmp/lexerStructGen
 	@rm -f tmp/parserStructGen
 	@rm -f var/versionStamp.txt
@@ -74,6 +80,8 @@ t: test
 i: install
 
 u: uninstall
+
+m: man
 
 v: version
 
@@ -110,6 +118,14 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
 	@mkdir -p var
 	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
 	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
+
+# MANPAGE
+
+tmp/$(TARGET).1.gz: man/$(TARGET).1
+	@echo Packaging manpage...
+	@gzip -9 man/$(TARGET).1 -c > tmp/$(TARGET).1.gz
+
+
 
 # LEXER
 

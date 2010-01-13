@@ -10,7 +10,7 @@
 // global variables
 
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
-int optimizationLevel = OPTIMIZATION_LEVEL_DEFAULT;
+int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions

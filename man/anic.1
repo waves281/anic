@@ -1,4 +1,4 @@
-.TH ANIC "1" "January 2010" "ANI Tools" "ANI"
+.TH ANIC "1" "January 2010" "ANI Toolchain" "ANI"
 .SH NAME
 \fBanic\fR \- ANI programming language compiler
 .SH SYNOPSIS
@@ -11,12 +11,45 @@ Compile, assemble, and link ANI programs into standalone binaries.
 .PP
 .TP
 \fB\-\fR
-read standard input as if it were an additional source file
+read standard input as if it were a source file
 .TP
 \fB\-o\fR
 specify the path to output the resulting binary to
-.PP
-If this is not specified, the default is \fBa.out\fR.
+.IP
+If this option is not specified, the default is \fBa.out\fR.
+.TP
+\fB\-p\fR
+specify the level of code optimization applied during compilation
+.IP
+The valid range is \fB0\fR to \fB3\fR inclusive, with larger numbers specifying increasingly more powerful (but also time-consuming) optimizations.
+If this option is not specified, the default is \fB1\fR.
+.TP
+\fB\-s\fR
+silent mode; print nothing, not even compilation errors
+.IP
+Cannot be used with \fB\-v\fR.
+.TP
+\fB\-v\fR
+verbose mode; print additional information about the compilation process on the standard output
+.IP
+Cannot be used with \fB\-s\fR.
+The additional information includes lexical tokens, parsing transitions, symbol trees, typing information, and resource allocation.
+.IP
+It is highly recommended to pipe the output of this option to a file or stream viewer, as it can be quite lengthy, even for small source programs.
+.IP
+For example,
+.IP
+\fBanic program.ani \-v | less\fR
+.IP
+will make viewing the verbose ouput much more manageable.
+.TP
+\fB\-e\fR
+pedantic error mode; do not to give up on compilation even when encountering confusing or large volumes of errors
+.IP
+Cannot be used with \fB\-s\fR.
+.TP
+\fB\-h\fR
+program help; display this manual page
 .SH EXAMPLES
 .TP
 \fBanic program.ani\fR

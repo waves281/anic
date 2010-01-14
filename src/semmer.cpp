@@ -93,6 +93,24 @@ Type::~Type() {
 	delete next;
 }
 
+// operators
+
+bool Type::operator==(int kind) {
+	return (this->kind == kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+}
+
+bool Type::operator!=(int kind) {
+	return (this->kind != kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+}
+
+bool Type::operator>=(int kind) {
+	return (this->kind >= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+}
+
+bool Type::operator<=(int kind) {
+	return (this->kind <= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+}
+
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
@@ -370,20 +388,150 @@ void bindInstances(vector<Tree *> &instanceList) {
 	}
 }
 
+// returns a string representation of the given type; used for debugging
 string type2String(Type *t) {
-	return ""; // stub
+	return ""; // LOL
+}
+
+// forward declarations of mutually recursive typing functions
+
+Type *getPrimaryType(Type *inType, Tree *primary);
+Type *getExpType(Type *inType, Tree *exp);
+Type *getTermType(Type *inType, Tree *term);
+
+// typing function definitions
+
+Type *getPrimaryType(Type *inType, Tree *primary) {
+	Tree *primaryc = primary->child;
+	Type *type = NULL;
+	if (primaryc->t.tokenType == TOKEN_Identifier) {
+		type = NULL; // LOL
+	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
+		type = NULL; // LOL
+	} else if (primaryc->t.tokenType == TOKEN_PrimLiteral) {
+		Tree *primLiteralc = primaryc;
+		if (primLiteralc->t.tokenType == TOKEN_INUM) {
+			type = new Type(STD_INT);
+		} else if (primLiteralc->t.tokenType == TOKEN_FNUM) {
+			type = new Type(STD_FLOAT);
+		} else if (primLiteralc->t.tokenType == TOKEN_CQUOTE) {
+			type = new Type(STD_CHAR);
+		} else if (primLiteralc->t.tokenType == TOKEN_SQUOTE) {
+			type = new Type(STD_STRING);
+		}
+	} else if (primaryc->t.tokenType == TOKEN_PrefixOrMultiOp) {
+		Tree *pomocc = primaryc->child->child;
+		Type *subType = getPrimaryType(inType, primaryc->next);
+		if (pomocc->t.tokenType == TOKEN_NOT) {
+			if (*subType == STD_BOOL) {
+				type = subType;
+			}
+		} else if (pomocc->t.tokenType == TOKEN_COMPLEMENT) {
+			if (*subType == STD_INT) {
+				type = subType;
+			}
+		} else if (pomocc->t.tokenType == TOKEN_DPLUS) {
+			if (*subType == STD_INT) {
+				type = subType;
+			}
+		} else if (pomocc->t.tokenType == TOKEN_DMINUS) {
+			if (*subType == STD_INT) {
+				type = subType;
+			}
+		} else if (pomocc->t.tokenType == TOKEN_PLUS) {
+			if (*subType == STD_INT || *subType == STD_FLOAT) {
+				type = subType;
+			}
+		} else if (pomocc->t.tokenType == TOKEN_MINUS) {
+			if (*subType == STD_INT || *subType == STD_FLOAT) {
+				type = subType;
+			}
+		}
+	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
+		type = getExpType(inType, primaryc->next);
+	}
+	// latch the type to the Primary node
+	primary->type = type;
+	// return the derived type
+	return type;
 }
 
 Type *getExpType(Type *inType, Tree *exp) {
-	return (Type *)0x4; // stub
+	Tree *expc = exp->child;
+	Type *type = NULL;
+	if (expc->t.tokenType == TOKEN_Primary) {
+		type = getPrimaryType(inType, expc);
+	} else if (expc->t.tokenType == TOKEN_Exp) {
+		Tree *expLeft = expc;
+		Tree *op = expLeft->next;
+		Tree *expRight = op->next;
+		Type *typeLeft = getExpType(inType, expLeft);
+		Type *typeRight = getExpType(inType, expRight);
+		switch (op->t.tokenType) {
+			case TOKEN_DOR:
+			case TOKEN_DAND:
+				if (*typeLeft == STD_BOOL && *typeRight == STD_BOOL) {
+					type = typeLeft;
+				}
+				break;
+			case TOKEN_OR:
+			case TOKEN_XOR:
+			case TOKEN_AND:
+				if (*typeLeft == STD_INT && *typeRight == STD_INT) {
+					type = typeLeft;
+				}
+				break;
+			case TOKEN_DEQUALS:
+			case TOKEN_NEQUALS:
+			case TOKEN_LT:
+			case TOKEN_GT:
+			case TOKEN_LE:
+			case TOKEN_GE:
+				if (*typeLeft >= STD_MIN_COMPARABLE && *typeRight >= STD_MIN_COMPARABLE &&
+						*typeLeft <= STD_MAX_COMPARABLE && *typeRight <= STD_MAX_COMPARABLE &&
+						typeLeft->kind == typeRight->kind) {
+					type = new Type(STD_BOOL);
+				}
+				break;
+			case TOKEN_LS:
+			case TOKEN_RS:
+				if (*typeLeft == STD_INT && *typeRight == STD_INT) {
+					type = typeLeft;
+				}
+				break;
+			case TOKEN_TIMES:
+			case TOKEN_DIVIDE:
+			case TOKEN_MOD:
+			case TOKEN_PLUS:
+			case TOKEN_MINUS:
+				if ( (*typeLeft == STD_INT || *typeLeft == STD_FLOAT) &&
+						(*typeRight == STD_INT || *typeRight == STD_FLOAT) ) {
+					if (*typeRight != STD_FLOAT) {
+						type = typeLeft;
+					} else {
+						type = typeRight;
+					}
+				}
+				break;
+			default: // can't happen
+				typeLeft = NULL;
+				typeRight = NULL;
+				break;
+		}
+	}
+	// latch the type to the Exp node
+	exp->type = type;
+	// return the derived type
+	return type;
 }
 
 Type *getTermType(Type *inType, Tree *term) {
 	Tree *tc2 = term->child->child;
+	Type *type = NULL;
 	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
-
+// LOL
 	} else if (tc2->t.tokenType == TOKEN_OpenCondTerm) {
-
+// LOL
 	} else if (tc2->t.tokenType == TOKEN_SimpleTerm) {
 		Tree *tc3 = tc2->child;
 		if (tc3->t.tokenType == TOKEN_DynamicTerm) {
@@ -395,57 +543,60 @@ Type *getTermType(Type *inType, Tree *term) {
 					if (tc6->t.tokenType == TOKEN_Node) {
 						Tree *tc7 = tc6->child;
 						if (tc7->t.tokenType == TOKEN_Identifier) {
-
+// LOL
 						} else if (tc7->t.tokenType == TOKEN_NodeInstantiation) {
-
+// LOL
 						} else if (tc7->t.tokenType == TOKEN_TypedNodeLiteral) {
-
+// LOL
 						} else if (tc7->t.tokenType == TOKEN_PrimOpNode) {
 							Tree *tc8 = tc7->child; // type of operator
 							Tree *tc9 = tc8->child; // the operator token itself
 							if (tc8->t.tokenType == TOKEN_PrefixOp) {
-								return new Type(STD_PREFIX_OP, tc9);
+								type = new Type(STD_PREFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_InfixOp) {
-								return new Type(STD_INFIX_OP, tc9);
+								type = new Type(STD_INFIX_OP, tc9);
 							} else if (tc8->t.tokenType == TOKEN_MultiOp) {
-								return new Type(STD_MULTI_OP, tc9);
+								type = new Type(STD_MULTI_OP, tc9);
 							}
 						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
 							Tree *tc8 = tc7->child;
 							if (tc8->t.tokenType == TOKEN_INUM) {
-								return new Type(STD_INT);
+								type = new Type(STD_INT);
 							} else if (tc8->t.tokenType == TOKEN_FNUM) {
-								return new Type(STD_FLOAT);
+								type = new Type(STD_FLOAT);
 							} else if (tc8->t.tokenType == TOKEN_CQUOTE) {
-								return new Type(STD_CHAR);
+								type = new Type(STD_CHAR);
 							} else if (tc8->t.tokenType == TOKEN_SQUOTE) {
-								return new Type(STD_STRING);
+								type = new Type(STD_STRING);
 							}
 						}
 					} else if (tc6->t.tokenType == TOKEN_LBRACKET) { // it's an expression
 						Type *expType = getExpType(inType, tc6->next);
 						tc6->type = expType;
-						return expType;
+						type = expType;
 					}
 				} else if (tc5->t.tokenType == TOKEN_Delatch) {
-
+// LOL
 				} else if (tc5->t.tokenType == TOKEN_Block) {
-
+// LOL
 				}
 			} else if (tc4->t.tokenType == TOKEN_Compound) {
-
+// LOL
 			} else if (tc4->t.tokenType == TOKEN_Link) {
-
+// LOL
 			} else if (tc4->t.tokenType == TOKEN_Send) {
-
+// LOL
 			}
 		} else if (tc3->t.tokenType == TOKEN_SwitchTerm) {
-
+// LOL
 		}
 	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
-
+// LOL
 	}
-	return (Type *)0x4;
+	// latch the type to the Term node
+	term->type = type;
+	// return the derived type
+	return (Type *)0x4; // LOL
 }
 
 void traceTypes(vector<Tree *> &netsList) {

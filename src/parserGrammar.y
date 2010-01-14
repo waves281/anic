@@ -52,7 +52,6 @@
 %token TIMES
 %token DIVIDE
 %token MOD
-%token DTIMES
 %token NOT
 %token COMPLEMENT
 
@@ -67,7 +66,6 @@
 %left LS RS
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
-%left DTIMES
 %left NOT COMPLEMENT
 %left LBRACKET RBRACKET
 
@@ -143,7 +141,6 @@ Exp : Primary
 	| Exp TIMES Exp
 	| Exp DIVIDE Exp
 	| Exp MOD Exp
-	| Exp DTIMES Exp
 	| Exp PLUS Exp
 	| Exp MINUS Exp
 	;
@@ -207,7 +204,6 @@ InfixOp : DOR
 	| TIMES
 	| DIVIDE
 	| MOD
-	| DTIMES
 	;
 MultiOp : PLUS
 	| MINUS

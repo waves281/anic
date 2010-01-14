@@ -41,11 +41,16 @@ class SymbolTable {
 
 #define STD_NULL 1
 #define STD_NODE 2
+
+#define STD_MIN_COMPARABLE 3 // anything in the range is considered comparable
+
 #define STD_INT 3
 #define STD_FLOAT 4
 #define STD_BOOL 5
 #define STD_CHAR 6
 #define STD_STRING 7
+
+#define STD_MAX_COMPARABLE 7 // anything in the range is considered comparable
 
 // for the following, base will point to the actual operator token
 
@@ -70,6 +75,11 @@ class Type {
 		Type(int kind, Tree *base);
 		Type(int kind, Tree *base, int suffix);
 		~Type();
+		// operators
+		bool operator==(int kind);
+		bool operator!=(int kind);
+		bool operator<=(int kind);
+		bool operator>=(int kind);
 };
 
 // main semantic analysis function

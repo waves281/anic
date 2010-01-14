@@ -60,8 +60,10 @@ clean: start
 	@rm -f $(UNINSTALL_SCRIPT)
 	@rm -f *.gz
 	@rm -f tmp/version
-	@rm -f tmp/lexerStructGen
-	@rm -f tmp/parserStructGen
+	@rm -f tmp/parserTable.txt
+	@rm -f tmp/{lexer,parser}StructGen
+	@rm -f tmp/{lexer,parser}Struct.{h,cpp,o}
+	@rm -f -R tmp
 	@$(MAKE_PROGRAM) -C bld/hyacc -f makefile clean -s
 
 reset: start clean

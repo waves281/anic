@@ -10,6 +10,7 @@
 // global variables
 
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
+bool silentMode = SILENT_MODE_DEFAULT;
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
@@ -36,23 +37,27 @@ int main(int argc, char **argv) {
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
 	vector<const char *> inFileNames; // source file name vector
+	char *outFileName = MALLOC_STRING; // output file name
+	strcpy(outFileName, OUTPUT_FILE_DEFAULT); // initialize output file name
 	// handled flags for each option
-	bool vHandled = false;
+	bool oHandled = false;
 	bool pHandled = false;
+	bool sHandled = false;
+	bool vHandled = false;
 	bool eHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
-			if (argv[i][1] == 'v' && !vHandled) { // verbose output option
-				verboseOutput = true;
-				VERBOSE (
-					printNotice("verbose output enabled");
-					print("");
-				)
+			if (argv[i][1] == 'o' && !oHandled) { // output file name
+				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
+					printError("-o expected file name argument");
+					die();
+				}
+				outFileName = argv[i]; // log the file name
 				// flag this option as handled
-				vHandled = true;
+				oHandled = true;
 			} else if (argv[i][1] == 'p' && !pHandled) { // optimization level option
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
-					printError("-p expected optimization level");
+					printError("-p expected optimization level argument");
 					die();
 				}
 				int n;
@@ -69,6 +74,18 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				pHandled = true;
+			} else if (argv[i][1] == 's' && !vHandled && !sHandled) { // silent compilation option
+				silentMode = true;
+				// flag this option as handled
+				sHandled = true;
+			} else if (argv[i][1] == 'v' && !vHandled && !sHandled) { // verbose output option
+				verboseOutput = true;
+				VERBOSE (
+					printNotice("verbose output enabled");
+					print("");
+				)
+				// flag this option as handled
+				vHandled = true;
 			} else if (argv[i][1] == 'e' && !eHandled) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
@@ -100,6 +117,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+
 	// terminate if there were no input files
 	if (inFiles.empty()) {
 		printError("no input files");
@@ -233,6 +251,13 @@ int main(int argc, char **argv) {
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		die(1);
+	}
+
+	// open output file for writing
+	ofstream *outFile = new ofstream(outFileName);
+	if (!outFile->good()) {
+		printError("cannot open output file '" << outFileName << "'");
+		die();
 	}
 
 	// terminate the program successfully

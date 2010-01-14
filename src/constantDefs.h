@@ -10,7 +10,9 @@
 #define SEE_ALSO_LITERAL "\n\tFor more information, type 'anic -h'.\n" /* see also literal */
 #define LINK_LITERAL "\thome page: "<<HOME_PAGE<<"\n" /* link literal */
 
+#define OUTPUT_FILE_DEFAULT "a.out"
 #define VERBOSE_OUTPUT_DEFAULT false
+#define SILENT_MODE_DEFAULT false
 #define EVENTUALLY_GIVE_UP_DEFAULT true
 
 #define MIN_OPTIMIZATION_LEVEL 0

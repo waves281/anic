@@ -116,7 +116,7 @@ tmp/version: bld/version.c
 
 # VERSION STAMP
 
-var/versionStamp.txt: $(CORE_DEPENDENCIES) tmp/version
+var/versionStamp.txt: ./bld/getChecksumProgram.sh $(CORE_DEPENDENCIES) tmp/version
 	@echo Stamping version...
 	@mkdir -p var
 	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"

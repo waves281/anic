@@ -4,7 +4,8 @@
 
 echo Running installer...
 
-if [ -a var/testCertificate.dat ]; then
+if test -f var/testCertificate.dat
+then
 	./$*;
 else
 	echo

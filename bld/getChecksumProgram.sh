@@ -2,7 +2,8 @@
 
 ### Checksum program location script
 
-if [ -f /usr/bin/sha256sum ] ; then
+if test -f /usr/bin/sha256sumc
+then
 	echo /usr/bin/sha256sum
 else
 	echo /usr/bin/shasum

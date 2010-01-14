@@ -202,7 +202,7 @@ tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
 ### CORE APPLICATION
 
 $(TARGET): var/versionStamp.txt
-	@echo Building main executable...
+	@echo Building main executable.
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 	-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \

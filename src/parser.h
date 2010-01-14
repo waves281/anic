@@ -61,7 +61,7 @@ Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int
 
 // post-includes
 
-#include "../var/parserStruct.h"
+#include "../tmp/parserStruct.h"
 #include "semmer.h"
 
 #endif

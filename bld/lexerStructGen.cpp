@@ -24,12 +24,12 @@ int main() {
 	}
 	// output files
 	FILE *out;
-	out = fopen("./var/lexerStruct.h","w");
+	out = fopen("./tmp/lexerStruct.h","w");
 	if (out == NULL) { // if file open failed, return an error
 		return -1;
 	}
 	FILE *out2;
-		out2 = fopen("./var/lexerStruct.cpp","w");
+		out2 = fopen("./tmp/lexerStruct.cpp","w");
 		if (out2 == NULL) { // if file open failed, return an error
 			return -1;
 	}

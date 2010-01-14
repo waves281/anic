@@ -7,18 +7,18 @@
 int main() {
 	// input file
 	FILE *in;
-	in = fopen("./var/parserTable.txt","r");
+	in = fopen("./tmp/parserTable.txt","r");
 	if (in == NULL) { // if file open failed, return an error
 		return -1;
 	}
 	// output files
 	FILE *out;
-	out = fopen("./var/parserStruct.h","w");
+	out = fopen("./tmp/parserStruct.h","w");
 	if (out == NULL) { // if file open failed, return an error
 		return -1;
 	}
 	FILE *out2;
-		out2 = fopen("./var/parserStruct.cpp","w");
+		out2 = fopen("./tmp/parserStruct.cpp","w");
 		if (out2 == NULL) { // if file open failed, return an error
 			return -1;
 	}

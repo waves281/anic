@@ -25,6 +25,6 @@ vector<Token> *lex(ifstream *in, const char *fileName, bool verboseOutput, int o
 
 // post-includes
 
-#include "../var/lexerStruct.h"
+#include "../tmp/lexerStruct.h"
 
 #endif

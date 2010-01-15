@@ -33,11 +33,11 @@ all: start cleanout test install
 version: start var/versionStamp.txt
 	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
-test: start $(TARGET)
+test: start $(TARGET) bld/runTests.sh
 	@chmod +x bld/runTests.sh
 	@./bld/runTests.sh $(TARGET) -v $(TEST_FILES)
 
-install: start $(TARGET) man bld/authenticatedInstall.sh $(INSTALL_SCRIPT)
+install: start $(TARGET) man $(INSTALL_SCRIPT) bld/authenticatedInstall.sh
 	@chmod +x bld/authenticatedInstall.sh
 	@./bld/authenticatedInstall.sh $(INSTALL_SCRIPT)
 
@@ -46,11 +46,9 @@ uninstall: start $(UNINSTALL_SCRIPT)
 
 man: start $(MAN_PAGE).gz
 
-dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
-	@echo Packing redistributable...
-	@tar cf $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
-	@gzip -f $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar
-	@echo Done packing to $(TARGET)-$(VERSION_STRING)."`cat var/versionStamp.txt`".tar.gz
+dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT) bld/genDist.sh
+	@chmod +x bld/genDist.sh
+	@./bld/genDist.sh $(TARGET) $(VERSION_STRING) $(MAN_PAGE) $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
 
 clean: start
 	@echo Cleaning build output...

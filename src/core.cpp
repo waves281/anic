@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
 				)
 				// flag this option as handled
 				vHandled = true;
-			} else if (argv[i][1] == 'e' && !eHandled) {
+			} else if (argv[i][1] == 'e' && !eHandled && !sHandled) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
 				eHandled = true;

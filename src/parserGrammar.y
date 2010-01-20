@@ -234,9 +234,9 @@ RetList :
 	;
 Param : Type ID
 	;
-Type : Node
-	| Node LatchTypeSuffix
-	| Node StreamTypeSuffix
+Type : Identifier
+	| Identifier LatchTypeSuffix
+	| Identifier StreamTypeSuffix
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

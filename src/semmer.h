@@ -22,7 +22,7 @@ class SymbolTable {
 		// data members
 		int kind;
 		string id;
-		Tree *defSite; // where the symbol is defined in the Tree; NULL for root block and standard nodes
+		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param); NULL for root block and standard nodes
 		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators

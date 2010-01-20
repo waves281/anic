@@ -161,7 +161,7 @@ SymbolTable *genDefaultDefs() {
 }
 
 // recursively extracts the appropriate nodes from the given tree and appropriately populates the passed containers
-void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &instanceList, vector<Tree *> &netsList, bool netsHandled) {
+void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &netsList, bool netsHandled) {
 	// base case
 	if (parseme == NULL) {
 		return;
@@ -170,23 +170,19 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 	parseme->env = st;
 	// recursive cases
 	if (parseme->t.tokenType == TOKEN_Identifier) { // if it's an Identifier
-		if (!(parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT)) { // if it's non-import
-			// log this identifier use case
-			instanceList.push_back(parseme);
-			// *don't* recurse any deeper in this Identifier
-		} else { // else if it's an import Identifier
+		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT) { // if it's an import Identifier
 			// recurse on the right only; i.e. don't log import subidentifiers as use cases
-			extractNodes(parseme->next, st, importList, instanceList, netsList, netsHandled); // right
+			extractNodes(parseme->next, st, importList, netsList, netsHandled); // right
 		}
 	} else if (parseme->t.tokenType == TOKEN_NonEmptyTerms && !netsHandled) { // if it's a term stream node
 		// log the stream occurence
 		netsList.push_back(parseme);
 		// recurse down only; NonEmptyTerms never has any right siblings
-		extractNodes(parseme->child, st, importList, instanceList, netsList, true); // right
+		extractNodes(parseme->child, st, importList, netsList, true); // right
 	} else if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, parseme);
-		// if there is a header attatched to this block, inject its definitions into the block node
+		// if there is a header for to this block, add its parameters into the block node
 		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_NodeHeader) {
 			Tree *nh = parseme->back; // NodeHeader
 			if (nh->child->next->child != NULL) { // if there is a parameter list to process
@@ -208,7 +204,7 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 		// finally, link the block node into the main trunk
 		*st *= blockDef;
 		// recurse
-		extractNodes(parseme->child, blockDef, importList, instanceList, netsList, netsHandled); // child of Block
+		extractNodes(parseme->child, blockDef, importList, netsList, netsHandled); // child of Block
 	} else if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
 		Token t = parseme->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
@@ -217,14 +213,14 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			extractNodes(parseme->child, newDef, importList, instanceList, netsList, netsHandled); // child of Declaration
+			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, parseme->child->t.s, parseme);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			extractNodes(parseme->child, newDef, importList, instanceList, netsList, netsHandled); // child of Declaration
+			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
 		} else if (t.tokenType == TOKEN_Identifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, parseme);
@@ -233,13 +229,18 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 			// also, since it's an import declaration, log it to the import list
 			importList.push_back(newDef);
 			// recurse
-			extractNodes(parseme->child, newDef, importList, instanceList, netsList, netsHandled); // child of Declaration
+			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
 		}
 	} else { // else if it's not a declaration node
 		// recurse normally
-		extractNodes(parseme->child, st, importList, instanceList, netsList, netsHandled); // down
-		extractNodes(parseme->next, st, importList, instanceList, netsList, netsHandled); // right
+		extractNodes(parseme->child, st, importList, netsList, netsHandled); // down
+		extractNodes(parseme->next, st, importList, netsList, netsHandled); // right
 	}
+}
+
+// wrapper for the above function
+void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &netsList) {
+	extractNodes(parseme, st, importList, netsList, false);
 }
 
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
@@ -390,7 +391,57 @@ void bindInstances(vector<Tree *> &instanceList) {
 
 // returns a string representation of the given type; used for debugging
 string type2String(Type *t) {
-	return ""; // LOL
+	// allocate an accumulator for the type
+	string acc = "";
+	while (t != NULL) { // while there is more of the type to analyse
+		// figure out the base type
+		string baseType;
+		if (t->kind == STD_NULL) {
+			baseType = "null";
+		} else if (t->kind == STD_NODE) {
+			baseType = "node";
+		} else if (t->kind == STD_INT) {
+			baseType = "int";
+		} else if (t->kind == STD_FLOAT) {
+			baseType = "float";
+		} else if (t->kind == STD_BOOL) {
+			baseType = "bool";
+		} else if (t->kind == STD_CHAR) {
+			baseType = "char";
+		} else if (t->kind == STD_STRING) {
+			baseType = "string";
+		} else if (t->kind == STD_PREFIX_OP || t->kind == STD_INFIX_OP || t->kind == STD_MULTI_OP) {
+			baseType = t->base->t.s; // get the base type from the raw token
+		} else {
+			baseType = ""; // can't happen
+		}
+		// figure out the suffix
+		string suffix;
+		if (t->suffix == SUFFIX_NONE) {
+			suffix = "";
+		} else if (t->suffix == SUFFIX_LATCH) {
+			suffix = "\\";
+		} else {
+			suffix = "";
+			for (int i = 0; i < t->suffix; i++) {
+				suffix += "\\\\";
+				if (i+1 < t->suffix) { // if there's still more rounds to go, add a space
+					suffix += " ";
+				}
+			}
+		}
+
+		// accumulate
+		acc += (baseType + suffix);
+		// advance
+		t = t->next;
+		// add a comma if necessary
+		if (t != NULL) {
+			acc += ", ";
+		}
+	}
+
+	return acc;
 }
 
 // forward declarations of mutually recursive typing functions
@@ -631,24 +682,20 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	semmerErrorCode = 0;
 	semmerEventuallyGiveUp = eventuallyGiveUp;
 
-	VERBOSE( printNotice("Binding identifiers..."); )
+	VERBOSE( printNotice("Collecting tree nodes..."); )
 
 	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
 
 	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
 	vector<SymbolTable *> importList; // import Declaration nodes
-	vector<Tree *> instanceList; // top-level non-import Identifier nodes
 	vector<Tree *> netsList; // list of top-level Term nodes
-	extractNodes(rootParseme, stRoot, importList, instanceList, netsList, false);
+	extractNodes(rootParseme, stRoot, importList, netsList);
 
 	// substitute import declarations
 	subImportDecls(importList);
 
 	VERBOSE( cout << stRoot; )
-
-	// bind identifier use sites to their definitions, checking for errors
-	bindInstances(instanceList);
 
 	VERBOSE( printNotice("Tracing type flow..."); )
 

@@ -413,36 +413,35 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 		if (inType->kind == STD_NULL) { // if the incoming type is null, we can't bind to it, so return an error
 			return NULL;
 		} else if (inType->kind != USR) { // else if it's a non-user-defined base type
-			string recString = typeKind2String(inType->kind); // get the string representation statically
-			return bindId(recString, env); // bind to the standard node
+			string recString = typeKind2String(inType->kind); // statically get the string representation
+			return bindId(recString, env); // statically bind to the specific standard node
 		} else { // else if it's a user-defined type
 			return NULL; // LOL
 		}
 	}
 	// recursive case
-	string tip = idTip(id);
+	string tip = idHead(id);
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
 		if ((*latchIter)->id == tip) { // if we've found a latch point
 
 			// verify that the latching holds for the rest of the identifier
 			SymbolTable *stCur = *latchIter;
-			vector<string> choppedId = idChop(id);
-			unsigned int i = 1; // start at 1, since we've aleady matched the tip (index 0)
-			while (i < choppedId.size()) {
+			string idCur = idTail(id);
+			while (!idCur.empty()) { // while there's still more of the identifier to match
 
 				// find a static match in the current st node's children
 				SymbolTable *match = NULL;
 				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
-
-					if ((*stcIter)->id == choppedId[i]) { // if the identifiers are the same, we have a match
+					string idCurHead = idHead(idCur);
+					if ((*stcIter)->id == idCurHead) { // if the identifiers are the same, we have a match
 						match = *stcIter;
 						goto matchOK;
 
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
 					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
-							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedId[i]) { // if the identifiers are the same, we have a match
+							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
 								match = *blockIter;
 								goto matchOK;
 							}
@@ -465,16 +464,17 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 				if (match != NULL) { // if we ultimately do have a match
 					// advance to the matched st node
 					stCur = match;
-					// advance to the next token in the qi
-					i++;
+					// advance to the next token in the id
+					idCur = idTail(idCur);
 				} else { // else if we don't have a match, fail
 					break;
 				}
 
 			}
 			// if we've verified the entire qi, return the tail of the latch point
-			if (i == choppedId.size()) {
-				return stCur;
+			if (idCur.empty()) {
+				id.clear(); // clear id to signify that the latching is complete
+				return stCur; // return the tail of the latch point
 			}
 			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
 			break;

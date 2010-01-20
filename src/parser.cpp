@@ -127,7 +127,7 @@ string id2String(Tree *t) {
 	return retVal;
 }
 
-string idTip(string &id) {
+string idHead(string &id) {
 	string retVal;
 	for (unsigned int i=0; i<id.size(); i++) {
 		if (id[i] == '.') {
@@ -139,6 +139,17 @@ string idTip(string &id) {
 	return retVal;
 }
 
+string idTail(string &id) {
+	for (unsigned int i=0; i<id.size(); i++) {
+		if (id[i] == '.') {
+			if (id.length() > i) {
+				return id.substr(i+1);
+			}
+		}
+	}
+	return "";
+}
+
 string idEnd(string &id) {
 	string retVal;
 	for (unsigned int i=0; i<id.size(); i++) {
@@ -147,24 +158,6 @@ string idEnd(string &id) {
 		} else {
 			retVal += id[i];
 		}
-	}
-	return retVal;
-}
-
-vector<string> idChop(string &id) {
-	vector<string> retVal;
-	string s;
-	for (unsigned int i=0; i<id.size(); i++) {
-		if (id[i] == '.') {
-			retVal.push_back(s);
-			s.clear();
-		} else {
-			s += id[i];
-		}
-	}
-	// push back the last part of the qi if necessary
-	if (!s.empty()) {
-		retVal.push_back(s);
 	}
 	return retVal;
 }

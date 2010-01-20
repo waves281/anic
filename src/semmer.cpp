@@ -388,7 +388,7 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 	extractNodes(parseme, st, importList, netsList, false);
 }
 
-// forward declaration
+// forward declarations
 SymbolTable *bindId(string &id, SymbolTable *env);
 
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
@@ -421,13 +421,14 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 	}
 	// recursive case
 	string tip = idHead(id);
+	string idCur = idTail(id);
+	SymbolTable *stCur = NULL;
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
 		if ((*latchIter)->id == tip) { // if we've found a latch point
 
 			// verify that the latching holds for the rest of the identifier
-			SymbolTable *stCur = *latchIter;
-			string idCur = idTail(id);
+			stCur = *latchIter;
 			while (!idCur.empty()) { // while there's still more of the identifier to match
 
 				// find a static match in the current st node's children
@@ -450,50 +451,55 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 
 				} matchOK: ; // match verification loop
 
-				// if we don't have a static match, look for a dynamic match stemming from stCur
-				if (match == NULL) {
-					if (stCur->kind == KIND_STATIC_DECL) {
-// LOL
-					} else if (stCur->kind == KIND_THROUGH_DECL) {
-// LOL
-					} else if (stCur->kind == KIND_PARAM) {
-// LOL
-					}
-				}
-
-				if (match != NULL) { // if we ultimately do have a match
+				if (match != NULL) { // if we have a match for this part of the rest
 					// advance to the matched st node
 					stCur = match;
 					// advance to the next token in the id
 					idCur = idTail(idCur);
-				} else { // else if we don't have a match, fail
+				} else { // else if we don't have a match for this part of the rest
 					break;
 				}
 
 			}
-			// if we've verified the entire qi, return the tail of the latch point
-			if (idCur.empty()) {
-				id.clear(); // clear id to signify that the latching is complete
-				return stCur; // return the tail of the latch point
-			}
-			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
+			// no need to look through the rest of the children; we've already found the correctly named one on this level
 			break;
 		}
 	} // per-latch point loop
 
-	// otherwise, recursively try to find a binding starting one level higher
+	// if we've verified the entire qi, return the tail of the latch point
+	if (stCur != NULL && idCur.empty()) {
+		id.clear(); // clear id to signify that the latching is complete
+		return stCur; // return the tail of the latch point
+	}
+
+	// otherwise, compare the current binding with the alternate higher-level one
 	// but first, scan up to the next block level, since jumping to the enclosing identifier is a waste of time
 	SymbolTable *recurseSt = env->parent;
 	while (recurseSt != NULL && recurseSt->kind != KIND_BLOCK) {
 		recurseSt = recurseSt->parent;
 	}
-	return bindId(inType, id, recurseSt);
+	string altId = id;
+	if (stCur != NULL) { // if there was some sort of binding, update id to be the rest of it
+		id = idCur;
+	}
+
+	// do the recursion
+	SymbolTable *altResult = bindId(inType, altId, recurseSt);
+
+	// check if the recursive solution is better
+	if (altResult != NULL  && ((altId.length() < id.length()) || stCur == NULL)) { // if the other binding succeeded and is better, return it
+		id = altId;
+		return altResult;
+	} else { // otherwise, return the local binding
+		return stCur;
+	}
 }
 
-// wrapper for the above function
+// wrappers for the above function
 SymbolTable *bindId(string &id, SymbolTable *env) {
 	return bindId(NULL, id, env);
 }
+
 
 void subImportDecls(vector<SymbolTable *> &importList) {
 	bool stdExplicitlyImported = false;

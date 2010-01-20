@@ -11,6 +11,7 @@ then
 	echo --------------------------------
 	echo Default test cases passed.
 	echo
+	rm -f ./a.out
 	mkdir -p var
 	echo OK > var/testCertificate.dat
 else

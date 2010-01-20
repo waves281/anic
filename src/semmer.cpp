@@ -402,21 +402,25 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 	// recall identifier case
 	if (id[0] == '.' && id[1] == '.') {
 
-		// update id to be the rest of the recall identifier
-		string idRest = "";
-		if (id.length() >= 3) { // if this recall identifier has a rest-part
-			idRest = id.substr(3, id.length()-3); // get the rest of the recall identifier string
-		}
-		id = idRest;
+		if (inType != NULL) { // if there is an input type
+			// update id to be the rest of the recall identifier
+			string idRest = "";
+			if (id.length() >= 3) { // if this recall identifier has a rest-part
+				idRest = id.substr(3, id.length()-3); // get the rest of the recall identifier string
+			}
+			id = idRest;
 
-		// return the binding of the current input type, since that's what the recall identifier implicitly binds to
-		if (inType->kind == STD_NULL) { // if the incoming type is null, we can't bind to it, so return an error
+			// return the binding of the current input type, since that's what the recall identifier implicitly binds to
+			if (inType->kind == STD_NULL) { // if the incoming type is null, we can't bind to it, so return an error
+				return NULL;
+			} else if (inType->kind != USR) { // else if it's a non-user-defined base type
+				string recString = typeKind2String(inType->kind); // statically get the string representation
+				return bindId(recString, env); // statically bind to the specific standard node
+			} else { // else if it's a user-defined type
+				return NULL; // LOL
+			}
+		} else { // else if there is no input type
 			return NULL;
-		} else if (inType->kind != USR) { // else if it's a non-user-defined base type
-			string recString = typeKind2String(inType->kind); // statically get the string representation
-			return bindId(recString, env); // statically bind to the specific standard node
-		} else { // else if it's a user-defined type
-			return NULL; // LOL
 		}
 	}
 	// recursive case
@@ -517,7 +521,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 		}
 		// try to find a binding for this import
 		SymbolTable *binding = bindId(importPath, *importIter);
-		if (binding != NULL) { // if we found a binding
+		if (binding != NULL && importPath.empty()) { // if we found a complete static binding
 			// check to make sure that this import doesn't cause a binding conflict
 			string importPathTip = binding->id; // must exist if binding succeeed
 			// per-parent's children loop (parent must exist, since the root is a block st node)
@@ -563,7 +567,14 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 	Type *type = NULL;
 	if (primaryc->t.tokenType == TOKEN_Identifier) {
 		string id = id2String(primaryc); // string representation of this identifier
-		SymbolTable *st = bindId(inType, id, primaryc->env);
+		string idCur = id; // a destructible copy for the recursion
+		SymbolTable *st = bindId(inType, idCur, primaryc->env);
+		if (st != NULL) { // if we found some sort of static binding
+
+		} else { // else if there was no static binding at all
+			Token t = primaryc->t;
+			printSemmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
+		}
 
 		type = NULL; // LOL
 	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
@@ -703,7 +714,16 @@ Type *getTermType(Type *inType, Tree *term) {
 					if (tc6->t.tokenType == TOKEN_Node) {
 						Tree *tc7 = tc6->child;
 						if (tc7->t.tokenType == TOKEN_Identifier) {
+
+							// try to find a binding for this identifier
+							string id = id2String(tc7);
+ 							SymbolTable *st = bindId(id, tc7->env);
+ 							if (st != NULL) { // if we found some sort of static binding
 // LOL
+							} else { // else if there was no static binding at all
+								Token t = tc7->t;
+								printSemmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
+							}
 						} else if (tc7->t.tokenType == TOKEN_NodeInstantiation) {
 // LOL
 						} else if (tc7->t.tokenType == TOKEN_TypedNodeLiteral) {

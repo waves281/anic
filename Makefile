@@ -28,7 +28,7 @@ TEST_FILES = tst/test.ani
 
 main: start $(TARGET)
 
-all: start cleanout test install
+all: start clean test install
 
 version: start var/versionStamp.txt
 	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"

@@ -127,39 +127,39 @@ string id2String(Tree *t) {
 	return retVal;
 }
 
-string idTip(string &qi) {
+string idTip(string &id) {
 	string retVal;
-	for (unsigned int i=0; i<qi.size(); i++) {
-		if (qi[i] == '.') {
+	for (unsigned int i=0; i<id.size(); i++) {
+		if (id[i] == '.') {
 			break;
 		} else {
-			retVal += qi[i];
+			retVal += id[i];
 		}
 	}
 	return retVal;
 }
 
-string idEnd(string &qi) {
+string idEnd(string &id) {
 	string retVal;
-	for (unsigned int i=0; i<qi.size(); i++) {
-		if (qi[i] == '.') {
+	for (unsigned int i=0; i<id.size(); i++) {
+		if (id[i] == '.') {
 			retVal.clear();
 		} else {
-			retVal += qi[i];
+			retVal += id[i];
 		}
 	}
 	return retVal;
 }
 
-vector<string> qiChop(string &qi) {
+vector<string> idChop(string &id) {
 	vector<string> retVal;
 	string s;
-	for (unsigned int i=0; i<qi.size(); i++) {
-		if (qi[i] == '.') {
+	for (unsigned int i=0; i<id.size(); i++) {
+		if (id[i] == '.') {
 			retVal.push_back(s);
 			s.clear();
 		} else {
-			s += qi[i];
+			s += id[i];
 		}
 	}
 	// push back the last part of the qi if necessary

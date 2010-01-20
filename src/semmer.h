@@ -42,7 +42,7 @@ class SymbolTable {
 #define STD_NULL 1
 #define STD_NODE 2
 
-#define STD_MIN_COMPARABLE 3 // anything in the range is considered comparable
+#define STD_MIN_COMPARABLE 3 /* anything in the range is considered comparable */
 
 #define STD_INT 3
 #define STD_FLOAT 4
@@ -50,13 +50,32 @@ class SymbolTable {
 #define STD_CHAR 6
 #define STD_STRING 7
 
-#define STD_MAX_COMPARABLE 7 // anything in the range is considered comparable
+#define STD_MAX_COMPARABLE 7 /* anything in the range is considered comparable */
 
-// for the following, base will point to the actual operator token
+#define STD_NOT 8
+#define STD_COMPLEMENT 9
+#define STD_DPLUS 10
+#define STD_DMINUS 11
 
-#define STD_PREFIX_OP 8
-#define STD_INFIX_OP 9
-#define STD_MULTI_OP 10
+#define STD_DOR 12
+#define STD_DAND 13
+#define STD_OR 14
+#define STD_XOR 15
+#define STD_AND 16
+#define STD_DEQUALS 17
+#define STD_NEQUALS 18
+#define STD_LT 19
+#define STD_GT 20
+#define STD_LE 21
+#define STD_GE 22
+#define STD_LS 23
+#define STD_RS 24
+#define STD_TIMES 25
+#define STD_DIVIDE 26
+#define STD_MOD 27
+
+#define STD_PLUS 28
+#define STD_MINUS 29
 
 // Type suffix specifiers
 

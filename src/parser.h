@@ -54,9 +54,9 @@ class Tree {
 };
 
 string id2String(Tree *t);
-string idTip(string &qi);
-string idEnd(string &qi);
-vector<string> qiChop(string &qi);
+string idTip(string &id);
+string idEnd(string &id);
+vector<string> idChop(string &id);
 Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 // post-includes

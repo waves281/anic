@@ -111,6 +111,121 @@ bool Type::operator<=(int kind) {
 	return (this->kind <= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
 }
 
+// to-string functions
+
+// returns a string representation of the given type kind; does *not* work for USR kinds
+string typeKind2String(int kind) {
+	switch(kind) {
+		// null type
+		case STD_NULL:
+			return "null";
+		// standard types
+		case STD_NODE:
+			return "node";
+		case STD_INT:
+			return "int";
+		case STD_FLOAT:
+			return "float";
+		case STD_BOOL:
+			return "bool";
+		case STD_CHAR:
+			return "char";
+		case STD_STRING:
+			return "string";
+		// prefix operators
+		case STD_NOT:
+			return "!";
+		case STD_COMPLEMENT:
+			return "~";
+		case STD_DPLUS:
+			return "++";
+		case STD_DMINUS:
+			return "--";
+		// infix operators
+		case STD_DOR:
+			return "||";
+		case STD_DAND:
+			return "&&";
+		case STD_OR:
+			return "|";
+		case STD_XOR:
+			return "^";
+		case STD_AND:
+			return "&";
+		case STD_DEQUALS:
+			return "==";
+		case STD_NEQUALS:
+			return "!=";
+		case STD_LT:
+			return "<";
+		case STD_GT:
+			return ">";
+		case STD_LE:
+			return "<=";
+		case STD_GE:
+			return ">=";
+		case STD_LS:
+			return "<<";
+		case STD_RS:
+			return ">>";
+		case STD_TIMES:
+			return "*";
+		case STD_DIVIDE:
+			return "/";
+		case STD_MOD:
+			return "%";
+		// multi operators
+		case STD_PLUS:
+			return "+";
+		case STD_MINUS:
+			return "-";
+		// can't happen
+		default:
+			return "";
+	}
+}
+
+// returns a string representation of the given type
+string type2String(Type *t) {
+	// allocate an accumulator for the type
+	string acc = "";
+	while (t != NULL) { // while there is more of the type to analyse
+		// figure out the base type
+		string baseType;
+		if (t->kind != USR) { // if it's a non-user-defined base type
+			baseType = typeKind2String(t->kind); // get the string representation statically
+		} else { // else if it's a user-defined type
+			baseType = ""; // LOL
+		}
+		// figure out the suffix
+		string suffix;
+		if (t->suffix == SUFFIX_NONE) {
+			suffix = "";
+		} else if (t->suffix == SUFFIX_LATCH) {
+			suffix = "\\";
+		} else {
+			suffix = "";
+			for (int i = 0; i < t->suffix; i++) {
+				suffix += "\\\\";
+				if (i+1 < t->suffix) { // if there's still more rounds to go, add a space
+					suffix += " ";
+				}
+			}
+		}
+		// accumulate
+		acc += (baseType + suffix);
+		// advance
+		t = t->next;
+		// add a comma if necessary
+		if (t != NULL) {
+			acc += ", ";
+		}
+	}
+
+	return acc;
+}
+
+
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
@@ -120,6 +235,34 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "bool", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "char", NULL);
 	*stRoot *= new SymbolTable(KIND_STD, "string", NULL);
+}
+
+void catStdOps(SymbolTable *&stRoot) {
+	// prefix
+	*stRoot *= new SymbolTable(KIND_STD, "!", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "~", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "++", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "--", NULL);
+	// infix
+	*stRoot *= new SymbolTable(KIND_STD, "||", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "&&", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "|", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "^", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "&", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "==", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "!=", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "<", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, ">", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "<=", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, ">=", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "<<", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, ">>", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "*", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "/", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "%", NULL);
+	// multi
+	*stRoot *= new SymbolTable(KIND_STD, "+", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "-", NULL);
 }
 
 void catStdLib(SymbolTable *&stRoot) {
@@ -154,6 +297,8 @@ SymbolTable *genDefaultDefs() {
 	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, NULL);
 	// concatenate in the standard types
 	catStdNodes(stRoot);
+	// concatenate in the standard operators
+	catStdOps(stRoot);
 	// concatenate in the standard library
 	catStdLib(stRoot);
 	// finally, return the genrated default symtable
@@ -243,41 +388,61 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 	extractNodes(parseme, st, importList, netsList, false);
 }
 
+// forward declaration
+SymbolTable *bindId(string &id, SymbolTable *env);
+
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
-// returns NULL if no binding can be found
-SymbolTable *bindId(string qi, SymbolTable *env) {
+// also, updates id to contain the portion of the identifier that could not be bound
+// returns NULL if no binding whatsoever can be found
+SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 	// base case
 	if (env == NULL) {
 		return NULL;
 	}
 	// recall identifier case
-	if (qi[0] == '.' && qi[1] == '.') {
-// LOL
+	if (id[0] == '.' && id[1] == '.') {
+
+		// update id to be the rest of the recall identifier
+		string idRest = "";
+		if (id.length() >= 3) { // if this recall identifier has a rest-part
+			idRest = id.substr(3, id.length()-3); // get the rest of the recall identifier string
+		}
+		id = idRest;
+
+		// return the binding of the current input type, since that's what the recall identifier implicitly binds to
+		if (inType->kind == STD_NULL) { // if the incoming type is null, we can't bind to it, so return an error
+			return NULL;
+		} else if (inType->kind != USR) { // else if it's a non-user-defined base type
+			string recString = typeKind2String(inType->kind); // get the string representation statically
+			return bindId(recString, env); // bind to the standard node
+		} else { // else if it's a user-defined type
+			return NULL; // LOL
+		}
 	}
 	// recursive case
-	string tip = idTip(qi);
+	string tip = idTip(id);
 	// scan the current environment's children for a latch point
 	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
 		if ((*latchIter)->id == tip) { // if we've found a latch point
 
 			// verify that the latching holds for the rest of the identifier
 			SymbolTable *stCur = *latchIter;
-			vector<string> choppedQI = qiChop(qi);
+			vector<string> choppedId = idChop(id);
 			unsigned int i = 1; // start at 1, since we've aleady matched the tip (index 0)
-			while (i < choppedQI.size()) {
+			while (i < choppedId.size()) {
 
 				// find a static match in the current st node's children
 				SymbolTable *match = NULL;
 				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
 
-					if ((*stcIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
+					if ((*stcIter)->id == choppedId[i]) { // if the identifiers are the same, we have a match
 						match = *stcIter;
 						goto matchOK;
 
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
 					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
-							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedQI[i]) { // if the identifiers are the same, we have a match
+							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == choppedId[i]) { // if the identifiers are the same, we have a match
 								match = *blockIter;
 								goto matchOK;
 							}
@@ -297,7 +462,7 @@ SymbolTable *bindId(string qi, SymbolTable *env) {
 					}
 				}
 
-				if (match != NULL) { // if we ultimately do have a match, advance
+				if (match != NULL) { // if we ultimately do have a match
 					// advance to the matched st node
 					stCur = match;
 					// advance to the next token in the qi
@@ -308,7 +473,7 @@ SymbolTable *bindId(string qi, SymbolTable *env) {
 
 			}
 			// if we've verified the entire qi, return the tail of the latch point
-			if (i == choppedQI.size()) {
+			if (i == choppedId.size()) {
 				return stCur;
 			}
 			// no need to look thrugh the rest of the children; we've already found the correctly named one on this level
@@ -322,7 +487,12 @@ SymbolTable *bindId(string qi, SymbolTable *env) {
 	while (recurseSt != NULL && recurseSt->kind != KIND_BLOCK) {
 		recurseSt = recurseSt->parent;
 	}
-	return bindId(qi, recurseSt);
+	return bindId(inType, id, recurseSt);
+}
+
+// wrapper for the above function
+SymbolTable *bindId(string &id, SymbolTable *env) {
+	return bindId(NULL, id, env);
 }
 
 void subImportDecls(vector<SymbolTable *> &importList) {
@@ -374,76 +544,6 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 	} // per-import loop
 }
 
-void bindInstances(vector<Tree *> &instanceList) {
-	// per-instance loop
-	for (vector<Tree *>::iterator instanceIter = instanceList.begin(); instanceIter != instanceList.end(); instanceIter++) {
-		Tree *qi = *instanceIter;
-		string qiString = id2String(qi);
-		SymbolTable *binding = bindId(qiString, qi->env);
-		if (binding != NULL) { // if we found a binding for this identifier, latch it
-			qi->env = binding;
-		} else { // else if we couldn't find a binding
-			Token curQIToken = qi->child->t;
-			printSemmerError(curQIToken.fileName,curQIToken.row,curQIToken.col,"cannot resolve '"<<qiString<<"'",);
-		}
-	}
-}
-
-// returns a string representation of the given type; used for debugging
-string type2String(Type *t) {
-	// allocate an accumulator for the type
-	string acc = "";
-	while (t != NULL) { // while there is more of the type to analyse
-		// figure out the base type
-		string baseType;
-		if (t->kind == STD_NULL) {
-			baseType = "null";
-		} else if (t->kind == STD_NODE) {
-			baseType = "node";
-		} else if (t->kind == STD_INT) {
-			baseType = "int";
-		} else if (t->kind == STD_FLOAT) {
-			baseType = "float";
-		} else if (t->kind == STD_BOOL) {
-			baseType = "bool";
-		} else if (t->kind == STD_CHAR) {
-			baseType = "char";
-		} else if (t->kind == STD_STRING) {
-			baseType = "string";
-		} else if (t->kind == STD_PREFIX_OP || t->kind == STD_INFIX_OP || t->kind == STD_MULTI_OP) {
-			baseType = t->base->t.s; // get the base type from the raw token
-		} else {
-			baseType = ""; // can't happen
-		}
-		// figure out the suffix
-		string suffix;
-		if (t->suffix == SUFFIX_NONE) {
-			suffix = "";
-		} else if (t->suffix == SUFFIX_LATCH) {
-			suffix = "\\";
-		} else {
-			suffix = "";
-			for (int i = 0; i < t->suffix; i++) {
-				suffix += "\\\\";
-				if (i+1 < t->suffix) { // if there's still more rounds to go, add a space
-					suffix += " ";
-				}
-			}
-		}
-
-		// accumulate
-		acc += (baseType + suffix);
-		// advance
-		t = t->next;
-		// add a comma if necessary
-		if (t != NULL) {
-			acc += ", ";
-		}
-	}
-
-	return acc;
-}
-
 // forward declarations of mutually recursive typing functions
 
 Type *getPrimaryType(Type *inType, Tree *primary);
@@ -456,6 +556,9 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 	Tree *primaryc = primary->child;
 	Type *type = NULL;
 	if (primaryc->t.tokenType == TOKEN_Identifier) {
+		string id = id2String(primaryc); // string representation of this identifier
+		SymbolTable *st = bindId(inType, id, primaryc->env);
+
 		type = NULL; // LOL
 	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
 		type = NULL; // LOL
@@ -600,14 +703,78 @@ Type *getTermType(Type *inType, Tree *term) {
 						} else if (tc7->t.tokenType == TOKEN_TypedNodeLiteral) {
 // LOL
 						} else if (tc7->t.tokenType == TOKEN_PrimOpNode) {
-							Tree *tc8 = tc7->child; // type of operator
-							Tree *tc9 = tc8->child; // the operator token itself
-							if (tc8->t.tokenType == TOKEN_PrefixOp) {
-								type = new Type(STD_PREFIX_OP, tc9);
-							} else if (tc8->t.tokenType == TOKEN_InfixOp) {
-								type = new Type(STD_INFIX_OP, tc9);
-							} else if (tc8->t.tokenType == TOKEN_MultiOp) {
-								type = new Type(STD_MULTI_OP, tc9);
+							Tree *tc9 = tc7->child->child; // the operator token itself
+							// generate the type based on the specific operator it is
+							switch (tc9->t.tokenType) {
+								case TOKEN_NOT:
+									type = new Type(STD_NOT, tc9);
+									break;
+								case TOKEN_COMPLEMENT:
+									type = new Type(STD_COMPLEMENT, tc9);
+									break;
+								case TOKEN_DPLUS:
+									type = new Type(STD_DPLUS, tc9);
+									break;
+								case TOKEN_DMINUS:
+									type = new Type(STD_DMINUS, tc9);
+									break;
+								case TOKEN_DOR:
+									type = new Type(STD_DOR, tc9);
+									break;
+								case TOKEN_DAND:
+									type = new Type(STD_DAND, tc9);
+									break;
+								case TOKEN_OR:
+									type = new Type(STD_OR, tc9);
+									break;
+								case TOKEN_XOR:
+									type = new Type(STD_XOR, tc9);
+									break;
+								case TOKEN_AND:
+									type = new Type(STD_AND, tc9);
+									break;
+								case TOKEN_DEQUALS:
+									type = new Type(STD_DEQUALS, tc9);
+									break;
+								case TOKEN_NEQUALS:
+									type = new Type(STD_NEQUALS, tc9);
+									break;
+								case TOKEN_LT:
+									type = new Type(STD_LT, tc9);
+									break;
+								case TOKEN_GT:
+									type = new Type(STD_GT, tc9);
+									break;
+								case TOKEN_LE:
+									type = new Type(STD_LE, tc9);
+									break;
+								case TOKEN_GE:
+									type = new Type(STD_GE, tc9);
+									break;
+								case TOKEN_LS:
+									type = new Type(STD_LS, tc9);
+									break;
+								case TOKEN_RS:
+									type = new Type(STD_RS, tc9);
+									break;
+								case TOKEN_TIMES:
+									type = new Type(STD_TIMES, tc9);
+									break;
+								case TOKEN_DIVIDE:
+									type = new Type(STD_DIVIDE, tc9);
+									break;
+								case TOKEN_MOD:
+									type = new Type(STD_MOD, tc9);
+									break;
+								case TOKEN_PLUS:
+									type = new Type(STD_PLUS, tc9);
+									break;
+								case TOKEN_MINUS:
+									type = new Type(STD_MINUS, tc9);
+									break;
+								default: // can't happen
+									type = NULL;
+									break;
 							}
 						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
 							Tree *tc8 = tc7->child;

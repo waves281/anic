@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
 				eHandled = true;
-			} else if (argv[i][1] == 'h' && i == 1) {
+			} else if (argv[i][1] == 'h' && argc == 2) {
 				// invoke the program's man page
 				system("/usr/bin/man anic");
 				die(0);

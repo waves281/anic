@@ -6,8 +6,6 @@
 %token DPERIOD
 %token LBRACKET
 %token RBRACKET
-%token LSLASH
-%token DLSLASH
 %token COMMA
 %token EQUALS
 %token SEMICOLON

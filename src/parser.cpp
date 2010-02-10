@@ -285,7 +285,7 @@ transitionParserState: ;
 			} else {
 				errorString += "\'" + t.s + "\'";
 			}
-			printParserError(fileName, t.row, t.col, errorString);
+			parserError(fileName, t.row, t.col, errorString);
 			break;
 		}
 	}

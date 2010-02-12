@@ -8,7 +8,8 @@ INSTALL_PATH = /usr/local/bin
 VERSION_STRING = "0.65"
 VERSION_YEAR = "2010"
 
-MAKE_PROGRAM = /usr/bin/make
+MAKE_PROGRAM = make
+HYACC_PATH = bld/hyacc
 
 PRINT_VERSION = @echo Version stamp is
 
@@ -62,7 +63,8 @@ clean: start
 	@rm -f tmp/{lexer,parser}StructGen
 	@rm -f tmp/{lexer,parser}Struct.{h,cpp,o}
 	@rm -f -R tmp
-	@$(MAKE_PROGRAM) -C bld/hyacc -f makefile clean -s
+	@chmod +x bld/hyaccMake.sh
+	@./bld/hyaccMake.sh $(MAKE_PROGRAM) $(HYACC_PATH) clean
 
 reset: start clean
 	@echo Resetting build variables...
@@ -129,7 +131,7 @@ var/versionStamp.txt: ./bld/getChecksumProgram.sh $(CORE_DEPENDENCIES) tmp/versi
 
 $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
 	@echo Generating installater script...
-	@echo -e "#!/bin/sh\n\n\
+	@printf "#!/bin/sh\n\n\
 ### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
 echo Installing binary...\n\
 cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)\n\
@@ -141,7 +143,7 @@ exit" > $(INSTALL_SCRIPT)
 
 $(UNINSTALL_SCRIPT): Makefile
 	@echo Generating uninstallater script...
-	@echo -e "#!/bin/sh\n\n\
+	@printf "#!/bin/sh\n\n\
 ### $(UNINSTALL_SCRIPT) -- generated script for uninstalling $(TARGET) ANI Compiler\n\n\
 echo Uninstalling man page...\n\
 rm -f /usr/share/man/man1/anic.1.gz\n\
@@ -190,7 +192,8 @@ tmp/parserStructGen: bld/parserStructGen.cpp
 
 tmp/hyacc: bld/hyacc/makefile
 	@echo Building parser table generator...
-	@$(MAKE_PROGRAM) --directory=bld/hyacc --makefile=makefile -s
+	@chmod +x bld/hyaccMake.sh
+	@./bld/hyaccMake.sh $(MAKE_PROGRAM) bld/hyacc
 
 tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
 	@echo Constructing parser table...

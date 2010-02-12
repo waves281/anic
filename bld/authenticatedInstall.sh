@@ -10,7 +10,8 @@ then
 else
 	echo
 	echo Warning: Default test cases have not been passed. To run them, use \'make test\'.
-	read -p "Proceed anyway (y/n)? " yn
+	printf "Proceed anyway (y/n)? "
+	read yn
 	case $yn in
 		[Yy]* ) ./$*;;
 		[Nn]* ) exit;;

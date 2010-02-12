@@ -6,7 +6,7 @@ echo
 echo ...Running default test cases...
 echo --------------------------------
 ./$*
-if test $? == 0
+if test $? = 0
 then
 	echo --------------------------------
 	echo Default test cases passed.

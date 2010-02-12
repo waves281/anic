@@ -3,25 +3,28 @@
 ### Checksum program location script
 
 # Cygwin/Linux
-if test -f /usr/bin/sha256sum
+type sha256sum > /dev/null
+if test $? = 0
 then
-	echo /usr/bin/sha256sum
+	printf "sha256sum"
 	exit
 fi
 
-# Mac OSX
-if test -f /usr/bin/shasum
+# Mac OSX / Sun OS
+type shasum > /dev/null
+if test $? = 0
 then
-	echo /usr/bin/shasum
+	printf "shasum"
 	exit
 fi
 
 # FreeBSD
-if test -f /sbin/sha256
+type sha256 > /dev/null
+if test $? = 0
 then
-	echo /sbin/sha256
+	printf "sha256"
 	exit
 fi
 
-echo Cannot find checksum program!
+echo Cannot find checksum program! > 2
 exit 1

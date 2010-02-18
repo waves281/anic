@@ -16,7 +16,7 @@ PRINT_VERSION = @echo Version stamp is
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O3 -fomit-frame-pointer -ffast-math -pipe -Wall
 
 CORE_DEPENDENCIES = Makefile \
-	tmp/version bld/hexTruncate.awk \
+	tmp/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
 	src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 	src/lexer.h src/parser.h src/semmer.h \
 	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
@@ -51,7 +51,7 @@ dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT) bld/g
 	@chmod +x bld/genDist.sh
 	@./bld/genDist.sh $(TARGET) $(VERSION_STRING) $(MAN_PAGE) $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
 
-clean: start
+clean: start bld/hyaccMake.sh
 	@echo Cleaning build output...
 	@rm -f $(TARGET)
 	@rm -f $(MAN_PAGE).gz
@@ -120,7 +120,7 @@ tmp/version: bld/version.c
 
 # VERSION STAMP
 
-var/versionStamp.txt: ./bld/getChecksumProgram.sh $(CORE_DEPENDENCIES) tmp/version
+var/versionStamp.txt: $(CORE_DEPENDENCIES)
 	@echo Stamping version...
 	@mkdir -p var
 	@chmod +x bld/getChecksumProgram.sh
@@ -190,7 +190,7 @@ tmp/parserStructGen: bld/parserStructGen.cpp
 	@mkdir -p tmp
 	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen
 
-tmp/hyacc: bld/hyacc/makefile
+tmp/hyacc: bld/hyaccMake.sh bld/hyacc/makefile
 	@echo Building parser table generator...
 	@chmod +x bld/hyaccMake.sh
 	@./bld/hyaccMake.sh $(MAKE_PROGRAM) bld/hyacc

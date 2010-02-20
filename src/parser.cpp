@@ -202,7 +202,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+map<int, vector<Tree *> > *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -217,12 +217,12 @@ Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int
 
 	// iterate through the lexemes and do the actual parsing
 
+	map<int, vector<Tree *> > *parseme = new map<int, vector<Tree *> >();// the parseme we're going to build up and return
+	Tree *treeCur = NULL; // the current bit of tree that we're examining
+
 	// initialize the state stack and push the initial state onto it
 	stack<unsigned int> stateStack;
 	stateStack.push(0);
-	// iterate through the lexemes
-
-	Tree *treeCur = NULL; // the current bit of tree that we're examining
 
 	for(vector<Token>::iterator lexemeIter = lexeme->begin(); lexemeIter != lexeme->end(); lexemeIter++) {
 
@@ -239,6 +239,9 @@ transitionParserState: ;
 		if (transition.action == ACTION_SHIFT) {
 			shiftToken(treeCur, t);
 			stateStack.push(transition.n);
+
+			// log the token in the parseme
+			(*parseme)[t.tokenType].push_back(treeCur);
 
 			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << "\t[" << tokenType2String(t.tokenType) << "]\n"; )
 
@@ -267,6 +270,9 @@ transitionParserState: ;
 			int tempState = stateStack.top();
 			stateStack.push(parserNode[tempState][tokenType].n);
 
+			// log the nonterminal in the parseme
+			(*parseme)[t.tokenType].push_back(treeCur);
+
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];
 				cout << "\tREDUCE\t" << curState << "\t->\t" << stateStack.top() << "\t<" << tokenString << ">\n";
@@ -292,10 +298,11 @@ transitionParserState: ;
 
 	// finally, return to the caller
 	if (parserErrorCode) {
-		// deallocate the output tree, since we're just going to return null
+		// deallocate the unfinished tree and parseme, since we're just going to return null
 		delete treeCur;
+		delete parseme;
 		return NULL;
 	} else {
-		return treeCur;
+		return parseme;
 	}
 }

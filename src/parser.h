@@ -57,7 +57,7 @@ string id2String(Tree *t);
 string idHead(string &id);
 string idTail(string &id);
 string idEnd(string &id);
-Tree *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+map<int, vector<Tree *> > *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 // post-includes
 

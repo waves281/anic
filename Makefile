@@ -16,7 +16,7 @@ HYACC_PATH = bld/hyacc
 
 PRINT_VERSION = @echo Version stamp is
 
-CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -g -O$(OPTIMIZATION_LEVEL) -fomit-frame-pointer -ffast-math -pipe -Wall
+CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -fomit-frame-pointer -ffast-math -pipe -Wall
 
 CORE_DEPENDENCIES = Makefile \
 	tmp/version bld/getChecksumProgram.sh bld/hexTruncate.awk \

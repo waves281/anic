@@ -546,13 +546,18 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 
 // forward declarations of mutually recursive typing functions
 
-Type *getPrimaryType(Type *inType, Tree *primary);
-Type *getExpType(Type *inType, Tree *exp);
-Type *getTermType(Type *inType, Tree *term);
+Type *getTypePrimary(Type *inType, Tree *primary);
+Type *getTypeExp(Type *inType, Tree *exp);
+Type *getTypeTerm(Type *inType, Tree *term);
 
 // typing function definitions
 
-Type *getPrimaryType(Type *inType, Tree *primary) {
+Type *getTypePrimary(Type *inType, Tree *primary) {
+	// if the type is memoized, short-circuit evaluate
+	if (primary->type != NULL) {
+		return primary->type;
+	}
+	// otherwise, copute the type normally
 	Tree *primaryc = primary->child;
 	Type *type = NULL;
 	if (primaryc->t.tokenType == TOKEN_Identifier) {
@@ -582,7 +587,7 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 		}
 	} else if (primaryc->t.tokenType == TOKEN_PrefixOrMultiOp) {
 		Tree *pomocc = primaryc->child->child;
-		Type *subType = getPrimaryType(inType, primaryc->next);
+		Type *subType = getTypePrimary(inType, primaryc->next);
 		if (pomocc->t.tokenType == TOKEN_NOT) {
 			if (*subType == STD_BOOL) {
 				type = subType;
@@ -609,7 +614,7 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 			}
 		}
 	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
-		type = getExpType(inType, primaryc->next);
+		type = getTypeExp(inType, primaryc->next);
 	}
 	// if we could not resolve a type, use the error type
 	if (type == NULL) {
@@ -621,17 +626,22 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 	return type;
 }
 
-Type *getExpType(Type *inType, Tree *exp) {
+Type *getTypeExp(Type *inType, Tree *exp) {
+	// if the type is memoized, short-circuit evaluate
+	if (exp->type != NULL) {
+		return exp->type;
+	}
+	// otherwise, copute the type normally
 	Tree *expc = exp->child;
 	Type *type = NULL;
 	if (expc->t.tokenType == TOKEN_Primary) {
-		type = getPrimaryType(inType, expc);
+		type = getTypePrimary(inType, expc);
 	} else if (expc->t.tokenType == TOKEN_Exp) {
 		Tree *expLeft = expc;
 		Tree *op = expLeft->next;
 		Tree *expRight = op->next;
-		Type *typeLeft = getExpType(inType, expLeft);
-		Type *typeRight = getExpType(inType, expRight);
+		Type *typeLeft = getTypeExp(inType, expLeft);
+		Type *typeRight = getTypeExp(inType, expRight);
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
 			case TOKEN_DAND:
@@ -694,7 +704,12 @@ Type *getExpType(Type *inType, Tree *exp) {
 	return type;
 }
 
-Type *getTermType(Type *inType, Tree *term) {
+Type *getTypeTerm(Type *inType, Tree *term) {
+	// if the type is memoized, short-circuit evaluate
+	if (term->type != NULL) {
+		return term->type;
+	}
+	// otherwise, copute the type normally
 	Tree *tc2 = term->child->child;
 	Type *type = NULL;
 	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
@@ -812,7 +827,7 @@ Type *getTermType(Type *inType, Tree *term) {
 							}
 						}
 					} else if (tc6->t.tokenType == TOKEN_LBRACKET) { // it's an expression
-						Type *expType = getExpType(inType, tc6->next);
+						Type *expType = getTypeExp(inType, tc6->next);
 						tc6->type = expType;
 						type = expType;
 					}
@@ -857,7 +872,7 @@ void traceTypes(vector<Tree *> *parseme) {
 			Tree *curTerm = netsCur->child;
 			Type *inType = nullType;
 			while (curTerm != NULL) {
-				Type *outType = getTermType(inType, curTerm);
+				Type *outType = getTypeTerm(inType, curTerm);
 				if (outType != NULL) { // if we found a proper typing for this term, log it
 					curTerm->type = outType;
 				} else { // otherwise, if we were unable to assign a type to the term, flag an error

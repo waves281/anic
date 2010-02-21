@@ -84,6 +84,8 @@ int main() {
 			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), (1 + nonTermCount));
 			nonTermCount++;
 		}
+		// define the total label count
+		fprintf(out, "#define NUM_LABELS NUM_TOKENS + NUM_NONTERMS\n");
 		// push the string to the token ordering map
 		tokenOrder.insert( make_pair(tokenOrder.size(), token) );
 	}

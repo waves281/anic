@@ -869,7 +869,7 @@ void traceTypes(vector<Tree *> &netsList) {
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
-int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int sem(Tree *treeRoot, vector<vector<Tree *> *> &parsemes, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	semmerErrorCode = 0;
@@ -883,7 +883,7 @@ int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimiz
 	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
 	vector<SymbolTable *> importList; // import Declaration nodes
 	vector<Tree *> netsList; // list of top-level Term nodes
-	extractNodes(rootParseme, stRoot, importList, netsList);
+	extractNodes(treeRoot, stRoot, importList, netsList);
 
 	// substitute import declarations
 	subImportDecls(importList);

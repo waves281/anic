@@ -103,6 +103,6 @@ class Type {
 
 // main semantic analysis function
 
-int sem(Tree *rootParseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+int sem(Tree *treeRoot, vector<vector<Tree *> *> &parsemes, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

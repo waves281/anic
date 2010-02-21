@@ -202,7 +202,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-map<int, vector<Tree *> > *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+vector<Tree *> *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -217,7 +217,7 @@ map<int, vector<Tree *> > *parse(vector<Token> *lexeme, const char *fileName, bo
 
 	// iterate through the lexemes and do the actual parsing
 
-	map<int, vector<Tree *> > *parseme = new map<int, vector<Tree *> >();// the parseme we're going to build up and return
+	vector<Tree *> *parseme = new vector<Tree *>[NUM_LABELS];// the parseme we're going to build up and return
 	Tree *treeCur = NULL; // the current bit of tree that we're examining
 
 	// initialize the state stack and push the initial state onto it
@@ -241,7 +241,7 @@ transitionParserState: ;
 			stateStack.push(transition.n);
 
 			// log the token in the parseme
-			(*parseme)[t.tokenType].push_back(treeCur);
+			parseme[t.tokenType].push_back(treeCur);
 
 			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << "\t[" << tokenType2String(t.tokenType) << "]\n"; )
 
@@ -271,7 +271,7 @@ transitionParserState: ;
 			stateStack.push(parserNode[tempState][tokenType].n);
 
 			// log the nonterminal in the parseme
-			(*parseme)[t.tokenType].push_back(treeCur);
+			parseme[t.tokenType].push_back(treeCur);
 
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];

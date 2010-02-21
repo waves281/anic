@@ -37,6 +37,8 @@ class SymbolTable {
 
 // Type kind specifiers
 
+#define TYPE_ERROR -1
+
 #define USR 0
 
 #define STD_NULL 1
@@ -103,6 +105,6 @@ class Type {
 
 // main semantic analysis function
 
-int sem(Tree *treeRoot, vector<vector<Tree *> *> &parsemes, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
 
 #endif

@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 	// parse lexemes
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
-	vector<vector<Tree *> *> parsemes; // per-file vector of the parsemes that the parser is about to generate
+	vector<Tree *> parseme[NUM_LABELS]; // per-file vector of the parsemes that the parser is about to generate
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
 		const char *fileName = inFileNames[fileIndex];
 		if (strcmp(fileName,"-") == 0) {
@@ -174,20 +174,17 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		int thisParseError = 0; // one-shot error flag
-		vector<Tree *> *parseme = parse(*lexemeIter, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
-		if (parseme == NULL) { // if parsing failed with an error, log the error condition
+		int thisParseError = parse(*lexemeIter, parseme, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
+		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
 				print(""); // new line
 			)
-			thisParseError = 1;
 		} else { // else if parsing was successful, log the parseme to the vector
 			VERBOSE(
 				printNotice("successfully parsed file \'" << fileName << "\'");
 				print(""); // new line
 			)
-			parsemes.push_back(parseme);
 		}
 		// log the highest error code that occured
 		if (thisParseError > parserError) {
@@ -203,17 +200,14 @@ int main(int argc, char **argv) {
 
 	VERBOSE(printNotice("Merging parse trees...");)
 
-	// concatenate the generated parsemes into one
-	vector<vector<Tree *> *>::iterator parsemeIter = parsemes.begin();
-	// log the root parseme as the Program node of the first parseme (which is guaranteed to exist)
-	Tree *treeRoot = (*parsemeIter)[TOKEN_Program][0]; // Program (there can only be one root node)
-	// advance to the second parseme
-	parsemeIter++;
-	// set treeCur to the initial Program Node
+	// concatenate the generated trees into one
+	// log the tree root as the first program parseme (which is guaranteed to exist)
+	Tree *treeRoot = parseme[TOKEN_Program][0]; // Program (there can only be one root node)
+	// set treeCur to the initial Program node
 	Tree *treeCur = treeRoot; // Program
-	for (; parsemeIter != parsemes.end(); parsemeIter++) {
+	for (unsigned int i=1; i < parseme[TOKEN_Program].size(); i++) {
 		// log the tree we're about to concatenate on this iteration
-		Tree *treeToAdd = (*parsemeIter)[TOKEN_Program][0]; // Program (there can only be one root node)
+		Tree *treeToAdd = parseme[TOKEN_Program][i]; // Program (there can only be one root node)
 		// link in this tree
 		// to the right
 		*treeCur += treeToAdd;
@@ -235,7 +229,7 @@ int main(int argc, char **argv) {
 	// allocate symbol table root (will be filled by user-level definitions during parsing)
 	SymbolTable *stRoot;
 
-	int semmerErrorCode = sem(treeRoot, parsemes, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
+	int semmerErrorCode = sem(treeRoot, parseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(

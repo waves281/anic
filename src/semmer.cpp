@@ -306,30 +306,25 @@ SymbolTable *genDefaultDefs() {
 }
 
 // recursively extracts the appropriate nodes from the given tree and appropriately populates the passed containers
-void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &netsList, bool netsHandled) {
+void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// base case
-	if (parseme == NULL) {
+	if (tree == NULL) {
 		return;
 	}
-	// log the current symbol environment in the parseme
-	parseme->env = st;
+	// log the current symbol environment in the tree
+	tree->env = st;
 	// recursive cases
-	if (parseme->t.tokenType == TOKEN_Identifier) { // if it's an Identifier
-		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_AT) { // if it's an import Identifier
-			// recurse on the right only; i.e. don't log import subidentifiers as use cases
-			extractNodes(parseme->next, st, importList, netsList, netsHandled); // right
+	if (tree->t.tokenType == TOKEN_Identifier) { // if it's an Identifier
+		if (tree->back != NULL && tree->back->t.tokenType == TOKEN_AT) { // if it's an import Identifier
+			// recurse on the right only; i.e. don't consider import string subidentifiers
+			buildSt(tree->next, st, importList); // right
 		}
-	} else if (parseme->t.tokenType == TOKEN_NonEmptyTerms && !netsHandled) { // if it's a term stream node
-		// log the stream occurence
-		netsList.push_back(parseme);
-		// recurse down only; NonEmptyTerms never has any right siblings
-		extractNodes(parseme->child, st, importList, netsList, true); // right
-	} else if (parseme->t.tokenType == TOKEN_Block) { // if it's a block node
+	} else if (tree->t.tokenType == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
-		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, parseme);
+		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// if there is a header for to this block, add its parameters into the block node
-		if (parseme->back != NULL && parseme->back->t.tokenType == TOKEN_NodeHeader) {
-			Tree *nh = parseme->back; // NodeHeader
+		if (tree->back != NULL && tree->back->t.tokenType == TOKEN_NodeHeader) {
+			Tree *nh = tree->back; // NodeHeader
 			if (nh->child->next->child != NULL) { // if there is a parameter list to process
 				Tree *param = nh->child->next->child->child; // Param
 				for (;;) { // per-param loop
@@ -349,43 +344,38 @@ void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importL
 		// finally, link the block node into the main trunk
 		*st *= blockDef;
 		// recurse
-		extractNodes(parseme->child, blockDef, importList, netsList, netsHandled); // child of Block
-	} else if (parseme->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
-		Token t = parseme->child->next->t;
+		buildSt(tree->child, blockDef, importList); // child of Block
+	} else if (tree->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
+		Token t = tree->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
+			buildSt(tree->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, parseme->child->t.s, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
-			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
+			buildSt(tree->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_Identifier) { // import declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, parseme);
+			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
 			// ... and link it in
 			*st *= newDef;
 			// also, since it's an import declaration, log it to the import list
 			importList.push_back(newDef);
 			// recurse
-			extractNodes(parseme->child, newDef, importList, netsList, netsHandled); // child of Declaration
+			buildSt(tree->child, newDef, importList); // child of Declaration
 		}
 	} else { // else if it's not a declaration node
 		// recurse normally
-		extractNodes(parseme->child, st, importList, netsList, netsHandled); // down
-		extractNodes(parseme->next, st, importList, netsList, netsHandled); // right
+		buildSt(tree->child, st, importList); // down
+		buildSt(tree->next, st, importList); // right
 	}
-}
-
-// wrapper for the above function
-void extractNodes(Tree *parseme, SymbolTable *st, vector<SymbolTable *> &importList, vector<Tree *> &netsList) {
-	extractNodes(parseme, st, importList, netsList, false);
 }
 
 // forward declarations
@@ -621,6 +611,10 @@ Type *getPrimaryType(Type *inType, Tree *primary) {
 	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
 		type = getExpType(inType, primaryc->next);
 	}
+	// if we could not resolve a type, use the error type
+	if (type == NULL) {
+		type = new Type(TYPE_ERROR);
+	}
 	// latch the type to the Primary node
 	primary->type = type;
 	// return the derived type
@@ -688,7 +682,11 @@ Type *getExpType(Type *inType, Tree *exp) {
 				typeLeft = NULL;
 				typeRight = NULL;
 				break;
-		}
+		} // switch
+	} // if
+	// if we could not resolve a type, use the error type
+	if (type == NULL) {
+		type = new Type(TYPE_ERROR);
 	}
 	// latch the type to the Exp node
 	exp->type = type;
@@ -714,7 +712,6 @@ Type *getTermType(Type *inType, Tree *term) {
 					if (tc6->t.tokenType == TOKEN_Node) {
 						Tree *tc7 = tc6->child;
 						if (tc7->t.tokenType == TOKEN_Identifier) {
-
 							// try to find a binding for this identifier
 							string id = id2String(tc7);
  							SymbolTable *st = bindId(id, tc7->env);
@@ -837,39 +834,48 @@ Type *getTermType(Type *inType, Tree *term) {
 	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
 // LOL
 	}
+	// if we could not resolve a type, use the error type
+	if (type == NULL) {
+		type = new Type(TYPE_ERROR);
+	}
 	// latch the type to the Term node
 	term->type = type;
 	// return the derived type
-	return (Type *)0x4; // LOL
+	return NULL; // LOL
 }
 
-void traceTypes(vector<Tree *> &netsList) {
-	// simply iterate through the list of NonEmptyTerms and trace the types for each one, starting with nullity
+void traceTypes(vector<Tree *> *parseme) {
+	// get a list of NonEmptyTerms nodes
+	vector<Tree *> &netsList = parseme[TOKEN_NonEmptyTerms];
+	// iterate through the list of NonEmptyTerms and trace the types for each one, starting with nullity
 	for (unsigned int i=0; i < netsList.size(); i++) {
-		// temporaily allocate the null type
-		Type *nullType = new Type(STD_NULL);
-		// scan the pipe left to right
-		Tree *curTerm = netsList[i]->child;
-		Type *inType = nullType;
-		while (curTerm != NULL) {
-			Type *outType = getTermType(inType, curTerm);
-			if (outType != NULL) { // if we found a proper typing for this term, log it
-				curTerm->type = outType;
-			} else { // otherwise, if we were unable to assign a type to the term, flag an error
-				Token curToken = curTerm->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve output type for this term",);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")",);
-				// skip typing this pipe and move on to the next one
-				break;
+		Tree *netsCur = netsList[i];
+		if (netsCur->type == NULL) { // if we haven't resolved a type for this node yet
+			// temporaily allocate the null type
+			Type *nullType = new Type(STD_NULL);
+			// scan the pipe left to right
+			Tree *curTerm = netsCur->child;
+			Type *inType = nullType;
+			while (curTerm != NULL) {
+				Type *outType = getTermType(inType, curTerm);
+				if (outType != NULL) { // if we found a proper typing for this term, log it
+					curTerm->type = outType;
+				} else { // otherwise, if we were unable to assign a type to the term, flag an error
+					Token curToken = curTerm->t;
+					semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type",);
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")",);
+					// skip typing this pipe and move on to the next one
+					break;
+				}
+				// advance
+				curTerm = curTerm->next->child; // Term
 			}
-			// advance
-			curTerm = curTerm->next->child; // Term
 		}
 	}
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
-int sem(Tree *treeRoot, vector<vector<Tree *> *> &parsemes, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	semmerErrorCode = 0;
@@ -882,18 +888,15 @@ int sem(Tree *treeRoot, vector<vector<Tree *> *> &parsemes, SymbolTable *&stRoot
 
 	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
 	vector<SymbolTable *> importList; // import Declaration nodes
-	vector<Tree *> netsList; // list of top-level Term nodes
-	extractNodes(treeRoot, stRoot, importList, netsList);
-
-	// substitute import declarations
-	subImportDecls(importList);
+	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
+	subImportDecls(importList); // resolve and substitute import declarations into the symbol table
 
 	VERBOSE( cout << stRoot; )
 
 	VERBOSE( printNotice("Tracing type flow..."); )
 
 	// assign types to all node streams
-	traceTypes(netsList);
+	traceTypes(parseme);
 
 	// finally, return to the caller
 	return semmerErrorCode ? 1 : 0;

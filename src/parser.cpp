@@ -202,7 +202,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-vector<Tree *> *parse(vector<Token> *lexeme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int parse(vector<Token> *lexeme, vector<Tree *> *parseme, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -212,14 +212,12 @@ vector<Tree *> *parse(vector<Token> *lexeme, const char *fileName, bool verboseO
 	static unsigned int ruleRhsLength[NUM_RULES];
 	static int ruleLhsTokenType[NUM_RULES];
 	static const char *ruleLhsTokenString[NUM_RULES];
-	static ParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS];
+	static ParserNode parserNode[NUM_RULES][NUM_LABELS];
 	parserInit(ruleRhsLength, ruleLhsTokenType, ruleLhsTokenString, parserNode); // defined in the generated structure
 
 	// iterate through the lexemes and do the actual parsing
-
-	vector<Tree *> *parseme = new vector<Tree *>[NUM_LABELS];// the parseme we're going to build up and return
-	Tree *treeCur = NULL; // the current bit of tree that we're examining
-
+	// initialize the current bit of tree that we're examining
+	Tree *treeCur = NULL;
 	// initialize the state stack and push the initial state onto it
 	stack<unsigned int> stateStack;
 	stateStack.push(0);
@@ -271,7 +269,7 @@ transitionParserState: ;
 			stateStack.push(parserNode[tempState][tokenType].n);
 
 			// log the nonterminal in the parseme
-			parseme[t.tokenType].push_back(treeCur);
+			parseme[tokenType].push_back(treeCur);
 
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];
@@ -296,13 +294,11 @@ transitionParserState: ;
 		}
 	}
 
-	// finally, return to the caller
+	// clean up if there was an error
 	if (parserErrorCode) {
-		// deallocate the unfinished tree and parseme, since we're just going to return null
+		// deallocate the unfinished tree, since there was an error anyway
 		delete treeCur;
-		delete parseme;
-		return NULL;
-	} else {
-		return parseme;
 	}
+	// finally, return to the caller
+	return parserErrorCode;
 }

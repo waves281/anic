@@ -91,8 +91,19 @@ int main(int argc, char **argv) {
 				// flag this option as handled
 				eHandled = true;
 			} else if (argv[i][1] == 'h' && argc == 2) {
+				// test to see if a command interpreter is available
+				int systemRetVal = system(NULL);
+				if (!systemRetVal) {
+					printError("cannot display manual page: no command interpreter available");
+					die(1);
+				}
 				// invoke the program's man page
-				system("/usr/bin/man anic");
+				systemRetVal = system("man anic 2> /dev/null");
+				// test if displaying the manual page failed
+				if (systemRetVal) {
+					printError("cannot display manual page: executing manual driver failed");
+					die(1);
+				}
 				die(0);
 			} else {
 				printWarning("confused by option '" << argv[i] << "', skipping");

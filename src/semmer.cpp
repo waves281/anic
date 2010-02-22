@@ -572,7 +572,7 @@ Type *getTypeIdentifier(Type *inType, Tree *tree) {
 		Token t = tree->t;
 		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
 	}
-	type = NULL; // LOL
+// LOL
 	GET_TYPE_FOOTER;
 }
 
@@ -582,7 +582,7 @@ Type *getTypePrimary(Type *inType, Tree *tree) {
 	if (primaryc->t.tokenType == TOKEN_Identifier) {
 		type = getTypeIdentifier(inType, primaryc);
 	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
-		type = NULL; // LOL
+// LOL
 	} else if (primaryc->t.tokenType == TOKEN_PrimLiteral) {
 		Tree *primLiteralc = primaryc;
 		if (primLiteralc->t.tokenType == TOKEN_INUM) {

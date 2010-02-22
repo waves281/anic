@@ -551,6 +551,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 // forward declarations of mutually recursive typing functions
 
 Type *getTypeIdentifier(Type *inType, Tree *tree);
+Type *getTypePrefixOrMultiOp(Type *inType, Tree *tree);
 Type *getTypePrimary(Type *inType, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *tree);
@@ -576,6 +577,38 @@ Type *getTypeIdentifier(Type *inType, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypePrefixOrMultiOp(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *pomocc = tree->child->child;
+	Type *subType = getTypePrimary(inType, tree->next);
+	if (pomocc->t.tokenType == TOKEN_NOT) {
+		if (*subType == STD_BOOL) {
+			type = subType;
+		}
+	} else if (pomocc->t.tokenType == TOKEN_COMPLEMENT) {
+		if (*subType == STD_INT) {
+			type = subType;
+		}
+	} else if (pomocc->t.tokenType == TOKEN_DPLUS) {
+		if (*subType == STD_INT) {
+			type = subType;
+		}
+	} else if (pomocc->t.tokenType == TOKEN_DMINUS) {
+		if (*subType == STD_INT) {
+			type = subType;
+		}
+	} else if (pomocc->t.tokenType == TOKEN_PLUS) {
+		if (*subType == STD_INT || *subType == STD_FLOAT) {
+			type = subType;
+		}
+	} else if (pomocc->t.tokenType == TOKEN_MINUS) {
+		if (*subType == STD_INT || *subType == STD_FLOAT) {
+			type = subType;
+		}
+	}
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypePrimary(Type *inType, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
@@ -584,44 +617,9 @@ Type *getTypePrimary(Type *inType, Tree *tree) {
 	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
 // LOL
 	} else if (primaryc->t.tokenType == TOKEN_PrimLiteral) {
-		Tree *primLiteralc = primaryc;
-		if (primLiteralc->t.tokenType == TOKEN_INUM) {
-			type = new Type(STD_INT);
-		} else if (primLiteralc->t.tokenType == TOKEN_FNUM) {
-			type = new Type(STD_FLOAT);
-		} else if (primLiteralc->t.tokenType == TOKEN_CQUOTE) {
-			type = new Type(STD_CHAR);
-		} else if (primLiteralc->t.tokenType == TOKEN_SQUOTE) {
-			type = new Type(STD_STRING);
-		}
+		type = getTypePrimLiteral(inType, primaryc);
 	} else if (primaryc->t.tokenType == TOKEN_PrefixOrMultiOp) {
-		Tree *pomocc = primaryc->child->child;
-		Type *subType = getTypePrimary(inType, primaryc->next);
-		if (pomocc->t.tokenType == TOKEN_NOT) {
-			if (*subType == STD_BOOL) {
-				type = subType;
-			}
-		} else if (pomocc->t.tokenType == TOKEN_COMPLEMENT) {
-			if (*subType == STD_INT) {
-				type = subType;
-			}
-		} else if (pomocc->t.tokenType == TOKEN_DPLUS) {
-			if (*subType == STD_INT) {
-				type = subType;
-			}
-		} else if (pomocc->t.tokenType == TOKEN_DMINUS) {
-			if (*subType == STD_INT) {
-				type = subType;
-			}
-		} else if (pomocc->t.tokenType == TOKEN_PLUS) {
-			if (*subType == STD_INT || *subType == STD_FLOAT) {
-				type = subType;
-			}
-		} else if (pomocc->t.tokenType == TOKEN_MINUS) {
-			if (*subType == STD_INT || *subType == STD_FLOAT) {
-				type = subType;
-			}
-		}
+		type = getTypePrefixOrMultiOp(inType, primaryc);
 	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
 		type = getTypeExp(inType, primaryc->next);
 	}

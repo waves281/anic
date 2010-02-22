@@ -553,8 +553,10 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 Type *getTypeIdentifier(Type *inType, Tree *tree);
 Type *getTypePrimary(Type *inType, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *tree);
-Type *getTypeTerm(Type *inType, Tree *tree);
+Type *getTypePrimOpNode(Type *inType, Tree *tree);
+Type *getTypePrimLiteral(Type *inType, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *tree);
+Type *getTypeTerm(Type *inType, Tree *tree);
 
 // typing function definitions
 
@@ -691,6 +693,99 @@ Type *getTypeExp(Type *inType, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypePrimOpNode(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *ponc = tree->child->child; // the operator token itself
+	// generate the type based on the specific operator it is
+	switch (ponc->t.tokenType) {
+		case TOKEN_NOT:
+			type = new Type(STD_NOT, ponc);
+			break;
+		case TOKEN_COMPLEMENT:
+			type = new Type(STD_COMPLEMENT, ponc);
+			break;
+		case TOKEN_DPLUS:
+			type = new Type(STD_DPLUS, ponc);
+			break;
+		case TOKEN_DMINUS:
+			type = new Type(STD_DMINUS, ponc);
+			break;
+		case TOKEN_DOR:
+			type = new Type(STD_DOR, ponc);
+			break;
+		case TOKEN_DAND:
+			type = new Type(STD_DAND, ponc);
+			break;
+		case TOKEN_OR:
+			type = new Type(STD_OR, ponc);
+			break;
+		case TOKEN_XOR:
+			type = new Type(STD_XOR, ponc);
+			break;
+		case TOKEN_AND:
+			type = new Type(STD_AND, ponc);
+			break;
+		case TOKEN_DEQUALS:
+			type = new Type(STD_DEQUALS, ponc);
+			break;
+		case TOKEN_NEQUALS:
+			type = new Type(STD_NEQUALS, ponc);
+			break;
+		case TOKEN_LT:
+			type = new Type(STD_LT, ponc);
+			break;
+		case TOKEN_GT:
+			type = new Type(STD_GT, ponc);
+			break;
+		case TOKEN_LE:
+			type = new Type(STD_LE, ponc);
+			break;
+		case TOKEN_GE:
+			type = new Type(STD_GE, ponc);
+			break;
+		case TOKEN_LS:
+			type = new Type(STD_LS, ponc);
+			break;
+		case TOKEN_RS:
+			type = new Type(STD_RS, ponc);
+			break;
+		case TOKEN_TIMES:
+			type = new Type(STD_TIMES, ponc);
+			break;
+		case TOKEN_DIVIDE:
+			type = new Type(STD_DIVIDE, ponc);
+			break;
+		case TOKEN_MOD:
+			type = new Type(STD_MOD, ponc);
+			break;
+		case TOKEN_PLUS:
+			type = new Type(STD_PLUS, ponc);
+			break;
+		case TOKEN_MINUS:
+			type = new Type(STD_MINUS, ponc);
+			break;
+		default: // can't happen
+			type = NULL;
+			break;
+	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypePrimLiteral(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *plc = tree->child;
+	if (plc->t.tokenType == TOKEN_INUM) {
+		type = new Type(STD_INT);
+	} else if (plc->t.tokenType == TOKEN_FNUM) {
+		type = new Type(STD_FLOAT);
+	} else if (plc->t.tokenType == TOKEN_CQUOTE) {
+		type = new Type(STD_CHAR);
+	} else if (plc->t.tokenType == TOKEN_SQUOTE) {
+		type = new Type(STD_STRING);
+	}
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypeSimpleTerm(Type *inType, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child;
@@ -709,95 +804,12 @@ Type *getTypeSimpleTerm(Type *inType, Tree *tree) {
 					} else if (tc5->t.tokenType == TOKEN_TypedNodeLiteral) {
 // LOL
 					} else if (tc5->t.tokenType == TOKEN_PrimOpNode) {
-						Tree *tc6 = tc5->child->child; // the operator token itself
-						// generate the type based on the specific operator it is
-						switch (tc6->t.tokenType) {
-							case TOKEN_NOT:
-								type = new Type(STD_NOT, tc6);
-								break;
-							case TOKEN_COMPLEMENT:
-								type = new Type(STD_COMPLEMENT, tc6);
-								break;
-							case TOKEN_DPLUS:
-								type = new Type(STD_DPLUS, tc6);
-								break;
-							case TOKEN_DMINUS:
-								type = new Type(STD_DMINUS, tc6);
-								break;
-							case TOKEN_DOR:
-								type = new Type(STD_DOR, tc6);
-								break;
-							case TOKEN_DAND:
-								type = new Type(STD_DAND, tc6);
-								break;
-							case TOKEN_OR:
-								type = new Type(STD_OR, tc6);
-								break;
-							case TOKEN_XOR:
-								type = new Type(STD_XOR, tc6);
-								break;
-							case TOKEN_AND:
-								type = new Type(STD_AND, tc6);
-								break;
-							case TOKEN_DEQUALS:
-								type = new Type(STD_DEQUALS, tc6);
-								break;
-							case TOKEN_NEQUALS:
-								type = new Type(STD_NEQUALS, tc6);
-								break;
-							case TOKEN_LT:
-								type = new Type(STD_LT, tc6);
-								break;
-							case TOKEN_GT:
-								type = new Type(STD_GT, tc6);
-								break;
-							case TOKEN_LE:
-								type = new Type(STD_LE, tc6);
-								break;
-							case TOKEN_GE:
-								type = new Type(STD_GE, tc6);
-								break;
-							case TOKEN_LS:
-								type = new Type(STD_LS, tc6);
-								break;
-							case TOKEN_RS:
-								type = new Type(STD_RS, tc6);
-								break;
-							case TOKEN_TIMES:
-								type = new Type(STD_TIMES, tc6);
-								break;
-							case TOKEN_DIVIDE:
-								type = new Type(STD_DIVIDE, tc6);
-								break;
-							case TOKEN_MOD:
-								type = new Type(STD_MOD, tc6);
-								break;
-							case TOKEN_PLUS:
-								type = new Type(STD_PLUS, tc6);
-								break;
-							case TOKEN_MINUS:
-								type = new Type(STD_MINUS, tc6);
-								break;
-							default: // can't happen
-								type = NULL;
-								break;
-						}
+						type = getTypePrimOpNode(inType, tc5);
 					} else if (tc5->t.tokenType == TOKEN_PrimLiteral) {
-						Tree *tc6 = tc5->child;
-						if (tc6->t.tokenType == TOKEN_INUM) {
-							type = new Type(STD_INT);
-						} else if (tc6->t.tokenType == TOKEN_FNUM) {
-							type = new Type(STD_FLOAT);
-						} else if (tc6->t.tokenType == TOKEN_CQUOTE) {
-							type = new Type(STD_CHAR);
-						} else if (tc6->t.tokenType == TOKEN_SQUOTE) {
-							type = new Type(STD_STRING);
-						}
+						type = getTypePrimLiteral(inType, tc5);
 					}
 				} else if (tc4->t.tokenType == TOKEN_LBRACKET) { // it's an expression
-					Type *expType = getTypeExp(inType, tc4->next);
-					tc4->type = expType;
-					type = expType;
+					type = getTypeExp(inType, tc4->next);
 				}
 			} else if (tc3->t.tokenType == TOKEN_Delatch) {
 // LOL

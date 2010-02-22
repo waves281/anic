@@ -555,6 +555,7 @@ Type *getTypePrimary(Type *inType, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *tree);
+Type *getTypeTypedStaticTerm(Type *inType, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *tree);
 
@@ -786,6 +787,28 @@ Type *getTypePrimLiteral(Type *inType, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypeTypedStaticTerm(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *tstc = tree->child;
+	if (tstc->t.tokenType == TOKEN_Node) {
+		Tree *tstcc = tstc->child;
+		if (tstcc->t.tokenType == TOKEN_Identifier) {
+			type = getTypeIdentifier(inType, tstcc);
+		} else if (tstcc->t.tokenType == TOKEN_NodeInstantiation) {
+// LOL
+		} else if (tstcc->t.tokenType == TOKEN_TypedNodeLiteral) {
+// LOL
+		} else if (tstcc->t.tokenType == TOKEN_PrimOpNode) {
+			type = getTypePrimOpNode(inType, tstcc);
+		} else if (tstcc->t.tokenType == TOKEN_PrimLiteral) {
+			type = getTypePrimLiteral(inType, tstcc);
+		}
+	} else if (tstc->t.tokenType == TOKEN_LBRACKET) { // it's an expression
+		type = getTypeExp(inType, tstc->next); // move past the bracket to the actual Exp node
+	}
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypeSimpleTerm(Type *inType, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child;
@@ -794,23 +817,7 @@ Type *getTypeSimpleTerm(Type *inType, Tree *tree) {
 		if (tc2->t.tokenType == TOKEN_StaticTerm) {
 			Tree *tc3 = tc2->child;
 			if (tc3->t.tokenType == TOKEN_TypedStaticTerm) {
-				Tree *tc4 = tc3->child;
-				if (tc4->t.tokenType == TOKEN_Node) {
-					Tree *tc5 = tc4->child;
-					if (tc5->t.tokenType == TOKEN_Identifier) {
-						type = getTypeIdentifier(inType, tc5);
-					} else if (tc5->t.tokenType == TOKEN_NodeInstantiation) {
-// LOL
-					} else if (tc5->t.tokenType == TOKEN_TypedNodeLiteral) {
-// LOL
-					} else if (tc5->t.tokenType == TOKEN_PrimOpNode) {
-						type = getTypePrimOpNode(inType, tc5);
-					} else if (tc5->t.tokenType == TOKEN_PrimLiteral) {
-						type = getTypePrimLiteral(inType, tc5);
-					}
-				} else if (tc4->t.tokenType == TOKEN_LBRACKET) { // it's an expression
-					type = getTypeExp(inType, tc4->next);
-				}
+				type = getTypeTypedStaticTerm(inType, tc3);
 			} else if (tc3->t.tokenType == TOKEN_Delatch) {
 // LOL
 			} else if (tc3->t.tokenType == TOKEN_Block) {

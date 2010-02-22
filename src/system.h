@@ -23,11 +23,9 @@ void die(void);
 	if (lexerEventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
 #define parserError(fn,r,c,str) if (!silentMode) { cerr << PROGRAM_STRING << ": ERROR: PARSER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; } \
-	parserErrorCode++; \
-	if (parserEventuallyGiveUp && parserErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return parserErrorCode; }
+	parserErrorCode++;
 
-#define semmerError(fn,r,c,str,rv) if (!silentMode) { cerr << PROGRAM_STRING << ": ERROR: SEMMER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; } \
-	semmerErrorCode++; \
-	if (semmerEventuallyGiveUp && semmerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return rv; }
+#define semmerError(fn,r,c,str) if (!silentMode) { cerr << PROGRAM_STRING << ": ERROR: SEMMER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; } \
+	semmerErrorCode++;
 
 #endif

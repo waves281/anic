@@ -64,8 +64,8 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 					prevDefToken.row = 0;
 					prevDefToken.col = 0;
 				}
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'",*this);
-				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)",*this);
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'");
+				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 				delete st;
 				return *this;
 			} // if there's a conflict
@@ -531,8 +531,8 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 						prevDefToken.row = 0;
 						prevDefToken.col = 0;
 					}
-					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'",);
-					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)",);
+					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					goto nextImport;
 				}
 				// advance
@@ -542,7 +542,7 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 			**importIter = *binding;
 		} else { // else if no binding could be found
 			Token t = (*importIter)->defSite->t;
-			semmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'",);
+			semmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'");
 		}
 		nextImport: ;
 	} // per-import loop
@@ -571,7 +571,7 @@ Type *getTypeIdentifier(Type *inType, Tree *tree) {
 
 	} else { // else if there was no static binding at all
 		Token t = tree->t;
-		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
+		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'");
 	}
 // LOL
 	GET_TYPE_FOOTER;
@@ -867,8 +867,8 @@ void traceTypes(vector<Tree *> *parseme) {
 					curTerm->type = outType;
 				} else { // otherwise, if we were unable to assign a type to the term, flag an error
 					Token curToken = curTerm->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type",);
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")",);
+					semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
 					// skip typing this pipe and move on to the next one
 					break;
 				}

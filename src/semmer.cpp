@@ -117,6 +117,9 @@ bool Type::operator<=(int kind) {
 // returns a string representation of the given type kind; does *not* work for USR kinds
 string typeKind2String(int kind) {
 	switch(kind) {
+		// error type
+		case TYPE_ERROR:
+			return "error";
 		// null type
 		case STD_NULL:
 			return "null";

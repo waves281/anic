@@ -103,6 +103,26 @@ class Type {
 		bool operator>=(int kind);
 };
 
+// semantic analysis helper blocks
+
+#define GET_TYPE_HEADER \
+	/* if the type is memoized, short-circuit evaluate */\
+	if (tree->type != NULL) {\
+		return tree->type;\
+	}\
+	/* otherwise, copute the type normally */\
+	Type *type = NULL
+
+#define GET_TYPE_FOOTER \
+	/* if we could't resolve a valid type, use the error type */\
+	if (type == NULL) {\
+		type = errType;\
+	}\
+	/* latch the type to the tree node */\
+	tree->type = type;\
+	/* return the derived type */\
+	return type
+
 // main semantic analysis function
 
 int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);

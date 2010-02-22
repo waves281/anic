@@ -6,6 +6,7 @@
 
 int semmerErrorCode;
 bool semmerEventuallyGiveUp;
+Type *errType = new Type(TYPE_ERROR);
 
 // SymbolTable functions
 
@@ -546,32 +547,34 @@ void subImportDecls(vector<SymbolTable *> &importList) {
 
 // forward declarations of mutually recursive typing functions
 
-Type *getTypePrimary(Type *inType, Tree *primary);
-Type *getTypeExp(Type *inType, Tree *exp);
-Type *getTypeTerm(Type *inType, Tree *term);
+Type *getTypeIdentifier(Type *inType, Tree *tree);
+Type *getTypePrimary(Type *inType, Tree *tree);
+Type *getTypeExp(Type *inType, Tree *tree);
+Type *getTypeTerm(Type *inType, Tree *tree);
+Type *getTypeSimpleTerm(Type *inType, Tree *tree);
 
 // typing function definitions
 
-Type *getTypePrimary(Type *inType, Tree *primary) {
-	// if the type is memoized, short-circuit evaluate
-	if (primary->type != NULL) {
-		return primary->type;
+Type *getTypeIdentifier(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	string id = id2String(tree); // string representation of this identifier
+	string idCur = id; // a destructible copy for the recursion
+	SymbolTable *st = bindId(inType, idCur, tree->env);
+	if (st != NULL) { // if we found some sort of static binding
+
+	} else { // else if there was no static binding at all
+		Token t = tree->t;
+		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
 	}
-	// otherwise, copute the type normally
-	Tree *primaryc = primary->child;
-	Type *type = NULL;
+	type = NULL; // LOL
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypePrimary(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *primaryc = tree->child;
 	if (primaryc->t.tokenType == TOKEN_Identifier) {
-		string id = id2String(primaryc); // string representation of this identifier
-		string idCur = id; // a destructible copy for the recursion
-		SymbolTable *st = bindId(inType, idCur, primaryc->env);
-		if (st != NULL) { // if we found some sort of static binding
-
-		} else { // else if there was no static binding at all
-			Token t = primaryc->t;
-			semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
-		}
-
-		type = NULL; // LOL
+		type = getTypeIdentifier(inType, primaryc);
 	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
 		type = NULL; // LOL
 	} else if (primaryc->t.tokenType == TOKEN_PrimLiteral) {
@@ -616,24 +619,12 @@ Type *getTypePrimary(Type *inType, Tree *primary) {
 	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
 		type = getTypeExp(inType, primaryc->next);
 	}
-	// if we could not resolve a type, use the error type
-	if (type == NULL) {
-		type = new Type(TYPE_ERROR);
-	}
-	// latch the type to the Primary node
-	primary->type = type;
-	// return the derived type
-	return type;
+	GET_TYPE_FOOTER;
 }
 
-Type *getTypeExp(Type *inType, Tree *exp) {
-	// if the type is memoized, short-circuit evaluate
-	if (exp->type != NULL) {
-		return exp->type;
-	}
-	// otherwise, copute the type normally
-	Tree *expc = exp->child;
-	Type *type = NULL;
+Type *getTypeExp(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *expc = tree->child;
 	if (expc->t.tokenType == TOKEN_Primary) {
 		type = getTypePrimary(inType, expc);
 	} else if (expc->t.tokenType == TOKEN_Exp) {
@@ -694,169 +685,148 @@ Type *getTypeExp(Type *inType, Tree *exp) {
 				break;
 		} // switch
 	} // if
-	// if we could not resolve a type, use the error type
-	if (type == NULL) {
-		type = new Type(TYPE_ERROR);
-	}
-	// latch the type to the Exp node
-	exp->type = type;
-	// return the derived type
-	return type;
+	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTerm(Type *inType, Tree *term) {
-	// if the type is memoized, short-circuit evaluate
-	if (term->type != NULL) {
-		return term->type;
+Type *getTypeSimpleTerm(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *tc = tree->child;
+	if (tc->t.tokenType == TOKEN_DynamicTerm) {
+		Tree *tc2 = tc->child;
+		if (tc2->t.tokenType == TOKEN_StaticTerm) {
+			Tree *tc3 = tc2->child;
+			if (tc3->t.tokenType == TOKEN_TypedStaticTerm) {
+				Tree *tc4 = tc3->child;
+				if (tc4->t.tokenType == TOKEN_Node) {
+					Tree *tc5 = tc4->child;
+					if (tc5->t.tokenType == TOKEN_Identifier) {
+						type = getTypeIdentifier(inType, tc5);
+					} else if (tc5->t.tokenType == TOKEN_NodeInstantiation) {
+// LOL
+					} else if (tc5->t.tokenType == TOKEN_TypedNodeLiteral) {
+// LOL
+					} else if (tc5->t.tokenType == TOKEN_PrimOpNode) {
+						Tree *tc6 = tc5->child->child; // the operator token itself
+						// generate the type based on the specific operator it is
+						switch (tc6->t.tokenType) {
+							case TOKEN_NOT:
+								type = new Type(STD_NOT, tc6);
+								break;
+							case TOKEN_COMPLEMENT:
+								type = new Type(STD_COMPLEMENT, tc6);
+								break;
+							case TOKEN_DPLUS:
+								type = new Type(STD_DPLUS, tc6);
+								break;
+							case TOKEN_DMINUS:
+								type = new Type(STD_DMINUS, tc6);
+								break;
+							case TOKEN_DOR:
+								type = new Type(STD_DOR, tc6);
+								break;
+							case TOKEN_DAND:
+								type = new Type(STD_DAND, tc6);
+								break;
+							case TOKEN_OR:
+								type = new Type(STD_OR, tc6);
+								break;
+							case TOKEN_XOR:
+								type = new Type(STD_XOR, tc6);
+								break;
+							case TOKEN_AND:
+								type = new Type(STD_AND, tc6);
+								break;
+							case TOKEN_DEQUALS:
+								type = new Type(STD_DEQUALS, tc6);
+								break;
+							case TOKEN_NEQUALS:
+								type = new Type(STD_NEQUALS, tc6);
+								break;
+							case TOKEN_LT:
+								type = new Type(STD_LT, tc6);
+								break;
+							case TOKEN_GT:
+								type = new Type(STD_GT, tc6);
+								break;
+							case TOKEN_LE:
+								type = new Type(STD_LE, tc6);
+								break;
+							case TOKEN_GE:
+								type = new Type(STD_GE, tc6);
+								break;
+							case TOKEN_LS:
+								type = new Type(STD_LS, tc6);
+								break;
+							case TOKEN_RS:
+								type = new Type(STD_RS, tc6);
+								break;
+							case TOKEN_TIMES:
+								type = new Type(STD_TIMES, tc6);
+								break;
+							case TOKEN_DIVIDE:
+								type = new Type(STD_DIVIDE, tc6);
+								break;
+							case TOKEN_MOD:
+								type = new Type(STD_MOD, tc6);
+								break;
+							case TOKEN_PLUS:
+								type = new Type(STD_PLUS, tc6);
+								break;
+							case TOKEN_MINUS:
+								type = new Type(STD_MINUS, tc6);
+								break;
+							default: // can't happen
+								type = NULL;
+								break;
+						}
+					} else if (tc5->t.tokenType == TOKEN_PrimLiteral) {
+						Tree *tc6 = tc5->child;
+						if (tc6->t.tokenType == TOKEN_INUM) {
+							type = new Type(STD_INT);
+						} else if (tc6->t.tokenType == TOKEN_FNUM) {
+							type = new Type(STD_FLOAT);
+						} else if (tc6->t.tokenType == TOKEN_CQUOTE) {
+							type = new Type(STD_CHAR);
+						} else if (tc6->t.tokenType == TOKEN_SQUOTE) {
+							type = new Type(STD_STRING);
+						}
+					}
+				} else if (tc4->t.tokenType == TOKEN_LBRACKET) { // it's an expression
+					Type *expType = getTypeExp(inType, tc4->next);
+					tc4->type = expType;
+					type = expType;
+				}
+			} else if (tc3->t.tokenType == TOKEN_Delatch) {
+// LOL
+			} else if (tc3->t.tokenType == TOKEN_Block) {
+// LOL
+			}
+		} else if (tc2->t.tokenType == TOKEN_Compound) {
+// LOL
+		} else if (tc2->t.tokenType == TOKEN_Link) {
+// LOL
+		} else if (tc2->t.tokenType == TOKEN_Send) {
+// LOL
+		}
+	} else if (tc->t.tokenType == TOKEN_SwitchTerm) {
+// LOL
 	}
-	// otherwise, copute the type normally
-	Tree *tc2 = term->child->child;
-	Type *type = NULL;
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeTerm(Type *inType, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *tc2 = tree->child->child;
 	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
 // LOL
 	} else if (tc2->t.tokenType == TOKEN_OpenCondTerm) {
 // LOL
 	} else if (tc2->t.tokenType == TOKEN_SimpleTerm) {
-		Tree *tc3 = tc2->child;
-		if (tc3->t.tokenType == TOKEN_DynamicTerm) {
-			Tree *tc4 = tc3->child;
-			if (tc4->t.tokenType == TOKEN_StaticTerm) {
-				Tree *tc5 = tc4->child;
-				if (tc5->t.tokenType == TOKEN_TypedStaticTerm) {
-					Tree *tc6 = tc5->child;
-					if (tc6->t.tokenType == TOKEN_Node) {
-						Tree *tc7 = tc6->child;
-						if (tc7->t.tokenType == TOKEN_Identifier) {
-							// try to find a binding for this identifier
-							string id = id2String(tc7);
- 							SymbolTable *st = bindId(id, tc7->env);
- 							if (st != NULL) { // if we found some sort of static binding
-// LOL
-							} else { // else if there was no static binding at all
-								Token t = tc7->t;
-								semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'",NULL);
-							}
-						} else if (tc7->t.tokenType == TOKEN_NodeInstantiation) {
-// LOL
-						} else if (tc7->t.tokenType == TOKEN_TypedNodeLiteral) {
-// LOL
-						} else if (tc7->t.tokenType == TOKEN_PrimOpNode) {
-							Tree *tc9 = tc7->child->child; // the operator token itself
-							// generate the type based on the specific operator it is
-							switch (tc9->t.tokenType) {
-								case TOKEN_NOT:
-									type = new Type(STD_NOT, tc9);
-									break;
-								case TOKEN_COMPLEMENT:
-									type = new Type(STD_COMPLEMENT, tc9);
-									break;
-								case TOKEN_DPLUS:
-									type = new Type(STD_DPLUS, tc9);
-									break;
-								case TOKEN_DMINUS:
-									type = new Type(STD_DMINUS, tc9);
-									break;
-								case TOKEN_DOR:
-									type = new Type(STD_DOR, tc9);
-									break;
-								case TOKEN_DAND:
-									type = new Type(STD_DAND, tc9);
-									break;
-								case TOKEN_OR:
-									type = new Type(STD_OR, tc9);
-									break;
-								case TOKEN_XOR:
-									type = new Type(STD_XOR, tc9);
-									break;
-								case TOKEN_AND:
-									type = new Type(STD_AND, tc9);
-									break;
-								case TOKEN_DEQUALS:
-									type = new Type(STD_DEQUALS, tc9);
-									break;
-								case TOKEN_NEQUALS:
-									type = new Type(STD_NEQUALS, tc9);
-									break;
-								case TOKEN_LT:
-									type = new Type(STD_LT, tc9);
-									break;
-								case TOKEN_GT:
-									type = new Type(STD_GT, tc9);
-									break;
-								case TOKEN_LE:
-									type = new Type(STD_LE, tc9);
-									break;
-								case TOKEN_GE:
-									type = new Type(STD_GE, tc9);
-									break;
-								case TOKEN_LS:
-									type = new Type(STD_LS, tc9);
-									break;
-								case TOKEN_RS:
-									type = new Type(STD_RS, tc9);
-									break;
-								case TOKEN_TIMES:
-									type = new Type(STD_TIMES, tc9);
-									break;
-								case TOKEN_DIVIDE:
-									type = new Type(STD_DIVIDE, tc9);
-									break;
-								case TOKEN_MOD:
-									type = new Type(STD_MOD, tc9);
-									break;
-								case TOKEN_PLUS:
-									type = new Type(STD_PLUS, tc9);
-									break;
-								case TOKEN_MINUS:
-									type = new Type(STD_MINUS, tc9);
-									break;
-								default: // can't happen
-									type = NULL;
-									break;
-							}
-						} else if (tc7->t.tokenType == TOKEN_PrimLiteral) {
-							Tree *tc8 = tc7->child;
-							if (tc8->t.tokenType == TOKEN_INUM) {
-								type = new Type(STD_INT);
-							} else if (tc8->t.tokenType == TOKEN_FNUM) {
-								type = new Type(STD_FLOAT);
-							} else if (tc8->t.tokenType == TOKEN_CQUOTE) {
-								type = new Type(STD_CHAR);
-							} else if (tc8->t.tokenType == TOKEN_SQUOTE) {
-								type = new Type(STD_STRING);
-							}
-						}
-					} else if (tc6->t.tokenType == TOKEN_LBRACKET) { // it's an expression
-						Type *expType = getTypeExp(inType, tc6->next);
-						tc6->type = expType;
-						type = expType;
-					}
-				} else if (tc5->t.tokenType == TOKEN_Delatch) {
-// LOL
-				} else if (tc5->t.tokenType == TOKEN_Block) {
-// LOL
-				}
-			} else if (tc4->t.tokenType == TOKEN_Compound) {
-// LOL
-			} else if (tc4->t.tokenType == TOKEN_Link) {
-// LOL
-			} else if (tc4->t.tokenType == TOKEN_Send) {
-// LOL
-			}
-		} else if (tc3->t.tokenType == TOKEN_SwitchTerm) {
-// LOL
-		}
+		type = getTypeSimpleTerm(inType, tc2);
 	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
 // LOL
 	}
-	// if we could not resolve a type, use the error type
-	if (type == NULL) {
-		type = new Type(TYPE_ERROR);
-	}
-	// latch the type to the Term node
-	term->type = type;
-	// return the derived type
-	return NULL; // LOL
+	GET_TYPE_FOOTER;
 }
 
 void traceTypes(vector<Tree *> *parseme) {
@@ -912,6 +882,11 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot, bool verb
 
 	// assign types to all node streams
 	traceTypes(parseme);
+
+	// if there were no errors, free the error type node
+	if (!semmerErrorCode) {
+		delete errType;
+	}
 
 	// finally, return to the caller
 	return semmerErrorCode ? 1 : 0;

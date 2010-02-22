@@ -21,7 +21,7 @@ class Token {
 		int col;
 };
 
-vector<Token> *lex(ifstream *in, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp);
+vector<Token> *lex(ifstream *in, const char *fileName);
 
 // post-includes
 

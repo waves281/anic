@@ -880,7 +880,7 @@ void traceTypes(vector<Tree *> *parseme) {
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
-int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;

@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
 		)
 		// do the actual lexing
 		int thisLexError = 0; // one-shot error flag
-		vector<Token> *lexeme = lex(inFiles[i], fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
+		vector<Token> *lexeme = lex(inFiles[i], fileName);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
 			thisLexError = 1;
 		} else { // else if lexing was successful, log the lexeme to the vector
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		int thisParseError = parse(*lexemeIter, parseme, fileName, verboseOutput, optimizationLevel, eventuallyGiveUp);
+		int thisParseError = parse(*lexemeIter, parseme, fileName);
 		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
 	// allocate symbol table root (will be filled by user-level definitions during parsing)
 	SymbolTable *stRoot;
 
-	int semmerErrorCode = sem(treeRoot, parseme, stRoot, verboseOutput, optimizationLevel, eventuallyGiveUp);
+	int semmerErrorCode = sem(treeRoot, parseme, stRoot);
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(

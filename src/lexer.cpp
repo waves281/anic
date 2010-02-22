@@ -70,7 +70,7 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 	}
 }
 
-vector<Token> *lex(ifstream *in, const char *fileName, bool verboseOutput, int optimizationLevel, bool eventuallyGiveUp) {
+vector<Token> *lex(ifstream *in, const char *fileName) {
 
 	// initialize error variables
 	lexerErrorCode = 0;

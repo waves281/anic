@@ -1,7 +1,9 @@
 #ifndef _MAIN_DEFS_H_
 #define _MAIN_DEFS_H_
 
-#include <iostream>
+// standard includes
+
+#include<iostream>
 #include <fstream>
 #include <string>
 #include <map>
@@ -26,5 +28,12 @@ using std::string;
 using std::vector;
 using std::map;
 using std::stack;
+
+// global variable linkage specifiers
+
+extern bool verboseOutput;
+extern bool silentMode;
+extern int optimizationLevel;
+extern bool eventuallyGiveUp;
 
 #endif

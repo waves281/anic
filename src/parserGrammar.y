@@ -235,6 +235,12 @@ Param : Type ID
 Type : Identifier
 	| Identifier LatchTypeSuffix
 	| Identifier StreamTypeSuffix
+	| SubType
+	| SubType LatchTypeSuffix
+	| SubType StreamTypeSuffix
+	;
+SubType : LBRACKET NonEmptyTypeList RBRACKET
+	| LBRACKET NonEmptyTypeList DRARROW Type RBRACKET
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

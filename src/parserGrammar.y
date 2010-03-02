@@ -235,9 +235,14 @@ Param : Type ID
 Type : Identifier
 	| Identifier LatchTypeSuffix
 	| Identifier StreamTypeSuffix
-	| NodeHeader
-	| NodeHeader LatchTypeSuffix
-	| NodeHeader StreamTypeSuffix
+	| NodeType
+	| NodeType LatchTypeSuffix
+	| NodeType StreamTypeSuffix
+	;
+NodeType : DLSQUARE TypeList RetList DRSQUARE
+	;
+TypeList : 
+	| NonEmptyTypeList
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

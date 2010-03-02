@@ -1,0 +1,72 @@
+@std;
+@std.gen;
+
+// real-time parallel clock + calculator hybrid program
+{
+	@std.in;
+	a=[[int\]]<-0; op=[[char\]]<-' '; b=[[int\]]<-0; r=[[int\]]<-0;
+	0 { clock => [[int ms]] { ("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->std.out; 1 std.delay (ms+1) clock} };
+	inLoop => {\in->a \in->op \in->b inLoop};
+	\\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r;
+};
+
+
+main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
+
+	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
+
+	retVal = [[int, int]];
+	
+	y ? { loop =>
+			y.z ?
+				{1,2 loop}
+			:
+				{3,4 loop}
+		} : 5,6 -->;
+	retVal -->;
+	// okay, we're done now!
+};
+
+/* name resolution testing */
+
+nameRes = [[]] {
+	x = [[int z --> int]] {
+		100 -->;
+		@main.y;
+		y -->;
+	};
+};
+
+x=10e-1;
+
+@nameRes.x.y;
+
+/* end name resolution testing */
+
+// Dining philosophers problem
+
+philosopher = [[int id]] {
+	chopstick = [[int\]] <- 0;
+	leftPhil = [[philosopher]];
+	rightPhil = [[philosopher]];
+	
+	getChopsticks = [[--> int\, int\]] { \leftPhil.chopstick, \rightPhil.chopstick --> };
+	returnChopsticks = [[int\ cs1, int\ cs2]] { \cs1 ->leftPhil.chopstick; \cs2 ->rightPhil.chopstick; };
+	eat = [[int\ cs1, int\ cs2 --> int\, int\]] {
+		"Philosopher " + id + " eating...\n" ->std.out;
+		\cs1, \cs2 -->;
+	};
+	
+	loopback => std.rand std.delay \getChopsticks eat ->returnChopsticks loopback;
+};
+
+numPhils = 5;
+
+philStream = [[philosopher\\]];
+\\[[std.gen]] <- numPhils {
+	[[philosopher]] <- {..} ->philStream;
+	philStream[..] ->philStream[..].leftPhil;
+	philStream[(.. + 1) % numPhils] ->philStream[..].rightPhil;
+};
+
+// EOF comment

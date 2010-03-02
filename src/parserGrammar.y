@@ -239,8 +239,8 @@ Type : Identifier
 	| SubType LatchTypeSuffix
 	| SubType StreamTypeSuffix
 	;
-SubType : LBRACKET NonEmptyTypeList RBRACKET
-	| LBRACKET NonEmptyTypeList DRARROW Type RBRACKET
+SubType : DLSQUARE NonEmptyTypeList DRSQUARE
+	| DLSQUARE NonEmptyTypeList DRARROW Type DRSQUARE
 	;
 NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList

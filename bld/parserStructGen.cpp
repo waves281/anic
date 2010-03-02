@@ -107,7 +107,7 @@ int main() {
 	fprintf(out, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
 	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES], \n");
-	fprintf(out, "\t\tvoid *parserNode );\n\n");
+	fprintf(out, "\t\tParserNode parserNode[NUM_RULES][NUM_LABELS] );\n\n");
 	fprintf(out, "#endif\n");
 
 	// print the necessary prologue into the .cpp
@@ -116,7 +116,7 @@ int main() {
 	fprintf(out2, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out2, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
 	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
-	fprintf(out2, "\t\tvoid *parserNode ) {\n\n");
+	fprintf(out2, "\t\tParserNode parserNode[NUM_RULES][NUM_LABELS] ) {\n\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);
@@ -259,7 +259,7 @@ int main() {
 		}
 	}
 
-	// print out the parserNode array literal
+	// print out the parserNode array initializer
 	fprintf(out2, "\tconst ParserNode parserNodeRaw[NUM_RULES][NUM_LABELS] = {\n");
 	// per-rule loop
 	for (unsigned int i=0; i < NUM_RULES; i++) {

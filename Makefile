@@ -188,7 +188,7 @@ tmp/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen tmp/parserTable.txt s
 	@mkdir -p tmp
 	@g++ tmp/parserStruct.cpp $(CFLAGS) -O1 -c -o tmp/parserStruct.o
 
-tmp/parserStructGen: bld/parserStructGen.cpp
+tmp/parserStructGen: bld/parserStructGen.cpp src/parser.h tmp/lexerStruct.h
 	@echo Building parser structure generator...
 	@mkdir -p tmp
 	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen

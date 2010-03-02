@@ -1,6 +1,9 @@
 #include "../src/mainDefs.h"
 #include "../src/constantDefs.h"
 
+#include "../src/parser.h"
+#include "../tmp/lexerStruct.h"
+
 #define NUM_RULES 1024
 
 // parses the generated parse table into an includable .h file with the appropriate struct representation

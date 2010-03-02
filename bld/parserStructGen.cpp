@@ -86,7 +86,7 @@ int main() {
 			parsingNonTerms = true;
 		}
 		if (parsingNonTerms) {
-			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), (1 + nonTermCount));
+			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), nonTermCount);
 			nonTermCount++;
 		}
 		// push the string to the token ordering map
@@ -95,7 +95,7 @@ int main() {
 		if (mapping != NUM_TOKENS) { // if it's a lexerStruct mapping
 			tokenClassifier.insert( make_pair(token, mapping) );
 		} else { // otherwise, if it's a parserStruct mapping
-			tokenClassifier.insert( make_pair(token, (NUM_TOKENS + nonTermCount)) );
+			tokenClassifier.insert( make_pair(token, (NUM_TOKENS + (nonTermCount - 1))) );
 		}
 	}
 	// print out the definition of the number of nonterminals

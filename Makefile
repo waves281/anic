@@ -180,7 +180,7 @@ tmp/lexerStructGen: bld/lexerStructGen.cpp
 
 # PARSER
 
-tmp/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
+tmp/parserStruct.h tmp/parserStruct.o tmp/parserNodeRaw.h: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
 	@echo Generating parser structures...
 	@mkdir -p var
 	@./tmp/parserStructGen

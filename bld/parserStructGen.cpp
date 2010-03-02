@@ -21,9 +21,14 @@ int main() {
 		return -1;
 	}
 	FILE *out2;
-		out2 = fopen("./tmp/parserStruct.cpp","w");
-		if (out2 == NULL) { // if file open failed, return an error
-			return -1;
+	out2 = fopen("./tmp/parserStruct.cpp","w");
+	if (out2 == NULL) { // if file open failed, return an error
+		return -1;
+	}
+	FILE *out3;
+	out3 = fopen("./tmp/parserNodeRaw.h","w");
+	if (out3 == NULL) { // if file open failed, return an error
+		return -1;
 	}
 	// print the necessary prologue into the .h
 	fprintf(out, "#ifndef _PARSER_STRUCT_H_\n");
@@ -106,8 +111,7 @@ int main() {
 	// print out the epilogue into the .h
 	fprintf(out, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES], \n");
-	fprintf(out, "\t\tParserNode parserNode[NUM_RULES][NUM_LABELS] );\n\n");
+	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES] );\n\n");
 	fprintf(out, "#endif\n");
 
 	// print the necessary prologue into the .cpp
@@ -115,8 +119,7 @@ int main() {
 	// print out parserInit to the .cpp
 	fprintf(out2, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out2, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
-	fprintf(out2, "\t\tParserNode parserNode[NUM_RULES][NUM_LABELS] ) {\n\n");
+	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES] ) {\n\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);
@@ -260,10 +263,10 @@ int main() {
 	}
 
 	// print out the parserNode array initializer
-	fprintf(out2, "\tconst ParserNode parserNodeRaw[NUM_RULES][NUM_LABELS] = {\n");
+	fprintf(out3, "const ParserNode parserNode[NUM_RULES][NUM_LABELS] = {\n");
 	// per-rule loop
 	for (unsigned int i=0; i < NUM_RULES; i++) {
-		fprintf(out2, "\t\t{\n");
+		fprintf(out3, "\t{\n");
 		// per-label loop
 		for (unsigned int j=0; j < (NUM_TOKENS + nonTermCount); j++) {
 			string actionString = (
@@ -274,22 +277,21 @@ int main() {
 				parserNode[i][j].action == ACTION_ERROR ? "ACTION_ERROR" :
 				""
 			);
-			fprintf(out2, "\t\t\t{ %s, %u } /* [%u][%u] */", actionString.c_str(), parserNode[i][j].n, i, j);
+			fprintf(out3, "\t\t{ %s, %u } /* [%u][%u] */", actionString.c_str(), parserNode[i][j].n, i, j);
 			if (j + 1 != (NUM_TOKENS + nonTermCount)) {
-				fprintf(out2, ",\n");
+				fprintf(out3, ",\n");
 			} else {
-				fprintf(out2, "\n");
+				fprintf(out3, "\n");
 			}
 		}
-		fprintf(out2, "\t\t}");
+		fprintf(out3, "\t}");
 		if (i + 1 != NUM_RULES) {
-			fprintf(out2, ",\n");
+			fprintf(out3, ",\n");
 		} else {
-			fprintf(out2, "\n");
+			fprintf(out3, "\n");
 		}
 	}
-	fprintf(out2, "\t};\n");
-	fprintf(out2, "\tmemcpy(parserNode, parserNodeRaw, sizeof(parserNodeRaw));\n");
+	fprintf(out3, "};\n");
 
 	// print out the epilogue into the .cpp
 	fprintf(out2, "}\n");

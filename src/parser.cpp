@@ -212,8 +212,8 @@ int parse(vector<Token> *lexeme, vector<Tree *> *parseme, const char *fileName) 
 	static unsigned int ruleRhsLength[NUM_RULES];
 	static int ruleLhsTokenType[NUM_RULES];
 	static const char *ruleLhsTokenString[NUM_RULES];
-	static ParserNode parserNode[NUM_RULES][NUM_LABELS];
-	parserInit(ruleRhsLength, ruleLhsTokenType, ruleLhsTokenString, parserNode); // defined in the generated structure
+#include "../tmp/parserNodeRaw.h"
+	parserInit(ruleRhsLength, ruleLhsTokenType, ruleLhsTokenString); // defined in the generated structure
 
 	// iterate through the lexemes and do the actual parsing
 	// initialize the current bit of tree that we're examining

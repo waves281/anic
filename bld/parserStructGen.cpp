@@ -1,8 +1,8 @@
 #include "../src/mainDefs.h"
 #include "../src/constantDefs.h"
 
-#include "../src/parser.h"
 #include "../tmp/lexerStruct.h"
+#include "../src/parserStructDefs.h"
 
 #define NUM_RULES 1024
 
@@ -28,7 +28,8 @@ int main() {
 	// print the necessary prologue into the .h
 	fprintf(out, "#ifndef _PARSER_STRUCT_H_\n");
 	fprintf(out, "#define _PARSER_STRUCT_H_\n\n");
-	fprintf(out, "#include \"../src/parser.h\"\n\n");
+	fprintf(out, "#include \"../tmp/lexerStruct.h\"\n");
+	fprintf(out, "#include \"../src/parserStructDefs.h\"\n\n");
 	fprintf(out, "#define NUM_RULES %d\n\n", NUM_RULES);
 
 	// now, process the input file
@@ -65,8 +66,9 @@ int main() {
 	// read in the token ordering itself
 	bool parsingNonTerms = false; // whether we have reached the nonterminal part yet
 	unsigned int nonTermCount = 0;
-	string token; // temportary token string
+	string token; // temporary token string
 	map<unsigned int, string> tokenOrder;
+	map<string, unsigned int> tokenClassifier;
 	for(;;) {
 		if (sscanf(lbCur, "%s", junk) < 1) {
 			break;
@@ -89,6 +91,12 @@ int main() {
 		}
 		// push the string to the token ordering map
 		tokenOrder.insert( make_pair(tokenOrder.size(), token) );
+		unsigned int mapping = string2TokenType(token);
+		if (mapping != NUM_TOKENS) { // if it's a lexerStruct mapping
+			tokenClassifier.insert( make_pair(token, mapping) );
+		} else { // otherwise, if it's a parserStruct mapping
+			tokenClassifier.insert( make_pair(token, (NUM_TOKENS + nonTermCount)) );
+		}
 	}
 	// print out the definition of the number of nonterminals
 	fprintf(out, "\n");
@@ -98,8 +106,8 @@ int main() {
 	// print out the epilogue into the .h
 	fprintf(out, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
-	fprintf(out, "\t\tParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS] );\n\n");
+	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES], \n");
+	fprintf(out, "\t\tvoid *parserNode );\n\n");
 	fprintf(out, "#endif\n");
 
 	// print the necessary prologue into the .cpp
@@ -108,14 +116,7 @@ int main() {
 	fprintf(out2, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
 	fprintf(out2, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
 	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES],\n");
-	fprintf(out2, "\t\tParserNode parserNode[NUM_RULES][NUM_TOKENS + NUM_NONTERMS] ) {\n\n");
-	// initialize all parser nodes to error conditions
-	fprintf(out2, "\tfor (unsigned int i=0; i < NUM_RULES; i++) {\n");
-	fprintf(out2, "\t\tfor (unsigned int j=0; j < (NUM_TOKENS + NUM_NONTERMS); j++) {\n");
-	fprintf(out2, "\t\t\tparserNode[i][j].action = ACTION_ERROR;\n");
-	fprintf(out2, "\t\t}\n");
-	fprintf(out2, "\t}\n");
-	fprintf(out2, "\t\n");
+	fprintf(out2, "\t\tvoid *parserNode ) {\n\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);
@@ -212,6 +213,13 @@ int main() {
 	}
 
 	// finally, process the raw parse table actions
+	ParserNode parserNode[NUM_RULES][NUM_TOKENS + nonTermCount];
+	for (unsigned int i=0; i < NUM_RULES; i++) {
+		for (unsigned int j=0; j < (NUM_TOKENS + nonTermCount); j++) {
+			parserNode[i][j].action = ACTION_ERROR;
+			parserNode[i][j].n = ACTION_ERROR;
+		}
+	}
 	for(;;) {
 		char *retVal = fgets(lineBuf, MAX_STRING_LENGTH, in);
 		if (retVal == NULL || lineBuf[0] == 'N') { // if we've reached the end of the table, break out of the loop
@@ -239,19 +247,53 @@ int main() {
 			}
 			// branch based on the type of transition action it is
 			if (junk[0] == 's') { // shift action
-				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_SHIFT", atoi(junk+1) );
+				parserNode[fromState][tokenClassifier[tokenOrder[i]]] = (ParserNode){ ACTION_SHIFT, atoi(junk+1) };
 			} else if (junk[0] == 'r') { // reduce action
-				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_REDUCE", atoi(junk+1) );
+				parserNode[fromState][tokenClassifier[tokenOrder[i]]] = (ParserNode){ ACTION_REDUCE, atoi(junk+1) };
 			} else if (junk[0] == 'a') { // accept action
-				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_ACCEPT", 0 );
+				parserNode[fromState][tokenClassifier[tokenOrder[i]]] = (ParserNode){ ACTION_ACCEPT, ACTION_ERROR };
 			} else if (junk[0] == 'g') { // goto action
-				fprintf(out2, "\tparserNode[%d][%s] = (ParserNode){ %s, %d };\n", fromState, tokenOrder[i].c_str(), "ACTION_GOTO", atoi(junk+1) );
+				parserNode[fromState][tokenClassifier[tokenOrder[i]]] = (ParserNode){ ACTION_GOTO, atoi(junk+1) };
 			}
 			// do nothing on error states; all states have been defaulted to ACTION_ERROR already
 		}
 	}
+
+	// print out the parserNode array literal
+	fprintf(out2, "\tconst ParserNode parserNodeRaw[NUM_RULES][NUM_LABELS] = {\n");
+	// per-rule loop
+	for (unsigned int i=0; i < NUM_RULES; i++) {
+		fprintf(out2, "\t\t{\n");
+		// per-label loop
+		for (unsigned int j=0; j < (NUM_TOKENS + nonTermCount); j++) {
+			string actionString = (
+				parserNode[i][j].action == ACTION_SHIFT ? "ACTION_SHIFT" :
+				parserNode[i][j].action == ACTION_REDUCE ? "ACTION_REDUCE" :
+				parserNode[i][j].action == ACTION_ACCEPT ? "ACTION_ACCEPT" :
+				parserNode[i][j].action == ACTION_GOTO ? "ACTION_GOTO" :
+				parserNode[i][j].action == ACTION_ERROR ? "ACTION_ERROR" :
+				""
+			);
+			fprintf(out2, "\t\t\t{ %s, %u } /* [%u][%u] */", actionString.c_str(), parserNode[i][j].n, i, j);
+			if (j + 1 != (NUM_TOKENS + nonTermCount)) {
+				fprintf(out2, ",\n");
+			} else {
+				fprintf(out2, "\n");
+			}
+		}
+		fprintf(out2, "\t\t}");
+		if (i + 1 != NUM_RULES) {
+			fprintf(out2, ",\n");
+		} else {
+			fprintf(out2, "\n");
+		}
+	}
+	fprintf(out2, "\t};\n");
+	fprintf(out2, "\tmemcpy(parserNode, parserNodeRaw, sizeof(parserNodeRaw));\n");
+
 	// print out the epilogue into the .cpp
 	fprintf(out2, "}\n");
+
 	// finally, return normally
 	return 0;
 }

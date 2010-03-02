@@ -180,18 +180,18 @@ tmp/lexerStructGen: bld/lexerStructGen.cpp
 
 # PARSER
 
-tmp/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen tmp/parserTable.txt src/parser.h
+tmp/parserStruct.h tmp/parserStruct.o: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
 	@echo Generating parser structures...
 	@mkdir -p var
 	@./tmp/parserStructGen
 	@echo Compiling parser structure object...
 	@mkdir -p tmp
-	@g++ tmp/parserStruct.cpp $(CFLAGS) -O1 -c -o tmp/parserStruct.o
+	@g++ tmp/parserStruct.cpp $(CFLAGS) -c -o tmp/parserStruct.o
 
-tmp/parserStructGen: bld/parserStructGen.cpp src/parser.h tmp/lexerStruct.h
+tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserStructDefs.h
 	@echo Building parser structure generator...
 	@mkdir -p tmp
-	@g++ bld/parserStructGen.cpp -o tmp/parserStructGen
+	@g++ bld/parserStructGen.cpp tmp/lexerStruct.o -o tmp/parserStructGen
 
 tmp/hyacc: bld/hyaccMake.sh bld/hyacc/makefile
 	@echo Building parser table generator...

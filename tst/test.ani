@@ -11,7 +11,7 @@
 };
 
 
-main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, int]] {
+main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> int]]\ ]] {
 
 	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 

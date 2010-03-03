@@ -15,27 +15,37 @@ int main() {
 		return -1;
 	}
 	// output files
-	FILE *out;
-	out = fopen("./tmp/parserStruct.h","w");
-	if (out == NULL) { // if file open failed, return an error
+	FILE *header;
+	header = fopen("./tmp/parserStruct.h","w");
+	if (header == NULL) { // if file open failed, return an error
 		return -1;
 	}
-	FILE *out2;
-	out2 = fopen("./tmp/parserStruct.cpp","w");
-	if (out2 == NULL) { // if file open failed, return an error
+	FILE *pnr;
+	pnr = fopen("./tmp/parserNodeRaw.h","w");
+	if (pnr == NULL) { // if file open failed, return an error
 		return -1;
 	}
-	FILE *out3;
-	out3 = fopen("./tmp/parserNodeRaw.h","w");
-	if (out3 == NULL) { // if file open failed, return an error
+	FILE *rltt;
+	rltt = fopen("./tmp/ruleLhsTokenTypeRaw.h","w");
+	if (rltt == NULL) { // if file open failed, return an error
+		return -1;
+	}
+	FILE *rlts;
+	rlts = fopen("./tmp/ruleLhsTokenStringRaw.h","w");
+	if (rlts == NULL) { // if file open failed, return an error
+		return -1;
+	}
+	FILE *rrl;
+	rrl = fopen("./tmp/ruleRhsLengthRaw.h","w");
+	if (rrl == NULL) { // if file open failed, return an error
 		return -1;
 	}
 	// print the necessary prologue into the .h
-	fprintf(out, "#ifndef _PARSER_STRUCT_H_\n");
-	fprintf(out, "#define _PARSER_STRUCT_H_\n\n");
-	fprintf(out, "#include \"../tmp/lexerStruct.h\"\n");
-	fprintf(out, "#include \"../src/parserStructDefs.h\"\n\n");
-	fprintf(out, "#define NUM_RULES %d\n\n", NUM_RULES);
+	fprintf(header, "#ifndef _PARSER_STRUCT_H_\n");
+	fprintf(header, "#define _PARSER_STRUCT_H_\n\n");
+	fprintf(header, "#include \"../tmp/lexerStruct.h\"\n");
+	fprintf(header, "#include \"../src/parserStructDefs.h\"\n\n");
+	fprintf(header, "#define NUM_RULES %d\n\n", NUM_RULES);
 
 	// now, process the input file
 	char lineBuf[MAX_STRING_LENGTH]; // line data buffer
@@ -91,7 +101,7 @@ int main() {
 			parsingNonTerms = true;
 		}
 		if (parsingNonTerms) {
-			fprintf(out, "#define %s NUM_TOKENS + %d\n", token.c_str(), nonTermCount);
+			fprintf(header, "#define %s NUM_TOKENS + %d\n", token.c_str(), nonTermCount);
 			nonTermCount++;
 		}
 		// push the string to the token ordering map
@@ -104,22 +114,14 @@ int main() {
 		}
 	}
 	// print out the definition of the number of nonterminals
-	fprintf(out, "\n");
-	fprintf(out, "#define NUM_NONTERMS %d\n\n", nonTermCount);
+	fprintf(header, "\n");
+	fprintf(header, "#define NUM_NONTERMS %d\n\n", nonTermCount);
 	// print out the definition for the total label count
-	fprintf(out, "#define NUM_LABELS NUM_TOKENS + NUM_NONTERMS\n\n");
+	fprintf(header, "#define NUM_LABELS NUM_TOKENS + NUM_NONTERMS\n\n");
 	// print out the epilogue into the .h
-	fprintf(out, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
-	fprintf(out, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(out, "\t\tconst char *ruleLhsTokenString[NUM_RULES] );\n\n");
-	fprintf(out, "#endif\n");
-
-	// print the necessary prologue into the .cpp
-	fprintf(out2, "#include \"parserStruct.h\"\n\n");
-	// print out parserInit to the .cpp
-	fprintf(out2, "void parserInit( unsigned int ruleRhsLength[NUM_RULES],\n");
-	fprintf(out2, "\t\tint ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(out2, "\t\tconst char *ruleLhsTokenString[NUM_RULES] ) {\n\n");
+	fprintf(header, "void parserInit( int ruleLhsTokenType[NUM_RULES],\n");
+	fprintf(header, "\t\tconst char *ruleLhsTokenString[NUM_RULES] );\n\n");
+	fprintf(header, "#endif\n");
 
 	// now, back up in the file and scan ahead to the rule declarations
 	fseek(in, 0, SEEK_SET);
@@ -139,6 +141,10 @@ int main() {
 		return -1;
 	}
 
+	// print out the ruleLhsTokenType, ruleLshTokenString, and ruleRhsLength array initializers
+	fprintf(rltt, "const int ruleLhsTokenType[NUM_RULES] = {\n");
+	fprintf(rlts, "const char *ruleLhsTokenString[NUM_RULES] = {\n");
+	fprintf(rrl, "const unsigned int ruleRhsLength[NUM_RULES] = {\n");
 	// get rule lengths
 	for (unsigned int i=0; true; i++) { // per-rule line loop
 		// read in a line
@@ -187,12 +193,17 @@ int main() {
 		}
 		// then, log the lhs tokenType, lhs tokenString and rhs size of the rule in the corresponding arrays
 		if (lhs != "$accept") {
-			fprintf(out2, "\truleLhsTokenType[%d] = TOKEN_%s;\n", i, lhs.c_str());
-			fprintf(out2, "\truleLhsTokenString[%d] = \"%s\";\n", i, lhs.c_str());
+			fprintf(rltt, "\tTOKEN_%s,\n", lhs.c_str());
+			fprintf(rlts, "\t\"%s\",\n", lhs.c_str());
+		} else {
+			fprintf(rltt, "\t0,\n");
+			fprintf(rlts, "\t\"\",\n");
 		}
-		fprintf(out2, "\truleRhsLength[%d] = %d;\n", i, rhsElements);
+		fprintf(rrl, "\t%d,\n", rhsElements);
 	}
-	fprintf(out2, "\n");
+	fprintf(rltt, "};\n");
+	fprintf(rlts, "};\n");
+	fprintf(rrl, "};\n");
 
 	// now, scan ahead to the parse table
 	tableFound = false;
@@ -263,10 +274,10 @@ int main() {
 	}
 
 	// print out the parserNode array initializer
-	fprintf(out3, "const ParserNode parserNode[NUM_RULES][NUM_LABELS] = {\n");
+	fprintf(pnr, "const ParserNode parserNode[NUM_RULES][NUM_LABELS] = {\n");
 	// per-rule loop
 	for (unsigned int i=0; i < NUM_RULES; i++) {
-		fprintf(out3, "\t{\n");
+		fprintf(pnr, "\t{\n");
 		// per-label loop
 		for (unsigned int j=0; j < (NUM_TOKENS + nonTermCount); j++) {
 			string actionString = (
@@ -277,24 +288,11 @@ int main() {
 				parserNode[i][j].action == ACTION_ERROR ? "ACTION_ERROR" :
 				""
 			);
-			fprintf(out3, "\t\t{ %s, %u } /* [%u][%u] */", actionString.c_str(), parserNode[i][j].n, i, j);
-			if (j + 1 != (NUM_TOKENS + nonTermCount)) {
-				fprintf(out3, ",\n");
-			} else {
-				fprintf(out3, "\n");
-			}
+			fprintf(pnr, "\t\t{ %s, %u }, /* [%u][%u] */\n", actionString.c_str(), parserNode[i][j].n, i, j);
 		}
-		fprintf(out3, "\t}");
-		if (i + 1 != NUM_RULES) {
-			fprintf(out3, ",\n");
-		} else {
-			fprintf(out3, "\n");
-		}
+		fprintf(pnr, "\t},\n");
 	}
-	fprintf(out3, "};\n");
-
-	// print out the epilogue into the .cpp
-	fprintf(out2, "}\n");
+	fprintf(pnr, "};\n");
 
 	// finally, return normally
 	return 0;

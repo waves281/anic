@@ -180,13 +180,11 @@ tmp/lexerStructGen: bld/lexerStructGen.cpp
 
 # PARSER
 
-tmp/parserStruct.h tmp/parserStruct.o tmp/parserNodeRaw.h: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
+tmp/parserStruct.h tmp/ruleRhsLengthRaw.h tmp/ruleLhsTokenTypeRaw.h tmp/ruleLhsTokenStringRaw.h tmp/parserNodeRaw.h \
+		: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
 	@echo Generating parser structures...
-	@mkdir -p var
-	@./tmp/parserStructGen
-	@echo Compiling parser structure object...
 	@mkdir -p tmp
-	@g++ tmp/parserStruct.cpp $(CFLAGS) -c -o tmp/parserStruct.o
+	@./tmp/parserStructGen
 
 tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserStructDefs.h
 	@echo Building parser structure generator...

@@ -5,12 +5,7 @@
 #include "constantDefs.h"
 #include "system.h"
 
-struct lexerNodeStruct {
-	int valid;
-	int tokenType;
-	int toState;
-};
-typedef struct lexerNodeStruct LexerNode;
+#include "../tmp/lexerStruct.h"
 
 class Token {
 	public:

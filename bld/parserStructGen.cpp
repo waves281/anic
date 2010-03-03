@@ -2,7 +2,7 @@
 #include "../src/constantDefs.h"
 
 #include "../tmp/lexerStruct.h"
-#include "../src/parserStructDefs.h"
+#include "../src/parserNodeStruct.h"
 
 #define NUM_RULES 256
 
@@ -44,7 +44,7 @@ int main() {
 	fprintf(header, "#ifndef _PARSER_STRUCT_H_\n");
 	fprintf(header, "#define _PARSER_STRUCT_H_\n\n");
 	fprintf(header, "#include \"../tmp/lexerStruct.h\"\n");
-	fprintf(header, "#include \"../src/parserStructDefs.h\"\n\n");
+	fprintf(header, "#include \"../src/parserNodeStruct.h\"\n\n");
 	fprintf(header, "#define NUM_RULES %d\n\n", NUM_RULES);
 
 	// now, process the input file

@@ -21,8 +21,9 @@ CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$
 CORE_DEPENDENCIES = Makefile \
 	tmp/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
 	src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
+	tmp/lexerStruct.h tmp/lexerStruct.o tmp/parserStruct.h \
 	src/lexer.h src/parser.h src/semmer.h \
-	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
+	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp
 
 TEST_FILES = tst/test.ani
 
@@ -173,20 +174,20 @@ tmp/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen src/lexerTable.txt src/l
 	@mkdir -p tmp
 	@g++ tmp/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
-tmp/lexerStructGen: bld/lexerStructGen.cpp
+tmp/lexerStructGen: bld/lexerStructGen.cpp src/mainDefs.h src/constantDefs.h
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
 	@g++ bld/lexerStructGen.cpp -o tmp/lexerStructGen
 
 # PARSER
 
-tmp/parserStruct.h tmp/ruleRhsLengthRaw.h tmp/ruleLhsTokenTypeRaw.h tmp/ruleLhsTokenStringRaw.h tmp/parserNodeRaw.h \
-		: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserStructDefs.h
+tmp/parserStruct.h \
+		: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserNodeStruct.h
 	@echo Generating parser structures...
 	@mkdir -p tmp
 	@./tmp/parserStructGen
 
-tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserStructDefs.h
+tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
 	@echo Building parser structure generator...
 	@mkdir -p tmp
 	@g++ bld/parserStructGen.cpp tmp/lexerStruct.o -o tmp/parserStructGen
@@ -208,7 +209,7 @@ tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
 $(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
-	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o tmp/parserStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
+	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 	-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
 	$(CFLAGS) \
 	-o $(TARGET)

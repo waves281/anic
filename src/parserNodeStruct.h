@@ -1,5 +1,5 @@
-#ifndef PARSER_STRUCT_DEFS_H
-#define PARSER_STRUCT_DEFS_H
+#ifndef PARSER_STRUCT_NODE_H
+#define PARSER_STRUCT_NODE_H
 
 // action definitions
 #define ACTION_SHIFT 1

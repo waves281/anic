@@ -77,8 +77,7 @@ vector<Token> *lex(ifstream *in, const char *fileName) {
 	lexerEventuallyGiveUp = eventuallyGiveUp;
 
 	// declare and initialize lexer structure
-	static LexerNode lexerNode[256][256];
-	lexerInit(lexerNode); // defined in the generated structure
+#include "../tmp/lexerNodeRaw.h"
 	// declare output vector
 	vector<Token> *outputVector = new vector<Token>();
 	// input character buffers

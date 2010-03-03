@@ -1,6 +1,8 @@
 #include "../src/mainDefs.h"
 #include "../src/constantDefs.h"
 
+#include "../src/lexerNodeStruct.h"
+
 map<string,int> tokenMap;
 
 int mapToken(string s) {
@@ -29,25 +31,31 @@ int main() {
 		return -1;
 	}
 	FILE *out2;
-		out2 = fopen("./tmp/lexerStruct.cpp","w");
-		if (out2 == NULL) { // if file open failed, return an error
-			return -1;
+	out2 = fopen("./tmp/lexerStruct.cpp","w");
+	if (out2 == NULL) { // if file open failed, return an error
+		return -1;
+	}
+	FILE *lnr;
+	lnr = fopen("./tmp/lexerNodeRaw.h","w");
+	if (lnr == NULL) { // if file open failed, return an error
+		return -1;
 	}
 
 	// print the necessary prologue into the .cpp
 	fprintf(out2, "#include \"lexerStruct.h\"\n\n");
-	// print out lexerInit to the .cpp
-	fprintf(out2, "void lexerInit(LexerNode lexerNode[256][256]) {\n");
-	fprintf(out2, "\tfor (int i = 0; i<256; i++) {\n");
-	fprintf(out2, "\t\tfor (int j = 0; j<256; j++) {\n");
-	fprintf(out2, "\t\t\tlexerNode[i][j].valid = 0;\n");
-	fprintf(out2, "\t\t}\n");
-	fprintf(out2, "\t}\n");
+
+	// create the lexer node array
+	LexerNode lexerNode[256][256];
+	for (int i = 0; i<256; i++) {
+		for (int j = 0; j<256; j++) {
+			lexerNode[i][j] = (LexerNode){ 0, 0, 0 };
+		}
+	}
 	// now, process the input file
 	// data buffers
 	char lineBuf[MAX_STRING_LENGTH];
 	int fromState;
-	char c;
+	unsigned char c;
 	char tokenTypeCString[MAX_STRING_LENGTH];
 	int toState;
 	// read the lexer data
@@ -63,11 +71,9 @@ int main() {
 			continue;
 		} else if (retVal2 == 4) { // else if it was a valid data line, process it normally
 			int tokenType = mapToken(tokenTypeString); // get the token mapping
-			fprintf(out2, "\tlexerNode[%d][%d] = (LexerNode){ 1, %d, %d };\n", fromState, c, tokenType, toState);
+			lexerNode[fromState][c] = (LexerNode){ 1, tokenType, toState };
 		}
 	}
-	// terminate the lexerInit definition
-	fprintf(out2, "}\n\n");
 
 	// print out tokenType2String to the .cpp
 	fprintf(out2, "const char *tokenType2String(int tokenType) {\n");
@@ -102,7 +108,8 @@ int main() {
 	// print the necessary prologue into the .h
 	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
 	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
-	fprintf(out, "#include \"../src/lexer.h\"\n\n");
+	fprintf(out, "#include \"../src/mainDefs.h\"\n\n");
+	fprintf(out, "#include \"../src/lexerNodeStruct.h\"\n\n");
 	// print out token definitions to the .h
 	fprintf(out, "#define NUM_TOKENS %u\n\n", ((unsigned int)tokenMap.size() + 1)); // plus 1 due to Token_END
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
@@ -112,11 +119,21 @@ int main() {
 	fprintf(out, "#define TOKEN_END %u\n", (unsigned int)tokenMap.size());
 	fprintf(out, "\n");
 	// print out the forward declarations to the .h
-	fprintf(out, "void lexerInit(LexerNode lexerNode[256][256]);\n");
 	fprintf(out, "const char *tokenType2String(int tokenType);\n");
 	fprintf(out, "unsigned int string2TokenType(string s);\n\n");
-
 	fprintf(out, "#endif\n");
+
+	// print out the lexer node struct array
+	fprintf(lnr, "const LexerNode lexerNode[256][256] = {\n");
+	for (unsigned int i=0; i < 256; i++) {
+		fprintf(lnr, "\t{\n");
+		for (unsigned int j=0; j < 256; j++) {
+			fprintf(lnr, "\t\t{ %d, %d, %d },\n", lexerNode[i][j].valid, lexerNode[i][j].tokenType, lexerNode[i][j].toState);
+		}
+		fprintf(lnr, "\t},\n");
+	}
+	fprintf(lnr, "};\n");
+
 	// finally, return normally
 	return 0;
 }

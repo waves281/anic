@@ -4,7 +4,7 @@
 #include "../tmp/lexerStruct.h"
 #include "../src/parserStructDefs.h"
 
-#define NUM_RULES 1024
+#define NUM_RULES 256
 
 // parses the generated parse table into an includable .h file with the appropriate struct representation
 int main() {

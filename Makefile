@@ -1,23 +1,22 @@
 TARGET = anic
+INSTALL_PATH = /usr/local/bin
+MAN_PATH = /usr/share/man/man1
 
+CC = g++
+CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -fomit-frame-pointer -ffast-math -pipe -Wall
 OPTIMIZATION_LEVEL = 3
+
+VERSION_STRING = "0.66"
+VERSION_YEAR = "2010"
 
 MAN_PAGE = $(TARGET).1
 INSTALL_SCRIPT = $(TARGET)-install
 UNINSTALL_SCRIPT = $(TARGET)-uninstall
 
-INSTALL_PATH = /usr/local/bin
-
-VERSION_STRING = "0.66"
-VERSION_YEAR = "2010"
-
 MAKE_PROGRAM = make
 HYACC_PATH = bld/hyacc
 
 PRINT_VERSION = @echo Version stamp is
-
-CC = g++
-CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -fomit-frame-pointer -ffast-math -pipe -Wall
 
 CORE_DEPENDENCIES = Makefile \
 	tmp/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
@@ -141,7 +140,7 @@ $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
 echo Installing binary...\n\
 cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)\n\
 echo Installing manpage...\n\
-cp -f $(MAN_PAGE).gz /usr/share/man/man1\n\
+cp -f $(MAN_PAGE).gz $(MAN_PATH)\n\
 echo Installation complete.\n\
 exit" > $(INSTALL_SCRIPT)
 	@chmod +x $(INSTALL_SCRIPT)

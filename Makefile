@@ -120,7 +120,7 @@ tmp/version: bld/version.c
 	@echo Building version controller...
 	@mkdir -p var
 	@mkdir -p tmp
-	@gcc bld/version.c -o tmp/version
+	@g++ bld/version.c -o tmp/version
 
 # VERSION STAMP
 
@@ -210,7 +210,8 @@ $(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@g++ src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
-	-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
-	$(CFLAGS) \
-	-o $(TARGET)
+		-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
+		$(CFLAGS) \
+		-o $(TARGET)
+	@chmod +x $(TARGET)
 	@echo Done building main executable.

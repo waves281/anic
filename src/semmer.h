@@ -102,6 +102,8 @@ class Type {
 		// operators
 		bool operator==(int kind);
 		bool operator!=(int kind);
+		bool operator==(Type &otherType);
+		bool operator!=(Type &otherType);
 		bool operator<=(int kind);
 		bool operator>=(int kind);
 };

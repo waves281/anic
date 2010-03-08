@@ -3,7 +3,7 @@ INSTALL_PATH = /usr/local/bin
 MAN_PATH = /usr/share/man/man1
 
 CC = g++
-CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -fomit-frame-pointer -ffast-math -pipe -Wall
+CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -g -fomit-frame-pointer -ffast-math -pipe -Wall
 OPTIMIZATION_LEVEL = 3
 
 VERSION_STRING = "0.66"

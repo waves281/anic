@@ -95,8 +95,8 @@ Type::~Type() {
 	delete next;
 	delete from;
 	delete to;
-}
 
+}
 // operators
 
 bool Type::operator==(int kind) {
@@ -105,6 +105,19 @@ bool Type::operator==(int kind) {
 
 bool Type::operator!=(int kind) {
 	return (!operator==(kind));
+}
+
+bool Type::operator==(Type &otherType) {
+	return (
+		this->kind == otherType.kind && this->base == otherType.base &&
+		( ((this->next == NULL) == (otherType.next == NULL)) && (this->next != NULL ? (*(this->next) == *(otherType.next)) : true) ) &&
+		( ((this->from == NULL) == (otherType.from == NULL)) && (this->from != NULL ? (*(this->from) == *(otherType.from)) : true) ) &&
+		( ((this->to == NULL) == (otherType.to == NULL)) && (this->to != NULL ? (*(this->to) == *(otherType.to)) : true) )
+		);
+}
+
+bool Type::operator!=(Type &otherType) {
+	return (!operator==(otherType));
 }
 
 bool Type::operator>=(int kind) {
@@ -565,6 +578,11 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
@@ -808,7 +826,29 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 
 Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-// LOL
+	Tree *pipeCur = tree->child->next->child; // Pipe
+	bool pipeTypesValid = true;
+	while(pipeCur != NULL) {
+		// try to get a type for this pipe
+		Type *resultType = getTypePipe(inType, recallBinding, pipeCur);
+		// if we failed to find a type, flag this fact
+		if (resultType == NULL) {
+			pipeTypesValid = false;
+		}
+		// advance
+		if (pipeCur->next != NULL) {
+			pipeCur = pipeCur->next->next->child; // Pipe
+		} else {
+			pipeCur = NULL;
+		}
+	}
+	// if we managed to derive a type for all of the enclosed pipes
+	if (pipeTypesValid) {
+		// allocate a null type
+		Type *nullType = new Type(STD_NULL);
+		// set the result type to the input type being mapped to the null type
+		type = new Type(inType, nullType);
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -875,17 +915,83 @@ Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// reports errors
+Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	if (*inType == STD_BOOL) {
+		type = getTypeTerm(recallBinding->type, recallBinding, tree->child->next);
+	} else {
+		Token curToken = tree->child->t; // QUESTION
+		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *ctc = tree->child;
+	if (*ctc == TOKEN_SimpleTerm) {
+		type = getTypeSimpleTerm(inType, recallBinding, ctc);
+	} else if (*ctc == TOKEN_ClosedCondTerm) {
+		type = getTypeClosedCondTerm(inType, recallBinding, ctc);
+	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *otc = tree->child;
+	if (*otc == TOKEN_SimpleCondTerm) {
+		type = getTypeSimpleCondTerm(inType, recallBinding, otc);
+	} else if (*otc == TOKEN_OpenCondTerm) {
+		type = getTypeOpenCondTerm(inType, recallBinding, otc);
+	}
+	GET_TYPE_FOOTER;
+}
+
+// reports errors
+Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	if (*inType == STD_BOOL) {
+		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, tree->child->next);
+		Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, tree->child->next->next->next);
+		if (*trueType == *falseType) {
+			type = trueType;
+			delete falseType;
+		} else {
+			Token curToken = tree->child->t; // QUESTION
+			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (true branch type was "<<type2String(trueType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (false branch type was "<<type2String(trueType)<<")");
+			delete trueType;
+			delete falseType;
+		}
+	} else {
+		Token curToken = tree->child->t; // QUESTION
+		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc2 = tree->child->child;
 	if (*tc2 == TOKEN_SimpleCondTerm) {
-// LOL
+		type = getTypeSimpleCondTerm(inType, recallBinding, tc2);
 	} else if (*tc2 == TOKEN_OpenCondTerm) {
-// LOL
+		type = getTypeOpenCondTerm(inType, recallBinding, tc2);
 	} else if (*tc2 == TOKEN_SimpleTerm) {
 		type = getTypeSimpleTerm(inType, recallBinding, tc2);
 	} else if (*tc2 == TOKEN_ClosedCondTerm) {
-// LOL
+		type = getTypeClosedCondTerm(inType, recallBinding, tc2);
 	}
 	GET_TYPE_FOOTER;
 }
@@ -942,7 +1048,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	// iterate through the list of Pipes and trace the type flow for each one
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
-		if (*(pipeCur->parent) == TOKEN_Pipes) { // if it's a top-level pipe
+		if (pipeCur->type == NULL) { // if we haven't derived a type for this pipe yet
 			// temporaily allocate the null type
 			Type *nullType = new Type(STD_NULL);
 			Type *resultType = getTypePipe(nullType, NULL, pipeCur);

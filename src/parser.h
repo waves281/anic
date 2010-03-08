@@ -27,6 +27,8 @@ class Tree {
 		Tree(Token &t);
 		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		~Tree();
+		// comparison operators
+		bool operator==(int tokenType);
 		// traversal operators
 		Tree *goNext(unsigned int n);
 		Tree *goBack(unsigned int n);

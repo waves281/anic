@@ -19,6 +19,12 @@ Tree::~Tree() {
 	delete type;
 }
 
+// comparison oparators
+
+bool Tree::operator==(int tokenType) {
+	return (t.tokenType == tokenType);
+}
+
 // traversal operators
 // binary traversers
 Tree *Tree::goNext(unsigned int n) {

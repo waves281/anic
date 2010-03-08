@@ -318,16 +318,16 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// log the current symbol environment in the tree
 	tree->env = st;
 	// recursive cases
-	if (tree->t.tokenType == TOKEN_Identifier) { // if it's an Identifier
-		if (tree->back != NULL && tree->back->t.tokenType == TOKEN_AT) { // if it's an import Identifier
+	if (*tree == TOKEN_Identifier) { // if it's an Identifier
+		if (tree->back != NULL && *(tree->back) == TOKEN_AT) { // if it's an import Identifier
 			// recurse on the right only; i.e. don't consider import string subidentifiers
 			buildSt(tree->next, st, importList); // right
 		}
-	} else if (tree->t.tokenType == TOKEN_Block) { // if it's a block node
+	} else if (*tree == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// if there is a header for to this block, add its parameters into the block node
-		if (tree->back != NULL && tree->back->t.tokenType == TOKEN_NodeHeader) {
+		if (tree->back != NULL && *(tree->back) == TOKEN_NodeHeader) {
 			Tree *nh = tree->back; // NodeHeader
 			if (nh->child->next->child != NULL) { // if there is a parameter list to process
 				Tree *param = nh->child->next->child->child; // Param
@@ -349,7 +349,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		*st *= blockDef;
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block
-	} else if (tree->t.tokenType == TOKEN_Declaration) { // if it's a declaration node
+	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
 		Token t = tree->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
@@ -581,27 +581,27 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pomocc = tree->child->child;
 	Type *subType = getTypePrimary(inType, recallBinding, tree->next);
-	if (pomocc->t.tokenType == TOKEN_NOT) {
+	if (*pomocc == TOKEN_NOT) {
 		if (*subType == STD_BOOL) {
 			type = subType;
 		}
-	} else if (pomocc->t.tokenType == TOKEN_COMPLEMENT) {
+	} else if (*pomocc == TOKEN_COMPLEMENT) {
 		if (*subType == STD_INT) {
 			type = subType;
 		}
-	} else if (pomocc->t.tokenType == TOKEN_DPLUS) {
+	} else if (*pomocc == TOKEN_DPLUS) {
 		if (*subType == STD_INT) {
 			type = subType;
 		}
-	} else if (pomocc->t.tokenType == TOKEN_DMINUS) {
+	} else if (*pomocc == TOKEN_DMINUS) {
 		if (*subType == STD_INT) {
 			type = subType;
 		}
-	} else if (pomocc->t.tokenType == TOKEN_PLUS) {
+	} else if (*pomocc == TOKEN_PLUS) {
 		if (*subType == STD_INT || *subType == STD_FLOAT) {
 			type = subType;
 		}
-	} else if (pomocc->t.tokenType == TOKEN_MINUS) {
+	} else if (*pomocc == TOKEN_MINUS) {
 		if (*subType == STD_INT || *subType == STD_FLOAT) {
 			type = subType;
 		}
@@ -612,15 +612,15 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
-	if (primaryc->t.tokenType == TOKEN_Identifier) {
+	if (*primaryc == TOKEN_Identifier) {
 		type = getTypeIdentifier(inType, recallBinding, primaryc);
-	} else if (primaryc->t.tokenType == TOKEN_SLASH) {
+	} else if (*primaryc == TOKEN_SLASH) {
 // LOL
-	} else if (primaryc->t.tokenType == TOKEN_PrimLiteral) {
+	} else if (*primaryc == TOKEN_PrimLiteral) {
 		type = getTypePrimLiteral(inType, recallBinding, primaryc);
-	} else if (primaryc->t.tokenType == TOKEN_PrefixOrMultiOp) {
+	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
 		type = getTypePrefixOrMultiOp(inType, recallBinding, primaryc);
-	} else if (primaryc->t.tokenType == TOKEN_LBRACKET) {
+	} else if (*primaryc == TOKEN_LBRACKET) {
 		type = getTypeExp(inType, recallBinding, primaryc->next);
 	}
 	GET_TYPE_FOOTER;
@@ -629,9 +629,9 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *expc = tree->child;
-	if (expc->t.tokenType == TOKEN_Primary) {
+	if (*expc == TOKEN_Primary) {
 		type = getTypePrimary(inType, recallBinding, expc);
-	} else if (expc->t.tokenType == TOKEN_Exp) {
+	} else if (*expc == TOKEN_Exp) {
 		Tree *expLeft = expc;
 		Tree *op = expLeft->next;
 		Tree *expRight = op->next;
@@ -773,13 +773,13 @@ Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *plc = tree->child;
-	if (plc->t.tokenType == TOKEN_INUM) {
+	if (*plc == TOKEN_INUM) {
 		type = new Type(STD_INT);
-	} else if (plc->t.tokenType == TOKEN_FNUM) {
+	} else if (*plc == TOKEN_FNUM) {
 		type = new Type(STD_FLOAT);
-	} else if (plc->t.tokenType == TOKEN_CQUOTE) {
+	} else if (*plc == TOKEN_CQUOTE) {
 		type = new Type(STD_CHAR);
-	} else if (plc->t.tokenType == TOKEN_SQUOTE) {
+	} else if (*plc == TOKEN_SQUOTE) {
 		type = new Type(STD_STRING);
 	}
 	GET_TYPE_FOOTER;
@@ -788,20 +788,20 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tstc = tree->child;
-	if (tstc->t.tokenType == TOKEN_Node) {
+	if (*tstc == TOKEN_Node) {
 		Tree *tstcc = tstc->child;
-		if (tstcc->t.tokenType == TOKEN_Identifier) {
+		if (*tstcc == TOKEN_Identifier) {
 			type = getTypeIdentifier(inType, recallBinding, tstcc);
-		} else if (tstcc->t.tokenType == TOKEN_NodeInstantiation) {
+		} else if (*tstcc == TOKEN_NodeInstantiation) {
 // LOL
-		} else if (tstcc->t.tokenType == TOKEN_TypedNodeLiteral) {
+		} else if (*tstcc == TOKEN_TypedNodeLiteral) {
 // LOL
-		} else if (tstcc->t.tokenType == TOKEN_PrimOpNode) {
+		} else if (*tstcc == TOKEN_PrimOpNode) {
 			type = getTypePrimOpNode(inType, recallBinding, tstcc);
-		} else if (tstcc->t.tokenType == TOKEN_PrimLiteral) {
+		} else if (*tstcc == TOKEN_PrimLiteral) {
 			type = getTypePrimLiteral(inType, recallBinding, tstcc);
 		}
-	} else if (tstc->t.tokenType == TOKEN_LBRACKET) { // it's an expression
+	} else if (*tstc == TOKEN_LBRACKET) { // it's an expression
 		type = getTypeExp(inType, recallBinding, tstc->next); // move past the bracket to the actual Exp node
 	}
 	GET_TYPE_FOOTER;
@@ -810,25 +810,25 @@ Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child;
-	if (tc->t.tokenType == TOKEN_DynamicTerm) {
+	if (*tc == TOKEN_DynamicTerm) {
 		Tree *tc2 = tc->child;
-		if (tc2->t.tokenType == TOKEN_StaticTerm) {
+		if (*tc2 == TOKEN_StaticTerm) {
 			Tree *tc3 = tc2->child;
-			if (tc3->t.tokenType == TOKEN_TypedStaticTerm) {
+			if (*tc3 == TOKEN_TypedStaticTerm) {
 				type = getTypeTypedStaticTerm(inType, recallBinding, tc3);
-			} else if (tc3->t.tokenType == TOKEN_Delatch) {
+			} else if (*tc3 == TOKEN_Delatch) {
 // LOL
-			} else if (tc3->t.tokenType == TOKEN_Block) {
+			} else if (*tc3 == TOKEN_Block) {
 // LOL
 			}
-		} else if (tc2->t.tokenType == TOKEN_Compound) {
+		} else if (*tc2 == TOKEN_Compound) {
 // LOL
-		} else if (tc2->t.tokenType == TOKEN_Link) {
+		} else if (*tc2 == TOKEN_Link) {
 // LOL
-		} else if (tc2->t.tokenType == TOKEN_Send) {
+		} else if (*tc2 == TOKEN_Send) {
 // LOL
 		}
-	} else if (tc->t.tokenType == TOKEN_SwitchTerm) {
+	} else if (*tc == TOKEN_SwitchTerm) {
 // LOL
 	}
 	GET_TYPE_FOOTER;
@@ -837,24 +837,30 @@ Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc2 = tree->child->child;
-	if (tc2->t.tokenType == TOKEN_SimpleCondTerm) {
+	if (*tc2 == TOKEN_SimpleCondTerm) {
 // LOL
-	} else if (tc2->t.tokenType == TOKEN_OpenCondTerm) {
+	} else if (*tc2 == TOKEN_OpenCondTerm) {
 // LOL
-	} else if (tc2->t.tokenType == TOKEN_SimpleTerm) {
+	} else if (*tc2 == TOKEN_SimpleTerm) {
 		type = getTypeSimpleTerm(inType, recallBinding, tc2);
-	} else if (tc2->t.tokenType == TOKEN_ClosedCondTerm) {
+	} else if (*tc2 == TOKEN_ClosedCondTerm) {
 // LOL
 	}
 	GET_TYPE_FOOTER;
 }
 
 void traceTypes(vector<Tree *> *parseme) {
-	// get a list of NonEmptyTerms nodes
-	vector<Tree *> &netsList = parseme[TOKEN_NonEmptyTerms];
-	// iterate through the list of NonEmptyTerms and trace the types for each one, starting with nullity
-	for (unsigned int i=0; i < netsList.size(); i++) {
-		Tree *netsCur = netsList[i];
+	// get a list of Pipes nodes
+	vector<Tree *> &pipesList = parseme[TOKEN_Pipes];
+	// iterate through the list of Pipes and trace the type flow for each one
+	for (unsigned int i=0; i < pipesList.size(); i++) {
+		Tree *pipesCur = pipesList[i];
+		if (pipesCur->parent != NULL && *(pipesCur->parent) == TOKEN_Program) { // if it's a top-level pipe
+
+		}
+
+/*
+
 		if (netsCur->type == NULL) { // if we haven't resolved a type for this node yet
 			// temporaily allocate the null type
 			Type *nullType = new Type(STD_NULL);
@@ -876,6 +882,7 @@ void traceTypes(vector<Tree *> *parseme) {
 				curTerm = curTerm->next->child; // Term
 			}
 		}
+		*/
 	}
 }
 

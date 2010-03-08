@@ -321,12 +321,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// log the current symbol environment in the tree
 	tree->env = st;
 	// recursive cases
-	if (*tree == TOKEN_Identifier) { // if it's an Identifier
-		if (tree->back != NULL && *(tree->back) == TOKEN_AT) { // if it's an import Identifier
-			// recurse on the right only; i.e. don't consider import string subidentifiers
-			buildSt(tree->next, st, importList); // right
-		}
-	} else if (*tree == TOKEN_Block) { // if it's a block node
+	if (*tree == TOKEN_Block) { // if it's a block node
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// if there is a header for to this block, add its parameters into the block node
@@ -355,12 +350,12 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
 		Token t = tree->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
-			// recurse first, since the binding isn't valid inside its own definition
-			buildSt(tree->child, st, importList); // child of Declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
+			// recurse
+			buildSt(tree->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, tree->child->t.s, tree);

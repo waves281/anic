@@ -785,22 +785,28 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *nodec = tree->child;
+	if (*nodec == TOKEN_Identifier) {
+		type = getTypeIdentifier(inType, recallBinding, nodec);
+	} else if (*nodec == TOKEN_NodeInstantiation) {
+// LOL
+	} else if (*nodec == TOKEN_TypedNodeLiteral) {
+// LOL
+	} else if (*nodec == TOKEN_PrimOpNode) {
+		type = getTypePrimOpNode(inType, recallBinding, nodec);
+	} else if (*nodec == TOKEN_PrimLiteral) {
+		type = getTypePrimLiteral(inType, recallBinding, nodec);
+	}
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
-		Tree *tstcc = tstc->child;
-		if (*tstcc == TOKEN_Identifier) {
-			type = getTypeIdentifier(inType, recallBinding, tstcc);
-		} else if (*tstcc == TOKEN_NodeInstantiation) {
-// LOL
-		} else if (*tstcc == TOKEN_TypedNodeLiteral) {
-// LOL
-		} else if (*tstcc == TOKEN_PrimOpNode) {
-			type = getTypePrimOpNode(inType, recallBinding, tstcc);
-		} else if (*tstcc == TOKEN_PrimLiteral) {
-			type = getTypePrimLiteral(inType, recallBinding, tstcc);
-		}
+		type = getTypeNode(inType, recallBinding, tstc);
 	} else if (*tstc == TOKEN_LBRACKET) { // it's an expression
 		type = getTypeExp(inType, recallBinding, tstc->next); // move past the bracket to the actual Exp node
 	}

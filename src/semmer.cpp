@@ -104,7 +104,7 @@ bool Type::operator==(int kind) {
 }
 
 bool Type::operator!=(int kind) {
-	return (this->kind != kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+	return (!operator==(kind));
 }
 
 bool Type::operator>=(int kind) {
@@ -562,6 +562,7 @@ Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
 
 // typing function definitions
 
+// reports errors
 Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	string id = id2String(tree); // string representation of this identifier
@@ -574,6 +575,12 @@ Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'");
 	}
 // LOL
+	// if we couldn't resolve a type
+	if (type == NULL) {
+		Token curToken = tree->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve identifier's type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -626,6 +633,7 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// reports errors
 Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *expc = tree->child;
@@ -689,6 +697,12 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 				break;
 		} // switch
 	} // if
+	// if we couldn't resolve a type
+	if (type == NULL) {
+		Token curToken = tree->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's output type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -785,6 +799,7 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// reports errors
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *nodec = tree->child;
@@ -799,9 +814,16 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else if (*nodec == TOKEN_PrimLiteral) {
 		type = getTypePrimLiteral(inType, recallBinding, nodec);
 	}
+	// if we couldn't resolve a type
+	if (type == NULL && *nodec != TOKEN_Identifier) {
+		Token curToken = tree->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node's type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
+// reports errors
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tstc = tree->child;
@@ -855,6 +877,7 @@ Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// reports errors
 Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	// scan the pipe left to right

@@ -25,6 +25,10 @@ bool Tree::operator==(int tokenType) {
 	return (t.tokenType == tokenType);
 }
 
+bool Tree::operator!=(int tokenType) {
+	return (!operator==(tokenType));
+}
+
 // traversal operators
 // binary traversers
 Tree *Tree::goNext(unsigned int n) {

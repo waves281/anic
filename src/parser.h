@@ -29,6 +29,7 @@ class Tree {
 		~Tree();
 		// comparison operators
 		bool operator==(int tokenType);
+		bool operator!=(int tokenType);
 		// traversal operators
 		Tree *goNext(unsigned int n);
 		Tree *goBack(unsigned int n);

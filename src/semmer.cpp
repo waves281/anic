@@ -554,6 +554,8 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
@@ -797,6 +799,12 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
 // reports errors
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
@@ -811,6 +819,8 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		type = getTypePrimOpNode(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimLiteral) {
 		type = getTypePrimLiteral(inType, recallBinding, nodec);
+	} else if (*nodec == TOKEN_Block) {
+		type = getTypeBlock(inType, recallBinding, nodec);
 	}
 	// if we couldn't resolve a type
 	if (type == NULL && *nodec != TOKEN_Identifier) {
@@ -843,8 +853,6 @@ Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 			if (*tc3 == TOKEN_TypedStaticTerm) {
 				type = getTypeTypedStaticTerm(inType, recallBinding, tc3);
 			} else if (*tc3 == TOKEN_Delatch) {
-// LOL
-			} else if (*tc3 == TOKEN_Block) {
 // LOL
 			}
 		} else if (*tc2 == TOKEN_Compound) {

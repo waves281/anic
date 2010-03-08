@@ -117,7 +117,6 @@ DynamicTerm : StaticTerm
 	;
 StaticTerm : TypedStaticTerm
 	| Delatch
-	| Block
 	;
 TypedStaticTerm : Node
 	| LBRACKET Exp RBRACKET
@@ -153,6 +152,7 @@ Node : Identifier
 	| TypedNodeLiteral
 	| PrimOpNode
 	| PrimLiteral
+	| Block
 	;
 Identifier : ID
 	| ID PERIOD Identifier

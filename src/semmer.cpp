@@ -903,7 +903,16 @@ void traceTypes(vector<Tree *> *parseme) {
 			} else if (*pipeCurc == TOKEN_Declaration) { // else if it's a Declaration pipe
 				Tree *declarationSub = pipeCurc->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 				if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) {
-// LOL
+					// temporaily allocate the null type
+					Type *nullType = new Type(STD_NULL);
+					// recurse to get the type of the TypedStaticTerm
+					Tree *tst = declarationSub; // TypedStaticTerm
+					Type *resultType = getTypeTypedStaticTerm(nullType, NULL, tst);
+					if (resultType != NULL) { // if we successfully derived a type
+						pipeCur->type = resultType;
+					} else { // else if we failed to derive a type
+						delete nullType;
+					}
 				} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) {
 					// temporaily allocate the null type
 					Type *nullType = new Type(STD_NULL);

@@ -29,12 +29,14 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> [[int]]\]]
 
 /* name resolution testing */
 
-nameRes = [[]] {
+nameRes =  {
 	x = [[int z --> int]] {
+		g = [[]]/***/{};
 		100 -->;
 		@main.y;
 		y -->;
 	};
+	z = main;
 };
 
 x=10e-1;

@@ -87,8 +87,8 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // allocators/deallocators
 
 Type::Type(int kind) : kind(kind), base(NULL), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
-Type::Type(int kind, Tree *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
-Type::Type(int kind, Tree *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL), from(NULL), to(NULL) {}
+Type::Type(int kind, SymbolTable *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
+Type::Type(int kind, SymbolTable *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL), from(NULL), to(NULL) {}
 Type::Type(Type *from, Type *to) : kind(kind), base(base), suffix(suffix), next(NULL), from(from), to(to) {}
 
 Type::~Type() {
@@ -381,6 +381,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 }
 
 // forward declarations
+SymbolTable *bindId(Tree *t);
 SymbolTable *bindId(string &id, SymbolTable *env);
 
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
@@ -492,6 +493,12 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 }
 
 // wrappers for the above function
+
+SymbolTable *bindId(Tree *t) {
+	string s(t->t.s);
+	return bindId(NULL, s, t->env);
+}
+
 SymbolTable *bindId(string &id, SymbolTable *env) {
 	return bindId(NULL, id, env);
 }
@@ -712,70 +719,70 @@ Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	// generate the type based on the specific operator it is
 	switch (ponc->t.tokenType) {
 		case TOKEN_NOT:
-			type = new Type(STD_NOT, ponc);
+			type = new Type(STD_NOT);
 			break;
 		case TOKEN_COMPLEMENT:
-			type = new Type(STD_COMPLEMENT, ponc);
+			type = new Type(STD_COMPLEMENT);
 			break;
 		case TOKEN_DPLUS:
-			type = new Type(STD_DPLUS, ponc);
+			type = new Type(STD_DPLUS);
 			break;
 		case TOKEN_DMINUS:
-			type = new Type(STD_DMINUS, ponc);
+			type = new Type(STD_DMINUS);
 			break;
 		case TOKEN_DOR:
-			type = new Type(STD_DOR, ponc);
+			type = new Type(STD_DOR);
 			break;
 		case TOKEN_DAND:
-			type = new Type(STD_DAND, ponc);
+			type = new Type(STD_DAND);
 			break;
 		case TOKEN_OR:
-			type = new Type(STD_OR, ponc);
+			type = new Type(STD_OR);
 			break;
 		case TOKEN_XOR:
-			type = new Type(STD_XOR, ponc);
+			type = new Type(STD_XOR);
 			break;
 		case TOKEN_AND:
-			type = new Type(STD_AND, ponc);
+			type = new Type(STD_AND);
 			break;
 		case TOKEN_DEQUALS:
-			type = new Type(STD_DEQUALS, ponc);
+			type = new Type(STD_DEQUALS);
 			break;
 		case TOKEN_NEQUALS:
-			type = new Type(STD_NEQUALS, ponc);
+			type = new Type(STD_NEQUALS);
 			break;
 		case TOKEN_LT:
-			type = new Type(STD_LT, ponc);
+			type = new Type(STD_LT);
 			break;
 		case TOKEN_GT:
-			type = new Type(STD_GT, ponc);
+			type = new Type(STD_GT);
 			break;
 		case TOKEN_LE:
-			type = new Type(STD_LE, ponc);
+			type = new Type(STD_LE);
 			break;
 		case TOKEN_GE:
-			type = new Type(STD_GE, ponc);
+			type = new Type(STD_GE);
 			break;
 		case TOKEN_LS:
-			type = new Type(STD_LS, ponc);
+			type = new Type(STD_LS);
 			break;
 		case TOKEN_RS:
-			type = new Type(STD_RS, ponc);
+			type = new Type(STD_RS);
 			break;
 		case TOKEN_TIMES:
-			type = new Type(STD_TIMES, ponc);
+			type = new Type(STD_TIMES);
 			break;
 		case TOKEN_DIVIDE:
-			type = new Type(STD_DIVIDE, ponc);
+			type = new Type(STD_DIVIDE);
 			break;
 		case TOKEN_MOD:
-			type = new Type(STD_MOD, ponc);
+			type = new Type(STD_MOD);
 			break;
 		case TOKEN_PLUS:
-			type = new Type(STD_PLUS, ponc);
+			type = new Type(STD_PLUS);
 			break;
 		case TOKEN_MINUS:
-			type = new Type(STD_MINUS, ponc);
+			type = new Type(STD_MINUS);
 			break;
 		default: // can't happen
 			type = NULL;

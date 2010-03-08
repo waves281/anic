@@ -355,12 +355,12 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
 		Token t = tree->child->next->t;
 		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
+			// recurse first, since the binding isn't valid inside its own definition
+			buildSt(tree->child, st, importList); // child of Declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
-			// recurse
-			buildSt(tree->child, newDef, importList); // child of Declaration
 		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, tree->child->t.s, tree);

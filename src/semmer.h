@@ -89,12 +89,15 @@ class Type {
 		// data members
 		int kind; // the class of type that this is
 		Tree *base; // the Node that defines this type
-		int suffix; // positive values indicate stream depth
+		int suffix; // positive values indicate stream depth, -1 indicates latch
 		Type *next; // the next part of the type's compounding
+		Type *from; // the source of this object type
+		Type *to; // the destination of this object type
 		// allocators/deallocators
 		Type(int kind);
 		Type(int kind, Tree *base);
 		Type(int kind, Tree *base, int suffix);
+		Type(Type *from, Type *to);
 		~Type();
 		// operators
 		bool operator==(int kind);

@@ -86,12 +86,15 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // allocators/deallocators
 
-Type::Type(int kind) : kind(kind), base(NULL), suffix(SUFFIX_NONE), next(NULL) {}
-Type::Type(int kind, Tree *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL) {}
-Type::Type(int kind, Tree *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL) {}
+Type::Type(int kind) : kind(kind), base(NULL), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
+Type::Type(int kind, Tree *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
+Type::Type(int kind, Tree *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL), from(NULL), to(NULL) {}
+Type::Type(Type *from, Type *to) : kind(kind), base(base), suffix(suffix), next(NULL), from(from), to(to) {}
 
 Type::~Type() {
 	delete next;
+	delete from;
+	delete to;
 }
 
 // operators
@@ -559,6 +562,7 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
 
 // typing function definitions
 
@@ -849,40 +853,72 @@ Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-void traceTypes(vector<Tree *> *parseme) {
-	// get a list of Pipes nodes
-	vector<Tree *> &pipesList = parseme[TOKEN_Pipes];
-	// iterate through the list of Pipes and trace the type flow for each one
-	for (unsigned int i=0; i < pipesList.size(); i++) {
-		Tree *pipesCur = pipesList[i];
-		if (pipesCur->parent != NULL && *(pipesCur->parent) == TOKEN_Program) { // if it's a top-level pipe
-
+Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	// scan the pipe left to right
+	Tree *curTerm = tree->child;
+	Type *outType = NULL;
+	while (curTerm != NULL) {
+		outType = getTypeTerm(inType, NULL, curTerm);
+		if (outType != NULL) { // if we found a proper typing for this term, log it
+			curTerm->type = outType;
+			inType = outType;
+		} else { // otherwise, if we were unable to assign a type to the term, flag an error
+			Token curToken = curTerm->t;
+			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+			// fail typing
+			outType = NULL;
+			break;
 		}
+		// advance
+		curTerm = curTerm->next->child; // Term
+	}
+	// if we succeeded in deriving an output type, return the mapping of the imput type to the output type
+	if (outType != NULL) {
+		type = new Type(inType, outType);
+	}
+	GET_TYPE_FOOTER;
+}
 
-/*
-
-		if (netsCur->type == NULL) { // if we haven't resolved a type for this node yet
-			// temporaily allocate the null type
-			Type *nullType = new Type(STD_NULL);
-			// scan the pipe left to right
-			Tree *curTerm = netsCur->child;
-			Type *inType = nullType;
-			while (curTerm != NULL) {
-				Type *outType = getTypeTerm(inType, NULL, curTerm);
-				if (outType != NULL) { // if we found a proper typing for this term, log it
-					curTerm->type = outType;
-				} else { // otherwise, if we were unable to assign a type to the term, flag an error
-					Token curToken = curTerm->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
-					// skip typing this pipe and move on to the next one
-					break;
+void traceTypes(vector<Tree *> *parseme) {
+	// get a list of Pipe nodes
+	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
+	// iterate through the list of Pipes and trace the type flow for each one
+	for (unsigned int i=0; i < pipeList.size(); i++) {
+		Tree *pipeCur = pipeList[i];
+		if (*(pipeCur->parent) == TOKEN_Pipes) { // if it's a top-level pipe
+			Tree *pipeCurc = pipeCur->child;
+			if (*pipeCurc == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
+				// temporaily allocate the null type
+				Type *nullType = new Type(STD_NULL);
+				// recurse to get the type of the NonEmptyTerms
+				Tree *nets = pipeCur->child; // NonEmptyTerms
+				Type *resultType = getTypeNonEmptyTerms(nullType, NULL, nets);
+				if (resultType != NULL) { // if we successfully derived a type
+					pipeCur->type = resultType;
+				} else { // else if we failed to derive a type
+					delete nullType;
 				}
-				// advance
-				curTerm = curTerm->next->child; // Term
+			} else if (*pipeCurc == TOKEN_Declaration) { // else if it's a Declaration pipe
+				Tree *declarationSub = pipeCurc->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+				if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) {
+// LOL
+				} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) {
+					// temporaily allocate the null type
+					Type *nullType = new Type(STD_NULL);
+					// recurse to get the type of the NonEmptyTerms
+					Tree *nets = declarationSub; // NonEmptyTerms
+					Type *resultType = getTypeNonEmptyTerms(nullType, NULL, nets);
+					if (resultType != NULL) { // if we successfully derived a type
+						pipeCur->type = resultType;
+					} else { // else if we failed to derive a type
+						delete nullType;
+					}
+				}
+				// otherwise, if it's an import declaration, do nothing
 			}
 		}
-		*/
 	}
 }
 

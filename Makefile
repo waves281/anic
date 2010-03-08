@@ -61,7 +61,7 @@ clean: start bld/hyaccMake.sh
 	@rm -f $(MAN_PAGE).gz
 	@rm -f $(INSTALL_SCRIPT)
 	@rm -f $(UNINSTALL_SCRIPT)
-	@rm -f *.gz
+	@rm -f $(TARGET)-*.gz
 	@rm -f tmp/version
 	@rm -f tmp/parserTable.txt
 	@rm -f tmp/{lexer,parser}StructGen

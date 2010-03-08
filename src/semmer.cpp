@@ -563,6 +563,7 @@ Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
 
 // typing function definitions
 
@@ -881,6 +882,23 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *pipec = tree->child;
+	if (*pipec == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
+		type = getTypeNonEmptyTerms(inType, recallBinding, pipec);
+	} else if (*pipec == TOKEN_Declaration) { // else if it's a Declaration pipe
+		Tree *declarationSub = pipec->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+		if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) {
+			type = getTypeTypedStaticTerm(inType, recallBinding, declarationSub);
+		} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) {
+			type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
+		}
+		// otherwise, if it's an import declaration, do nothing
+	}
+	GET_TYPE_FOOTER;
+}
+
 void traceTypes(vector<Tree *> *parseme) {
 	// get a list of Pipe nodes
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
@@ -888,44 +906,12 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (*(pipeCur->parent) == TOKEN_Pipes) { // if it's a top-level pipe
-			Tree *pipeCurc = pipeCur->child;
-			if (*pipeCurc == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
-				// temporaily allocate the null type
-				Type *nullType = new Type(STD_NULL);
-				// recurse to get the type of the NonEmptyTerms
-				Tree *nets = pipeCur->child; // NonEmptyTerms
-				Type *resultType = getTypeNonEmptyTerms(nullType, NULL, nets);
-				if (resultType != NULL) { // if we successfully derived a type
-					pipeCur->type = resultType;
-				} else { // else if we failed to derive a type
-					delete nullType;
-				}
-			} else if (*pipeCurc == TOKEN_Declaration) { // else if it's a Declaration pipe
-				Tree *declarationSub = pipeCurc->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-				if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) {
-					// temporaily allocate the null type
-					Type *nullType = new Type(STD_NULL);
-					// recurse to get the type of the TypedStaticTerm
-					Tree *tst = declarationSub; // TypedStaticTerm
-					Type *resultType = getTypeTypedStaticTerm(nullType, NULL, tst);
-					if (resultType != NULL) { // if we successfully derived a type
-						pipeCur->type = resultType;
-					} else { // else if we failed to derive a type
-						delete nullType;
-					}
-				} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) {
-					// temporaily allocate the null type
-					Type *nullType = new Type(STD_NULL);
-					// recurse to get the type of the NonEmptyTerms
-					Tree *nets = declarationSub; // NonEmptyTerms
-					Type *resultType = getTypeNonEmptyTerms(nullType, NULL, nets);
-					if (resultType != NULL) { // if we successfully derived a type
-						pipeCur->type = resultType;
-					} else { // else if we failed to derive a type
-						delete nullType;
-					}
-				}
-				// otherwise, if it's an import declaration, do nothing
+			// temporaily allocate the null type
+			Type *nullType = new Type(STD_NULL);
+			Type *resultType = getTypePipe(nullType, NULL, pipeCur);
+			// if we failed to derive a type, delete the temporary null type
+			if (resultType == NULL) {
+				delete nullType;
 			}
 		}
 	}

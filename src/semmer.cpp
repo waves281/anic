@@ -571,15 +571,13 @@ Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (st != NULL) { // if we found some sort of static binding
 
 	} else { // else if there was no static binding at all
-		Token t = tree->t;
-		semmerError(t.fileName,t.row,t.col,"cannot resolve '"<<id<<"'");
+
 	}
 // LOL
 	// if we couldn't resolve a type
 	if (type == NULL) {
 		Token curToken = tree->t;
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve identifier's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve '"<<id<<"'");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -700,7 +698,7 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	// if we couldn't resolve a type
 	if (type == NULL) {
 		Token curToken = tree->t;
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's output type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
 	}
 	GET_TYPE_FOOTER;

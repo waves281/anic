@@ -6,6 +6,8 @@
 
 int semmerErrorCode;
 bool semmerEventuallyGiveUp;
+
+Type *nullType = new Type(STD_NULL);
 Type *errType = new Type(TYPE_ERROR);
 
 // SymbolTable functions
@@ -900,8 +902,6 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 	}
 	// if we managed to derive a type for all of the enclosed pipes
 	if (pipeTypesValid) {
-		// allocate a null type
-		Type *nullType = new Type(STD_NULL);
 		// set the result type to the input type being mapped to the null type
 		type = new Type(inType, nullType);
 	}
@@ -1014,14 +1014,11 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 		Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, tree->child->next->next->next);
 		if (*trueType == *falseType) {
 			type = trueType;
-			delete falseType;
 		} else {
 			Token curToken = tree->child->t; // QUESTION
 			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (true branch type was "<<type2String(trueType)<<")");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (false branch type was "<<type2String(trueType)<<")");
-			delete trueType;
-			delete falseType;
 		}
 	} else {
 		Token curToken = tree->child->t; // QUESTION
@@ -1105,13 +1102,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (pipeCur->type == NULL) { // if we haven't derived a type for this pipe yet
-			// temporaily allocate the null type
-			Type *nullType = new Type(STD_NULL);
-			Type *resultType = getTypePipe(nullType, NULL, pipeCur);
-			// if we failed to derive a type, delete the temporary null type
-			if (*resultType == TYPE_ERROR) {
-				delete nullType;
-			}
+			getTypePipe(nullType, NULL, pipeCur);
 		}
 	}
 }

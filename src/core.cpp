@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
 	vector<string> inFileNames; // source file name vector
-	string outFileName = OUTPUT_FILE_DEFAULT; // initialize the output file name
+	string outFileName(OUTPUT_FILE_DEFAULT); // initialize the output file name
 	// handled flags for each option
 	bool oHandled = false;
 	bool pHandled = false;
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
 		// check file arguments
-		string fileName = inFileNames[i];
+		string fileName(inFileNames[i]);
 		if (fileName == "-") {
 			fileName = STD_IN_FILE_NAME;
 		}
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parseme[NUM_LABELS]; // per-file vector of the parsemes that the parser is about to generate
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
-		string fileName = inFileNames[fileIndex];
+		string fileName(inFileNames[fileIndex]);
 		if (fileName == "-") {
 			fileName = STD_IN_FILE_NAME;
 		}

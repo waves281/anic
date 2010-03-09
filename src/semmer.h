@@ -37,9 +37,9 @@ class SymbolTable {
 
 // Type kind specifiers
 
-#define USR 0
+#define TYPE_ERROR 0
 
-#define TYPE_ERROR 1
+#define USR 1
 
 #define STD_NULL 2
 #define STD_NODE 3
@@ -98,7 +98,10 @@ class Type {
 		Type(int kind, SymbolTable *base);
 		Type(int kind, SymbolTable *base, int suffix);
 		Type(Type *from, Type *to);
+		Type(Type &otherType);
 		~Type();
+		// mutators
+		void delatch();
 		// operators
 		bool operator==(int kind);
 		bool operator!=(int kind);

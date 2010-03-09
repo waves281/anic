@@ -91,12 +91,44 @@ Type::Type(int kind, SymbolTable *base) : kind(kind), base(base), suffix(SUFFIX_
 Type::Type(int kind, SymbolTable *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL), from(NULL), to(NULL) {}
 Type::Type(Type *from, Type *to) : kind(kind), base(base), suffix(suffix), next(NULL), from(from), to(to) {}
 
+Type::Type(Type &otherType) {
+	this->kind = otherType.kind;
+	this->base = otherType.base;
+	this->suffix = otherType.suffix;
+	if (otherType.next != NULL) {
+		this->next = new Type(*(otherType.next));
+	} else {
+		this->next = NULL;
+	}
+	if (otherType.from != NULL) {
+		this->from = new Type(*(otherType.from));
+	} else {
+		this->from = NULL;
+	}
+	if (otherType.to != NULL) {
+		this->to = new Type(*(otherType.to));
+	} else {
+		this->to = NULL;
+	}
+}
+
 Type::~Type() {
 	delete next;
 	delete from;
 	delete to;
 
 }
+
+// mutators
+
+void Type::delatch() {
+	if (this->suffix == SUFFIX_LATCH) {
+		this->suffix = SUFFIX_NONE;
+	} else if (this->suffix > 0) {
+		(this->suffix)--;
+	}
+}
+
 // operators
 
 bool Type::operator==(int kind) {
@@ -394,7 +426,6 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 }
 
 // forward declarations
-SymbolTable *bindId(Tree *t);
 SymbolTable *bindId(string &id, SymbolTable *env);
 
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
@@ -506,12 +537,6 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 }
 
 // wrappers for the above function
-
-SymbolTable *bindId(Tree *t) {
-	string s(t->t.s);
-	return bindId(NULL, s, t->env);
-}
-
 SymbolTable *bindId(string &id, SymbolTable *env) {
 	return bindId(NULL, id, env);
 }
@@ -568,15 +593,24 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		} // per-import loop
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
-				Token t = (*importIter)->defSite->t;
+				Token curToken = (*importIter)->defSite->t;
 				string importPath = id2String((*importIter)->defSite->child->next);
-				semmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
 		} else { // else if the import table hasn't stabilized yet, do another substitution round on the failed binding list
 			importList = newImportList;
 		}
 	} // per-change loop
+}
+
+Type *getStType(SymbolTable *st) {
+	if (st->defSite != NULL && st->defSite->type != NULL) { // if there is already a type logged for this st node
+		return st->defSite->type;
+	} else { // else if we need to derive a type ourselves
+// LOL
+		return errType;
+	}
 }
 
 // forward declarations of mutually recursive typing functions
@@ -608,14 +642,9 @@ Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 	string id = id2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
 	SymbolTable *st = bindId(inType, idCur, tree->env);
-	if (st != NULL) { // if we found some sort of static binding
-
-	} else { // else if there was no static binding at all
-
-	}
-// LOL
-	// if we couldn't resolve a type
-	if (type == NULL) {
+	if (st != NULL) { // if we found a binding
+		type = getStType(st);
+	} else { // else if we couldn't find a binding
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve '"<<id<<"'");
 	}
@@ -654,13 +683,27 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// reports errors for TOKEN_SLASH case
 Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_Identifier) {
 		type = getTypeIdentifier(inType, recallBinding, primaryc);
 	} else if (*primaryc == TOKEN_SLASH) {
-// LOL
+		Tree *subIdentifier = primaryc->next; // Identifier
+		Type *subType = getTypeIdentifier(inType, recallBinding, subIdentifier); // Identifier
+		if (*subType != TYPE_ERROR) { // if we derived a subtype
+			if (subType->suffix != SUFFIX_NONE) { // if the derived type is a latch or a stream
+				// copy the subtype
+				type = new Type(*subType);
+				// down-level the type
+				type->delatch();
+			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
+				Token curToken = primaryc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<id2String(subIdentifier)<<"'");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<type2String(inType)<<")");
+			}
+		}
 	} else if (*primaryc == TOKEN_PrimLiteral) {
 		type = getTypePrimLiteral(inType, recallBinding, primaryc);
 	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
@@ -739,7 +782,7 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (type == NULL) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -845,7 +888,7 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 		// try to get a type for this pipe
 		Type *resultType = getTypePipe(inType, recallBinding, pipeCur);
 		// if we failed to find a type, flag this fact
-		if (resultType == NULL) {
+		if (*resultType == TYPE_ERROR) {
 			pipeTypesValid = false;
 		}
 		// advance
@@ -886,7 +929,7 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (type == NULL && *nodec != TOKEN_Identifier) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -936,7 +979,7 @@ Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else {
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -983,7 +1026,7 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else {
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1023,7 +1066,7 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type was "<<type2String(inType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 			// fail typing
 			outType = NULL;
 			break;
@@ -1066,7 +1109,7 @@ void traceTypes(vector<Tree *> *parseme) {
 			Type *nullType = new Type(STD_NULL);
 			Type *resultType = getTypePipe(nullType, NULL, pipeCur);
 			// if we failed to derive a type, delete the temporary null type
-			if (resultType == NULL) {
+			if (*resultType == TYPE_ERROR) {
 				delete nullType;
 			}
 		}

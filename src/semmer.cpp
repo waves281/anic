@@ -1017,8 +1017,8 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 		} else {
 			Token curToken = tree->child->t; // QUESTION
 			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (true branch type was "<<type2String(trueType)<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (false branch type was "<<type2String(trueType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (true branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (false branch type is "<<type2String(trueType)<<")");
 		}
 	} else {
 		Token curToken = tree->child->t; // QUESTION

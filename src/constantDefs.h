@@ -22,7 +22,6 @@
 #define TOLERABLE_ERROR_LIMIT 256
 
 #define MAX_STRING_LENGTH (sizeof(char)*4096)
-#define MALLOC_STRING ((char *)malloc(MAX_STRING_LENGTH))
 
 #define STD_IN_FILE_NAME "stdin"
 

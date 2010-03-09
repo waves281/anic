@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 		fprintf(f,"%s %lu\n", versionString, buildNumber);
 		fclose(f);
 	} else { // a version file exists, so use it
-		char *version = MALLOC_STRING;
+		char version[MAX_STRING_LENGTH];
 		fscanf(f, "%s %lu", version, &buildNumber);
 		fclose(f);
 		f = fopen("var/version.cfg","w");

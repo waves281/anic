@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
 	vector<const char *> inFileNames; // source file name vector
-	char *outFileName = MALLOC_STRING; // output file name
+	char outFileName[MAX_STRING_LENGTH]; // output file name
 	strcpy(outFileName, OUTPUT_FILE_DEFAULT); // initialize output file name
 	// handled flags for each option
 	bool oHandled = false;
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 					printError("-o expected file name argument");
 					die();
 				}
-				outFileName = argv[i]; // log the file name
+				strncpy(outFileName, argv[i], strlen(argv[i]) + 1);
 				// flag this option as handled
 				oHandled = true;
 			} else if (argv[i][1] == 'p' && !pHandled) { // optimization level option

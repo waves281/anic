@@ -16,7 +16,7 @@ bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
 
-int containsString(vector<string> inFileNames, string s) {
+int containsString(vector<string> inFileNames, string &s) {
 	for (unsigned int i=0; i < inFileNames.size(); i++) { // scan the vector for matches
 		if (inFileNames[i] == s) { // if we have a match at this index, return true
 			return 1;

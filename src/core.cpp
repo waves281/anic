@@ -16,9 +16,9 @@ bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
 
-int containsString(vector<const char *>inFileNames, const char *s) {
-	for (unsigned int i=0; i<inFileNames.size(); i++) { // scan the vector for matches
-		if (strcmp(inFileNames[i], s) == 0) { // if we have a match at this index, return true
+int containsString(vector<string> inFileNames, string s) {
+	for (unsigned int i=0; i < inFileNames.size(); i++) { // scan the vector for matches
+		if (inFileNames[i] == s) { // if we have a match at this index, return true
 			return 1;
 		}
 	}
@@ -36,9 +36,8 @@ int main(int argc, char **argv) {
 	}
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
-	vector<const char *> inFileNames; // source file name vector
-	char outFileName[MAX_STRING_LENGTH]; // output file name
-	strcpy(outFileName, OUTPUT_FILE_DEFAULT); // initialize output file name
+	vector<string> inFileNames; // source file name vector
+	string outFileName = OUTPUT_FILE_DEFAULT; // initialize the output file name
 	// handled flags for each option
 	bool oHandled = false;
 	bool pHandled = false;
@@ -52,7 +51,7 @@ int main(int argc, char **argv) {
 					printError("-o expected file name argument");
 					die();
 				}
-				strncpy(outFileName, argv[i], strlen(argv[i]) + 1);
+				outFileName = argv[i];
 				// flag this option as handled
 				oHandled = true;
 			} else if (argv[i][1] == 'p' && !pHandled) { // optimization level option
@@ -110,15 +109,17 @@ int main(int argc, char **argv) {
 			}
 
 		} else { // default case; assume regular file argument
-			const char *fileName = argv[i];
+			string fileName;
 			if (argv[i][0] == '-') {
 				fileName = STD_IN_FILE_NAME;
+			} else {
+				fileName = argv[i];
 			}
 			if (containsString(inFileNames, fileName)) {
 				printWarning("including file '" << fileName << "' multiple times");
 				continue;
 			}
-			ifstream *inFile = (strcmp(fileName,STD_IN_FILE_NAME) == 0) ? NULL : new ifstream(fileName); // create a stream for this file
+			ifstream *inFile = (fileName == STD_IN_FILE_NAME) ? NULL : new ifstream(fileName.c_str()); // create a stream for this file
 			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
 				die();
@@ -140,8 +141,8 @@ int main(int argc, char **argv) {
 	vector<vector<Token> *> lexemes; // per-file vector of the lexemes that the lexer is about to generate
 	for (unsigned int i=0; i<inFiles.size(); i++) {
 		// check file arguments
-		const char *fileName = inFileNames[i];
-		if (strcmp(fileName,"-") == 0) {
+		string fileName = inFileNames[i];
+		if (fileName == "-") {
 			fileName = STD_IN_FILE_NAME;
 		}
 		VERBOSE(
@@ -179,8 +180,8 @@ int main(int argc, char **argv) {
 	unsigned int fileIndex = 0; // file name index
 	vector<Tree *> parseme[NUM_LABELS]; // per-file vector of the parsemes that the parser is about to generate
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
-		const char *fileName = inFileNames[fileIndex];
-		if (strcmp(fileName,"-") == 0) {
+		string fileName = inFileNames[fileIndex];
+		if (fileName == "-") {
 			fileName = STD_IN_FILE_NAME;
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
@@ -259,7 +260,7 @@ int main(int argc, char **argv) {
 	}
 
 	// open output file for writing
-	ofstream *outFile = new ofstream(outFileName);
+	ofstream *outFile = new ofstream(outFileName.c_str());
 	if (!outFile->good()) {
 		printError("cannot open output file '" << outFileName << "'");
 		die();

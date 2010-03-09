@@ -212,7 +212,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-int parse(vector<Token> *lexeme, vector<Tree *> *parseme, const char *fileName) {
+int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName) {
 
 	// initialize error code
 	parserErrorCode = 0;

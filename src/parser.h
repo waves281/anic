@@ -48,7 +48,7 @@ string id2String(Tree *t);
 string idHead(string &id);
 string idTail(string &id);
 string idEnd(string &id);
-int parse(vector<Token> *lexeme, vector<Tree *> *parseme, const char *fileName);
+int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName);
 
 // post-includes
 

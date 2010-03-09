@@ -26,7 +26,7 @@ void resetState(string &s, int &state, int &tokenType) {
 	return;
 }
 
-void commitToken(string &s, int &state, int &tokenType, const char *fileName, int rowStart, int colStart, vector<Token> *outputVector, char c) {
+void commitToken(string &s, int &state, int &tokenType, string &fileName, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
 	Token t;
 	t.tokenType = tokenType;
@@ -70,7 +70,7 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 	}
 }
 
-vector<Token> *lex(ifstream *in, const char *fileName) {
+vector<Token> *lex(ifstream *in, string &fileName) {
 
 	// initialize error variables
 	lexerErrorCode = 0;

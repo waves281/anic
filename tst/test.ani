@@ -27,6 +27,8 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> [[int]]\]]
 	// okay, we're done now!
 };
 
+@nameRes.x.y;
+
 /* name resolution testing */
 
 nameRes =  {
@@ -41,7 +43,7 @@ nameRes =  {
 
 x=10e-1;
 
-@nameRes.x.y;
+
 
 /* end name resolution testing */
 

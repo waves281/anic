@@ -517,53 +517,66 @@ SymbolTable *bindId(string &id, SymbolTable *env) {
 }
 
 
-void subImportDecls(vector<SymbolTable *> &importList) {
+void subImportDecls(vector<SymbolTable *> importList) {
 	bool stdExplicitlyImported = false;
-	// per-import loop
-	for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
-		// extract the import path out of the iterator
-		string importPath = id2String((*importIter)->defSite->child->next);
-		// standard import special-casing
-		if (importPath == "std") { // if it's the standard import
-			if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
-				(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
-				stdExplicitlyImported = true;
-				continue;
-			}
-		}
-		// try to find a binding for this import
-		SymbolTable *binding = bindId(importPath, *importIter);
-		if (binding != NULL && importPath.empty()) { // if we found a complete static binding
-			// check to make sure that this import doesn't cause a binding conflict
-			string importPathTip = binding->id; // must exist if binding succeeed
-			// per-parent's children loop (parent must exist, since the root is a block st node)
-			vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
-			while (childIter != (*importIter)->parent->children.end()) {
-				if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
-					Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
-					Token prevDefToken;
-					if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-						prevDefToken = (*childIter)->defSite->t;
-					} else { // otherwise, it must be a standard definition, so make up the token as if it was
-						prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-						prevDefToken.row = 0;
-						prevDefToken.col = 0;
-					}
-					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
-					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-					goto nextImport;
+
+	for(;;) { // per-change loop
+		// per-import loop
+		vector<SymbolTable *> newImportList;
+		for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
+			// extract the import path out of the iterator
+			string importPath = id2String((*importIter)->defSite->child->next);
+			// standard import special-casing
+			if (importPath == "std") { // if it's the standard import
+				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
+					(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
+					stdExplicitlyImported = true;
+					continue;
 				}
-				// advance
-				childIter++;
 			}
-			// there was no conflict, so just deep-copy the binding in place of the import placeholder node
-			**importIter = *binding;
-		} else { // else if no binding could be found
-			Token t = (*importIter)->defSite->t;
-			semmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'");
+			// otherwise, try to find a non-std binding for this import
+			SymbolTable *binding = bindId(importPath, *importIter);
+			if (binding != NULL && importPath.empty()) { // if we found a complete static binding
+				// check to make sure that this import doesn't cause a binding conflict
+				string importPathTip = binding->id; // must exist if binding succeeed
+				// per-parent's children loop (parent must exist, since the root is a block st node)
+				vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
+				while (childIter != (*importIter)->parent->children.end()) {
+					if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
+						Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
+						Token prevDefToken;
+						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+							prevDefToken = (*childIter)->defSite->t;
+						} else { // otherwise, it must be a standard definition, so make up the token as if it was
+							prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+							prevDefToken.row = 0;
+							prevDefToken.col = 0;
+						}
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
+						goto nextImport;
+					}
+					// advance
+					childIter++;
+				}
+				// there was no conflict, so just deep-copy the binding in place of the import placeholder node
+				**importIter = *binding;
+			} else { // else if no binding could be found
+				newImportList.push_back(*importIter); // log the failed node for rebinding during the next round
+			}
+			nextImport: ;
+		} // per-import loop
+		if (newImportList.size() == importList.size()) { // if the import table has stabilized
+			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
+				Token t = (*importIter)->defSite->t;
+				string importPath = id2String((*importIter)->defSite->child->next);
+				semmerError(t.fileName,t.row,t.col,"cannot resolve import '"<<importPath<<"'");
+			}
+			break;
+		} else { // else if the import table hasn't stabilized yet, do another substitution round on the failed binding list
+			importList = newImportList;
 		}
-		nextImport: ;
-	} // per-import loop
+	} // per-change loop
 }
 
 // forward declarations of mutually recursive typing functions

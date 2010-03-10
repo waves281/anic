@@ -634,6 +634,8 @@ Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree);
@@ -875,9 +877,6 @@ Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		case TOKEN_MINUS:
 			type = new Type(STD_MINUS);
 			break;
-		default: // can't happen
-			type = NULL;
-			break;
 	}
 	GET_TYPE_FOOTER;
 }
@@ -929,6 +928,18 @@ Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
 // reports errors
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
@@ -961,7 +972,15 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 
 Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-// LOL
+	Tree *pl = tree->child->next; // ParamList
+	Type *fromType = getTypeParamList(inType, recallBinding, pl);
+	if (*fromType != TYPE_ERROR) { // if we derived a type for the from node
+		Tree *rl = pl->next; // RetList
+		Type *toType = getTypeRetList(inType, recallBinding, rl);
+		if (*toType != TYPE_ERROR) { // if we derived a type for the to node
+			type = new Type(fromType, toType);
+		}
+	}
 	GET_TYPE_FOOTER;
 }
 

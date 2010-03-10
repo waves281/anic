@@ -1060,6 +1060,8 @@ Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 // LOL
 	} else if (*dtc == TOKEN_Send) {
 // LOL
+	} else if (*dtc == TOKEN_Swap) {
+	// LOL
 	}
 	GET_TYPE_FOOTER;
 }

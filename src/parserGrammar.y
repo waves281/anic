@@ -25,6 +25,7 @@
 %token DRARROW
 %token ERARROW
 %token LARROW
+%token LRARROW
 %token SLASH
 %token DSLASH
 %token AT
@@ -114,6 +115,7 @@ DynamicTerm : StaticTerm
 	| Compound
 	| Link
 	| Send
+	| Swap
 	;
 StaticTerm : TypedStaticTerm
 	| Delatch
@@ -258,5 +260,7 @@ Link : DCOLON StaticTerm
 	;
 Send : RARROW Node
 	| DRARROW
+	;
+Swap : LRARROW Node
 	;
 %%

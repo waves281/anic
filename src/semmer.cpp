@@ -154,6 +154,8 @@ bool Type::operator!=(Type &otherType) {
 	return (!operator==(otherType));
 }
 
+// raw comparibility operators
+
 bool Type::operator>=(int kind) {
 	return (this->kind >= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
 }
@@ -161,6 +163,8 @@ bool Type::operator>=(int kind) {
 bool Type::operator<=(int kind) {
 	return (this->kind <= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
 }
+
+// sendability checking operator
 
 bool Type::operator>>(Type &otherType) {
 // LOL

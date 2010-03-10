@@ -109,6 +109,7 @@ class Type {
 		bool operator!=(Type &otherType);
 		bool operator<=(int kind);
 		bool operator>=(int kind);
+		bool operator>>(Type &otherType);
 };
 
 // semantic analysis helper blocks

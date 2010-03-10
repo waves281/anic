@@ -162,6 +162,11 @@ bool Type::operator<=(int kind) {
 	return (this->kind <= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
 }
 
+bool Type::operator>>(Type &otherType) {
+// LOL
+	return false;
+}
+
 // to-string functions
 
 // returns a string representation of the given type kind; does *not* work for USR kinds
@@ -624,7 +629,9 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
@@ -912,15 +919,60 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
+// reports errors
+Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *netl = tree->child->next; // NonEmptyTypeList
+	type = getTypeNonEmptyTypeList(inType, recallBinding, netl);
+	if (*type != TYPE_ERROR) { // if we derived a type for the instantiation
+		if (netl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
+			Tree *st = netl->next->next->next; // StaticTerm
+			Type *initType = getTypeStaticTerm(inType, recallBinding, st);
+			if (*initType != TYPE_ERROR) { //  if we derived a type for the initializer
+				if (!(*initType >> *type)) { // if the types are incompatible, throw an error
+					Token curToken = st->t;
+					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<type2String(type)<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<type2String(initType)<<")");
+				}
+			} else { // else if we couldn't derive a type for the initializer
+				Token curToken = st->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+			}
+		}
+	} else { // else if we couldn't derive a type for the instantiation
+		Token curToken = tree->child->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instantiation type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
+	GET_TYPE_FOOTER;
+}
+
+// reports errors
+Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *nh = tree->child; // NodeHeader
+	Type *headerType = getTypeNodeHeader(inType, recallBinding, nh);
+	if (*headerType != TYPE_ERROR) { // if we derived a type for the header
+// LOL
+	} else { // else if we couldn't derive a type for the header
+		Token curToken = nh->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node header type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -931,9 +983,9 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (*nodec == TOKEN_Identifier) {
 		type = getTypeIdentifier(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
-		type = getTypeNodeInstantiation(inType, recallBinding, tree);
+		type = getTypeNodeInstantiation(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_TypedNodeLiteral) {
-		type = getTypeTypedNodeLiteral(inType, recallBinding, tree);
+		type = getTypeTypedNodeLiteral(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		type = getTypePrimOpNode(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimLiteral) {

@@ -1043,7 +1043,7 @@ Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
 		type = getTypeTypedStaticTerm(inType, recallBinding, stc);
-	} else if (*stc == TOKEN_Delatch) {
+	} else if (*stc == TOKEN_Access) {
 // LOL
 	}
 	GET_TYPE_FOOTER;

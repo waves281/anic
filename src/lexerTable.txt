@@ -72,26 +72,26 @@
 0 { LCURLY -1
 0 } RCURLY -1
 0 = EQUALS 10
-0 . PERIOD 114
+0 . PERIOD 115
 0 , COMMA -1
 0 \ SLASH 102
 0 ; SEMICOLON -1
-0 ? QUESTION 112
-0 : COLON 113
+0 ? QUESTION 113
+0 : COLON 114
 // arithmetic characters
-0 + PLUS 103
-0 - MINUS 104
+0 + PLUS 104
+0 - MINUS 105
 0 * TIMES -1
-0 / DIVIDE 105
+0 / DIVIDE 106
 0 % MOD -1
 // comparison characters
-0 < LT 108
-0 > GT 110
+0 < LT 109
+0 > GT 111
 // logical characters
 0 ! NOT 11
 0 ~ COMPLEMENT -1
-0 & AND 106
-0 | OR 107
+0 & AND 107
+0 | OR 108
 0 ^ XOR -1
 // quote characters
 0 ' CQUOTE -1
@@ -308,45 +308,49 @@
 101 ] DRSQUARE -1
 
 // state 102 (\ seen)
-102 \ DSLASH -1
+102 \ DSLASH 103
+102 * SSLASH -1
 
-// state 103 (+ seen)
-103 + DPLUS -1
+// state 103 (\\ seen)
+103 * DSSLASH -1
 
-// state 104 (- seen)
-104 - DMINUS 111
-104 > RARROW -1
+// state 104 (+ seen)
+104 + DPLUS -1
 
-// state 105 (/ seen)
-105 / REGCOMMENT -1
-105 * STARCOMMENT -1
+// state 105 (- seen)
+105 - DMINUS 112
+105 > RARROW -1
 
-// state 106 (& seen)
-106 & DAND -1
+// state 106 (/ seen)
+106 / REGCOMMENT -1
+106 * STARCOMMENT -1
 
-// state 107 (| seen)
-107 | DOR -1
+// state 107 (& seen)
+107 & DAND -1
 
-// state 108 (< seen)
-108 < LS -1
-108 = LE -1
-108 - LARROW 109
+// state 108 (| seen)
+108 | DOR -1
 
-// state 109 (<- seen)
-109 > LRARROW -1
+// state 109 (< seen)
+109 < LS -1
+109 = LE -1
+109 - LARROW 110
 
-// state 110 (> seen)
-110 > RS -1
-110 = GE -1
+// state 110 (<- seen)
+110 > LRARROW -1
 
-// state 111 (-- seen)
-111 > DRARROW -1
+// state 111 (> seen)
+111 > RS -1
+111 = GE -1
 
-// state 112 (? seen)
-112 ? DQUESTION -1
+// state 112 (-- seen)
+112 > DRARROW -1
 
-// state 113 (: seen)
-113 : DCOLON -1
+// state 113 (? seen)
+113 ? DQUESTION -1
 
-// state 114 (. seen)
-114 . DPERIOD -1
+// state 114 (: seen)
+114 : DCOLON -1
+
+// state 115 (. seen)
+115 . DPERIOD -1

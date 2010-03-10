@@ -27,7 +27,9 @@
 %token LARROW
 %token LRARROW
 %token SLASH
+%token SSLASH
 %token DSLASH
+%token DSSLASH
 %token AT
 
 /* arithmetic tokens */
@@ -84,7 +86,7 @@ Pipe : Declaration
 	;
 Declaration : ID EQUALS TypedStaticTerm
 	| ID ERARROW NonEmptyTerms
-	| AT Identifier
+	| AT SuffixedIdentifier
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -118,7 +120,7 @@ DynamicTerm : StaticTerm
 	| Swap
 	;
 StaticTerm : TypedStaticTerm
-	| Delatch
+	| Access
 	;
 TypedStaticTerm : Node
 	| LBRACKET Exp RBRACKET
@@ -143,35 +145,29 @@ Exp : Primary
 	| Exp PLUS Exp
 	| Exp MINUS Exp
 	;
-Primary : Identifier
-	| SLASH Identifier
+Primary : SuffixedIdentifier
+	| SLASH SuffixedIdentifier
 	| PrimLiteral
 	| PrefixOrMultiOp Primary
 	| LBRACKET Exp RBRACKET
 	;
-Node : Identifier
+Node : SuffixedIdentifier
 	| NodeInstantiation
 	| TypedNodeLiteral
 	| PrimOpNode
 	| PrimLiteral
 	| Block
 	;
+SuffixedIdentifier : Identifier
+	| Identifier PERIOD SuffixedIdentifier
+	| Identifier ArraySuffix
+	| Identifier ArraySuffix PERIOD SuffixedIdentifier
+	;
 Identifier : ID
-	| ID PERIOD Identifier
-	| ID ArraySuffix
-	| ID ArraySuffix PERIOD Identifier
 	| DPERIOD
-	| DPERIOD PERIOD Identifier
-	| DPERIOD ArraySuffix
-	| DPERIOD ArraySuffix PERIOD Identifier
 	;
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
-	;
-LatchTypeSuffix : SLASH
-	;
-StreamTypeSuffix : DSLASH
-	| DSLASH StreamTypeSuffix
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp DCOLON Exp RSQUARE
@@ -234,12 +230,17 @@ RetList :
 	;
 Param : Type ID
 	;
-Type : Identifier
-	| Identifier LatchTypeSuffix
-	| Identifier StreamTypeSuffix
-	| NodeType
-	| NodeType LatchTypeSuffix
-	| NodeType StreamTypeSuffix
+Type : Identifier TypeSuffix
+	| NodeType TypeSuffix
+	;
+TypeSuffix : 
+	| SLASH
+	| ComplexTypeSuffix
+	;
+ComplexTypeSuffix : DSLASH
+	| DSLASH ComplexTypeSuffix
+	| LSQUARE RSQUARE
+	| LSQUARE RSQUARE ComplexTypeSuffix
 	;
 NodeType : DLSQUARE TypeList RetList DRSQUARE
 	;
@@ -251,8 +252,10 @@ NonEmptyTypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
-Delatch : SLASH Node
-	| DSLASH Node
+Access : SLASH Node
+	| SSLASH Node
+	| DSLASH Node	
+	| DSSLASH Node
 	;
 Compound : COMMA StaticTerm
 	;

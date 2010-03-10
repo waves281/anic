@@ -154,7 +154,7 @@ bool Type::operator!=(Type &otherType) {
 	return (!operator==(otherType));
 }
 
-// raw comparibility operators
+// raw comparability operators
 
 bool Type::operator>=(int kind) {
 	return (this->kind >= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);

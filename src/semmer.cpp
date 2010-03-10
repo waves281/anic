@@ -1084,9 +1084,8 @@ Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 				}
 			}
 			// derive the to-type of this label
-			Tree *st = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
-			Type *toType = getTypeSimpleTerm(inType, recallBinding, st);
-			Tree *toTree = st;
+			Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
+			Type *toType = getTypeSimpleTerm(inType, recallBinding, toTree);
 			// log the to-type and to-tree of this label
 			toTypes.push_back(toType);
 			toTrees.push_back(toTree);

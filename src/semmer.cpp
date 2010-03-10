@@ -1110,7 +1110,7 @@ Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<type2String(firstToType)<<")");
 			}
 		}
-	}
+	} // if the input type is non-erroneous
 	GET_TYPE_FOOTER;
 }
 

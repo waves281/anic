@@ -23,7 +23,7 @@
 
 #define MAX_STRING_LENGTH (sizeof(char)*4096)
 
-#define STD_IN_FILE_NAME "stdin"
+#define STD_IN_FILE_NAME "<stdin>"
 
 #define MAX_TOKEN_LENGTH INT_MAX
 #define ESCAPE_CHARACTER '\\'

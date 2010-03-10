@@ -1163,28 +1163,55 @@ Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 // reports errors
 Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	if (*inType == STD_BOOL) { // if what's coming in is a boolean
-		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, tree->child->next);
-		Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, tree->child->next->next->next);
-		if (*trueType == *falseType) { // if the two branches match in type
-			type = trueType;
-		} else { // else if the two branches don't match in type
+	if (*inType != TYPE_ERROR) { // if we're not starting with an erroneous input type in the first place
+		if (*inType == STD_BOOL) { // if what's coming in is a boolean
+			Tree *trueBranch = tree->child->next;
+			Tree *falseBranch = trueBranch->next->next;
+			Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
+			Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, falseBranch);
+			if (*trueType == *falseType) { // if the two branches match in type
+				type = trueType;
+			} else { // else if the two branches don't match in type
+				Token curToken = tree->child->t; // QUESTION
+				Token curToken2 = trueBranch->t; // ClosedTerm
+				Token curToken3 = falseBranch->t; // OpenTerm
+				semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
+				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
+			}
+		} else { // else if what's coming in isn't a boolean
 			Token curToken = tree->child->t; // QUESTION
-			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (true branch type is "<<type2String(trueType)<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (false branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 		}
-	} else { // else if what's coming in isn't a boolean
-		Token curToken = tree->child->t; // QUESTION
-		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
-	}
+	} // if the input type is non-erroneous
 	GET_TYPE_FOOTER;
 }
 
 Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-// LOL
+	if (*inType != TYPE_ERROR) { // if we're not starting with an erroneous input type in the first place
+		if (*inType == STD_BOOL) { // if what's coming in is a boolean
+			Tree *trueBranch = tree->child->next;
+			Tree *falseBranch = trueBranch->next->next;
+			Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
+			Type *falseType = getTypeClosedTerm(recallBinding->type, recallBinding, falseBranch);
+			if (*trueType == *falseType) { // if the two branches match in type
+				type = trueType;
+			} else { // else if the two branches don't match in type
+				Token curToken = tree->child->t; // QUESTION
+				Token curToken2 = trueBranch->t; // ClosedTerm
+				Token curToken3 = falseBranch->t; // ClosedTerm
+				semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
+				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
+			}
+		} else { // else if what's coming in isn't a boolean
+			Token curToken = tree->child->t; // QUESTION
+			semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		}
+	} // if the input type is non-erroneous
 	GET_TYPE_FOOTER;
 }
 

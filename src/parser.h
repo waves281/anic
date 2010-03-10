@@ -44,7 +44,7 @@ class Tree {
 		Tree *operator()(char *s);
 };
 
-string id2String(Tree *t);
+string sid2String(Tree *t);
 string idHead(string &id);
 string idTail(string &id);
 string idEnd(string &id);

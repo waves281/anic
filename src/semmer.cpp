@@ -404,22 +404,22 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block
 	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
-		Token t = tree->child->next->t;
-		if (t.tokenType == TOKEN_EQUALS) { // standard static declaration
+		Tree *bnc = tree->child->next;
+		if (*bnc == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
-		} else if (t.tokenType == TOKEN_ERARROW) { // flow-through declaration
+		} else if (*bnc == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
-		} else if (t.tokenType == TOKEN_Identifier) { // import declaration
+		} else if (*bnc == TOKEN_SuffixedIdentifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
 			// ... and link it in
@@ -561,7 +561,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		vector<SymbolTable *> newImportList;
 		for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
-			string importPath = id2String((*importIter)->defSite->child->next);
+			string importPath = sid2String((*importIter)->defSite->child->next);
 			// standard import special-casing
 			if (importPath == "std") { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -605,7 +605,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
-				string importPath = id2String((*importIter)->defSite->child->next);
+				string importPath = sid2String((*importIter)->defSite->child->next);
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
@@ -626,7 +626,7 @@ Type *getStType(SymbolTable *st) {
 
 // forward declarations of mutually recursive typing functions
 
-Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
@@ -657,9 +657,9 @@ Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
 // typing function definitions
 
 // reports errors
-Type *getTypeIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	string id = id2String(tree); // string representation of this identifier
+	string id = sid2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
 	SymbolTable *st = bindId(inType, idCur, tree->env);
 	if (st != NULL) { // if we found a binding
@@ -707,11 +707,11 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
-	if (*primaryc == TOKEN_Identifier) {
-		type = getTypeIdentifier(inType, recallBinding, primaryc);
-	} else if (*primaryc == TOKEN_SLASH) {
-		Tree *subIdentifier = primaryc->next; // Identifier
-		Type *subType = getTypeIdentifier(inType, recallBinding, subIdentifier); // Identifier
+	if (*primaryc == TOKEN_SuffixedIdentifier) {
+		type = getTypeSuffixedIdentifier(inType, recallBinding, primaryc);
+	} else if (*primaryc == TOKEN_SLASH || *primaryc == TOKEN_SSLASH) { // if it's a delatch-class term
+		Tree *subSI = primaryc->next; // SuffixedIdentifier
+		Type *subType = getTypeSuffixedIdentifier(inType, recallBinding, subSI); // SuffixedIdentifier
 		if (*subType != TYPE_ERROR) { // if we derived a subtype
 			if (subType->suffix != SUFFIX_NONE) { // if the derived type is a latch or a stream
 				// copy the subtype
@@ -720,7 +720,7 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 				type->delatch();
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<id2String(subIdentifier)<<"'");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<type2String(inType)<<")");
 			}
 		}
@@ -1004,8 +1004,8 @@ Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *nodec = tree->child;
-	if (*nodec == TOKEN_Identifier) {
-		type = getTypeIdentifier(inType, recallBinding, nodec);
+	if (*nodec == TOKEN_SuffixedIdentifier) {
+		type = getTypeSuffixedIdentifier(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
 		type = getTypeNodeInstantiation(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_TypedNodeLiteral) {
@@ -1018,7 +1018,7 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		type = getTypeBlock(inType, recallBinding, nodec);
 	}
 	// if we couldn't resolve a type
-	if (type == NULL && *nodec != TOKEN_Identifier) {
+	if (type == NULL && *nodec != TOKEN_SuffixedIdentifier) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node's type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");

@@ -147,6 +147,7 @@ Exp : Primary
 	;
 Primary : SuffixedIdentifier
 	| SLASH SuffixedIdentifier
+	| SSLASH SuffixedIdentifier
 	| PrimLiteral
 	| PrefixOrMultiOp Primary
 	| LBRACKET Exp RBRACKET
@@ -162,6 +163,9 @@ SuffixedIdentifier : Identifier
 	| Identifier PERIOD SuffixedIdentifier
 	| Identifier ArraySuffix
 	| Identifier ArraySuffix PERIOD SuffixedIdentifier
+	;
+NonArraySuffixedIdentifier : Identifier
+	| Identifier PERIOD NonArraySuffixedIdentifier
 	;
 Identifier : ID
 	| DPERIOD
@@ -230,7 +234,7 @@ RetList :
 	;
 Param : Type ID
 	;
-Type : Identifier TypeSuffix
+Type : NonArraySuffixedIdentifier TypeSuffix
 	| NodeType TypeSuffix
 	;
 TypeSuffix : 

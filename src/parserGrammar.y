@@ -101,7 +101,7 @@ ClosedTerm : SimpleTerm
 	;
 SimpleCondTerm : QUESTION Term
 	;
-SwitchTerm : DQUESTION SwitchBlock
+SwitchTerm : DQUESTION LCURLY LabeledPipes RCURLY
 	;
 OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
 	;
@@ -248,8 +248,6 @@ NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
 Block : LCURLY Pipes RCURLY
-	;
-SwitchBlock : LCURLY LabeledPipes RCURLY
 	;
 Delatch : SLASH Node
 	| DSLASH Node

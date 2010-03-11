@@ -10,14 +10,13 @@
 	\\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r;
 };
 
-
 main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> [[int]]\]]\ ]] {
 
 	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
 	retVal = [[int, int]];
 	
-	y ? { loop =>
+	y ? { loop => 
 			y.z ?
 				{1,2 loop}
 			:
@@ -46,22 +45,22 @@ nameRes =  {
 
 /* begin type testing */
 
-filterOut = [[char\\ inStream, char[] stringToFilterOut --> char\\]] { 
-        i = [[int\]] <- 0; 
-        { 
-                \\inStream [[char\ c]] { 
-                        (c == stringToFilterOut[i]) ? { // if we have a character match 
-                                (i+1 == stringToFilterOut.length) ? { // if we've matched the entire string 
+filterOut = [[char\\ inStream, char[] stringToFilterOut --> char\\]] {
+        i = [[int\]] <- 0;
+        {
+                \\inStream [[char\ c]] {
+                        (c == stringToFilterOut[i]) ? { // if we have a character match
+                                (i+1 == stringToFilterOut.length) ? { // if we've matched the entire string
                                         0<->i; // reset i 
-                                } : { // else if we haven't matched the entire string (yet) 
-                                        \i+1 ->i; // increment i 
-                                } 
-                        } : { // else if we have a character mismatch 
-                                // flow-through the matched characters plus the current one and reset i 
-                                \\*stringToFilterOut[0::i-1]::\c --> 0<->i; 
-                        } 
-                }; 
-        } stringToFilterOut[0::i-1] -->; // flow-through the trailing partial-match 
+                                } : { // else if we haven't matched the entire string (yet)
+                                        \i+1 ->i; // increment i
+                                }
+                        } : { // else if we have a character mismatch
+                                // flow-through the matched characters plus the current one and reset i
+                                \\*stringToFilterOut[0::i-1]::\c --> 0<->i;
+                        }
+                };
+        } stringToFilterOut[0::i-1] -->; // flow-through the trailing partial-match
 };
 
 /* end type testing */

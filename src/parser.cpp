@@ -116,17 +116,11 @@ Tree *Tree::operator()(char *s) {
 
 // SuffixedIdentifier -> string parser function
 string sid2String(Tree *sid) {
-// KOL
-	if (*sid != TOKEN_SuffixedIdentifier) {
-		cerr << "LOL" << endl;
-		exit(1);
-	}
-
 	string retVal;
 	Tree *cur = sid; // invariant: cur is a SuffixedIdentifier
 	for(;;) {
 		// log this part of the name
-		retVal += cur->child->child->t.s; // ID or DPERIOD
+		retVal += cur->child->t.s; // ID or DPERIOD
 		// advance
 		cur = cur->child->next; // NULL, PERIOD, or ArraySuffix
 		if (cur != NULL && cur->t.tokenType == TOKEN_ArraySuffix) { // move past a potential ArraySuffix

@@ -159,16 +159,19 @@ Node : SuffixedIdentifier
 	| PrimLiteral
 	| Block
 	;
-SuffixedIdentifier : Identifier
-	| Identifier PERIOD SuffixedIdentifier
-	| Identifier ArraySuffix
-	| Identifier ArraySuffix PERIOD SuffixedIdentifier
-	;
-NonArraySuffixedIdentifier : Identifier
-	| Identifier PERIOD NonArraySuffixedIdentifier
-	;
-Identifier : ID
+SuffixedIdentifier : ID
+	| ID PERIOD SuffixedIdentifier
+	| ID ArraySuffix
+	| ID ArraySuffix PERIOD SuffixedIdentifier
 	| DPERIOD
+	| DPERIOD PERIOD SuffixedIdentifier
+	| DPERIOD ArraySuffix
+	| DPERIOD ArraySuffix PERIOD SuffixedIdentifier
+	;
+NonArraySuffixedIdentifier : ID
+	| ID PERIOD NonArraySuffixedIdentifier
+	| DPERIOD
+	| DPERIOD PERIOD NonArraySuffixedIdentifier
 	;
 NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
 	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm

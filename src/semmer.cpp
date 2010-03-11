@@ -1068,51 +1068,49 @@ Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 
 Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	if (*inType != TYPE_ERROR) { // if we're not starting with an erroneous input type in the first place
-		vector<Type *> toTypes; // vector for logging the destination types of each branch
-		vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
-		Tree *lpCur = tree->child->next->next; // LabeledPipes
-		for (;;) { // per-labeled pipe loop
-			Tree *lpc = lpCur->child; // StaticTerm or COLON
-			// if there is a non-default label on this pipe, check its validity
-			if (*lpc == TOKEN_StaticTerm) {
-				// derive the label's type
-				Type *labelType = getTypeStaticTerm(inType, recallBinding, lpc);
-				if (*inType != *labelType) { // if the type doesn't match, throw an error
-					Token curToken = lpc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<type2String(labelType)<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
-				}
-			}
-			// derive the to-type of this label
-			Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
-			Type *toType = getTypeSimpleTerm(inType, recallBinding, toTree);
-			// log the to-type and to-tree of this label
-			toTypes.push_back(toType);
-			toTrees.push_back(toTree);
-			// advance
-			if (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) {
-				lpCur = lpCur->child->next->next->next; // LabeledPipes
-			} else {
-				break;
-			}
-		} // per-labeled pipe loop
-		// verify that all of the to-types are the same
-		Type *firstToType = toTypes[0];
-		Tree *firstToTree = toTrees[0];
-		for (unsigned int i=1; i < toTypes.size(); i++) { // for each to-type
-			Type *toType = toTypes[i];
-			if (*toType != *firstToType) { // if the types don't match, throw an error
-				Tree *toTree = toTrees[i];
-				Token curToken = toTree->t;
-				Token curToken2 = firstToTree->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"switch destination types are inconsistent");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<type2String(toType)<<")");
-				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<type2String(firstToType)<<")");
+	vector<Type *> toTypes; // vector for logging the destination types of each branch
+	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
+	Tree *lpCur = tree->child->next->next; // LabeledPipes
+	for (;;) { // per-labeled pipe loop
+		Tree *lpc = lpCur->child; // StaticTerm or COLON
+		// if there is a non-default label on this pipe, check its validity
+		if (*lpc == TOKEN_StaticTerm) {
+			// derive the label's type
+			Type *labelType = getTypeStaticTerm(inType, recallBinding, lpc);
+			if (*inType != *labelType) { // if the type doesn't match, throw an error
+				Token curToken = lpc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<type2String(labelType)<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 			}
 		}
-	} // if the input type is non-erroneous
+		// derive the to-type of this label
+		Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
+		Type *toType = getTypeSimpleTerm(inType, recallBinding, toTree);
+		// log the to-type and to-tree of this label
+		toTypes.push_back(toType);
+		toTrees.push_back(toTree);
+		// advance
+		if (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) {
+			lpCur = lpCur->child->next->next->next; // LabeledPipes
+		} else {
+			break;
+		}
+	} // per-labeled pipe loop
+	// verify that all of the to-types are the same
+	Type *firstToType = toTypes[0];
+	Tree *firstToTree = toTrees[0];
+	for (unsigned int i=1; i < toTypes.size(); i++) { // for each to-type
+		Type *toType = toTypes[i];
+		if (*toType != *firstToType) { // if the types don't match, throw an error
+			Tree *toTree = toTrees[i];
+			Token curToken = toTree->t;
+			Token curToken2 = firstToTree->t;
+			semmerError(curToken.fileName,curToken.row,curToken.col,"switch destination types are inconsistent");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<type2String(toType)<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<type2String(firstToType)<<")");
+		}
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -1165,55 +1163,51 @@ Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 // reports errors
 Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	if (*inType != TYPE_ERROR) { // if we're not starting with an erroneous input type in the first place
-		if (*inType == STD_BOOL) { // if what's coming in is a boolean
-			Tree *trueBranch = tree->child->next;
-			Tree *falseBranch = trueBranch->next->next;
-			Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
-			Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, falseBranch);
-			if (*trueType == *falseType) { // if the two branches match in type
-				type = trueType;
-			} else { // else if the two branches don't match in type
-				Token curToken = tree->child->t; // QUESTION
-				Token curToken2 = trueBranch->t; // ClosedTerm
-				Token curToken3 = falseBranch->t; // OpenTerm
-				semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
-				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
-			}
-		} else { // else if what's coming in isn't a boolean
+	if (*inType == STD_BOOL) { // if what's coming in is a boolean
+		Tree *trueBranch = tree->child->next;
+		Tree *falseBranch = trueBranch->next->next;
+		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
+		Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, falseBranch);
+		if (*trueType == *falseType) { // if the two branches match in type
+			type = trueType;
+		} else { // else if the two branches don't match in type
 			Token curToken = tree->child->t; // QUESTION
-			semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+			Token curToken2 = trueBranch->t; // ClosedTerm
+			Token curToken3 = falseBranch->t; // OpenTerm
+			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
 		}
-	} // if the input type is non-erroneous
+	} else { // else if what's coming in isn't a boolean
+		Token curToken = tree->child->t; // QUESTION
+		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
 Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	if (*inType != TYPE_ERROR) { // if we're not starting with an erroneous input type in the first place
-		if (*inType == STD_BOOL) { // if what's coming in is a boolean
-			Tree *trueBranch = tree->child->next;
-			Tree *falseBranch = trueBranch->next->next;
-			Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
-			Type *falseType = getTypeClosedTerm(recallBinding->type, recallBinding, falseBranch);
-			if (*trueType == *falseType) { // if the two branches match in type
-				type = trueType;
-			} else { // else if the two branches don't match in type
-				Token curToken = tree->child->t; // QUESTION
-				Token curToken2 = trueBranch->t; // ClosedTerm
-				Token curToken3 = falseBranch->t; // ClosedTerm
-				semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
-				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
-			}
-		} else { // else if what's coming in isn't a boolean
+	if (*inType == STD_BOOL) { // if what's coming in is a boolean
+		Tree *trueBranch = tree->child->next;
+		Tree *falseBranch = trueBranch->next->next;
+		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
+		Type *falseType = getTypeClosedTerm(recallBinding->type, recallBinding, falseBranch);
+		if (*trueType == *falseType) { // if the two branches match in type
+			type = trueType;
+		} else { // else if the two branches don't match in type
 			Token curToken = tree->child->t; // QUESTION
-			semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+			Token curToken2 = trueBranch->t; // ClosedTerm
+			Token curToken3 = falseBranch->t; // ClosedTerm
+			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
 		}
-	} // if the input type is non-erroneous
+	} else { // else if what's coming in isn't a boolean
+		Token curToken = tree->child->t; // QUESTION
+		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -1240,7 +1234,7 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	Type *outType = NULL;
 	while (curTerm != NULL) {
 		outType = getTypeTerm(inType, NULL, curTerm);
-		if (outType != NULL) { // if we found a proper typing for this term, log it
+		if (*outType != TYPE_ERROR) { // if we found a proper typing for this term, log it
 			curTerm->type = outType;
 			inType = outType;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error

@@ -119,7 +119,7 @@ class Type {
 	if (tree->type != NULL) {\
 		return tree->type;\
 	}\
-	/* otherwise, copute the type normally */\
+	/* otherwise, compute the type normally */\
 	Type *type = NULL
 
 #define GET_TYPE_FOOTER \

@@ -78,8 +78,6 @@
 0 ; SEMICOLON -1
 0 ? QUESTION 113
 0 : COLON 114
-// array access operators
-0 # HASH -1
 // quote characters
 0 ' CQUOTE -1
 0 " SQUOTE -1

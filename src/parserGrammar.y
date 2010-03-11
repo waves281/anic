@@ -26,7 +26,6 @@
 %token SSLASH
 %token DSLASH
 %token DSSLASH
-%token HASH
 %token CQUOTE
 %token SQUOTE
 %token AT
@@ -160,12 +159,12 @@ Node : SuffixedIdentifier
 	;
 SuffixedIdentifier : ID
 	| ID PERIOD SuffixedIdentifier
-	| ID ArraySuffix
-	| ID ArraySuffix PERIOD SuffixedIdentifier
+	| ID PERIOD ArrayAccess
+	| ID PERIOD ArrayAccess PERIOD SuffixedIdentifier
 	| DPERIOD
 	| DPERIOD PERIOD SuffixedIdentifier
-	| DPERIOD ArraySuffix
-	| DPERIOD ArraySuffix PERIOD SuffixedIdentifier
+	| DPERIOD PERIOD ArrayAccess
+	| DPERIOD PERIOD ArrayAccess PERIOD SuffixedIdentifier
 	;
 NonArraySuffixedIdentifier : ID
 	| ID PERIOD NonArraySuffixedIdentifier
@@ -175,11 +174,8 @@ NonArraySuffixedIdentifier : ID
 NodeInstantiation : LSQUARE NonEmptyTypeList RSQUARE
 	| LSQUARE NonEmptyTypeList RSQUARE LARROW StaticTerm
 	;
-ArrayAccess : HASH LSQUARE Exp RSQUARE
-	| HASH LSQUARE Exp DCOLON Exp RSQUARE
-	;
-ArraySuffix : ArrayAccess
-	| ArrayAccess ArraySuffix
+ArrayAccess : LSQUARE Exp RSQUARE
+	| LSQUARE Exp DCOLON Exp RSQUARE
 	;
 PrimOpNode : PrefixOp
 	| InfixOp
@@ -245,8 +241,8 @@ TypeSuffix :
 	;
 ComplexTypeSuffix : DSLASH
 	| DSLASH ComplexTypeSuffix
-	| HASH
-	| HASH ComplexTypeSuffix
+	| LSQUARE RSQUARE
+	| LSQUARE RSQUARE ComplexTypeSuffix
 	;
 NodeType : LSQUARE TypeList RetList RSQUARE
 	;

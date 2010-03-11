@@ -67,8 +67,8 @@
 // miscellaneous control characters
 0 ( LBRACKET -1
 0 ) RBRACKET -1
-0 [ LSQUARE 100
-0 ] RSQUARE 101
+0 [ LSQUARE -1
+0 ] RSQUARE -1
 0 { LCURLY -1
 0 } RCURLY -1
 0 = EQUALS 10
@@ -78,6 +78,13 @@
 0 ; SEMICOLON -1
 0 ? QUESTION 113
 0 : COLON 114
+// array access operators
+0 # HASH -1
+// quote characters
+0 ' CQUOTE -1
+0 " SQUOTE -1
+// package traversal operators
+0 @ AT -1
 // arithmetic characters
 0 + PLUS 104
 0 - MINUS 105
@@ -93,11 +100,6 @@
 0 & AND 107
 0 | OR 108
 0 ^ XOR -1
-// quote characters
-0 ' CQUOTE -1
-0 " SQUOTE -1
-// package traversal operators
-0 @ AT -1
 
 // state 1 (continuing id)
 // lowercase letters
@@ -300,12 +302,6 @@
 
 // state 11 (! seen)
 11 = NEQUALS -1
-
-// state 100 ([ seen)
-100 [ DLSQUARE -1
-
-// state 101 (] seen)
-101 ] DRSQUARE -1
 
 // state 102 (\ seen)
 102 \ DSLASH 103

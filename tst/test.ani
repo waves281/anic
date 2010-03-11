@@ -4,17 +4,17 @@
 // real-time parallel clock + calculator hybrid program
 {
 	@std.in;
-	a=[[int\]]<-0; op=[[char\]]<-' '; b=[[int\]]<-0; r=[[int\]]<-0;
-	0 { clock => [[int ms]] { ("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->std.out; 1 std.delay (ms+1) clock} };
+	a=[int\]<-0; op=[char\]<-' '; b=[int\]<-0; r=[int\]<-0;
+	0 { clock => [int ms] { ("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->std.out; 1 std.delay (ms+1) clock} };
 	inLoop => {\in->a \in->op \in->b inLoop};
 	\\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r;
 };
 
-main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> [[int]]\]]\ ]] {
+main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> [int]\]\ ] {
 
-	y => {z => 10 argv[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
+	y => {z => 10 argv#[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
-	retVal = [[int, int]];
+	retVal = [int, int];
 	
 	y ? { loop => 
 		y.z ?
@@ -32,8 +32,8 @@ main /* lol, main!!!*/ = [[int/**/argc, int argv --> int, [[int\\ --> [[int]]\]]
 @nameRes.x.y;
 
 nameRes =  {
-	x = [[int z --> int]] {
-		g = [[]]/***/{};
+	x = [int z --> int] {
+		g = []/***//*/x*/{};
 		100 -->;
 		@main.y;
 		y -->;
@@ -45,11 +45,11 @@ nameRes =  {
 
 /* begin type testing */
 
-filterOut = [[char\\ inStream, char[] stringToFilterOut --> char\\]] {
-	i = [[int\]] <- 0;
+filterOut = [char\\ inStream, char# stringToFilterOut --> char\\] {
+	i = [int\] <- 0;
 	{
-		\\inStream [[char\ c]] {
-			(c == stringToFilterOut[i]) ? { // if we have a character match
+		\\inStream [char\ c] {
+			(c == stringToFilterOut#[i]) ? { // if we have a character match
 				(i+1 == stringToFilterOut.length) ? { // if we've matched the entire string
 					0<->i; // reset i 
 				} : { // else if we haven't matched the entire string (yet)
@@ -57,24 +57,24 @@ filterOut = [[char\\ inStream, char[] stringToFilterOut --> char\\]] {
 				}
 			} : { // else if we have a character mismatch
 				// flow-through the matched characters plus the current one and reset i
-				\\*stringToFilterOut[0::i-1]::\c --> 0<->i;
+				\\*stringToFilterOut#[0::i-1]::\c --> 0<->i;
 			}
 		};
-	} stringToFilterOut[0::i-1] -->; // flow-through the trailing partial-match
+	} stringToFilterOut#[0::i-1] -->; // flow-through the trailing partial-match
 };
 
 /* end type testing */
 
 // Dining philosophers problem
 
-philosopher = [[int id]] {
-	chopstick = [[int\]] <- 0;
-	leftPhil = [[philosopher]];
-	rightPhil = [[philosopher]];
+philosopher = [int id] {
+	chopstick = [int\] <- 0;
+	leftPhil = [philosopher];
+	rightPhil = [philosopher];
 	
-	getChopsticks = [[--> int\, int\]] { \leftPhil.chopstick, \rightPhil.chopstick --> };
-	returnChopsticks = [[int\ cs1, int\ cs2]] { \cs1 ->leftPhil.chopstick; \cs2 ->rightPhil.chopstick; };
-	eat = [[int\ cs1, int\ cs2 --> int\, int\]] {
+	getChopsticks = [--> int\, int\] { \leftPhil.chopstick, \rightPhil.chopstick --> };
+	returnChopsticks = [int\ cs1, int\ cs2] { \cs1 ->leftPhil.chopstick; \cs2 ->rightPhil.chopstick; };
+	eat = [int\ cs1, int\ cs2 --> int\, int\] {
 		"Philosopher " + id + " eating...\n" ->std.out;
 		\cs1, \cs2 -->;
 	};
@@ -84,11 +84,11 @@ philosopher = [[int id]] {
 
 numPhils = 5;
 
-philStream = [[philosopher\\]];
-\\[[std.gen]] <- numPhils {
-	[[philosopher]] <- {..} ->philStream;
-	philStream[..] ->philStream[..].leftPhil;
-	philStream[(.. + 1) % numPhils] ->philStream[..].rightPhil;
+philStream = [philosopher\\];
+\\[std.gen] <- numPhils {
+	[philosopher] <- {..} ->philStream;
+	philStream#[..] ->philStream#[..].leftPhil;
+	philStream#[(.. + 1) % numPhils] ->philStream#[..].rightPhil;
 };
 
 // EOF comment

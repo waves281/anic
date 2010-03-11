@@ -124,7 +124,7 @@ string sid2String(Tree *sid) {
 		// advance
 		cur = cur->child->next; // NULL, PERIOD, or ArraySuffix
 		if (cur != NULL && cur->t.tokenType == TOKEN_ArraySuffix) { // move past a potential ArraySuffix
-			retVal += ".[]"; // note the array dereference in the identifier string
+			retVal += ".#[]"; // note the array dereference in the identifier string
 			cur = cur->next;
 		}
 		// we're now at a PERIOD or NULL

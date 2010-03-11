@@ -17,10 +17,6 @@
 %token RCURLY
 %token LSQUARE
 %token RSQUARE
-%token DLSQUARE
-%token DRSQUARE
-%token CQUOTE
-%token SQUOTE
 %token RARROW
 %token DRARROW
 %token ERARROW
@@ -30,6 +26,9 @@
 %token SSLASH
 %token DSLASH
 %token DSSLASH
+%token HASH
+%token CQUOTE
+%token SQUOTE
 %token AT
 
 /* arithmetic tokens */
@@ -173,11 +172,11 @@ NonArraySuffixedIdentifier : ID
 	| DPERIOD
 	| DPERIOD PERIOD NonArraySuffixedIdentifier
 	;
-NodeInstantiation : DLSQUARE NonEmptyTypeList DRSQUARE
-	| DLSQUARE NonEmptyTypeList DRSQUARE LARROW StaticTerm
+NodeInstantiation : LSQUARE NonEmptyTypeList RSQUARE
+	| LSQUARE NonEmptyTypeList RSQUARE LARROW StaticTerm
 	;
-ArrayAccess : LSQUARE Exp RSQUARE
-	| LSQUARE Exp DCOLON Exp RSQUARE
+ArrayAccess : HASH LSQUARE Exp RSQUARE
+	| HASH LSQUARE Exp DCOLON Exp RSQUARE
 	;
 ArraySuffix : ArrayAccess
 	| ArrayAccess ArraySuffix
@@ -224,7 +223,7 @@ PrimLiteral : INUM
 	;
 TypedNodeLiteral : NodeHeader Block
 	;
-NodeHeader : DLSQUARE ParamList RetList DRSQUARE
+NodeHeader : LSQUARE ParamList RetList RSQUARE
 	;
 ParamList : 
 	| NonEmptyParamList
@@ -246,10 +245,10 @@ TypeSuffix :
 	;
 ComplexTypeSuffix : DSLASH
 	| DSLASH ComplexTypeSuffix
-	| LSQUARE RSQUARE
-	| LSQUARE RSQUARE ComplexTypeSuffix
+	| HASH
+	| HASH ComplexTypeSuffix
 	;
-NodeType : DLSQUARE TypeList RetList DRSQUARE
+NodeType : LSQUARE TypeList RetList RSQUARE
 	;
 TypeList : 
 	| NonEmptyTypeList

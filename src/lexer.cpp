@@ -17,6 +17,10 @@ int isNewLine(unsigned char c) {
 	return (c == '\n');
 }
 
+int isTab(unsigned char c) {
+	return (c == '\t');
+}
+
 void resetState(string &s, int &state, int &tokenType) {
 	// reset the state variables
 	s.clear(); // clear the raw token buffer
@@ -58,6 +62,8 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 		if (isNewLine(c)) {
 			row++;
 			col = 0;
+		} else if (isTab(c)) {
+			col += 4;
 		} else {
 			col++;
 		}
@@ -112,7 +118,11 @@ lexerLoopTop: ;
 				c = '\n';
 			}
 			// either way, we just got a character, so advance the column count
-			col++;
+			if (isTab(c)) {
+				col += 4;
+			} else {
+				col++;
+			}
 		}
 		// now, process the character we just got
 		// first, check it it was a special character
@@ -163,6 +173,8 @@ lexerLoopTop: ;
 							row++;
 							col = 0;
 							break;
+						} else if (isTab(c)) {
+							col += 4;
 						} else {
 							col++;
 						}
@@ -174,7 +186,11 @@ lexerLoopTop: ;
 					char lastChar = '\0';
 					for(;;) { // scan until we hit either EOF or a * /
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
-						col++;
+						if (isTab(c)) {
+							col += 4;
+						} else {
+							col++;
+						}
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							lexerError(fileName,rowStart,colStart,"/* comment truncated by EOF");
 							done = true;
@@ -196,7 +212,11 @@ lexerLoopTop: ;
 					bool lastCharWasEsc = false;
 					for(;;) { // scan until we hit either EOF or the termChar
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
-						col++;
+						if (isTab(c)) {
+							col += 4;
+						} else {
+							col++;
+						}
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							if (termChar == '\'') {
 								lexerError(fileName,rowStart,colStart,"character literal truncated by EOF");

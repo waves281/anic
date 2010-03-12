@@ -63,7 +63,7 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 			row++;
 			col = 0;
 		} else if (isTab(c)) {
-			col += 4;
+			col = (col - (col % TAB_MODULUS) + TAB_MODULUS);
 		} else {
 			col++;
 		}
@@ -119,7 +119,7 @@ lexerLoopTop: ;
 			}
 			// either way, we just got a character, so advance the column count
 			if (isTab(c)) {
-				col += 4;
+				col = (col - (col % TAB_MODULUS) + TAB_MODULUS);
 			} else {
 				col++;
 			}
@@ -174,7 +174,7 @@ lexerLoopTop: ;
 							col = 0;
 							break;
 						} else if (isTab(c)) {
-							col += 4;
+							col = (col - (col % TAB_MODULUS) + TAB_MODULUS);
 						} else {
 							col++;
 						}
@@ -187,7 +187,7 @@ lexerLoopTop: ;
 					for(;;) { // scan until we hit either EOF or a * /
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						if (isTab(c)) {
-							col += 4;
+							col = (col - (col % TAB_MODULUS) + TAB_MODULUS);
 						} else {
 							col++;
 						}
@@ -213,7 +213,7 @@ lexerLoopTop: ;
 					for(;;) { // scan until we hit either EOF or the termChar
 						bool retVal = (in == NULL ? cin.get(c) : in->get(c));
 						if (isTab(c)) {
-							col += 4;
+							col = (col - (col % TAB_MODULUS) + TAB_MODULUS);
 						} else {
 							col++;
 						}

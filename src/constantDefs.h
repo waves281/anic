@@ -27,6 +27,7 @@
 
 #define MAX_TOKEN_LENGTH INT_MAX
 #define ESCAPE_CHARACTER '\\'
+#define TAB_MODULUS 4
 
 #define STANDARD_LIBRARY_STRING "std"
 

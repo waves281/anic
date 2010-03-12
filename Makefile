@@ -107,7 +107,7 @@ p: purge
 
 ### WRAPPER RULES
 
-start: 
+start:
 	@echo $(TARGET) ANI Compiler Makefile
 	@echo
 

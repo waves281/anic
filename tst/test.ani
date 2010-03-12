@@ -15,8 +15,8 @@ main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> [int]\]\ ] 
 	y => {z => 10 argv.[2::5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
 	retVal = [int, int];
-	
-	y ? { loop => 
+
+	y ? { loop =>
 		y.z ?
 		{1,2 loop}
 		:
@@ -51,7 +51,7 @@ filterOut = [char\\ inStream, char[] stringToFilterOut --> char\\] {
 		\\inStream [char\ c] {
 			(c == stringToFilterOut.[i]) ? { // if we have a character match
 				(i+1 == stringToFilterOut.length) ? { // if we've matched the entire string
-					0<->i; // reset i 
+					0<->i; // reset i
 				} : { // else if we haven't matched the entire string (yet)
 					\i+1 ->i; // increment i
 				}
@@ -71,14 +71,14 @@ philosopher = [int id] {
 	chopstick = [int\] <- 0;
 	leftPhil = [philosopher];
 	rightPhil = [philosopher];
-	
+
 	getChopsticks = [--> int\, int\] { \leftPhil.chopstick, \rightPhil.chopstick --> };
 	returnChopsticks = [int\ cs1, int\ cs2] { \cs1 ->leftPhil.chopstick; \cs2 ->rightPhil.chopstick; };
 	eat = [int\ cs1, int\ cs2 --> int\, int\] {
 		"Philosopher " + id + " eating...\n" ->std.out;
 		\cs1, \cs2 -->;
 	};
-	
+
 	loopback => std.rand std.delay \getChopsticks eat ->returnChopsticks loopback;
 };
 

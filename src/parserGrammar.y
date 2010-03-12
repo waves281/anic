@@ -71,7 +71,7 @@
 %%
 Program : Pipes
 	;
-Pipes : 
+Pipes :
 	| Pipe
 	| Pipe SEMICOLON Pipes
 	;
@@ -88,7 +88,7 @@ Declaration : ID EQUALS TypedStaticTerm
 	;
 NonEmptyTerms : Term Terms
 	;
-Terms : 
+Terms :
 	| Term Terms
 	;
 Term : OpenTerm
@@ -174,7 +174,7 @@ NodeInstantiation : LSQUARE NonEmptyTypeList RSQUARE
 	| LSQUARE NonEmptyTypeList RSQUARE LARROW StaticTerm
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
-	| LSQUARE Exp DCOLON Exp RSQUARE
+	| LSQUARE Exp COLON Exp RSQUARE
 	;
 PrimOpNode : PrefixOp
 	| InfixOp
@@ -220,13 +220,13 @@ TypedNodeLiteral : NodeHeader Block
 	;
 NodeHeader : LSQUARE ParamList RetList RSQUARE
 	;
-ParamList : 
+ParamList :
 	| NonEmptyParamList
 	;
 NonEmptyParamList: Param
 	| Param COMMA NonEmptyParamList
 	;
-RetList : 
+RetList :
 	| DRARROW NonEmptyTypeList
 	;
 Param : Type ID
@@ -234,7 +234,7 @@ Param : Type ID
 Type : NonArraySuffixedIdentifier TypeSuffix
 	| NodeType TypeSuffix
 	;
-TypeSuffix : 
+TypeSuffix :
 	| SLASH
 	| ComplexTypeSuffix
 	;
@@ -244,7 +244,7 @@ ComplexTypeSuffix : DSLASH
 	;
 NodeType : LSQUARE TypeList RetList RSQUARE
 	;
-TypeList : 
+TypeList :
 	| NonEmptyTypeList
 	;
 NonEmptyTypeList : Type
@@ -254,7 +254,7 @@ Block : LCURLY Pipes RCURLY
 	;
 Access : SLASH Node
 	| SSLASH Node
-	| DSLASH Node	
+	| DSLASH Node
 	| DSSLASH Node
 	;
 Compound : COMMA StaticTerm

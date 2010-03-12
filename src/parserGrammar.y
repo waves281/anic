@@ -242,7 +242,6 @@ TypeSuffix :
 ComplexTypeSuffix : DSLASH
 	| DSLASH ComplexTypeSuffix
 	| LSQUARE RSQUARE
-	| LSQUARE RSQUARE ComplexTypeSuffix
 	;
 NodeType : LSQUARE TypeList RetList RSQUARE
 	;

@@ -12,7 +12,7 @@
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
-int tabWidth = DEFAULT_TAB_WIDTH;
+int tabModulus = DEFAULT_TAB_MODULUS;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
@@ -93,18 +93,18 @@ int main(int argc, char **argv) {
 				eHandled = true;
 			} else if (argv[i][1] == 't' && !tHandled) {
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
-					printError("-t expected tab width argument");
+					printError("-t expected tab modulus argument");
 					die();
 				}
 				int n;
 				if (sscanf(argv[i], "%d", &n) < 1) { // unsuccessful attempt to extract a number out of the argument
-					printError("-t got illegal tab width '" << argv[i] << "'");
+					printError("-t got illegal tab modulus '" << argv[i] << "'");
 					die();
 				} else { // else attempt was successful
-					if (n >= MIN_TAB_WIDTH && n <= MAX_TAB_WIDTH) {
-						tabWidth = n;
+					if (n >= MIN_TAB_MODULUS && n <= MAX_TAB_MODULUS) {
+						tabModulus = n;
 					} else {
-						printError("-t got out-of-bounds tab width " << n);
+						printError("-t got out-of-bounds tab modulus " << n);
 						die();
 					}
 				}

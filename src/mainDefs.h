@@ -34,7 +34,7 @@ using std::stack;
 extern bool verboseOutput;
 extern bool silentMode;
 extern int optimizationLevel;
-extern int tabWidth;
+extern int tabModulus;
 extern bool eventuallyGiveUp;
 
 #endif

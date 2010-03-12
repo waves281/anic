@@ -2,7 +2,7 @@ TARGET = anic
 INSTALL_PATH = /usr/local/bin
 MAN_PATH = /usr/share/man/man1
 
-CC = g++
+CXX = g++
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -g -fomit-frame-pointer -ffast-math -pipe -Wall
 OPTIMIZATION_LEVEL = 3
 
@@ -120,7 +120,7 @@ tmp/version: bld/version.cpp
 	@echo Building version controller...
 	@mkdir -p var
 	@mkdir -p tmp
-	@$(CC) bld/version.cpp $(CFLAGS) -o tmp/version
+	@$(CXX) bld/version.cpp $(CFLAGS) -o tmp/version
 
 # VERSION STAMP
 
@@ -172,12 +172,12 @@ tmp/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen src/lexerTable.txt src/l
 	@./tmp/lexerStructGen
 	@echo Compiling lexer structure object...
 	@mkdir -p tmp
-	@$(CC) tmp/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
+	@$(CXX) tmp/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
 tmp/lexerStructGen: bld/lexerStructGen.cpp src/mainDefs.h src/constantDefs.h
 	@echo Building lexer structure generator...
 	@mkdir -p tmp
-	@$(CC) bld/lexerStructGen.cpp -o tmp/lexerStructGen
+	@$(CXX) bld/lexerStructGen.cpp -o tmp/lexerStructGen
 
 # PARSER
 
@@ -190,7 +190,7 @@ tmp/parserStruct.h \
 tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
 	@echo Building parser structure generator...
 	@mkdir -p tmp
-	@$(CC) bld/parserStructGen.cpp tmp/lexerStruct.o -o tmp/parserStructGen
+	@$(CXX) bld/parserStructGen.cpp tmp/lexerStruct.o -o tmp/parserStructGen
 
 tmp/hyacc: bld/hyaccMake.sh bld/hyacc/makefile
 	@echo Building parser table generator...
@@ -209,7 +209,7 @@ tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
 $(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
-	@$(CC) src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
+	@$(CXX) src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 		-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
 		$(CFLAGS) \
 		-o $(TARGET)

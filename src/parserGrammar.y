@@ -145,7 +145,6 @@ Exp : Primary
 	;
 Primary : SuffixedIdentifier
 	| SLASH SuffixedIdentifier
-	| SSLASH SuffixedIdentifier
 	| PrimLiteral
 	| PrefixOrMultiOp Primary
 	| LBRACKET Exp RBRACKET

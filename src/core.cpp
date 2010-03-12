@@ -12,6 +12,7 @@
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
+int tabWidth = DEFAULT_TAB_WIDTH;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
@@ -44,6 +45,7 @@ int main(int argc, char **argv) {
 	bool sHandled = false;
 	bool vHandled = false;
 	bool eHandled = false;
+	bool tHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (argv[i][1] == 'o' && !oHandled) { // output file name
@@ -89,6 +91,25 @@ int main(int argc, char **argv) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
 				eHandled = true;
+			} else if (argv[i][1] == 't' && !tHandled) {
+				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
+					printError("-t expected tab width argument");
+					die();
+				}
+				int n;
+				if (sscanf(argv[i], "%d", &n) < 1) { // unsuccessful attempt to extract a number out of the argument
+					printError("-t got illegal tab width '" << argv[i] << "'");
+					die();
+				} else { // else attempt was successful
+					if (n >= MIN_TAB_WIDTH && n <= MAX_TAB_WIDTH) {
+						tabWidth = n;
+					} else {
+						printError("-t got out-of-bounds tab width " << n);
+						die();
+					}
+				}
+				// flag this option as handled
+				tHandled = true;
 			} else if (argv[i][1] == 'h' && argc == 2) {
 				// test to see if a command interpreter is available
 				int systemRetVal = system(NULL);

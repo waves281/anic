@@ -119,8 +119,6 @@ int main() {
 	// print out the definition for the total label count
 	fprintf(header, "#define NUM_LABELS NUM_TOKENS + NUM_NONTERMS\n\n");
 	// print out the epilogue into the .h
-	fprintf(header, "void parserInit( int ruleLhsTokenType[NUM_RULES],\n");
-	fprintf(header, "\t\tconst char *ruleLhsTokenString[NUM_RULES] );\n\n");
 	fprintf(header, "#endif\n");
 
 	// now, back up in the file and scan ahead to the rule declarations

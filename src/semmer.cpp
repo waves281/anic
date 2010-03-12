@@ -709,7 +709,7 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_SuffixedIdentifier) {
 		type = getTypeSuffixedIdentifier(inType, recallBinding, primaryc);
-	} else if (*primaryc == TOKEN_SLASH || *primaryc == TOKEN_SSLASH) { // if it's a delatch-class term
+	} else if (*primaryc == TOKEN_SLASH) { // if it's a delatched term
 		Tree *subSI = primaryc->next; // SuffixedIdentifier
 		Type *subType = getTypeSuffixedIdentifier(inType, recallBinding, subSI); // SuffixedIdentifier
 		if (*subType != TYPE_ERROR) { // if we derived a subtype

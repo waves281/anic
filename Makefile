@@ -66,6 +66,7 @@ clean: start bld/hyaccMake.sh
 	@rm -f tmp/parserTable.txt
 	@rm -f tmp/{lexer,parser}StructGen
 	@rm -f tmp/{lexer,parser}Struct.{h,cpp,o}
+	@rm -f tmp/{lexerNode,parserNode,ruleLhsTokenString,ruleLhsTokenType,ruleRhsLength}Raw.h
 	@rm -f -R tmp
 	@chmod +x bld/hyaccMake.sh
 	@./bld/hyaccMake.sh $(MAKE_PROGRAM) $(HYACC_PATH) clean

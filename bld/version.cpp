@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	} else { // a version file exists, so use it
 		char version[MAX_STRING_LENGTH];
 		int retVal = fscanf(f, "%s %lu", version, &buildNumber);
-		if (retVal) {
+		if (retVal != 2) {
 			cerr << "Error reading var/version.cfg" << endl;
 			exit(1);
 		}

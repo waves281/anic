@@ -2611,14 +2611,14 @@ void show_state_config_info() {
  * print size of different objects. For development use only.
  */
 void print_size() {
-  printf("size of Grammar: %lu\n", sizeof(Grammar));
-  printf("size of State_collection: %lu\n", sizeof(State_collection));
-  printf("size of State: %lu\n", sizeof(State));
-  printf("size of (State *): %lu\n", sizeof(State *));
-  printf("size of Context: %lu\n", sizeof(Context));
-  printf("size of Production: %lu\n", sizeof(Production));
-  printf("size of Configuration: %lu\n", sizeof(Configuration));
-  printf("size of ParsingTblColHdr: %lu\n", sizeof(ParsingTblColHdr));
+  printf("size of Grammar: %u\n", sizeof(Grammar));
+  printf("size of State_collection: %u\n", sizeof(State_collection));
+  printf("size of State: %u\n", sizeof(State));
+  printf("size of (State *): %u\n", sizeof(State *));
+  printf("size of Context: %u\n", sizeof(Context));
+  printf("size of Production: %u\n", sizeof(Production));
+  printf("size of Configuration: %u\n", sizeof(Configuration));
+  printf("size of ParsingTblColHdr: %u\n", sizeof(ParsingTblColHdr));
 }
 
 

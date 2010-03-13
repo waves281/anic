@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../src/constantDefs.h"
+#include "../src/mainDefs.h"
 
 // prints the buildnumber to stdout
 int main(int argc, char **argv) {
@@ -24,7 +25,11 @@ int main(int argc, char **argv) {
 		fclose(f);
 	} else { // a version file exists, so use it
 		char version[MAX_STRING_LENGTH];
-		fscanf(f, "%s %lu", version, &buildNumber);
+		int retVal = fscanf(f, "%s %lu", version, &buildNumber);
+		if (retVal) {
+			cerr << "Error reading var/version.cfg" << endl;
+			exit(1);
+		}
 		fclose(f);
 		f = fopen("var/version.cfg","w");
 		if (strcmp(version, versionString) == 0) { // if we're still on the same version

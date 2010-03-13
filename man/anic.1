@@ -44,6 +44,14 @@ will make viewing the verbose ouput much more manageable.
 .IP
 Cannot be used with \fB\-s\fR.
 .TP
+\fB\-t \fR\fIn\fR\fR
+use a tab modulus (width) of \fR\fIn\fR
+.IP
+The valid range is \fB1\fR to \fB80\fR inclusive.
+.IP
+This option does not affect the compilation process. It simply defines how the compiler reports the column numbers of tokens in the presence of tab characters.
+If this option is not specified, the default is \fI4\fR.
+.TP
 \fB\-e\fR
 pedantic error handling; do not to give up on compilation even when encountering confusing or large volumes of errors
 .IP

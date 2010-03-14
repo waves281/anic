@@ -31,9 +31,9 @@ using std::stack;
 
 // global variable linkage specifiers
 
+extern int optimizationLevel;
 extern bool verboseOutput;
 extern bool silentMode;
-extern int optimizationLevel;
 extern int tabModulus;
 extern bool eventuallyGiveUp;
 

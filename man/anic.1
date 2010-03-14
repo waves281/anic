@@ -24,11 +24,6 @@ use level \fR\fIn\fR code optimizations during compilation
 The valid range is \fB0\fR to \fB3\fR inclusive, with larger numbers specifying increasingly more powerful (but also more time-consuming) optimizations.
 If this option is not specified, the default is \fI1\fR.
 .TP
-\fB\-s\fR
-silent mode; print nothing, not even compilation errors
-.IP
-Cannot be used with \fB\-v\fR.
-.TP
 \fB\-v\fR
 verbose output; print additional information about the compilation process on the standard output
 .IP
@@ -43,6 +38,11 @@ For example,
 will make viewing the verbose ouput much more manageable.
 .IP
 Cannot be used with \fB\-s\fR.
+.TP
+\fB\-s\fR
+silent mode; print nothing, not even compilation errors
+.IP
+Cannot be used with \fB\-v\fR.
 .TP
 \fB\-t \fR\fIn\fR\fR
 use a tab modulus (width) of \fR\fIn\fR

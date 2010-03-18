@@ -65,6 +65,27 @@ filterOut = [char\\ inStream, char[] stringToFilterOut --> char\\] {
 
 /* end type testing */
 
+// prime sieve
+
+MAXNUM = 10000;
+num = [int\\];
+{0, MAXNUM} std.gen {
+	(..+1) ->num.[..];
+}
+{1, MAXNUM} std.gen [int i] {
+	numI = [int\] <- \num.[i];
+	(numI != 0) ? {
+		{(i+1), MAXNUM} std.gen [int j] {
+			numJ = [int\] <- \num.[j];
+			(numJ != 0 && (numJ % numI) == 0) ? { 0 } : { \numJ } ->num.[j];
+		};
+	}
+	\numI ->num.[i];
+}
+{(MAXNUM-100), MAXNUM} std.gen num.[..] {
+	(.. != 0) ? (.. + " ") ->std.out;
+};
+
 // Dining philosophers problem
 
 philosopher = [int id] {

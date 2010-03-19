@@ -11,7 +11,7 @@ BEGIN {
 
 {
 	hexVal = $0
-	for (i = 1; i <= length(hexVal); i++)
+	for (i = 1; i <= length(hexVal) && decVal <= 99999999; i++)
 		decVal = int(decVal)*16 + hex[substr(hexVal, i, 1)]
 	printf "%s", substr(int(decVal),1,8)
 }

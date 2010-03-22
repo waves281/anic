@@ -152,8 +152,8 @@ Primary : SuffixedIdentifier
 Node : SuffixedIdentifier
 	| NodeInstantiation
 	| Block
-	| ObjectBlock
 	| Filter
+	| ObjectBlock
 	| PrimOpNode
 	| PrimLiteral
 	;

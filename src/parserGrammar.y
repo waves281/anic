@@ -151,10 +151,10 @@ Primary : SuffixedIdentifier
 	;
 Node : SuffixedIdentifier
 	| NodeInstantiation
-	| TypedNodeLiteral
+	| Filter
+	| Block
 	| PrimOpNode
 	| PrimLiteral
-	| Block
 	;
 SuffixedIdentifier : ID
 	| ID PERIOD SuffixedIdentifier
@@ -216,9 +216,9 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-TypedNodeLiteral : NodeHeader Block
+Filter : FilterHeader Block
 	;
-NodeHeader : LSQUARE ParamList RetList RSQUARE
+FilterHeader : LSQUARE ParamList RetList RSQUARE
 	;
 ParamList :
 	| NonEmptyParamList
@@ -226,8 +226,7 @@ ParamList :
 NonEmptyParamList: Param
 	| Param COMMA NonEmptyParamList
 	;
-RetList :
-	| DRARROW NonEmptyTypeList
+RetList : DRARROW NonEmptyTypeList
 	;
 Param : Type ID
 	;

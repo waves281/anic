@@ -381,8 +381,8 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// allocate the new definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// if there is a header for to this block, add its parameters into the block node
-		if (tree->back != NULL && *(tree->back) == TOKEN_NodeHeader) {
-			Tree *nh = tree->back; // NodeHeader
+		if (tree->back != NULL && *(tree->back) == TOKEN_FilterHeader) {
+			Tree *nh = tree->back; // FilterHeader
 			if (nh->child->next->child != NULL) { // if there is a parameter list to process
 				Tree *param = nh->child->next->child->child; // Param
 				for (;;) { // per-param loop
@@ -637,8 +637,8 @@ Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
@@ -972,7 +972,7 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pl = tree->child->next; // ParamList
 	Type *fromType = getTypeParamList(inType, recallBinding, pl);
@@ -987,10 +987,10 @@ Type *getTypeNodeHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeTypedNodeLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	Tree *nh = tree->child; // NodeHeader
-	Type *headerType = getTypeNodeHeader(inType, recallBinding, nh);
+	Tree *nh = tree->child; // FilterHeader
+	Type *headerType = getTypeFilterHeader(inType, recallBinding, nh);
 	if (*headerType != TYPE_ERROR) { // if we derived a type for the header
 // LOL
 	} else { // else if we couldn't derive a type for the header
@@ -1009,8 +1009,8 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		type = getTypeSuffixedIdentifier(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
 		type = getTypeNodeInstantiation(inType, recallBinding, nodec);
-	} else if (*nodec == TOKEN_TypedNodeLiteral) {
-		type = getTypeTypedNodeLiteral(inType, recallBinding, nodec);
+	} else if (*nodec == TOKEN_Filter) {
+		type = getTypeFilter(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		type = getTypePrimOpNode(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimLiteral) {

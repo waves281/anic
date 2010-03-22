@@ -652,6 +652,7 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
 
 // typing function definitions
@@ -1255,19 +1256,30 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+	if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
+		// first, bind the identifier's type
+// LOL
+		// then, verify that the type holds through the declared block
+		type = getTypeTypedStaticTerm(inType, recallBinding, declarationSub);
+	} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
+		// first, bind the identifier's type
+// LOL
+		// then, verify that the type holds through the declared block
+		type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
+	} // otherwise, if it's an import declaration, do nothing
+	GET_TYPE_FOOTER;
+}
+
 Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
 		type = getTypeNonEmptyTerms(inType, recallBinding, pipec);
 	} else if (*pipec == TOKEN_Declaration) { // else if it's a Declaration pipe
-		Tree *declarationSub = pipec->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-		if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) {
-			type = getTypeTypedStaticTerm(inType, recallBinding, declarationSub);
-		} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) {
-			type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
-		}
-		// otherwise, if it's an import declaration, do nothing
+		type = getTypeDeclaration(inType, recallBinding, pipec);
 	}
 	GET_TYPE_FOOTER;
 }

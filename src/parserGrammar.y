@@ -151,8 +151,9 @@ Primary : SuffixedIdentifier
 	;
 Node : SuffixedIdentifier
 	| NodeInstantiation
-	| Filter
 	| Block
+	| ObjectBlock
+	| Filter
 	| PrimOpNode
 	| PrimLiteral
 	;
@@ -218,7 +219,10 @@ PrimLiteral : INUM
 	;
 Filter : FilterHeader Block
 	;
-FilterHeader : LSQUARE ParamList RetList RSQUARE
+FilterHeader : LSQUARE ParamList RSQUARE
+	| LSQUARE ParamList RetList RSQUARE
+	;
+NonRetFilterHeader : LSQUARE ParamList RSQUARE
 	;
 ParamList :
 	| NonEmptyParamList
@@ -241,7 +245,8 @@ ComplexTypeSuffix : DSLASH
 	| DSLASH ComplexTypeSuffix
 	| LSQUARE RSQUARE
 	;
-NodeType : LSQUARE TypeList RetList RSQUARE
+NodeType : LSQUARE TypeList RSQUARE
+	| LSQUARE TypeList RetList RSQUARE
 	;
 TypeList :
 	| NonEmptyTypeList
@@ -250,6 +255,13 @@ NonEmptyTypeList : Type
 	| Type COMMA NonEmptyTypeList
 	;
 Block : LCURLY Pipes RCURLY
+	;
+ObjectBlock : LCURLY NonEmptyConstructors Pipes RCURLY
+	;
+NonEmptyConstructors : Constructor SEMICOLON
+	| Constructor SEMICOLON NonEmptyConstructors
+	;
+Constructor : EQUALS NonRetFilterHeader Block
 	;
 Access : SLASH Node
 	| SSLASH Node

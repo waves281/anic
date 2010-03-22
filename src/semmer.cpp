@@ -977,10 +977,13 @@ Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 	Tree *pl = tree->child->next; // ParamList
 	Type *fromType = getTypeParamList(inType, recallBinding, pl);
 	if (*fromType != TYPE_ERROR) { // if we derived a type for the from node
-		Tree *rl = pl->next; // RetList
-		Type *toType = getTypeRetList(inType, recallBinding, rl);
-		if (*toType != TYPE_ERROR) { // if we derived a type for the to node
-			type = new Type(fromType, toType);
+		Tree *rl = pl->next; // RetList or NULL
+		Type *toType = nullType;
+		if (*rl == TOKEN_RetList) {
+			toType = getTypeRetList(inType, recallBinding, rl);
+			if (*toType != TYPE_ERROR) { // if we derived a type for the to node
+				type = new Type(fromType, toType);
+			}
 		}
 	}
 	GET_TYPE_FOOTER;

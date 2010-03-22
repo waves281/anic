@@ -171,8 +171,8 @@ NonArraySuffixedIdentifier : ID
 	| DPERIOD
 	| DPERIOD PERIOD NonArraySuffixedIdentifier
 	;
-NodeInstantiation : LSQUARE NonEmptyTypeList RSQUARE
-	| LSQUARE NonEmptyTypeList RSQUARE LARROW StaticTerm
+NodeInstantiation : LSQUARE TypeList RSQUARE
+	| LSQUARE TypeList RSQUARE LARROW StaticTerm
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE
@@ -221,16 +221,14 @@ Filter : FilterHeader Block
 	;
 FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE
+	| LSQUARE RetList RSQUARE
 	;
 NonRetFilterHeader : LSQUARE ParamList RSQUARE
 	;
-ParamList :
-	| NonEmptyParamList
+ParamList : Param
+	| Param COMMA ParamList
 	;
-NonEmptyParamList: Param
-	| Param COMMA NonEmptyParamList
-	;
-RetList : DRARROW NonEmptyTypeList
+RetList : DRARROW TypeList
 	;
 Param : Type ID
 	;
@@ -247,12 +245,10 @@ ComplexTypeSuffix : DSLASH
 	;
 NodeType : LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE
+	| LSQUARE RetList RSQUARE
 	;
-TypeList :
-	| NonEmptyTypeList
-	;
-NonEmptyTypeList : Type
-	| Type COMMA NonEmptyTypeList
+TypeList : Type
+	| Type COMMA TypeList
 	;
 Block : LCURLY Pipes RCURLY
 	;

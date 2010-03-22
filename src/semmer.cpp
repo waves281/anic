@@ -382,9 +382,10 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// if there is a header for to this block, add its parameters into the block node
 		if (tree->back != NULL && *(tree->back) == TOKEN_FilterHeader) {
-			Tree *nh = tree->back; // FilterHeader
-			if (nh->child->next->child != NULL) { // if there is a parameter list to process
-				Tree *param = nh->child->next->child->child; // Param
+			Tree *fh = tree->back; // FilterHeader
+			Tree *pl = fh->child->next; // ParamList or RetList
+			if (*pl == TOKEN_ParamList) { // if there is a parameter list to process
+				Tree *param = pl->child; // Param
 				for (;;) { // per-param loop
 					// allocate the new parameter definition node
 					SymbolTable *paramDef = new SymbolTable(KIND_PARAM, param->child->next->t.s, param);
@@ -633,7 +634,7 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
@@ -924,7 +925,7 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeNonEmptyTypeList(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
@@ -945,8 +946,8 @@ Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree) {
 // reports errors
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	Tree *netl = tree->child->next; // NonEmptyTypeList
-	type = getTypeNonEmptyTypeList(inType, recallBinding, netl);
+	Tree *netl = tree->child->next; // TypeList
+	type = getTypeTypeList(inType, recallBinding, netl);
 	if (*type != TYPE_ERROR) { // if we derived a type for the instantiation
 		if (netl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
 			Tree *st = netl->next->next->next; // StaticTerm
@@ -974,17 +975,19 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 
 Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	Tree *pl = tree->child->next; // ParamList
-	Type *fromType = getTypeParamList(inType, recallBinding, pl);
-	if (*fromType != TYPE_ERROR) { // if we derived a type for the from node
-		Tree *rl = pl->next; // RetList or NULL
-		Type *toType = nullType;
-		if (*rl == TOKEN_RetList) {
-			toType = getTypeRetList(inType, recallBinding, rl);
-			if (*toType != TYPE_ERROR) { // if we derived a type for the to node
-				type = new Type(fromType, toType);
-			}
-		}
+	Type *fromType = nullType;
+	Type *toType = nullType;
+
+	Tree *treeCur = tree->child->next; // ParamList
+	if (*treeCur == TOKEN_ParamList) {
+		fromType = getTypeParamList(inType, recallBinding, treeCur);
+		treeCur = treeCur->next; // RetList or RSQUARE
+	}
+	if (*treeCur == TOKEN_RetList) {
+		fromType = getTypeRetList(inType, recallBinding, treeCur);
+	}
+	if (*fromType != TYPE_ERROR && *toType != TYPE_ERROR) {
+		type = new Type(fromType, toType);
 	}
 	GET_TYPE_FOOTER;
 }

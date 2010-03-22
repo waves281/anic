@@ -10,7 +10,7 @@
 	\\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r;
 };
 
-main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> int\]\ ] {
+main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> [int]\]\ ] {
 
 	y => {z => 10 argv.[2:5]; (- 500e-100 *80+10 - "\\lol !!!\'\"" )};
 
@@ -32,8 +32,10 @@ main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> int\]\ ] {
 @nameRes.x.y;
 
 nameRes =  {
+	= [float f] { f->std.out; /* constructor definition ... */ };
+	= [int\ i] { 0 <->i };
 	x = [int z --> int] {
-		g = [/***//*/x*/]{}; // that should be recognized as a single block comment
+		g = [float f/***//*/x*/]{}; // that should be recognized as a single block comment
 		100 -->;
 		@main.y;
 		y -->;

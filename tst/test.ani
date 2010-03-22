@@ -32,8 +32,8 @@ main /* lol, main!!!*/ = [ int/**/argc, int argv --> int, [int\\ --> [int]\]\ ] 
 @nameRes.x.y;
 
 nameRes =  {
-	= [float f] { f->std.out; /* constructor definition ... */ };
-	= [int\ i] { 0 <->i };
+	= [float consInit] { consInit->std.out; /* constructor definition ... */ };
+	= [int\ consInit2] { 0 <->consInit2 };
 	x = [int z --> int] {
 		g = [float f/***//*/x*/]{}; // that should be recognized as a single block comment
 		100 -->;

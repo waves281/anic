@@ -46,7 +46,7 @@ SymbolTable &SymbolTable::operator=(SymbolTable &st) {
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
-	if (st != NULL && st->id[0] != '_') { // if this is not a special system-level binding
+	if (st != NULL && st->id[0] != '_' && st->id[0] != '=') { // if this is not a special system-level binding
 		// per-symbol loop
 		for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 			if ((*childIter)->id == st->id) { // if we've found a conflict
@@ -377,33 +377,47 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// log the current symbol environment in the tree
 	tree->env = st;
 	// recursive cases
-	if (*tree == TOKEN_Block) { // if it's a block node
-		// allocate the new definition node
+	if (*tree == TOKEN_Block || *tree == TOKEN_ObjectBlock) { // if it's a block-style node
+		// allocate the new block definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
-		// if there is a header for to this block, add its parameters into the block node
-		if (tree->back != NULL && *(tree->back) == TOKEN_FilterHeader) {
-			Tree *fh = tree->back; // FilterHeader
-			Tree *pl = fh->child->next; // ParamList or RetList
-			if (*pl == TOKEN_ParamList) { // if there is a parameter list to process
-				Tree *param = pl->child; // Param
-				for (;;) { // per-param loop
-					// allocate the new parameter definition node
-					SymbolTable *paramDef = new SymbolTable(KIND_PARAM, param->child->next->t.s, param);
-					// ... and link it into the block node
-					*blockDef *= paramDef;
-					// advance
-					if (param->next != NULL) {
-						param = param->next->next->child; // Param
-					} else {
-						break;
-					}
-				} // per-param loop
-			}
-		} // if there is a header attatched to this block
 		// finally, link the block node into the main trunk
 		*st *= blockDef;
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block
+	} else if (*tree == TOKEN_FilterHeader || *tree == TOKEN_NonRetFilterHeader) { // if it's a filter header node
+		// locate the corresponding block and create an st node for it
+		Tree *block = tree->next; // Block
+		// allocate the new block definition node
+		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, block);
+		// finally, link the block node into the main trunk
+		*st *= blockDef;
+		// parse out the header's parameter declarations and add them to the st
+		Tree *pl = tree->child->next; // ParamList or RetList
+		if (*pl == TOKEN_ParamList) { // if there is a parameter list to process
+			Tree *param = pl->child; // Param
+			for (;;) { // per-param loop
+				// allocate the new parameter definition node
+				SymbolTable *paramDef = new SymbolTable(KIND_PARAM, param->child->next->t.s, param);
+				// ... and link it into the block node
+				*blockDef *= paramDef;
+				// advance
+				if (param->next != NULL) {
+					param = param->next->next->child; // Param
+				} else {
+					break;
+				}
+			} // per-param loop
+		} // if there is a parameter list to process
+		// recurse
+		buildSt(block->child, blockDef, importList); // child of Block
+	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
+		// allocate the new definition node
+		SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
+		// ... and link it in
+		*st *= newDef;
+		// recurse
+		buildSt(tree->child, newDef, importList); // child of Constructor
+		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
 		Tree *bnc = tree->child->next;
 		if (*bnc == TOKEN_EQUALS) { // standard static declaration

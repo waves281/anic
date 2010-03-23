@@ -962,15 +962,19 @@ Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 // reports errors
 Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
-	Tree *nh = tree->child; // FilterHeader
-	Type *headerType = getTypeFilterHeader(inType, recallBinding, nh);
-	if (*headerType != TYPE_ERROR) { // if we derived a type for the header
+	Tree *tc = tree->child; // FilterHeader or Block
+	Type *headerType = nullType;
+	if (*tc == TOKEN_FilterHeader) { // if there is a header, derive its type
+		headerType = getTypeFilterHeader(inType, recallBinding, tc);
+	}
+	if (*headerType != TYPE_ERROR) { // if we end up with a non-erroneous type for the header
 // LOL
-	} else { // else if we couldn't derive a type for the header
-		Token curToken = nh->t;
+	} else { // else if we derived an erroneous type for the header
+		Token curToken = tc->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node header type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
 	}
+
 	GET_TYPE_FOOTER;
 }
 
@@ -1036,8 +1040,6 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		type = getTypeSuffixedIdentifier(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
 		type = getTypeNodeInstantiation(inType, recallBinding, nodec);
-	} else if (*nodec == TOKEN_Block) {
-		type = getTypeBlock(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_Filter) {
 		type = getTypeFilter(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_ObjectBlock) {

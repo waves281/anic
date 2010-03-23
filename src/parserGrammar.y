@@ -151,7 +151,6 @@ Primary : SuffixedIdentifier
 	;
 Node : SuffixedIdentifier
 	| NodeInstantiation
-	| Block
 	| Filter
 	| ObjectBlock
 	| PrimOpNode
@@ -218,6 +217,7 @@ PrimLiteral : INUM
 	| SQUOTE
 	;
 Filter : FilterHeader Block
+	| Block
 	;
 FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE

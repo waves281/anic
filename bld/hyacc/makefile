@@ -25,7 +25,7 @@
 # Here target y is the same as release.
 #
 # To use this makefile, the only configuration needed is
-# to change the value of INSTALL_PATH below to the 
+# to change the value of INSTALL_PATH below to the
 # destination path you want to install hyacc.
 #
 # @Author: Xin Chen
@@ -41,23 +41,23 @@ SRC_HEADER = y.h stack_config.h mrt.h lane_tracing.h
 SRC = y.c get_yacc_grammar.c gen_compiler.c get_options.c \
       version.c hyacc_path.c symbol_table.c state_hash_table.c \
       queue.c gen_graphviz.c lr0.c lane_tracing.c stack_config.c \
-      mrt.c upe.c 
+      mrt.c upe.c
 OBJS = y.o get_yacc_grammar.o gen_compiler.o get_options.o \
        version.o hyacc_path.o symbol_table.o state_hash_table.o \
        queue.o gen_graphviz.o lr0.o lane_tracing.o \
-       stack_config.o mrt.o upe.o 
+       stack_config.o mrt.o upe.o
 PACK_SRC = $(SRC) $(SRC_HEADER) inst.c hyacc_path_dos.c makefile \
            hyaccpar hyaccmanpage hyaccmanpage.html \
            hyacc.1 GPL_license readme.pdf readme.txt calc.y
-TARGET = ../../tmp/hyacc
+TARGET = ../../bin/hyacc
 CC = gcc
 DATE = `date '+%m-%d-%y'`
 PACK_NAME = hyacc_$(DATE).tar
 FFLAG = -c -g
 
 
-$(TARGET) : $(OBJS) $(SRC_HEADER) 
-	@$(CC) -o $(TARGET) $(OBJS) 
+$(TARGET) : $(OBJS) $(SRC_HEADER)
+	@$(CC) -o $(TARGET) $(OBJS)
 
 #
 # all - the old default.
@@ -65,9 +65,9 @@ $(TARGET) : $(OBJS) $(SRC_HEADER)
 all : $(SRC) $(SRC_HEADER)
 	@$(CC) -o $(TARGET) $(SRC)
 
-release : $(SRC) $(SRC_HEADER) 
+release : $(SRC) $(SRC_HEADER)
 	@make create_path_file
-	@$(CC) -o $(TARGET) $(SRC)  
+	@$(CC) -o $(TARGET) $(SRC)
 
 debug : $(SRC) $(SRC_HEADER)
 	@make create_path_file
@@ -119,7 +119,7 @@ hyacc_path.o : hyacc_path.c y.h
 	@$(CC) $(FFLAG) hyacc_path.c
 
 lane_tracing.o : lane_tracing.c lane_tracing.h y.h stack_config.h
-	@$(CC) $(FFLAG) lane_tracing.c 
+	@$(CC) $(FFLAG) lane_tracing.c
 
 lr0.o : lr0.c y.h
 	@$(CC) $(FFLAG) lr0.c

@@ -9,9 +9,9 @@ OPTIMIZATION_LEVEL = 3
 VERSION_STRING = "0.66"
 VERSION_YEAR = "2010"
 
-MAN_PAGE = $(TARGET).1
-INSTALL_SCRIPT = $(TARGET)-install
-UNINSTALL_SCRIPT = $(TARGET)-uninstall
+MAN_PAGE = tmp/$(TARGET).1
+INSTALL_SCRIPT = tmp/$(TARGET)-install
+UNINSTALL_SCRIPT = tmp/$(TARGET)-uninstall
 
 MAKE_PROGRAM = make
 HYACC_PATH = bld/hyacc
@@ -19,7 +19,7 @@ HYACC_PATH = bld/hyacc
 PRINT_VERSION = @echo Version stamp is
 
 CORE_DEPENDENCIES = Makefile \
-	tmp/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
+	bin/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
 	src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
 	tmp/lexerStruct.h tmp/lexerStruct.o tmp/parserStruct.h \
 	src/lexer.h src/parser.h src/semmer.h \
@@ -58,18 +58,19 @@ dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT) bld/g
 clean: start bld/hyaccMake.sh
 	@echo Cleaning build output...
 	@rm -f $(TARGET)
+	@rm -f bin/version
+	@rm -f bin/{lexer,parser}StructGen
+	@chmod +x bld/hyaccMake.sh
+	@./bld/hyaccMake.sh $(MAKE_PROGRAM) $(HYACC_PATH) clean
+	@rm -f -R bin
 	@rm -f $(MAN_PAGE).gz
 	@rm -f $(INSTALL_SCRIPT)
 	@rm -f $(UNINSTALL_SCRIPT)
 	@rm -f $(TARGET)-*.gz
-	@rm -f tmp/version
 	@rm -f tmp/parserTable.txt
-	@rm -f tmp/{lexer,parser}StructGen
 	@rm -f tmp/{lexer,parser}Struct.{h,cpp,o}
 	@rm -f tmp/{lexerNode,parserNode,ruleLhsTokenString,ruleLhsTokenType,ruleRhsLength}Raw.h
 	@rm -f -R tmp
-	@chmod +x bld/hyaccMake.sh
-	@./bld/hyaccMake.sh $(MAKE_PROGRAM) $(HYACC_PATH) clean
 
 reset: start clean
 	@echo Resetting build variables...
@@ -117,11 +118,11 @@ start:
 
 # VERSION CONTROLLER
 
-tmp/version: bld/version.cpp
+bin/version: bld/version.cpp
 	@echo Building version controller...
 	@mkdir -p var
-	@mkdir -p tmp
-	@$(CXX) bld/version.cpp $(CFLAGS) -o tmp/version
+	@mkdir -p bin
+	@$(CXX) bld/version.cpp $(CFLAGS) -o bin/version
 
 # VERSION STAMP
 
@@ -129,13 +130,14 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES)
 	@echo Stamping version...
 	@mkdir -p var
 	@chmod +x bld/getChecksumProgram.sh
-	@./tmp/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
+	@./bin/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
 	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
 
 # INSTALLER
 
 $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
 	@echo Generating installater script...
+	@mkdir -p tmp
 	@printf "#!/bin/sh\n\n\
 ### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
 echo Installing binary...\n\
@@ -148,10 +150,11 @@ exit" > $(INSTALL_SCRIPT)
 
 $(UNINSTALL_SCRIPT): Makefile
 	@echo Generating uninstallater script...
+	@mkdir -p tmp
 	@printf "#!/bin/sh\n\n\
 ### $(UNINSTALL_SCRIPT) -- generated script for uninstalling $(TARGET) ANI Compiler\n\n\
 echo Uninstalling man page...\n\
-rm -f /usr/share/man/man1/anic.1.gz\n\
+rm -f $(MAN_PATH)/$(TARGET).1.gz\n\
 echo Uninstalling binary...\n\
 rm -f $(INSTALL_PATH)/$(TARGET)\n\
 exit" > $(UNINSTALL_SCRIPT)
@@ -159,48 +162,47 @@ exit" > $(UNINSTALL_SCRIPT)
 
 # MANPAGE
 
-$(MAN_PAGE).gz: man/$(MAN_PAGE)
+$(MAN_PAGE).gz: man/$(TARGET).1
 	@echo Packaging man page...
-	@gzip -9 man/$(MAN_PAGE) -c > $(MAN_PAGE).gz
+	@gzip -9 man/$(TARGET).1 -c > $(MAN_PAGE).gz
 
 
 
 # LEXER
 
-tmp/lexerStruct.h tmp/lexerStruct.o: tmp/lexerStructGen src/lexerTable.txt src/lexer.h
+tmp/lexerStruct.h tmp/lexerStruct.o: bin/lexerStructGen src/lexerTable.txt src/lexer.h
 	@echo Generating lexer structures...
-	@mkdir -p var
-	@./tmp/lexerStructGen
-	@echo Compiling lexer structure object...
 	@mkdir -p tmp
+	@./bin/lexerStructGen
+	@echo Compiling lexer structure object...
 	@$(CXX) tmp/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
-tmp/lexerStructGen: bld/lexerStructGen.cpp src/mainDefs.h src/constantDefs.h
+bin/lexerStructGen: bld/lexerStructGen.cpp src/mainDefs.h src/constantDefs.h
 	@echo Building lexer structure generator...
-	@mkdir -p tmp
-	@$(CXX) bld/lexerStructGen.cpp -o tmp/lexerStructGen
+	@mkdir -p bin
+	@$(CXX) bld/lexerStructGen.cpp -o bin/lexerStructGen
 
 # PARSER
 
-tmp/parserStruct.h \
-		: tmp/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserNodeStruct.h
+tmp/parserStruct.h: bin/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserNodeStruct.h
 	@echo Generating parser structures...
 	@mkdir -p tmp
-	@./tmp/parserStructGen
+	@./bin/parserStructGen
 
-tmp/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
+bin/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
 	@echo Building parser structure generator...
-	@mkdir -p tmp
-	@$(CXX) bld/parserStructGen.cpp tmp/lexerStruct.o -o tmp/parserStructGen
+	@mkdir -p bin
+	@$(CXX) bld/parserStructGen.cpp tmp/lexerStruct.o -o bin/parserStructGen
 
-tmp/hyacc: bld/hyaccMake.sh bld/hyacc/makefile
+bin/hyacc: bld/hyaccMake.sh bld/hyacc/makefile
 	@echo Building parser table generator...
+	@mkdir -p bin
 	@chmod +x bld/hyaccMake.sh
 	@./bld/hyaccMake.sh $(MAKE_PROGRAM) bld/hyacc
 
-tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
+tmp/parserTable.txt: bin/hyacc src/parserGrammar.y
 	@echo Constructing parser table...
-	@./tmp/hyacc -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
+	@./bin/hyacc -c -v -D1 -D2 -O1 -Q src/parserGrammar.y
 	@mv y.output tmp/parserTable.txt
 
 
@@ -210,6 +212,7 @@ tmp/parserTable.txt: tmp/hyacc src/parserGrammar.y
 $(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
+	@mkdir -p bin
 	@$(CXX) src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/semmer.cpp \
 		-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
 		$(CFLAGS) \

@@ -35,15 +35,25 @@ class SymbolTable {
 		SymbolTable &operator*=(SymbolTable *st);
 };
 
-// Type suffix specifiers
+// Type category specifiers
+#define CATEGORY_TYPELIST 0
+#define CATEGORY_STDTYPE 1
+#define CATEGORY_FILTERTYPE 2
+#define CATEGORY_OBJECTTYPE 3
+#define CATEGORY_ERRORTYPE 4
 
+// Type suffix specifiers
 #define SUFFIX_CONSTANT 0
 #define SUFFIX_LATCH 1
 #define SUFFIX_STREAM 2
 #define SUFFIX_ARRAY 3
-#define SUFFIX_STREAMARRAY 4
+#define SUFFIX_ARRAYSTREAM 4
 
 // forward declarations
+class Type;
+class TypeList;
+class MemberedType;
+class ErrorType;
 class StdType;
 class FilterType;
 class ObjectType;
@@ -52,41 +62,49 @@ class ErrorType;
 class Type {
 	public:
 		// data members
+		int category; // the category that this type belongs to
 		int suffix; // the type suffix
 		int depth; // stream depth of arrays and streams
 		// mutators
 		void delatch();
+		// allocators/deallocators
+		virtual ~Type();
+		// core methods
+		bool baseEquals(Type &otherType);
 		// operators
 		// virtual
-		virtual bool operator==(StdType &otherType) = 0;
-		virtual bool operator==(FilterType &otherType) = 0;
-		virtual bool operator==(ObjectType &otherType) = 0;
-		virtual bool operator==(ErrorType &otherType) = 0;
-		virtual bool operator>>(StdType &otherType) = 0;
-		virtual bool operator>>(FilterType &otherType) = 0;
-		virtual bool operator>>(ObjectType &otherType) = 0;
-		virtual bool operator>>(ErrorType &otherType) = 0;
-		// non-vitrual
+		virtual bool operator==(Type &otherType) = 0;
+		virtual bool operator>>(Type &otherType) = 0;
+		// non-virtual
 		bool operator!=(Type &otherType);
+};
+
+class TypeList : public Type {
+	public:
+		// data members
+		vector<Type *> list; // pointers to the underlying list of types
+		// allocators/deallocators
+		TypeList(Tree *tree);
+		// operators
+		bool operator==(Type &otherType);
+		bool operator>>(Type &otherType);
 };
 
 class MemberedType : public Type {
 	public:
+		// allocators/deallocators
+		virtual ~MemberedType();
 		// data members
 		vector<Type *> memberList;
 };
 
 class ErrorType : public Type {
 	public:
+		// allocators/deallocators
+		ErrorType();
 		// operators
-		bool operator==(StdType &otherType);
-		bool operator==(FilterType &otherType);
-		bool operator==(ObjectType &otherType);
-		bool operator==(ErrorType &otherType);
-		bool operator>>(StdType &otherType);
-		bool operator>>(FilterType &otherType);
-		bool operator>>(ObjectType &otherType);
-		bool operator>>(ErrorType &otherType);
+		bool operator==(Type &otherType);
+		bool operator>>(Type &otherType);
 };
 
 // Type kind specifiers
@@ -135,35 +153,24 @@ class StdType : public Type {
 		int kind; // the class of type that this is
 		// allocators/deallocators
 		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		~StdType();
+		// core methods
+		bool isComparable();
 		// operators
-		bool operator==(StdType &otherType);
-		bool operator==(FilterType &otherType);
-		bool operator==(ObjectType &otherType);
-		bool operator==(ErrorType &otherType);
-		bool operator>>(StdType &otherType);
-		bool operator>>(FilterType &otherType);
-		bool operator>>(ObjectType &otherType);
-		bool operator>>(ErrorType &otherType);
+		bool operator==(Type &otherType);
+		bool operator>>(Type &otherType);
 };
 
 class FilterType : public MemberedType {
 	public:
 		// data members
-		Type *from; // the source of this object type
-		Type *to; // the destination of this object type
+		TypeList *from; // the source of this object type
+		TypeList *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(TypeList *from, TypeList *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// operators
-		bool operator==(StdType &otherType);
-		bool operator==(FilterType &otherType);
-		bool operator==(ObjectType &otherType);
-		bool operator==(ErrorType &otherType);
-		bool operator>>(StdType &otherType);
-		bool operator>>(FilterType &otherType);
-		bool operator>>(ObjectType &otherType);
-		bool operator>>(ErrorType &otherType);
+		bool operator==(Type &otherType);
+		bool operator>>(Type &otherType);
 };
 
 class ObjectType : public MemberedType {
@@ -175,14 +182,8 @@ class ObjectType : public MemberedType {
 		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// operators
-		bool operator==(StdType &otherType);
-		bool operator==(FilterType &otherType);
-		bool operator==(ObjectType &otherType);
-		bool operator==(ErrorType &otherType);
-		bool operator>>(StdType &otherType);
-		bool operator>>(FilterType &otherType);
-		bool operator>>(ObjectType &otherType);
-		bool operator>>(ErrorType &otherType);
+		bool operator==(Type &otherType);
+		bool operator>>(Type &otherType);
 };
 
 // semantic analysis helper blocks

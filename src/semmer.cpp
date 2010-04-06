@@ -85,90 +85,181 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 }
 
 // Type functions
-
-// allocators/deallocators
-
-Type::Type(int kind) : kind(kind), base(NULL), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
-Type::Type(int kind, SymbolTable *base) : kind(kind), base(base), suffix(SUFFIX_NONE), next(NULL), from(NULL), to(NULL) {}
-Type::Type(int kind, SymbolTable *base, int suffix) : kind(kind), base(base), suffix(suffix), next(NULL), from(NULL), to(NULL) {}
-Type::Type(Type *from, Type *to) : kind(kind), base(base), suffix(suffix), next(NULL), from(from), to(to) {}
-
-Type::Type(Type &otherType) {
-	this->kind = otherType.kind;
-	this->base = otherType.base;
-	this->suffix = otherType.suffix;
-	if (otherType.next != NULL) {
-		this->next = new Type(*(otherType.next));
-	} else {
-		this->next = NULL;
-	}
-	if (otherType.from != NULL) {
-		this->from = new Type(*(otherType.from));
-	} else {
-		this->from = NULL;
-	}
-	if (otherType.to != NULL) {
-		this->to = new Type(*(otherType.to));
-	} else {
-		this->to = NULL;
-	}
-}
-
-Type::~Type() {
-	delete next;
-	delete from;
-	delete to;
-
-}
-
-// mutators
-
+bool Type::baseEquals(Type &otherType) {return (this->suffix == otherType.suffix && this->suffix == otherType.suffix);}
+Type::~Type() {}
 void Type::delatch() {
 	if (this->suffix == SUFFIX_LATCH) {
-		this->suffix = SUFFIX_NONE;
-	} else if (this->suffix > 0) {
-		(this->suffix)--;
+		this->suffix = SUFFIX_CONSTANT;
+	} else if (this->suffix == SUFFIX_STREAM) {
+		(this->depth)--;
+		if (this->depth == 0) {
+			this->suffix = SUFFIX_LATCH;
+		}
+	} else if (this->suffix == SUFFIX_ARRAY) {
+		(this->depth)--;
+		if (this->depth == 0) {
+			this->suffix = SUFFIX_CONSTANT;
+		}
+	} else if (this->suffix == SUFFIX_ARRAYSTREAM) {
+		(this->depth)--;
+		this->suffix = SUFFIX_ARRAY;
+	}
+}
+bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
+
+// TypeList functions
+TypeList::TypeList(Tree *tree) {
+	category = CATEGORY_TYPELIST;
+	// LOL
+}
+bool TypeList::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (list.size() != otherTypeCast->list.size()) {
+			return false;
+		}
+		vector<Type *>::iterator iter1 = list.begin();
+		vector<Type *>::iterator iter2 = otherTypeCast->list.begin();
+		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
+			if (**iter1 != **iter2) {
+				return false;
+			}
+			iter1++;
+			iter2++;
+		}
+		return true;
+	} else {
+		return false;
+	}
+}
+bool TypeList::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (list.size() != otherTypeCast->list.size()) {
+			return false;
+		}
+		vector<Type *>::iterator iter1 = list.begin();
+		vector<Type *>::iterator iter2 = otherTypeCast->list.begin();
+		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
+			if (! (**iter1 >> **iter2)) {
+				return false;
+			}
+			iter1++;
+			iter2++;
+		}
+		return true;
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		return false;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
 	}
 }
 
-// operators
+// MemberedType functions
+MemberedType::~MemberedType() {}
 
-bool Type::operator==(int kind) {
-	return (this->kind == kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
+// ErrorType functions
+ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
+bool ErrorType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_ERRORTYPE) {
+		return (this == &otherType);
+	} else {
+		return false;
+	}
 }
-
-bool Type::operator!=(int kind) {
-	return (!operator==(kind));
-}
-
-bool Type::operator==(Type &otherType) {
-	return (
-		this->kind == otherType.kind && this->base == otherType.base &&
-		( ((this->next == NULL) == (otherType.next == NULL)) && (this->next != NULL ? (*(this->next) == *(otherType.next)) : true) ) &&
-		( ((this->from == NULL) == (otherType.from == NULL)) && (this->from != NULL ? (*(this->from) == *(otherType.from)) : true) ) &&
-		( ((this->to == NULL) == (otherType.to == NULL)) && (this->to != NULL ? (*(this->to) == *(otherType.to)) : true) )
-		);
-}
-
-bool Type::operator!=(Type &otherType) {
-	return (!operator==(otherType));
-}
-
-// raw comparability operators
-
-bool Type::operator>=(int kind) {
-	return (this->kind >= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
-}
-
-bool Type::operator<=(int kind) {
-	return (this->kind <= kind && base == NULL && suffix == SUFFIX_NONE && next == NULL);
-}
-
-// sendability checking operator
-
-bool Type::operator>>(Type &otherType) {
-// LOL
+bool ErrorType::operator>>(Type &otherType) {
 	return false;
+}
+
+// StdType functions
+StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
+bool StdType::isComparable() {return (this->kind >= STD_MIN_COMPARABLE && this->kind <= STD_MAX_COMPARABLE);}
+bool StdType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		StdType *otherTypeCast = (StdType *)(&otherType);
+		return (this->kind == otherTypeCast->kind && baseEquals(otherType));
+	} else {
+		return false;
+	}
+}
+bool StdType::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		StdType *otherTypeCast = (StdType *)(&otherType);
+		return (this->isComparable() && otherTypeCast->isComparable() && this->kind <= otherTypeCast->kind && baseEquals(otherType));
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
+	}
+}
+
+// FilterType functions
+FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
+FilterType::~FilterType() {delete from; delete to;}
+bool FilterType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_FILTERTYPE) {
+// LOL
+	} else {
+		return false;
+	}
+}
+bool FilterType::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+// LOL
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
+	}
+}
+
+// ObjectType functions
+ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
+// LOL
+}
+ObjectType::~ObjectType() {delete base;}
+bool ObjectType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_OBJECTTYPE) {
+// LOL
+	} else {
+		return false;
+	}
+}
+bool ObjectType::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+// LOL
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
+	}
 }
 
 // to-string functions

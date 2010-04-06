@@ -165,6 +165,16 @@ bool TypeList::operator>>(Type &otherType) {
 		return false;
 	}
 }
+TypeList::operator string() {
+	string acc;
+	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
+		acc += (string)(**iter);
+		if ((iter+1) != list.end()) {
+			acc += ", ";
+		}
+	}
+	return acc;
+}
 
 // MemberedType functions
 MemberedType::~MemberedType() {}
@@ -180,6 +190,9 @@ bool ErrorType::operator==(Type &otherType) {
 }
 bool ErrorType::operator>>(Type &otherType) {
 	return false;
+}
+ErrorType::operator string() {
+	return "error";
 }
 
 // StdType functions
@@ -215,72 +228,8 @@ bool StdType::operator>>(Type &otherType) {
 		return false;
 	}
 }
-
-// FilterType functions
-FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
-FilterType::~FilterType() {delete from; delete to;}
-bool FilterType::operator==(Type &otherType) {
-	if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*(this->from) == *(otherTypeCast->from) && *(this->to) == *(otherTypeCast->to) && baseEquals(otherType));
-	} else {
-		return false;
-	}
-}
-bool FilterType::operator>>(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
-	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-// LOL
-	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-// LOL
-	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
-	}
-}
-
-// ObjectType functions
-ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
-	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
-// LOL
-}
-ObjectType::~ObjectType() {delete base;}
-bool ObjectType::operator==(Type &otherType) {
-	if (otherType.category == CATEGORY_OBJECTTYPE) {
-// LOL
-	} else {
-		return false;
-	}
-}
-bool ObjectType::operator>>(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
-	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-// LOL
-	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-// LOL
-	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
-	}
-}
-
-// to-string functions
-
-// returns a string representation of the given type kind; does *not* work for USR kinds
-string typeKind2String(int kind) {
+StdType::operator string() {
 	switch(kind) {
-		// error type
-		case TYPE_ERROR:
-			return "error";
 		// null type
 		case STD_NULL:
 			return "null";
@@ -348,6 +297,74 @@ string typeKind2String(int kind) {
 		default:
 			return "";
 	}
+}
+
+// FilterType functions
+FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
+FilterType::~FilterType() {delete from; delete to;}
+bool FilterType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+		return (*(this->from) == *(otherTypeCast->from) && *(this->to) == *(otherTypeCast->to) && baseEquals(otherType));
+	} else {
+		return false;
+	}
+}
+bool FilterType::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		return false;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
+	}
+}
+FilterType::operator string() {
+	string acc("[");
+	acc += (string)(*from);
+	acc += " --> ";
+	acc += (string)(*to);
+	acc += "]";
+	return acc;
+}
+
+// ObjectType functions
+ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
+// LOL
+}
+ObjectType::~ObjectType() {delete base;}
+bool ObjectType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_OBJECTTYPE) {
+// LOL
+	} else {
+		return false;
+	}
+}
+bool ObjectType::operator>>(Type &otherType) {
+	if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		return false;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+// LOL
+	} else if (otherType.category == CATEGORY_ERRORTYPE) {
+		return false;
+	}
+}
+ObjectType::operator string() {
+	return base->id;
 }
 
 // returns a string representation of the given type

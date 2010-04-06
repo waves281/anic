@@ -75,6 +75,7 @@ class Type {
 		// virtual
 		virtual bool operator==(Type &otherType) = 0;
 		virtual bool operator>>(Type &otherType) = 0;
+		virtual operator string() = 0;
 		// non-virtual
 		bool operator!=(Type &otherType);
 };
@@ -88,6 +89,7 @@ class TypeList : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator>>(Type &otherType);
+		operator string();
 };
 
 class MemberedType : public Type {
@@ -105,6 +107,7 @@ class ErrorType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator>>(Type &otherType);
+		operator string();
 };
 
 // Type kind specifiers
@@ -158,6 +161,7 @@ class StdType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator>>(Type &otherType);
+		operator string();
 };
 
 class FilterType : public MemberedType {
@@ -171,6 +175,7 @@ class FilterType : public MemberedType {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator>>(Type &otherType);
+		operator string();
 };
 
 class ObjectType : public MemberedType {
@@ -184,6 +189,7 @@ class ObjectType : public MemberedType {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator>>(Type &otherType);
+		operator string();
 };
 
 // semantic analysis helper blocks

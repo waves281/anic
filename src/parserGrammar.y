@@ -239,9 +239,12 @@ TypeSuffix :
 	| SLASH
 	| ComplexTypeSuffix
 	;
-ComplexTypeSuffix : DSLASH
-	| LSQUARE RSQUARE
+ComplexTypeSuffix : LSQUARE RSQUARE
 	| LSQUARE RSQUARE ComplexTypeSuffix
+	| ComplexTypeSuffixNoArray
+	;
+ComplexTypeSuffixNoArray : DSLASH
+	| DSLASH ComplexTypeSuffixNoArray
 	;
 NodeType : LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE

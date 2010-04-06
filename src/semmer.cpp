@@ -7,8 +7,8 @@
 int semmerErrorCode;
 bool semmerEventuallyGiveUp;
 
-Type *nullType = new Type(STD_NULL);
-Type *errType = new Type(TYPE_ERROR);
+Type *nullType = new StdType(STD_NULL);
+Type *errType = new ErrorType();
 
 // SymbolTable functions
 

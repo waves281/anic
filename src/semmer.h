@@ -47,6 +47,7 @@ class SymbolTable {
 class StdType;
 class FilterType;
 class ObjectType;
+class ErrorType;
 
 class Type {
 	public:
@@ -60,10 +61,11 @@ class Type {
 		virtual bool operator==(StdType &otherType) = 0;
 		virtual bool operator==(FilterType &otherType) = 0;
 		virtual bool operator==(ObjectType &otherType) = 0;
+		virtual bool operator==(ErrorType &otherType) = 0;
 		virtual bool operator>>(StdType &otherType) = 0;
 		virtual bool operator>>(FilterType &otherType) = 0;
 		virtual bool operator>>(ObjectType &otherType) = 0;
-		virtual bool isErr() = 0;
+		virtual bool operator>>(ErrorType &otherType) = 0;
 		// non-vitrual
 		bool operator!=(Type &otherType);
 };
@@ -77,7 +79,14 @@ class MemberedType : public Type {
 class ErrorType : public Type {
 	public:
 		// operators
-		bool isErr();
+		bool operator==(StdType &otherType);
+		bool operator==(FilterType &otherType);
+		bool operator==(ObjectType &otherType);
+		bool operator==(ErrorType &otherType);
+		bool operator>>(StdType &otherType);
+		bool operator>>(FilterType &otherType);
+		bool operator>>(ObjectType &otherType);
+		bool operator>>(ErrorType &otherType);
 };
 
 // Type kind specifiers
@@ -131,9 +140,11 @@ class StdType : public Type {
 		bool operator==(StdType &otherType);
 		bool operator==(FilterType &otherType);
 		bool operator==(ObjectType &otherType);
+		bool operator==(ErrorType &otherType);
 		bool operator>>(StdType &otherType);
 		bool operator>>(FilterType &otherType);
 		bool operator>>(ObjectType &otherType);
+		bool operator>>(ErrorType &otherType);
 };
 
 class FilterType : public MemberedType {
@@ -148,9 +159,11 @@ class FilterType : public MemberedType {
 		bool operator==(StdType &otherType);
 		bool operator==(FilterType &otherType);
 		bool operator==(ObjectType &otherType);
+		bool operator==(ErrorType &otherType);
 		bool operator>>(StdType &otherType);
 		bool operator>>(FilterType &otherType);
 		bool operator>>(ObjectType &otherType);
+		bool operator>>(ErrorType &otherType);
 };
 
 class ObjectType : public MemberedType {
@@ -165,9 +178,11 @@ class ObjectType : public MemberedType {
 		bool operator==(StdType &otherType);
 		bool operator==(FilterType &otherType);
 		bool operator==(ObjectType &otherType);
+		bool operator==(ErrorType &otherType);
 		bool operator>>(StdType &otherType);
 		bool operator>>(FilterType &otherType);
 		bool operator>>(ObjectType &otherType);
+		bool operator>>(ErrorType &otherType);
 };
 
 // semantic analysis helper blocks
@@ -183,7 +198,7 @@ class ObjectType : public MemberedType {
 #define GET_TYPE_FOOTER \
 	/* if we could't resolve a valid type, use the error type */\
 	if (type == NULL) {\
-		type = errType;\
+		type = ErrorType;\
 	}\
 	/* latch the type to the tree node */\
 	tree->type = type;\

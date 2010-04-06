@@ -1,0 +1,350 @@
+// state 0 (core)
+// lowercase letters
+0 a ID 1
+0 b ID 1
+0 c ID 1
+0 d ID 1
+0 e ID 1
+0 f ID 1
+0 g ID 1
+0 h ID 1
+0 i ID 1
+0 j ID 1
+0 k ID 1
+0 l ID 1
+0 m ID 1
+0 n ID 1
+0 o ID 1
+0 p ID 1
+0 q ID 1
+0 r ID 1
+0 s ID 1
+0 t ID 1
+0 u ID 1
+0 v ID 1
+0 w ID 1
+0 x ID 1
+0 y ID 1
+0 z ID 1
+// uppercase letters
+0 A ID 1
+0 B ID 1
+0 C ID 1
+0 D ID 1
+0 E ID 1
+0 F ID 1
+0 G ID 1
+0 H ID 1
+0 I ID 1
+0 J ID 1
+0 K ID 1
+0 L ID 1
+0 M ID 1
+0 N ID 1
+0 O ID 1
+0 P ID 1
+0 Q ID 1
+0 R ID 1
+0 S ID 1
+0 T ID 1
+0 U ID 1
+0 V ID 1
+0 W ID 1
+0 X ID 1
+0 Y ID 1
+0 Z ID 1
+// standard numbers
+0 0 INUM 3
+0 1 INUM 2
+0 2 INUM 2
+0 3 INUM 2
+0 4 INUM 2
+0 5 INUM 2
+0 6 INUM 2
+0 7 INUM 2
+0 8 INUM 2
+0 9 INUM 2
+// miscellaneous control characters
+0 ( LBRACKET -1
+0 ) RBRACKET -1
+0 [ LSQUARE -1
+0 ] RSQUARE -1
+0 { LCURLY -1
+0 } RCURLY -1
+0 = EQUALS 10
+0 . PERIOD 115
+0 , COMMA -1
+0 \ SLASH 102
+0 ; SEMICOLON -1
+0 ? QUESTION 113
+0 : COLON 114
+// quote characters
+0 ' CQUOTE -1
+0 " SQUOTE -1
+// package traversal operators
+0 @ AT -1
+// arithmetic characters
+0 + PLUS 104
+0 - MINUS 105
+0 * TIMES -1
+0 / DIVIDE 106
+0 % MOD -1
+// comparison characters
+0 < LT 109
+0 > GT 111
+// logical characters
+0 ! NOT 11
+0 ~ COMPLEMENT -1
+0 & AND 107
+0 | OR 108
+0 ^ XOR -1
+
+// state 1 (continuing id)
+// lowercase letters
+1 a ID 1
+1 b ID 1
+1 c ID 1
+1 d ID 1
+1 e ID 1
+1 f ID 1
+1 g ID 1
+1 h ID 1
+1 i ID 1
+1 j ID 1
+1 k ID 1
+1 l ID 1
+1 m ID 1
+1 n ID 1
+1 o ID 1
+1 p ID 1
+1 q ID 1
+1 r ID 1
+1 s ID 1
+1 t ID 1
+1 u ID 1
+1 v ID 1
+1 w ID 1
+1 x ID 1
+1 y ID 1
+1 z ID 1
+// uppercase letters
+1 A ID 1
+1 B ID 1
+1 C ID 1
+1 D ID 1
+1 E ID 1
+1 F ID 1
+1 G ID 1
+1 H ID 1
+1 I ID 1
+1 J ID 1
+1 K ID 1
+1 L ID 1
+1 M ID 1
+1 N ID 1
+1 O ID 1
+1 P ID 1
+1 Q ID 1
+1 R ID 1
+1 S ID 1
+1 T ID 1
+1 U ID 1
+1 V ID 1
+1 W ID 1
+1 X ID 1
+1 Y ID 1
+1 Z ID 1
+// standard numbers
+1 0 ID 1
+1 1 ID 1
+1 2 ID 1
+1 3 ID 1
+1 4 ID 1
+1 5 ID 1
+1 6 ID 1
+1 7 ID 1
+1 8 ID 1
+1 9 ID 1
+// miscellaneous name chars
+1 _ ID 1
+
+// state 2 (regular integer)
+// standard numbers
+2 0 INUM 2
+2 1 INUM 2
+2 2 INUM 2
+2 3 INUM 2
+2 4 INUM 2
+2 5 INUM 2
+2 6 INUM 2
+2 7 INUM 2
+2 8 INUM 2
+2 9 INUM 2
+// numeric modifiers
+2 . ERROR 4
+2 e ERROR 6
+
+// state 3 (saw an initial 0)
+// double zero (fail)
+3 0 FAIL -1
+// standard octal numbers, lacking zero
+3 1 INUM 8
+3 2 INUM 8
+3 3 INUM 8
+3 4 INUM 8
+3 5 INUM 8
+3 6 INUM 8
+3 7 INUM 8
+// hexadecimal modifier
+3 x ERROR 9
+// numeric modifiers
+3 . ERROR 4
+
+// state 4 (saw a decimal in a number)
+// standard numbers
+4 0 FNUM 5
+4 1 FNUM 5
+4 2 FNUM 5
+4 3 FNUM 5
+4 4 FNUM 5
+4 5 FNUM 5
+4 6 FNUM 5
+4 7 FNUM 5
+4 8 FNUM 5
+4 9 FNUM 5
+
+// state 5 (saw number decimal number)
+5 0 FNUM 5
+5 1 FNUM 5
+5 2 FNUM 5
+5 3 FNUM 5
+5 4 FNUM 5
+5 5 FNUM 5
+5 6 FNUM 5
+5 7 FNUM 5
+5 8 FNUM 5
+5 9 FNUM 5
+// numeric modifiers
+5 e ERROR 6
+
+// state 6 (saw an e in a number, possible + or - upcoming)
+// standard numbers
+6 0 FNUM 7
+6 1 FNUM 7
+6 2 FNUM 7
+6 3 FNUM 7
+6 4 FNUM 7
+6 5 FNUM 7
+6 6 FNUM 7
+6 7 FNUM 7
+6 8 FNUM 7
+6 9 FNUM 7
+// signage specifiers
+6 + ERROR 7
+6 - ERROR 7
+
+// state 7 (e in a number, no more + or - allowed)
+// standard numbers
+7 0 FNUM 7
+7 1 FNUM 7
+7 2 FNUM 7
+7 3 FNUM 7
+7 4 FNUM 7
+7 5 FNUM 7
+7 6 FNUM 7
+7 7 FNUM 7
+7 8 FNUM 7
+7 9 FNUM 7
+
+// state 8 (continuation of an octal number)
+// standard octal numbers
+8 0 INUM 8
+8 1 INUM 8
+8 2 INUM 8
+8 3 INUM 8
+8 4 INUM 8
+8 5 INUM 8
+8 6 INUM 8
+8 7 INUM 8
+
+// state 9 (continuation of a hex number)
+// standard numbers
+9 0 INUM 9
+9 1 INUM 9
+9 2 INUM 9
+9 3 INUM 9
+9 4 INUM 9
+9 5 INUM 9
+9 6 INUM 9
+9 7 INUM 9
+9 8 INUM 9
+9 9 INUM 9
+// standard lowercase hex digits
+9 a INUM 9
+9 b INUM 9
+9 c INUM 9
+9 d INUM 9
+9 e INUM 9
+9 f INUM 9
+// standard uppercase hex digits
+9 A INUM 9
+9 B INUM 9
+9 C INUM 9
+9 D INUM 9
+9 E INUM 9
+9 F INUM 9
+
+// state 10 (= seen)
+10 = DEQUALS -1
+10 > ERARROW -1
+
+// state 11 (! seen)
+11 = NEQUALS -1
+
+// state 102 (\ seen)
+102 \ DSLASH 103
+102 * SSLASH -1
+
+// state 103 (\\ seen)
+103 * DSSLASH -1
+
+// state 104 (+ seen)
+104 + DPLUS -1
+
+// state 105 (- seen)
+105 - DMINUS 112
+105 > RARROW -1
+
+// state 106 (/ seen)
+106 / REGCOMMENT -1
+106 * STARCOMMENT -1
+
+// state 107 (& seen)
+107 & DAND -1
+
+// state 108 (| seen)
+108 | DOR -1
+
+// state 109 (< seen)
+109 < LS -1
+109 = LE -1
+109 - LARROW 110
+
+// state 110 (<- seen)
+110 > LRARROW -1
+
+// state 111 (> seen)
+111 > RS -1
+111 = GE -1
+
+// state 112 (-- seen)
+112 > DRARROW -1
+
+// state 113 (? seen)
+113 ? DQUESTION -1
+
+// state 114 (: seen)
+114 : DCOLON -1
+
+// state 115 (. seen)
+115 . DPERIOD -1

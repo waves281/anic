@@ -177,7 +177,7 @@ class ObjectType : public MemberedType {
 	public:
 		// data members
 		SymbolTable *base; // the Node that defines this type
-		vector<Type *> constructorList; // list of this object's constructors
+		vector<TypeList *> constructorList; // list of the types of this object's constructors (each one is a TypeList)
 		// allocators/deallocators
 		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();

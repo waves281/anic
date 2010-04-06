@@ -152,10 +152,15 @@ bool TypeList::operator>>(Type &otherType) {
 		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-// LOL
+		return (*this >> *(otherTypeCast->from));
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-// LOL
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+			if (*this >> **iter) {
+				return true;
+			}
+		}
+		return false;
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
 		return false;
 	}
@@ -197,10 +202,15 @@ bool StdType::operator>>(Type &otherType) {
 		return (this->isComparable() && otherTypeCast->isComparable() && this->kind <= otherTypeCast->kind && baseEquals(otherType));
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-// LOL
+		return (*this >> *(otherTypeCast->from));
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-// LOL
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+			if (*this >> **iter) {
+				return true;
+			}
+		}
+		return false;
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
 		return false;
 	}
@@ -211,7 +221,8 @@ FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : fr
 FilterType::~FilterType() {delete from; delete to;}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
-// LOL
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+		return (*(this->from) == *(otherTypeCast->from) && *(this->to) == *(otherTypeCast->to) && baseEquals(otherType));
 	} else {
 		return false;
 	}
@@ -221,9 +232,8 @@ bool FilterType::operator>>(Type &otherType) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-// LOL
+		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
 // LOL
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
@@ -234,7 +244,8 @@ bool FilterType::operator>>(Type &otherType) {
 }
 
 // ObjectType functions
-ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
+ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 // LOL
 }
 ObjectType::~ObjectType() {delete base;}
@@ -250,7 +261,7 @@ bool ObjectType::operator>>(Type &otherType) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-// LOL
+		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 // LOL

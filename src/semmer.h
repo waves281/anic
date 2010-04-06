@@ -43,22 +43,29 @@ class SymbolTable {
 #define SUFFIX_ARRAY 3
 #define SUFFIX_STREAMARRAY 4
 
+// forward declarations
+class StdType;
+class FilterType;
+class ObjectType;
+
 class Type {
 	public:
 		// data members
 		int suffix; // the type suffix
 		int depth; // stream depth of arrays and streams
-		virtual Type() = 0;
 		// mutators
 		void delatch();
 		// operators
-		virtual bool operator==(int kind) = 0;
-		virtual bool operator!=(int kind) = 0;
-		virtual bool operator==(Type &otherType) = 0;
-		virtual bool operator!=(Type &otherType) = 0;
-		virtual bool operator<=(int kind) = 0;
-		virtual bool operator>=(int kind) = 0;
-		virtual bool operator>>(Type &otherType) = 0;
+		// virtual
+		virtual bool operator==(StdType &otherType) = 0;
+		virtual bool operator==(FilterType &otherType) = 0;
+		virtual bool operator==(ObjectType &otherType) = 0;
+		virtual bool operator>>(StdType &otherType) = 0;
+		virtual bool operator>>(FilterType &otherType) = 0;
+		virtual bool operator>>(ObjectType &otherType) = 0;
+		virtual bool isErr() = 0;
+		// non-vitrual
+		bool operator!=(Type &otherType);
 };
 
 class MemberedType : public Type {
@@ -67,63 +74,66 @@ class MemberedType : public Type {
 		vector<Type *> memberList;
 };
 
+class ErrorType : public Type {
+	public:
+		// operators
+		bool isErr();
+};
+
 // Type kind specifiers
 
-#define TYPE_ERROR 0
+#define STD_NULL 0
+#define STD_NODE 1
 
-#define STD_NULL 1
-#define STD_NODE 2
+#define STD_MIN_COMPARABLE 2 /* anything in the range is considered comparable */
 
-#define STD_MIN_COMPARABLE 3 /* anything in the range is considered comparable */
+#define STD_INT 2
+#define STD_FLOAT 3
+#define STD_BOOL 4
+#define STD_CHAR 5
+#define STD_STRING 6
 
-#define STD_INT 3
-#define STD_FLOAT 4
-#define STD_BOOL 5
-#define STD_CHAR 6
-#define STD_STRING 7
+#define STD_MAX_COMPARABLE 6 /* anything in the range is considered comparable */
 
-#define STD_MAX_COMPARABLE 7 /* anything in the range is considered comparable */
+#define STD_NOT 7
+#define STD_COMPLEMENT 8
+#define STD_DPLUS 9
+#define STD_DMINUS 10
 
-#define STD_NOT 8
-#define STD_COMPLEMENT 9
-#define STD_DPLUS 10
-#define STD_DMINUS 11
+#define STD_DOR 11
+#define STD_DAND 12
+#define STD_OR 13
+#define STD_XOR 14
+#define STD_AND 15
+#define STD_DEQUALS 16
+#define STD_NEQUALS 17
+#define STD_LT 18
+#define STD_GT 19
+#define STD_LE 20
+#define STD_GE 21
+#define STD_LS 22
+#define STD_RS 23
+#define STD_TIMES 24
+#define STD_DIVIDE 25
+#define STD_MOD 26
 
-#define STD_DOR 12
-#define STD_DAND 13
-#define STD_OR 14
-#define STD_XOR 15
-#define STD_AND 16
-#define STD_DEQUALS 17
-#define STD_NEQUALS 18
-#define STD_LT 19
-#define STD_GT 20
-#define STD_LE 21
-#define STD_GE 22
-#define STD_LS 23
-#define STD_RS 24
-#define STD_TIMES 25
-#define STD_DIVIDE 26
-#define STD_MOD 27
-
-#define STD_PLUS 28
-#define STD_MINUS 29
+#define STD_PLUS 27
+#define STD_MINUS 28
 
 class StdType : public Type {
 	public:
 		// data members
 		int kind; // the class of type that this is
 		// allocators/deallocators
-		StdType(int kind, int suffix = SUFFIX_CONSTANT);
+		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~StdType();
 		// operators
-		bool operator==(int kind);
-		bool operator!=(int kind);
-		bool operator==(Type &otherType);
-		bool operator!=(Type &otherType);
-		bool operator<=(int kind);
-		bool operator>=(int kind);
-		bool operator>>(Type &otherType);
+		bool operator==(StdType &otherType);
+		bool operator==(FilterType &otherType);
+		bool operator==(ObjectType &otherType);
+		bool operator>>(StdType &otherType);
+		bool operator>>(FilterType &otherType);
+		bool operator>>(ObjectType &otherType);
 };
 
 class FilterType : public MemberedType {
@@ -132,16 +142,15 @@ class FilterType : public MemberedType {
 		Type *from; // the source of this object type
 		Type *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT);
+		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// operators
-		bool operator==(int kind);
-		bool operator!=(int kind);
-		bool operator==(Type &otherType);
-		bool operator!=(Type &otherType);
-		bool operator<=(int kind);
-		bool operator>=(int kind);
-		bool operator>>(Type &otherType);
+		bool operator==(StdType &otherType);
+		bool operator==(FilterType &otherType);
+		bool operator==(ObjectType &otherType);
+		bool operator>>(StdType &otherType);
+		bool operator>>(FilterType &otherType);
+		bool operator>>(ObjectType &otherType);
 };
 
 class ObjectType : public MemberedType {
@@ -150,16 +159,15 @@ class ObjectType : public MemberedType {
 		SymbolTable *base; // the Node that defines this type
 		vector<Type *> constructorList; // list of this object's constructors
 		// allocators/deallocators
-		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT);
+		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// operators
-		bool operator==(int kind);
-		bool operator!=(int kind);
-		bool operator==(Type &otherType);
-		bool operator!=(Type &otherType);
-		bool operator<=(int kind);
-		bool operator>=(int kind);
-		bool operator>>(Type &otherType);
+		bool operator==(StdType &otherType);
+		bool operator==(FilterType &otherType);
+		bool operator==(ObjectType &otherType);
+		bool operator>>(StdType &otherType);
+		bool operator>>(FilterType &otherType);
+		bool operator>>(ObjectType &otherType);
 };
 
 // semantic analysis helper blocks

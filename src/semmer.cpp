@@ -895,7 +895,7 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<type2String(inType)<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*inType<<")");
 			}
 		}
 	} else if (*primaryc == TOKEN_PrimLiteral) {
@@ -976,7 +976,7 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (type == NULL) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1129,7 +1129,7 @@ Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else { // else if we derived an erroneous type for the header
 		Token curToken = tc->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node header type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 
 	GET_TYPE_FOOTER;
@@ -1172,19 +1172,19 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 				if (!(*initType >> *type)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<type2String(type)<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<type2String(initType)<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<*type<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<*initType<<")");
 				}
 			} else { // else if we couldn't derive a type for the initializer
 				Token curToken = st->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 			}
 		}
 	} else { // else if we couldn't derive a type for the instantiation
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instantiation type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1211,7 +1211,7 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	if (type == NULL && *nodec != TOKEN_SuffixedIdentifier) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1270,8 +1270,8 @@ Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 			if (*inType != *labelType) { // if the type doesn't match, throw an error
 				Token curToken = lpc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<type2String(labelType)<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<*labelType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 			}
 		}
 		// derive the to-type of this label
@@ -1297,8 +1297,8 @@ Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 			Token curToken = toTree->t;
 			Token curToken2 = firstToTree->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"switch destination types are inconsistent");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<type2String(toType)<<")");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<type2String(firstToType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<*toType<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<*firstToType<<")");
 		}
 	}
 	GET_TYPE_FOOTER;
@@ -1323,7 +1323,7 @@ Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1365,13 +1365,13 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // OpenTerm
 			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueType<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*trueType<<")");
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1390,13 +1390,13 @@ Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // ClosedTerm
 			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<type2String(trueType)<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<type2String(trueType)<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueType<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*trueType<<")");
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1430,7 +1430,7 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<type2String(inType)<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
 			// fail typing
 			outType = NULL;
 			break;

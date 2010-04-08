@@ -233,7 +233,7 @@ RetList : DRARROW TypeList
 Param : Type ID
 	;
 Type : NonArraySuffixedIdentifier TypeSuffix
-	| NodeType TypeSuffix
+	| FilterType TypeSuffix
 	;
 TypeSuffix :
 	| SLASH
@@ -249,7 +249,7 @@ ArrayTypeSuffix : LSQUARE RSQUARE
 ComplexTypeSuffixNoArray : DSLASH
 	| DSLASH ComplexTypeSuffixNoArray
 	;
-NodeType : LSQUARE TypeList RSQUARE
+FilterType : LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
 	;

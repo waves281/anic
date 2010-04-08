@@ -86,6 +86,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // Type functions
 bool Type::baseEquals(Type &otherType) {return (this->suffix == otherType.suffix && this->suffix == otherType.suffix);}
+bool Type::baseSendable(Type &otherType) { return (this->suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
 Type::~Type() {}
 void Type::delatch() {
 	if (this->suffix == SUFFIX_LATCH) {
@@ -100,17 +101,21 @@ void Type::delatch() {
 		if (this->depth == 0) {
 			this->suffix = SUFFIX_CONSTANT;
 		}
-	} else if (this->suffix == SUFFIX_ARRAYSTREAM) {
-		(this->depth)--;
-		this->suffix = SUFFIX_ARRAY;
 	}
 }
+Type::operator bool() {return (category != CATEGORY_ERRORTYPE);}
+bool Type::operator!() {return (category == CATEGORY_ERRORTYPE);}
 bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 TypeList::TypeList(Tree *tree) {
 	category = CATEGORY_TYPELIST;
 	// LOL
+}
+TypeList::~TypeList() {
+	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
+		delete (*iter);
+	}
 }
 bool TypeList::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -132,37 +137,41 @@ bool TypeList::operator==(Type &otherType) {
 		return false;
 	}
 }
-bool TypeList::operator>>(Type &otherType) {
+Type &TypeList::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
-			return false;
+			return *errType;
 		}
 		vector<Type *>::iterator iter1 = list.begin();
 		vector<Type *>::iterator iter2 = otherTypeCast->list.begin();
 		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
 			if (! (**iter1 >> **iter2)) {
-				return false;
+				return *errType;
 			}
 			iter1++;
 			iter2++;
 		}
-		return true;
+		return *nullType;
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
+		return *errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*this >> *(otherTypeCast->from));
+		if (*this >> *(otherTypeCast->from)) {
+			return *(otherTypeCast->to);
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
 			if (*this >> **iter) {
-				return true;
+				return otherType;
 			}
 		}
-		return false;
+		return *errType;
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
+		return otherType;
 	}
 }
 TypeList::operator string() {
@@ -188,8 +197,8 @@ bool ErrorType::operator==(Type &otherType) {
 		return false;
 	}
 }
-bool ErrorType::operator>>(Type &otherType) {
-	return false;
+Type &ErrorType::operator>>(Type &otherType) {
+	return *this;
 }
 ErrorType::operator string() {
 	return "error";
@@ -206,26 +215,36 @@ bool StdType::operator==(Type &otherType) {
 		return false;
 	}
 }
-bool StdType::operator>>(Type &otherType) {
+Type &StdType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
+			return *nullType;
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		return (this->isComparable() && otherTypeCast->isComparable() && this->kind <= otherTypeCast->kind && baseEquals(otherType));
+		if (this->isComparable() && otherTypeCast->isComparable() && this->kind <= otherTypeCast->kind && baseSendable(otherType)) {
+			return *nullType;
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*this >> *(otherTypeCast->from));
+		if (*this >> *(otherTypeCast->from)) {
+			return *(otherTypeCast->to);
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
 			if (*this >> **iter) {
-				return true;
+				return otherType;
 			}
 		}
-		return false;
+		return *errType;
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
+		return otherType;
 	}
 }
 StdType::operator string() {
@@ -310,19 +329,23 @@ bool FilterType::operator==(Type &otherType) {
 		return false;
 	}
 }
-bool FilterType::operator>>(Type &otherType) {
+Type &FilterType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
+			return *nullType;
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
+		return *errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 // LOL
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 // LOL
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
+		return otherType;
 	}
 }
 FilterType::operator string() {
@@ -347,12 +370,16 @@ bool ObjectType::operator==(Type &otherType) {
 		return false;
 	}
 }
-bool ObjectType::operator>>(Type &otherType) {
+Type &ObjectType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		return otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]));
+		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
+			return *nullType;
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
+		return *errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 // LOL
@@ -360,53 +387,12 @@ bool ObjectType::operator>>(Type &otherType) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 // LOL
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
-		return false;
+		return otherType;
 	}
 }
 ObjectType::operator string() {
 	return base->id;
 }
-
-// returns a string representation of the given type
-string type2String(Type *t) {
-	// allocate an accumulator for the type
-	string acc = "";
-	while (t != NULL) { // while there is more of the type to analyse
-		// figure out the base type
-		string baseType;
-		if (t->kind != USR) { // if it's a non-user-defined base type
-			baseType = typeKind2String(t->kind); // get the string representation statically
-		} else { // else if it's a user-defined type
-			baseType = ""; // LOL
-		}
-		// figure out the suffix
-		string suffix;
-		if (t->suffix == SUFFIX_NONE) {
-			suffix = "";
-		} else if (t->suffix == SUFFIX_LATCH) {
-			suffix = "\\";
-		} else {
-			suffix = "";
-			for (int i = 0; i < t->suffix; i++) {
-				suffix += "\\\\";
-				if (i+1 < t->suffix) { // if there's still more rounds to go, add a space
-					suffix += " ";
-				}
-			}
-		}
-		// accumulate
-		acc += (baseType + suffix);
-		// advance
-		t = t->next;
-		// add a comma if necessary
-		if (t != NULL) {
-			acc += ", ";
-		}
-	}
-
-	return acc;
-}
-
 
 // Main semantic analysis functions
 
@@ -593,13 +579,12 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 			id = idRest;
 
 			// return the binding of the current input type, since that's what the recall identifier implicitly binds to
-			if (inType->kind == STD_NULL) { // if the incoming type is null, we can't bind to it, so return an error
+			if (*inType == *nullType) { // if the incoming type is null, we can't bind to it, so return an error
 				return NULL;
-			} else if (inType->kind != USR) { // else if it's a non-user-defined base type
-				string recString = typeKind2String(inType->kind); // statically get the string representation
+			} else { // else if it's any other type, bind to it using its string representation
+// LOL
+				string recString = *inType; // statically get the string representation
 				return bindId(recString, env); // statically bind to the specific standard node
-			} else { // else if it's a user-defined type
-				return NULL; // LOL
 			}
 		} else { // else if there is no input type
 			return NULL;

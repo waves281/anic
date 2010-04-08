@@ -47,7 +47,6 @@ class SymbolTable {
 #define SUFFIX_LATCH 1
 #define SUFFIX_STREAM 2
 #define SUFFIX_ARRAY 3
-#define SUFFIX_ARRAYSTREAM 4
 
 // forward declarations
 class Type;
@@ -71,12 +70,15 @@ class Type {
 		virtual ~Type();
 		// core methods
 		bool baseEquals(Type &otherType);
+		bool baseSendable(Type &otherType);
 		// operators
 		// virtual
 		virtual bool operator==(Type &otherType) = 0;
-		virtual bool operator>>(Type &otherType) = 0;
+		virtual Type &operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
+		operator bool();
+		bool operator!();
 		bool operator!=(Type &otherType);
 };
 
@@ -86,9 +88,10 @@ class TypeList : public Type {
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
 		TypeList(Tree *tree);
+		~TypeList();
 		// operators
 		bool operator==(Type &otherType);
-		bool operator>>(Type &otherType);
+		Type &operator>>(Type &otherType);
 		operator string();
 };
 
@@ -106,7 +109,7 @@ class ErrorType : public Type {
 		ErrorType();
 		// operators
 		bool operator==(Type &otherType);
-		bool operator>>(Type &otherType);
+		Type &operator>>(Type &otherType);
 		operator string();
 };
 
@@ -160,7 +163,7 @@ class StdType : public Type {
 		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
-		bool operator>>(Type &otherType);
+		Type &operator>>(Type &otherType);
 		operator string();
 };
 
@@ -174,7 +177,7 @@ class FilterType : public MemberedType {
 		~FilterType();
 		// operators
 		bool operator==(Type &otherType);
-		bool operator>>(Type &otherType);
+		Type &operator>>(Type &otherType);
 		operator string();
 };
 
@@ -188,7 +191,7 @@ class ObjectType : public MemberedType {
 		~ObjectType();
 		// operators
 		bool operator==(Type &otherType);
-		bool operator>>(Type &otherType);
+		Type &operator>>(Type &otherType);
 		operator string();
 };
 
@@ -205,7 +208,7 @@ class ObjectType : public MemberedType {
 #define GET_TYPE_FOOTER \
 	/* if we could't resolve a valid type, use the error type */\
 	if (type == NULL) {\
-		type = ErrorType;\
+		type = errType;\
 	}\
 	/* latch the type to the tree node */\
 	tree->type = type;\

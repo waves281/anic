@@ -237,11 +237,14 @@ Type : NonArraySuffixedIdentifier TypeSuffix
 	;
 TypeSuffix :
 	| SLASH
-	| ComplexTypeSuffix
+	| StreamTypeSuffix
+	| ArrayTypeSuffix
 	;
-ComplexTypeSuffix : LSQUARE RSQUARE
-	| LSQUARE RSQUARE ComplexTypeSuffix
-	| ComplexTypeSuffixNoArray
+StreamTypeSuffix : DSLASH
+	| DSLASH StreamTypeSuffix
+	;
+ArrayTypeSuffix : LSQUARE RSQUARE
+	| LSQUARE RSQUARE ArrayTypeSuffix
 	;
 ComplexTypeSuffixNoArray : DSLASH
 	| DSLASH ComplexTypeSuffixNoArray

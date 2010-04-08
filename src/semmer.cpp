@@ -85,21 +85,21 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 }
 
 // Type functions
-bool Type::baseEquals(Type &otherType) {return (this->suffix == otherType.suffix && this->suffix == otherType.suffix);}
-bool Type::baseSendable(Type &otherType) { return (this->suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
+bool Type::baseEquals(Type &otherType) {return (suffix == otherType.suffix && suffix == otherType.suffix);}
+bool Type::baseSendable(Type &otherType) { return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
 Type::~Type() {}
 void Type::delatch() {
-	if (this->suffix == SUFFIX_LATCH) {
-		this->suffix = SUFFIX_CONSTANT;
-	} else if (this->suffix == SUFFIX_STREAM) {
-		(this->depth)--;
-		if (this->depth == 0) {
-			this->suffix = SUFFIX_LATCH;
+	if (suffix == SUFFIX_LATCH) {
+		suffix = SUFFIX_CONSTANT;
+	} else if (suffix == SUFFIX_STREAM) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_LATCH;
 		}
-	} else if (this->suffix == SUFFIX_ARRAY) {
-		(this->depth)--;
-		if (this->depth == 0) {
-			this->suffix = SUFFIX_CONSTANT;
+	} else if (suffix == SUFFIX_ARRAY) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
 		}
 	}
 }
@@ -108,9 +108,52 @@ bool Type::operator!() {return (category == CATEGORY_ERRORTYPE);}
 bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
+// constructor works on ParamList and TypeList
 TypeList::TypeList(Tree *tree) {
 	category = CATEGORY_TYPELIST;
-	// LOL
+	Tree *treeCur = tree;
+	for(;;) { // invariant: treeCur is either ParamList or Typelist
+		Tree *base;
+		if (*treeCur == TOKEN_ParamList) { // if we're working with a ParamList
+			base = treeCur->child->child->child; // NonArraySuffixedIdentifier or NodeType
+		} else { // otherwise we're working with a TypeList
+			base = treeCur->child->child; // NonArraySuffixedIdentifier or NodeType
+		}
+		Tree *typeSuffix = base->next; // TypeSuffix
+		// derive the suffix and depth first, since it's more convenient to do so
+		int suffixVal;
+		int depth = 0;
+		if (typeSuffix->child == NULL) {
+			suffixVal = SUFFIX_CONSTANT;
+		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
+			suffixVal = SUFFIX_LATCH;
+		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
+			suffixVal = SUFFIX_STREAM;
+			Tree *sts = typeSuffix->child; // StreamTypeSuffix
+			for(;;) {
+				depth++;
+				// advance
+				if (sts->child->next != NULL) {
+					sts = sts->child->next; // StreamTypeSuffix
+				} else {
+					break;
+				}
+			}
+		} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
+			suffixVal = SUFFIX_ARRAY;
+		} 
+		// construct the type
+		Type *curType = NULL;
+// LOL
+		// commit the type to the list
+		list.push_back(curType);
+		// advance
+		if (treeCur->child->next != NULL) {
+			treeCur = treeCur->child->next->next;
+		} else {
+			break;
+		}
+	}
 }
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
@@ -206,11 +249,11 @@ ErrorType::operator string() {
 
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
-bool StdType::isComparable() {return (this->kind >= STD_MIN_COMPARABLE && this->kind <= STD_MAX_COMPARABLE);}
+bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);}
 bool StdType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		return (this->kind == otherTypeCast->kind && baseEquals(otherType));
+		return (kind == otherTypeCast->kind && baseEquals(otherType));
 	} else {
 		return false;
 	}
@@ -225,7 +268,7 @@ Type &StdType::operator>>(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (this->isComparable() && otherTypeCast->isComparable() && this->kind <= otherTypeCast->kind && baseSendable(otherType)) {
+		if (isComparable() && otherTypeCast->isComparable() && kind <= otherTypeCast->kind && baseSendable(otherType)) {
 			return *nullType;
 		} else {
 			return *errType;
@@ -324,7 +367,7 @@ FilterType::~FilterType() {delete from; delete to;}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*(this->from) == *(otherTypeCast->from) && *(this->to) == *(otherTypeCast->to) && baseEquals(otherType));
+		return (*from == *(otherTypeCast->from) && *to == *(otherTypeCast->to) && baseEquals(otherType));
 	} else {
 		return false;
 	}

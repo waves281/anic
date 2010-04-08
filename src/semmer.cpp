@@ -141,6 +141,16 @@ TypeList::TypeList(Tree *tree) {
 			}
 		} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
 			suffixVal = SUFFIX_ARRAY;
+			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
+			for(;;) {
+				depth++;
+				// advance
+				if (ats->child->next != NULL) {
+					ats = ats->child->next; // ArrayTypeSuffix
+				} else {
+					break;
+				}
+			}
 		} 
 		// construct the type
 		Type *curType = NULL;

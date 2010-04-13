@@ -88,6 +88,7 @@ class TypeList : public Type {
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
 		TypeList(Tree *tree);
+		TypeList();
 		~TypeList();
 		// operators
 		bool operator==(Type &otherType);

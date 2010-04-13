@@ -112,17 +112,17 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 TypeList::TypeList(Tree *tree) {
 	category = CATEGORY_TYPELIST;
 	Tree *treeCur = tree;
-	for(;;) { // invariant: treeCur is either ParamList or Typelist
-		Tree *base;
+	for(;;) { // invariant: treeCur is either ParamList or TypeList
+		Tree *base; // NonArraySuffixedIdentifier or FilterType
 		if (*treeCur == TOKEN_ParamList) { // if we're working with a ParamList
-			base = treeCur->child->child->child; // NonArraySuffixedIdentifier or NodeType
+			base = treeCur->child->child->child; // NonArraySuffixedIdentifier or FilterType
 		} else { // otherwise we're working with a TypeList
-			base = treeCur->child->child; // NonArraySuffixedIdentifier or NodeType
+			base = treeCur->child->child; // NonArraySuffixedIdentifier or FilterType
 		}
 		Tree *typeSuffix = base->next; // TypeSuffix
 		// derive the suffix and depth first, since it's more convenient to do so
 		int suffixVal;
-		int depth = 0;
+		int depthVal = 0;
 		if (typeSuffix->child == NULL) {
 			suffixVal = SUFFIX_CONSTANT;
 		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
@@ -131,7 +131,7 @@ TypeList::TypeList(Tree *tree) {
 			suffixVal = SUFFIX_STREAM;
 			Tree *sts = typeSuffix->child; // StreamTypeSuffix
 			for(;;) {
-				depth++;
+				depthVal++;
 				// advance
 				if (sts->child->next != NULL) {
 					sts = sts->child->next; // StreamTypeSuffix
@@ -143,7 +143,7 @@ TypeList::TypeList(Tree *tree) {
 			suffixVal = SUFFIX_ARRAY;
 			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
 			for(;;) {
-				depth++;
+				depthVal++;
 				// advance
 				if (ats->child->next != NULL) {
 					ats = ats->child->next; // ArrayTypeSuffix
@@ -153,8 +153,28 @@ TypeList::TypeList(Tree *tree) {
 			}
 		} 
 		// construct the type
-		Type *curType = NULL;
+		Type *curType;
+		if (*base == TOKEN_FilterType) { // if it's a regular filter type
+			TypeList *from;
+			TypeList *to;
+			Tree *baseCur = base->child->next; // TypeList or RetList
+			if (*baseCur == TOKEN_TypeList) {
+				from = new TypeList(baseCur); // TypeList
+				// advance
+				baseCur = baseCur->next; // RetList or RSQUARE
+			} else {
+				from = new TypeList();
+			}
+			if (*baseCur == TOKEN_RetList) { // yes, if, as opposed to else if (see above)
+				to = new TypeList(baseCur->child->next); // TypeList
+			} else {
+				to = new TypeList();
+			}
+			curType = new FilterType(from, to, suffixVal, depthVal);
+		} else if (*base == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
+			curType = NULL;
 // LOL
+		}
 		// commit the type to the list
 		list.push_back(curType);
 		// advance
@@ -165,6 +185,7 @@ TypeList::TypeList(Tree *tree) {
 		}
 	}
 }
+TypeList::TypeList() {}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
 		delete (*iter);
@@ -393,10 +414,29 @@ Type &FilterType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		return *errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-// LOL
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+		// check if the target accepts this filter as input
+		TypeList *otherTypeListFrom = otherTypeCast->from;
+		for (vector<Type *>::iterator iter = otherTypeListFrom->list.begin(); iter != otherTypeListFrom->list.end(); iter++) {
+			if (*otherTypeListFrom >> **iter) { // if we have a compatibility match, return the filter's target
+				return *(otherTypeCast->to);
+			}
+		}
+		// otherwise, check if if the target is identical to the input
+		if (*this == otherType && baseSendable(otherType)) {
+			return otherType;
+		} else {
+			return *errType;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-// LOL
+		// if the target accepts this filter as input
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+			if (*this >> **iter) {
+				return (*this >> **iter);
+			}
+		}
+		return *errType;
 	} else if (otherType.category == CATEGORY_ERRORTYPE) {
 		return otherType;
 	}
@@ -413,6 +453,7 @@ FilterType::operator string() {
 // ObjectType functions
 ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
+	// base is assumed to be an actual object Declaration
 // LOL
 }
 ObjectType::~ObjectType() {delete base;}
@@ -435,7 +476,7 @@ Type &ObjectType::operator>>(Type &otherType) {
 		return *errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-// LOL
+		return (*this >> *(otherTypeCast->from));
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 // LOL

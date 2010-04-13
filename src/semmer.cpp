@@ -433,7 +433,7 @@ Type &FilterType::operator>>(Type &otherType) {
 		// if the target accepts this filter as input
 		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
 			if (*this >> **iter) {
-				return (*this >> **iter);
+				return otherType;
 			}
 		}
 		return *errType;
@@ -563,7 +563,7 @@ SymbolTable *genDefaultDefs() {
 	catStdOps(stRoot);
 	// concatenate in the standard library
 	catStdLib(stRoot);
-	// finally, return the genrated default symtable
+	// finally, return the generated default symtable
 	return stRoot;
 }
 

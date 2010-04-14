@@ -259,9 +259,6 @@ TypeList::operator string() {
 	return acc;
 }
 
-// MemberedType functions
-MemberedType::~MemberedType() {}
-
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
 bool ErrorType::operator==(Type &otherType) {
@@ -451,10 +448,38 @@ FilterType::operator string() {
 }
 
 // ObjectType functions
+// constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->ObjectBlock
 ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
-	// base is assumed to be an actual object Declaration
-// LOL
+	// build the list of constructors
+	Tree *necs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*ObjectBlock*/->child->next/*NonEmptyConstructors*/;
+	for(;;) {
+		// derive the constructor's type
+		Tree *paramList = necs->child/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
+		TypeList *curConsType = new TypeList(paramList);
+		// add the constructor to the constructor list
+		constructorList.push_back(curConsType);
+		// advance
+		if (necs->child->next->next != NULL) {
+			necs = necs->child->next->next; // NonEmptyConstructors
+		} else {
+			break;
+		}
+	}
+	// build the list of members
+	Tree *pipe = necs->next->child; // Pipe
+	while (pipe != NULL) {
+		if (*(pipe->child) == TOKEN_Declaration) {
+			Type *childType = getTypeDeclaration(nullType, NULL, pipe->child);
+			memberList.push_back(childType);
+		}
+		// advance
+		if (pipe->next != NULL) {
+			pipe = pipe->next->next->child;
+		} else {
+			break;
+		}
+	}
 }
 ObjectType::~ObjectType() {delete base;}
 bool ObjectType::operator==(Type &otherType) {
@@ -731,7 +756,7 @@ SymbolTable *bindId(Type *inType, string &id, SymbolTable *env) {
 		}
 	} // per-latch point loop
 
-	// if we've verified the entire qi, return the tail of the latch point
+	// if we've verified the entire identifier, return the tail of the latch point
 	if (stCur != NULL && idCur.empty()) {
 		id.clear(); // clear id to signify that the latching is complete
 		return stCur; // return the tail of the latch point
@@ -836,38 +861,6 @@ Type *getStType(SymbolTable *st) {
 		return errType;
 	}
 }
-
-// forward declarations of mutually recursive typing functions
-
-Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeObjectBlock(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
 
 // typing function definitions
 

@@ -26,7 +26,7 @@ class SymbolTable {
 		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators
-		SymbolTable(int kind, string id, Tree *defSite);
+		SymbolTable(int kind, string id, Tree *defSite = NULL);
 		SymbolTable(SymbolTable &st);
 		~SymbolTable();
 		// deep-copy assignment operator

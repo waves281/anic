@@ -550,64 +550,64 @@ ObjectType::operator string() {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "node", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "int", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "float", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "bool", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "char", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "string", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "node");
+	*stRoot *= new SymbolTable(KIND_STD, "int");
+	*stRoot *= new SymbolTable(KIND_STD, "float");
+	*stRoot *= new SymbolTable(KIND_STD, "bool");
+	*stRoot *= new SymbolTable(KIND_STD, "char");
+	*stRoot *= new SymbolTable(KIND_STD, "string");
 }
 
 void catStdOps(SymbolTable *&stRoot) {
 	// prefix
-	*stRoot *= new SymbolTable(KIND_STD, "!", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "~", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "++", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "--", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "!");
+	*stRoot *= new SymbolTable(KIND_STD, "~");
+	*stRoot *= new SymbolTable(KIND_STD, "++");
+	*stRoot *= new SymbolTable(KIND_STD, "--");
 	// infix
-	*stRoot *= new SymbolTable(KIND_STD, "||", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "&&", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "|", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "^", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "&", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "==", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "!=", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "<", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, ">", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "<=", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, ">=", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "<<", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, ">>", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "*", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "/", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "%", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "||");
+	*stRoot *= new SymbolTable(KIND_STD, "&&");
+	*stRoot *= new SymbolTable(KIND_STD, "|");
+	*stRoot *= new SymbolTable(KIND_STD, "^");
+	*stRoot *= new SymbolTable(KIND_STD, "&");
+	*stRoot *= new SymbolTable(KIND_STD, "==");
+	*stRoot *= new SymbolTable(KIND_STD, "!=");
+	*stRoot *= new SymbolTable(KIND_STD, "<");
+	*stRoot *= new SymbolTable(KIND_STD, ">");
+	*stRoot *= new SymbolTable(KIND_STD, "<=");
+	*stRoot *= new SymbolTable(KIND_STD, ">=");
+	*stRoot *= new SymbolTable(KIND_STD, "<<");
+	*stRoot *= new SymbolTable(KIND_STD, ">>");
+	*stRoot *= new SymbolTable(KIND_STD, "*");
+	*stRoot *= new SymbolTable(KIND_STD, "/");
+	*stRoot *= new SymbolTable(KIND_STD, "%");
 	// multi
-	*stRoot *= new SymbolTable(KIND_STD, "+", NULL);
-	*stRoot *= new SymbolTable(KIND_STD, "-", NULL);
+	*stRoot *= new SymbolTable(KIND_STD, "+");
+	*stRoot *= new SymbolTable(KIND_STD, "-");
 }
 
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
-	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, NULL);
+	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING);
 
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable(KIND_STD, "in", NULL);
-	*stdLib *= new SymbolTable(KIND_STD, "out", NULL);
-	*stdLib *= new SymbolTable(KIND_STD, "err", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "in");
+	*stdLib *= new SymbolTable(KIND_STD, "out");
+	*stdLib *= new SymbolTable(KIND_STD, "err");
 	// control nodes
-	*stdLib *= new SymbolTable(KIND_STD, "rand", NULL);
-	*stdLib *= new SymbolTable(KIND_STD, "delay", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "rand");
+	*stdLib *= new SymbolTable(KIND_STD, "delay");
 
 	// standard library
 	// containers
-	*stdLib *= new SymbolTable(KIND_STD, "stack", NULL);
-	*stdLib *= new SymbolTable(KIND_STD, "map", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "stack");
+	*stdLib *= new SymbolTable(KIND_STD, "map");
 	// filters
-	*stdLib *= new SymbolTable(KIND_STD, "filter", NULL);
-	*stdLib *= new SymbolTable(KIND_STD, "sort", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "filter");
+	*stdLib *= new SymbolTable(KIND_STD, "sort");
 	// generators
-	*stdLib *= new SymbolTable(KIND_STD, "gen", NULL);
+	*stdLib *= new SymbolTable(KIND_STD, "gen");
 
 	// concatenate the library to the root
 	*stRoot *= stdLib;
@@ -615,7 +615,7 @@ void catStdLib(SymbolTable *&stRoot) {
 
 SymbolTable *genDefaultDefs() {
 	// generate the root block node
-	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, NULL);
+	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING);
 	// concatenate in the standard types
 	catStdNodes(stRoot);
 	// concatenate in the standard operators

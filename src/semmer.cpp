@@ -467,11 +467,11 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 			// advance
 			iter++;
 		}
-		if (iter != constructorTypes.end()) { // if there was a conflict, flag an error
+		if (iter == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+			constructorTypes.push_back(curConsType);
+		} else { // otherwise, flag the conflict as an error
 			Token curDefToken = c->child->t;
 			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<(string)(*curConsType)<<" in "<<base->id);
-		} else { // otherwise, add the type to the list
-			constructorTypes.push_back(curConsType);
 		}
 	}
 	// build the list of members

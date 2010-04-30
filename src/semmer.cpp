@@ -1530,6 +1530,15 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
+		// if this isn't the first time we're trying to derive the type of this node, flag recursion error
+		if (tree->handled) {
+			Token curDefToken = tree->child->t;
+			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"ambiguous recursive definition of '"<<curDefToken.s<<"'");
+		} else {
+			tree->handled = true;
+		}
+	}
 	if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 		Tree *tstc = declarationSub->child; // Node or LBRACKET
 		if (*tstc == TOKEN_Node) { // possibly recursive node declaration

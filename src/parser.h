@@ -22,6 +22,7 @@ class Tree {
 		Tree *parent;
 		SymbolTable *env; // the symbol environment in which this node occurs
 		Type *type; // the Type coming OUT of this node; NULL if it hasn't been traced or is unresolvable
+		bool handled; // whether we have already begun to derive the type of this node (to detect ill-formed recursive definitions)
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);

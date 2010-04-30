@@ -449,12 +449,30 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 	// build the list of constructors
 	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;
-	for (Tree *c = cs->child; c != NULL; c = c->next->next->child) {
+	for (Tree *c = cs->child; c != NULL; c = (c->next->next != NULL) ? c->next->next->child : NULL) {
 		// derive the constructor's type
-		Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
-		TypeList *curConsType = new TypeList(paramList);
-		// add the constructor to the constructor list
-		constructorTypes.push_back(curConsType);
+		TypeList *curConsType;
+		if (*(c->child->next) == TOKEN_LSQUARE) {
+			curConsType = new TypeList();
+		} else if (*(c->child->next) == TOKEN_NonRetFilterHeader) {
+			Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
+			curConsType = new TypeList(paramList);
+		}
+		// check if there's already a constructor of this type
+		vector<TypeList *>::iterator iter = constructorTypes.begin();
+		while (iter != constructorTypes.end()) {
+			if (**iter == *curConsType) {
+				break;
+			}
+			// advance
+			iter++;
+		}
+		if (iter != constructorTypes.end()) { // if there was a conflict, flag an error
+			Token curDefToken = c->child->t;
+			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<(string)(*curConsType)<<" in "<<base->id);
+		} else { // otherwise, add the type to the list
+			constructorTypes.push_back(curConsType);
+		}
 	}
 	// build the list of members
 	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {

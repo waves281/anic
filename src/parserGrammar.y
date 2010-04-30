@@ -216,7 +216,8 @@ PrimLiteral : INUM
 	| CQUOTE
 	| SQUOTE
 	;
-Filter : FilterHeader Block
+Filter : Block
+	| FilterHeader Block
 	;
 FilterHeader : LSQUARE RSQUARE
 	| LSQUARE ParamList RSQUARE
@@ -262,10 +263,11 @@ Block : LCURLY Pipes RCURLY
 	;
 Object : LCURLY Constructors Pipes RCURLY
 	;
-Constructors : 
+Constructors : Constructor SEMICOLON
 	| Constructor SEMICOLON Constructors
 	;
-Constructor : EQUALS NonRetFilterHeader Block
+Constructor : EQUALS LSQUARE RSQUARE
+	| EQUALS NonRetFilterHeader Block
 	;
 Access : SLASH Node
 	| SSLASH Node

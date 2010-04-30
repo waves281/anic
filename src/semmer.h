@@ -167,6 +167,7 @@ class FilterType : public Type {
 		TypeList *to; // the destination of this object type
 		// allocators/deallocators
 		FilterType(TypeList *from, TypeList *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(TypeList *from, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// operators
 		bool operator==(Type &otherType);

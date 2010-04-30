@@ -390,6 +390,7 @@ StdType::operator string() {
 
 // FilterType functions
 FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
+FilterType::FilterType(TypeList *from, int suffix, int depth) : from(from), to(new TypeList()) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
 FilterType::~FilterType() {delete from; delete to;}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
@@ -1544,10 +1545,12 @@ Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 			type = getTypePrimary(inType, recallBinding, declarationSub);
 		}
 	} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
-		// first, set the identifier's type to the type of the NonEmptyTerms stream
-// LOL
+		// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
+		tree->type = new FilterType(inType);
 		// then, verify types for the declaration sub-block
 		type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
+		// delete the temporary filter type
+		delete (tree->type);
 	} // otherwise, if it's an import declaration, do nothing
 	GET_TYPE_FOOTER;
 }

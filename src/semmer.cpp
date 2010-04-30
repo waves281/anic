@@ -151,7 +151,7 @@ TypeList::TypeList(Tree *tree) {
 					break;
 				}
 			}
-		} 
+		}
 		// construct the type
 		Type *curType;
 		if (*base == TOKEN_FilterType) { // if it's a regular filter type
@@ -1263,6 +1263,13 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
+// blindly derives types from headers: does not verify sub-blocks
+Type *getTypeNodeSoft(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
 // reports errors
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
@@ -1279,7 +1286,7 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 		type = getTypePrimOpNode(inType, recallBinding, nodec);
 	} else if (*nodec == TOKEN_PrimLiteral) {
 		type = getTypePrimLiteral(inType, recallBinding, nodec);
-	
+
 	}
 	// if we couldn't resolve a type
 	if (type == NULL && *nodec != TOKEN_SuffixedIdentifier) {
@@ -1523,14 +1530,23 @@ Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
-		// first, bind the identifier's type
-// LOL
-		// then, verify that the type holds through the declared block
-		type = getTypeTypedStaticTerm(inType, recallBinding, declarationSub);
+		Tree *tstc = declarationSub->child; // Node or LBRACKET
+		if (*tstc == TOKEN_Node) { // possibly recursive node declaration
+			// first, set the identifier's type to the declared type of the Node
+			type = getTypeNodeSoft(nullType, recallBinding, tstc);
+			if (*type) {
+				tree->type = type;
+				// then, verify types for the declaration sub-block
+				type = getTypeNode(nullType, recallBinding, tstc);
+			}
+		} else if (*tstc == TOKEN_LBRACKET) { // non-recursive expression declaration
+			// derive the type of the expression without doing any bindings, since expressions must be non-recursive
+			type = getTypePrimary(inType, recallBinding, declarationSub);
+		}
 	} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
-		// first, bind the identifier's type
+		// first, set the identifier's type to the type of the NonEmptyTerms stream
 // LOL
-		// then, verify that the type holds through the declared block
+		// then, verify types for the declaration sub-block
 		type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
 	} // otherwise, if it's an import declaration, do nothing
 	GET_TYPE_FOOTER;

@@ -206,6 +206,7 @@ Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeNodeSoft(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);

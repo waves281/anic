@@ -177,9 +177,10 @@ class FilterType : public Type {
 class ObjectType : public Type {
 	public:
 		// data members
-		SymbolTable *base; // the Node that defines this type
-		vector<TypeList *> constructorList; // list of the types of this object's constructors (each one is a TypeList)
-		vector<Type *> memberList; // list of raw non-constructor members of this object
+		SymbolTable *base; // the Node that defines this type (base->defSite is Declaration->TypedStaticTerm->Node->Object)
+		vector<TypeList *> constructorTypes; // list of the types of this object's constructors (each one is a TypeList)
+		vector<string> memberNames; // list of names of raw non-constructor members of this object
+		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
 		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();

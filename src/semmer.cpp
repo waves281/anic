@@ -237,7 +237,7 @@ Type &TypeList::operator>>(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*this >> **iter) {
 				return otherType;
 			}
@@ -307,7 +307,7 @@ Type &StdType::operator>>(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*this >> **iter) {
 				return otherType;
 			}
@@ -424,7 +424,7 @@ Type &FilterType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		// if the target accepts this filter as input
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*this >> **iter) {
 				return otherType;
 			}
@@ -454,13 +454,14 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 		Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
 		TypeList *curConsType = new TypeList(paramList);
 		// add the constructor to the constructor list
-		constructorList.push_back(curConsType);
+		constructorTypes.push_back(curConsType);
 	}
 	// build the list of members
 	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		if (*(pipe->child) == TOKEN_Declaration) {
+			memberNames.push_back(pipe->child->child->t.s); // ID
 			Type *childType = getTypeDeclaration(nullType, NULL, pipe->child);
-			memberList.push_back(childType);
+			memberTypes.push_back(childType);
 		}
 	}
 }
@@ -468,11 +469,11 @@ ObjectType::~ObjectType() {delete base;}
 bool ObjectType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		if (base->id == otherTypeCast->base->id && constructorList.size() == otherTypeCast->constructorList.size() && memberList.size() == otherTypeCast->memberList.size()) {
+		if (base->id == otherTypeCast->base->id && constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberTypes.size() == otherTypeCast->memberTypes.size()) {
 			// verify that constructors match
-			vector<TypeList *>::iterator consIter1 = constructorList.begin();
-			vector<TypeList *>::iterator consIter2 = otherTypeCast->constructorList.begin();
-			while(consIter1 != constructorList.end() && consIter2 != otherTypeCast->constructorList.end()) {
+			vector<TypeList *>::iterator consIter1 = constructorTypes.begin();
+			vector<TypeList *>::iterator consIter2 = otherTypeCast->constructorTypes.begin();
+			while(consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
 				if (**consIter1 != **consIter2) {
 					return false;
 				}
@@ -481,9 +482,9 @@ bool ObjectType::operator==(Type &otherType) {
 				consIter2++;
 			}
 			// verify that regular members match
-			vector<Type *>::iterator memberIter1 = memberList.begin();
-			vector<Type *>::iterator memberIter2 = otherTypeCast->memberList.begin();
-			while(memberIter1 != memberList.end() && memberIter2 != otherTypeCast->memberList.end()) {
+			vector<Type *>::iterator memberIter1 = memberTypes.begin();
+			vector<Type *>::iterator memberIter2 = otherTypeCast->memberTypes.begin();
+			while(memberIter1 != memberTypes.end() && memberIter2 != otherTypeCast->memberTypes.end()) {
 				if (**memberIter1 != **memberIter2) {
 					return false;
 				}
@@ -515,7 +516,7 @@ Type &ObjectType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		// check if the target accepts this object as input
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorList.begin(); iter != otherTypeCast->constructorList.end(); iter++) {
+		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*this >> **iter) {
 				return otherType;
 			}

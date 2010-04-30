@@ -444,36 +444,23 @@ FilterType::operator string() {
 }
 
 // ObjectType functions
-// constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->ObjectBlock
+// constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
 ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 	// build the list of constructors
-	Tree *necs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*ObjectBlock*/->child->next/*NonEmptyConstructors*/;
-	for(;;) {
+	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;
+	for (Tree *c = cs->child; c != NULL; c = c->next->next->child) {
 		// derive the constructor's type
-		Tree *paramList = necs->child/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
+		Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
 		TypeList *curConsType = new TypeList(paramList);
 		// add the constructor to the constructor list
 		constructorList.push_back(curConsType);
-		// advance
-		if (necs->child->next->next != NULL) {
-			necs = necs->child->next->next; // NonEmptyConstructors
-		} else {
-			break;
-		}
 	}
 	// build the list of members
-	Tree *pipe = necs->next->child; // Pipe
-	while (pipe != NULL) {
+	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		if (*(pipe->child) == TOKEN_Declaration) {
 			Type *childType = getTypeDeclaration(nullType, NULL, pipe->child);
 			memberList.push_back(childType);
-		}
-		// advance
-		if (pipe->next != NULL) {
-			pipe = pipe->next->next->child;
-		} else {
-			break;
 		}
 	}
 }
@@ -635,7 +622,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// log the current symbol environment in the tree
 	tree->env = st;
 	// recursive cases
-	if (*tree == TOKEN_Block || *tree == TOKEN_ObjectBlock) { // if it's a block-style node
+	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
 		// finally, link the block node into the main trunk

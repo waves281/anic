@@ -109,7 +109,7 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(Tree *tree) {
+TypeList::TypeList(Tree *tree, Tree *&recallBinding) {
 	category = CATEGORY_TYPELIST;
 	Tree *treeCur = tree;
 	for(;;) { // invariant: treeCur is either ParamList or TypeList
@@ -159,20 +159,20 @@ TypeList::TypeList(Tree *tree) {
 			TypeList *to;
 			Tree *baseCur = base->child->next; // TypeList or RetList
 			if (*baseCur == TOKEN_TypeList) {
-				from = new TypeList(baseCur); // TypeList
+				from = new TypeList(baseCur, recallBinding); // TypeList
 				// advance
 				baseCur = baseCur->next; // RetList or RSQUARE
 			} else {
 				from = new TypeList();
 			}
 			if (*baseCur == TOKEN_RetList) { // yes, if, as opposed to else if (see above)
-				to = new TypeList(baseCur->child->next); // TypeList
+				to = new TypeList(baseCur->child->next, recallBinding); // TypeList
 			} else {
 				to = new TypeList();
 			}
 			curType = new FilterType(from, to, suffixVal, depthVal);
 		} else if (*base == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
-			curType = getTypeSuffixedIdentifier(nullType, NULL, base);
+			curType = getTypeSuffixedIdentifier(nullType, recallBinding, base);
 		}
 		// commit the type to the list
 		list.push_back(curType);
@@ -184,7 +184,11 @@ TypeList::TypeList(Tree *tree) {
 		}
 	}
 }
-TypeList::TypeList() {}
+TypeList::TypeList(Type *type) {
+	category = CATEGORY_TYPELIST;
+	list.push_back(type);
+}
+TypeList::TypeList() {category = CATEGORY_TYPELIST;}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {
@@ -284,7 +288,7 @@ ErrorType::operator string() {
 
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
-StdType::~StdType() {}
+StdType::~StdType() {category = CATEGORY_STDTYPE;}
 bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);}
 bool StdType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
@@ -401,8 +405,27 @@ StdType::operator string() {
 }
 
 // FilterType functions
-FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
-FilterType::FilterType(TypeList *from, int suffix, int depth) : from(from), to(new TypeList()) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
+FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
+	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;
+	if (from->category == CATEGORY_TYPELIST) {
+		from = (TypeList *)from;
+	} else {
+		from = new TypeList(from);
+	}
+	if (to->category == CATEGORY_TYPELIST) {
+		to = (TypeList *)from;
+	} else {
+		to = new TypeList(from);
+	}
+}
+FilterType::FilterType(Type *from, int suffix, int depth) : to(new TypeList()) {
+	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;
+	if (from->category == CATEGORY_TYPELIST) {
+		from = (TypeList *)from;
+	} else {
+		from = new TypeList(from);
+	}
+}
 FilterType::~FilterType() {
 	if (*from != *nullType && *from != *errType) {
 		delete from;
@@ -468,7 +491,7 @@ FilterType::operator string() {
 
 // ObjectType functions
 // constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
-ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
+ObjectType::ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 	// build the list of constructors
 	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;
@@ -479,7 +502,7 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 			curConsType = new TypeList();
 		} else if (*(c->child->next) == TOKEN_NonRetFilterHeader) {
 			Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
-			curConsType = new TypeList(paramList);
+			curConsType = new TypeList(paramList, recallBinding);
 		}
 		// check if there's already a constructor of this type
 		vector<TypeList *>::iterator iter = constructorTypes.begin();
@@ -501,7 +524,7 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		if (*(pipe->child) == TOKEN_Declaration) {
 			memberNames.push_back(pipe->child->child->t.s); // ID
-			Type *childType = getTypeDeclaration(nullType, NULL, pipe->child);
+			Type *childType = getTypeDeclaration(nullType, recallBinding, pipe->child);
 			memberTypes.push_back(childType);
 		}
 	}
@@ -942,7 +965,7 @@ Type *getStType(SymbolTable *st) {
 // typing function definitions
 
 // reports errors
-Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeSuffixedIdentifier(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	string id = sid2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
@@ -956,7 +979,7 @@ Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypePrefixOrMultiOp(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pomocc = tree->child->child;
 	Type *subType = getTypePrimary(inType, recallBinding, tree->next);
@@ -989,7 +1012,7 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors for TOKEN_SLASH case
-Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypePrimary(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_SuffixedIdentifier) {
@@ -1019,7 +1042,7 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeBracketedExp(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeBracketedExp(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *exp = tree->child->next; // Exp
 	return getTypeExp(inType, recallBinding, exp);
@@ -1027,7 +1050,7 @@ Type *getTypeBracketedExp(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *expc = tree->child;
 	if (*expc == TOKEN_Primary) {
@@ -1099,7 +1122,7 @@ Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypePrimOpNode(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *ponc = tree->child->child; // the operator token itself
 	// generate the type based on the specific operator it is
@@ -1174,7 +1197,7 @@ Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypePrimLiteral(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *plc = tree->child;
 	if (*plc == TOKEN_INUM) {
@@ -1189,7 +1212,7 @@ Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeBlock(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pipeCur = tree->child->next->child; // Pipe
 	bool pipeTypesValid = true;
@@ -1215,7 +1238,7 @@ Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeFilterHeader(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Type *fromType = nullType;
 	Type *toType = nullType;
@@ -1235,7 +1258,7 @@ Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeFilter(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child; // FilterHeader or Block
 	Type *headerType = nullType;
@@ -1253,32 +1276,32 @@ Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeObjectBlock(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeObjectBlock(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeTypeList(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeParamList(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeRetList(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeNodeInstantiation(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *netl = tree->child->next; // TypeList
 	type = getTypeTypeList(inType, recallBinding, netl);
@@ -1308,14 +1331,14 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // blindly derives types from headers: does not verify sub-blocks
-Type *getTypeNodeSoft(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeNodeSoft(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeNode(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
@@ -1342,7 +1365,7 @@ Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeTypedStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
@@ -1353,7 +1376,7 @@ Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
@@ -1364,7 +1387,7 @@ Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeDynamicTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *dtc = tree->child;
 	if (*dtc == TOKEN_StaticTerm) {
@@ -1381,7 +1404,7 @@ Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	vector<Type *> toTypes; // vector for logging the destination types of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
@@ -1429,7 +1452,7 @@ Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeSimpleTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_DynamicTerm) {
@@ -1441,7 +1464,7 @@ Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeSimpleCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	if (*inType == STD_BOOL) { // if what's coming in is a boolean
 		type = getTypeTerm(recallBinding->type, recallBinding, tree->child->next);
@@ -1453,7 +1476,7 @@ Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeClosedTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *ctc = tree->child;
 	if (*ctc == TOKEN_SimpleTerm) {
@@ -1464,7 +1487,7 @@ Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeOpenTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *otc = tree->child;
 	if (*otc == TOKEN_SimpleCondTerm) {
@@ -1476,7 +1499,7 @@ Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeOpenCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	if (*inType == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
@@ -1501,7 +1524,7 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeClosedCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	if (*inType == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
@@ -1526,7 +1549,7 @@ Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *tc2 = tree->child->child;
 	if (*tc2 == TOKEN_SimpleCondTerm) {
@@ -1542,14 +1565,13 @@ Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 }
 
 // reports errors
-Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeNonEmptyTerms(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	// scan the pipe left to right
 	Tree *curTerm = tree->child; // Term
 	Type *outType = NULL;
 	while (curTerm != NULL) {
-// LOL... how do we do the recall binding here?
-		outType = getTypeTerm(inType, inType, curTerm);
+		outType = getTypeTerm(inType, recallBinding, curTerm);
 		if (*outType) { // if we found a proper typing for this term, log it
 			curTerm->type = outType;
 			inType = outType;
@@ -1571,7 +1593,7 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
@@ -1608,7 +1630,7 @@ Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree) {
+Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
@@ -1626,7 +1648,8 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (pipeCur->type == NULL) { // if we haven't derived a type for this pipe yet
-			getTypePipe(nullType, NULL, pipeCur);
+			Tree *recallBinding = NULL; // recall binding buffer
+			getTypePipe(nullType, recallBinding, pipeCur);
 		}
 	}
 }

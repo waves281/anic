@@ -88,7 +88,8 @@ class TypeList : public Type {
 		// data members
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
-		TypeList(Tree *tree);
+		TypeList(Tree *tree, Tree *&recallBinding);
+		TypeList(Type *type);
 		TypeList();
 		~TypeList();
 		// operators
@@ -171,8 +172,8 @@ class FilterType : public Type {
 		TypeList *from; // the source of this object type
 		TypeList *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(TypeList *from, TypeList *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		FilterType(TypeList *from, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *from, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// operators
 		bool operator==(Type &otherType);
@@ -189,7 +190,7 @@ class ObjectType : public Type {
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
-		ObjectType(SymbolTable *base, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// operators
 		bool operator==(Type &otherType);
@@ -200,37 +201,37 @@ class ObjectType : public Type {
 
 // forward declarations of mutually recursive typing functions
 
-Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeBracketedExp(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeBlock(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeFilterHeader(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeFilter(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeObjectBlock(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTypeList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeParamList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeRetList(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNodeInstantiation(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNodeSoft(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNode(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTypedStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeStaticTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeDynamicTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSwitchTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSimpleTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeSimpleCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeClosedTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeOpenTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeOpenCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeClosedCondTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree);
-Type *getTypePipe(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeSuffixedIdentifier(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypePrefixOrMultiOp(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypePrimary(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeBracketedExp(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypePrimOpNode(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypePrimLiteral(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeBlock(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeFilterHeader(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeFilter(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeObjectBlock(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeTypeList(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeParamList(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeRetList(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeNodeInstantiation(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeNodeSoft(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeNode(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeTypedStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeDynamicTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeSimpleTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeSimpleCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeClosedTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeOpenTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeOpenCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeClosedCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeTerm(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeNonEmptyTerms(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree);
+Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree);
 
 // semantic analysis helper blocks
 

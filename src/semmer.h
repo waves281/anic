@@ -152,6 +152,7 @@ class StdType : public Type {
 		int kind; // the class of type that this is
 		// allocators/deallocators
 		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		~StdType();
 		// core methods
 		bool isComparable();
 		// operators

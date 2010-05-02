@@ -187,7 +187,9 @@ TypeList::TypeList(Tree *tree) {
 TypeList::TypeList() {}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
-		delete (*iter);
+		if (**iter != *nullType && **iter != *errType) {
+			delete (*iter);
+		}
 	}
 }
 bool TypeList::operator==(Type &otherType) {
@@ -276,6 +278,7 @@ ErrorType::operator string() {
 
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
+StdType::~StdType() {}
 bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);}
 bool StdType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
@@ -391,7 +394,14 @@ StdType::operator string() {
 // FilterType functions
 FilterType::FilterType(TypeList *from, TypeList *to, int suffix, int depth) : from(from), to(to) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
 FilterType::FilterType(TypeList *from, int suffix, int depth) : from(from), to(new TypeList()) {category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;}
-FilterType::~FilterType() {delete from; delete to;}
+FilterType::~FilterType() {
+	if (*from != *nullType && *from != *errType) {
+		delete from;
+	}
+	if (*to != *nullType && *to != *errType) {
+		delete to;
+	}
+}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
@@ -484,7 +494,18 @@ ObjectType::ObjectType(SymbolTable *base, int suffix, int depth) : base(base) {
 		}
 	}
 }
-ObjectType::~ObjectType() {delete base;}
+ObjectType::~ObjectType() {
+	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+		if (**iter != *nullType && **iter != *errType) {
+			delete (*iter);
+		}
+	}
+	for (vector<Type *>::iterator iter = memberTypes.begin(); iter != memberTypes.end(); iter++) {
+		if (**iter != *nullType && **iter != *errType) {
+			delete (*iter);
+		}
+	}
+}
 bool ObjectType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
@@ -1531,36 +1552,36 @@ Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
-		// if this isn't the first time we're trying to derive the type of this node, flag recursion error
-		if (tree->handled) {
+		if (tree->handled) { // if this isn't the first time we're trying to derive the type of this node, flag recursion error
 			Token curDefToken = tree->child->t;
 			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"ambiguous recursive definition of '"<<curDefToken.s<<"'");
-		} else {
+			type = errType;
+		} else { // otherwise, proceed with normal type derivation
 			tree->handled = true;
+			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
+				Tree *tstc = declarationSub->child; // Node or LBRACKET
+				if (*tstc == TOKEN_Node) { // possibly recursive node declaration
+					// first, set the identifier's type to the declared type of the Node
+					type = getTypeNodeSoft(nullType, recallBinding, tstc);
+					if (*type) {
+						tree->type = type;
+						// then, verify types for the declaration sub-block
+						type = getTypeNode(nullType, recallBinding, tstc);
+					}
+				} else if (*tstc == TOKEN_LBRACKET) { // non-recursive expression declaration
+					// derive the type of the expression without doing any bindings, since expressions must be non-recursive
+					type = getTypePrimary(inType, recallBinding, declarationSub);
+				}
+			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
+				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
+				tree->type = new FilterType(inType);
+				// then, verify types for the declaration sub-block
+				type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
+				// delete the temporary filter type
+				delete (tree->type);
+			} // otherwise, if it's an import declaration, do nothing
 		}
 	}
-	if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
-		Tree *tstc = declarationSub->child; // Node or LBRACKET
-		if (*tstc == TOKEN_Node) { // possibly recursive node declaration
-			// first, set the identifier's type to the declared type of the Node
-			type = getTypeNodeSoft(nullType, recallBinding, tstc);
-			if (*type) {
-				tree->type = type;
-				// then, verify types for the declaration sub-block
-				type = getTypeNode(nullType, recallBinding, tstc);
-			}
-		} else if (*tstc == TOKEN_LBRACKET) { // non-recursive expression declaration
-			// derive the type of the expression without doing any bindings, since expressions must be non-recursive
-			type = getTypePrimary(inType, recallBinding, declarationSub);
-		}
-	} else if (declarationSub != NULL && *declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
-		// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
-		tree->type = new FilterType(inType);
-		// then, verify types for the declaration sub-block
-		type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
-		// delete the temporary filter type
-		delete (tree->type);
-	} // otherwise, if it's an import declaration, do nothing
 	GET_TYPE_FOOTER;
 }
 

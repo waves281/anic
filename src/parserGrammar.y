@@ -121,7 +121,9 @@ StaticTerm : TypedStaticTerm
 	| Access
 	;
 TypedStaticTerm : Node
-	| LBRACKET Exp RBRACKET
+	| BracketedExp
+	;
+BracketedExp : LBRACKET Exp RBRACKET
 	;
 Exp : Primary
 	| Exp DOR Exp
@@ -147,7 +149,7 @@ Primary : SuffixedIdentifier
 	| SLASH SuffixedIdentifier
 	| PrimLiteral
 	| PrefixOrMultiOp Primary
-	| LBRACKET Exp RBRACKET
+	| BracketedExp
 	;
 Node : SuffixedIdentifier
 	| NodeInstantiation

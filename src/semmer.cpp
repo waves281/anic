@@ -212,6 +212,9 @@ bool TypeList::operator==(Type &otherType) {
 		return false;
 	}
 }
+bool TypeList::operator==(int kind) {
+	return (list.size() == 0 && *(list[0]) == kind);
+}
 Type &TypeList::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -269,6 +272,9 @@ bool ErrorType::operator==(Type &otherType) {
 		return false;
 	}
 }
+bool ErrorType::operator==(int kind) {
+	return false;
+}
 Type &ErrorType::operator>>(Type &otherType) {
 	return *this;
 }
@@ -287,6 +293,9 @@ bool StdType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
+}
+bool StdType::operator==(int kind) {
+	return (this->kind == kind && (suffix == SUFFIX_CONSTANT || suffix == SUFFIX_LATCH));
 }
 Type &StdType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -409,6 +418,9 @@ bool FilterType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
+}
+bool FilterType::operator==(int kind) {
+	return false;
 }
 Type &FilterType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -539,6 +551,9 @@ bool ObjectType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
+}
+bool ObjectType::operator==(int kind) {
+	return false;
 }
 Type &ObjectType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -1001,6 +1016,13 @@ Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree) {
 	} else if (*primaryc == TOKEN_LBRACKET) {
 		type = getTypeExp(inType, recallBinding, primaryc->next);
 	}
+	GET_TYPE_FOOTER;
+}
+
+Type *getTypeBracketedExp(Type *inType, Tree *recallBinding, Tree *tree) {
+	GET_TYPE_HEADER;
+	Tree *exp = tree->child->next; // Exp
+	return getTypeExp(inType, recallBinding, exp);
 	GET_TYPE_FOOTER;
 }
 
@@ -1523,23 +1545,24 @@ Type *getTypeTerm(Type *inType, Tree *recallBinding, Tree *tree) {
 Type *getTypeNonEmptyTerms(Type *inType, Tree *recallBinding, Tree *tree) {
 	GET_TYPE_HEADER;
 	// scan the pipe left to right
-	Tree *curTerm = tree->child;
+	Tree *curTerm = tree->child; // Term
 	Type *outType = NULL;
 	while (curTerm != NULL) {
-		outType = getTypeTerm(inType, NULL, curTerm);
-		if (*outType != TYPE_ERROR) { // if we found a proper typing for this term, log it
+// LOL... how do we do the recall binding here?
+		outType = getTypeTerm(inType, inType, curTerm);
+		if (*outType) { // if we found a proper typing for this term, log it
 			curTerm->type = outType;
 			inType = outType;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
-			// fail typing
+			// log the fact that typing failed
 			outType = NULL;
 			break;
 		}
 		// advance
-		curTerm = curTerm->next->child; // Term
+		curTerm = curTerm->next->child; // Term or NULL
 	}
 	// if we succeeded in deriving an output type, return the mapping of the imput type to the output type
 	if (outType != NULL) {
@@ -1568,9 +1591,9 @@ Type *getTypeDeclaration(Type *inType, Tree *recallBinding, Tree *tree) {
 						// then, verify types for the declaration sub-block
 						type = getTypeNode(nullType, recallBinding, tstc);
 					}
-				} else if (*tstc == TOKEN_LBRACKET) { // non-recursive expression declaration
+				} else if (*tstc == TOKEN_BracketedExp) { // non-recursive expression declaration
 					// derive the type of the expression without doing any bindings, since expressions must be non-recursive
-					type = getTypePrimary(inType, recallBinding, declarationSub);
+					type = getTypeBracketedExp(inType, recallBinding, tstc);
 				}
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)

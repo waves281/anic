@@ -74,6 +74,7 @@ class Type {
 		// operators
 		// virtual
 		virtual bool operator==(Type &otherType) = 0;
+		virtual bool operator==(int kind) = 0;
 		virtual Type &operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
@@ -92,6 +93,7 @@ class TypeList : public Type {
 		~TypeList();
 		// operators
 		bool operator==(Type &otherType);
+		bool operator==(int kind);
 		Type &operator>>(Type &otherType);
 		operator string();
 };
@@ -102,6 +104,7 @@ class ErrorType : public Type {
 		ErrorType();
 		// operators
 		bool operator==(Type &otherType);
+		bool operator==(int kind);
 		Type &operator>>(Type &otherType);
 		operator string();
 };
@@ -157,6 +160,7 @@ class StdType : public Type {
 		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
+		bool operator==(int kind);
 		Type &operator>>(Type &otherType);
 		operator string();
 };
@@ -172,6 +176,7 @@ class FilterType : public Type {
 		~FilterType();
 		// operators
 		bool operator==(Type &otherType);
+		bool operator==(int kind);
 		Type &operator>>(Type &otherType);
 		operator string();
 };
@@ -188,6 +193,7 @@ class ObjectType : public Type {
 		~ObjectType();
 		// operators
 		bool operator==(Type &otherType);
+		bool operator==(int kind);
 		Type &operator>>(Type &otherType);
 		operator string();
 };
@@ -197,6 +203,7 @@ class ObjectType : public Type {
 Type *getTypeSuffixedIdentifier(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrefixOrMultiOp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimary(Type *inType, Tree *recallBinding, Tree *tree);
+Type *getTypeBracketedExp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypeExp(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimOpNode(Type *inType, Tree *recallBinding, Tree *tree);
 Type *getTypePrimLiteral(Type *inType, Tree *recallBinding, Tree *tree);

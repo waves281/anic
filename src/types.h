@@ -154,8 +154,7 @@ class FilterType : public Type {
 		TypeList *from; // the source of this object type
 		TypeList *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		FilterType(Type *from, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *from, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
 		bool isComparable();
@@ -201,8 +200,7 @@ class TypeStatus {
 		operator Tree *();
 		operator bool(); // tests for NULLity of type, not for whether it's the error type or not!
 		// operators
-		TypeStatus &operator=(TypeStatus &otherStatus);
-		TypeStatus &operator=(Type *otherType);
+		TypeStatus &operator=(TypeStatus otherStatus);
 		Type &operator*();
 		bool operator==(Type &otherType);
 		bool operator!=(Type &otherType);

@@ -88,7 +88,7 @@ TypeList::TypeList(Tree *tree, Tree *&recall) {
 			}
 			curType = new FilterType(from, to, suffixVal, depthVal);
 		} else if (*base == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
-			curType = getTypeSuffixedIdentifier(base);
+			curType = getStatusSuffixedIdentifier(base);
 		}
 		// commit the type to the list
 		list.push_back(curType);
@@ -317,18 +317,14 @@ FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
 	} else {
 		from = new TypeList(from);
 	}
-	if (to->category == CATEGORY_TYPELIST) {
-		to = (TypeList *)from;
+	if (to != NULL) {
+		if (to->category == CATEGORY_TYPELIST) {
+			to = (TypeList *)to;
+		} else {
+			to = new TypeList(to);
+		}
 	} else {
-		to = new TypeList(from);
-	}
-}
-FilterType::FilterType(Type *from, int suffix, int depth) : to(new TypeList()) {
-	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;
-	if (from->category == CATEGORY_TYPELIST) {
-		from = (TypeList *)from;
-	} else {
-		from = new TypeList(from);
+		to = new TypeList();
 	}
 }
 FilterType::~FilterType() {
@@ -426,7 +422,7 @@ ObjectType::ObjectType(SymbolTable *base, Tree *&recall, int suffix, int depth) 
 	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		if (*(pipe->child) == TOKEN_Declaration) {
 			memberNames.push_back(pipe->child->child->t.s); // ID
-			Type *childType = getTypeDeclaration(pipe->child);
+			Type *childType = getStatusDeclaration(pipe->child);
 			memberTypes.push_back(childType);
 		}
 	}
@@ -518,8 +514,7 @@ TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() {return type;}
 TypeStatus::operator Tree *() {return recall;}
 TypeStatus::operator bool() {return (type != NULL);}
-TypeStatus &TypeStatus::operator=(TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; return *this;}
-TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
+TypeStatus &TypeStatus::operator=(TypeStatus otherStatus) {type = otherStatus.type; recall = otherStatus.recall; return *this;}
 Type &TypeStatus::operator*() {
 	if (type != NULL) {
 		return (*type);

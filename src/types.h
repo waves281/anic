@@ -199,7 +199,7 @@ class TypeStatus {
 		// converters
 		operator Type *();
 		operator Tree *();
-		operator bool();
+		operator bool(); // tests for NULLity of type, not for whether it's the error type or not!
 		// operators
 		TypeStatus &operator=(TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);

@@ -74,12 +74,12 @@ TypeStatus getTypePipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 
 #define GET_TYPE_HEADER \
 	/* if the type is memoized, short-circuit evaluate */\
-	if (tree->type != NULL) {\
-		return tree->type;\
+	if (tree->status != NULL) {\
+		return tree->status;\
 	}\
 	/* otherwise, compute the type normally */\
-	TypeStatus outStatus;\
-	Type *&type = outStatus.type
+	TypeStatus status;\
+	Type *&type = status.type
 
 #define GET_TYPE_FOOTER \
 	/* if we could't resolve a valid type, use the error type */\
@@ -87,9 +87,9 @@ TypeStatus getTypePipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 		type = errType;\
 	}\
 	/* latch the status to the tree node */\
-	tree->status = outStatus;\
+	tree->status = status;\
 	/* return the derived status block */\
-	return outStatus
+	return status
 
 // main semantic analysis function
 

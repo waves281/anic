@@ -425,8 +425,8 @@ void subImportDecls(vector<SymbolTable *> importList) {
 }
 
 Type *getStType(SymbolTable *st) {
-	if (st->defSite != NULL && st->defSite->type != NULL) { // if there is already a type logged for this st node
-		return st->defSite->type;
+	if (st->defSite != NULL && st->defSite->status) { // if there is already a type logged for this st node
+		return st->defSite->status;
 	} else { // else if we need to derive a type ourselves
 // LOL
 		return errType;
@@ -936,7 +936,7 @@ TypeStatus getTypeSimpleTerm(Tree *tree, TypeStatus inStatus) {
 TypeStatus getTypeSimpleCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		inStatus.type = inStatus.recall->type;
+		inStatus.type = inStatus.recall->status;
 		type = getTypeTerm(tree->child->next, inStatus);
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
@@ -974,7 +974,7 @@ TypeStatus getTypeOpenCondTerm(Tree *tree, TypeStatus inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		inStatus.type = inStatus.recall->type;
+		inStatus.type = inStatus.recall->status;
 		Type *trueType = getTypeClosedTerm(trueBranch, inStatus);
 		Type *falseType = getTypeOpenTerm(falseBranch, inStatus);
 		if (*trueType == *falseType) { // if the two branches match in type
@@ -1000,7 +1000,7 @@ TypeStatus getTypeClosedCondTerm(Tree *tree, TypeStatus inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		inStatus.type = inStatus.recall->type;
+		inStatus.type = inStatus.recall->status;
 		Type *trueType = getTypeClosedTerm(trueBranch, inStatus);
 		Type *falseType = getTypeClosedTerm(falseBranch, inStatus);
 		if (*trueType == *falseType) { // if the two branches match in type
@@ -1045,7 +1045,7 @@ TypeStatus getTypeNonEmptyTerms(Tree *tree, TypeStatus inStatus) {
 	while (curTerm != NULL) {
 		outType = getTypeTerm(curTerm, inStatus);
 		if (*outType) { // if we found a proper typing for this term, log it
-			curTerm->type = outType;
+			curTerm->status = outType;
 			inStatus = outType;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
@@ -1081,7 +1081,7 @@ TypeStatus getTypeDeclaration(Tree *tree, TypeStatus inStatus) {
 					// first, set the identifier's type to the declared type of the Node
 					type = getTypeNodeSoft(tstc);
 					if (*type) {
-						tree->type = type;
+						tree->status = type;
 						// then, verify types for the declaration sub-block
 						type = getTypeNode(tstc);
 					}
@@ -1091,11 +1091,11 @@ TypeStatus getTypeDeclaration(Tree *tree, TypeStatus inStatus) {
 				}
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
-				tree->type = new FilterType(inStatus);
+				tree->status = new FilterType(inStatus);
 				// then, verify types for the declaration sub-block
 				type = getTypeNonEmptyTerms(declarationSub, inStatus);
 				// delete the temporary filter type
-				delete (tree->type);
+				delete (tree->status.type);
 			} // otherwise, if it's an import declaration, do nothing
 		}
 	}
@@ -1119,7 +1119,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	// iterate through the list of Pipes and trace the type flow for each one
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
-		if (pipeCur->type == NULL) { // if we haven't derived a type for this pipe yet
+		if (!pipeCur->status) { // if we haven't derived a type for this pipe yet
 			getTypePipe(pipeCur);
 		}
 	}

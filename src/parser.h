@@ -11,6 +11,7 @@
 // forward declarations
 class SymbolTable;
 class Type;
+class TypeStatus;
 
 class Tree {
 	public:
@@ -21,7 +22,7 @@ class Tree {
 		Tree *child;
 		Tree *parent;
 		SymbolTable *env; // the symbol environment in which this node occurs
-		Type *type; // the Type coming OUT of this node; NULL if it hasn't been traced or is unresolvable
+		TypeStatus status; // the status coming OUT of this node
 		bool handled; // whether we have already begun to derive the type of this node (to detect ill-formed recursive definitions)
 		// allocators/deallocators
 		Tree();
@@ -52,7 +53,6 @@ string idEnd(string &id);
 int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName);
 
 // post-includes
-
 #include "semmer.h"
 
 #endif

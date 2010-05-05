@@ -8,15 +8,14 @@ bool parserEventuallyGiveUp;
 // tree functions
 
 // constructors
-Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL), type(NULL), handled(false) {}
-Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), type(NULL), handled(false) {}
-Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), type(NULL), handled(false) {}
+Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()), handled(false) {}
+Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()), handled(false) {}
+Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), status(TypeStatus()), handled(false) {}
 
 // destructor
 Tree::~Tree() {
 	delete next;
 	delete child;
-	delete type;
 }
 
 // comparison oparators

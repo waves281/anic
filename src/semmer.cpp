@@ -275,9 +275,7 @@ bool ErrorType::operator==(Type &otherType) {
 		return false;
 	}
 }
-Type &ErrorType::operator>>(Type &otherType) {
-	return *this;
-}
+Type &ErrorType::operator>>(Type &otherType) {return *this;}
 ErrorType::operator string() {
 	return "error";
 }
@@ -596,9 +594,7 @@ Type &ObjectType::operator>>(Type &otherType) {
 		return otherType;
 	}
 }
-ObjectType::operator string() {
-	return base->id;
-}
+ObjectType::operator string() {return base->id;}
 
 // typing status block functions
 TypeStatus::TypeStatus() : type(nullType), recall(NULL) {}
@@ -607,6 +603,7 @@ TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() {return type;}
 TypeStatus::operator Tree *() {return recall;}
 TypeStatus::operator bool() {return (*type != *errType);}
+TypeStatus &TypeStatus::operator=(TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
 Type &TypeStatus::operator*() {
 	if (type != NULL) {

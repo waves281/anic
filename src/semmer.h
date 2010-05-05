@@ -57,6 +57,7 @@ class StdType;
 class FilterType;
 class ObjectType;
 class ErrorType;
+class TypeStatus;
 
 class Type {
 	public:
@@ -224,6 +225,7 @@ class TypeStatus {
 		operator Tree *();
 		operator bool();
 		// operators
+		TypeStatus &operator=(TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
 		Type &operator*();
 		bool operator==(Type &otherType);
@@ -280,8 +282,8 @@ TypeStatus getTypePipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 	if (type == NULL) {\
 		type = errType;\
 	}\
-	/* latch the type to the tree node */\
-	tree->type = type;\
+	/* latch the status to the tree node */\
+	tree->status = outStatus;\
 	/* return the derived status block */\
 	return outStatus
 

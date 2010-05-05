@@ -69,12 +69,14 @@ class Type {
 		// allocators/deallocators
 		virtual ~Type();
 		// core methods
+		// virtual
+		virtual bool isComparable() = 0;
+		// non-virtual
 		bool baseEquals(Type &otherType);
 		bool baseSendable(Type &otherType);
 		// operators
 		// virtual
 		virtual bool operator==(Type &otherType) = 0;
-		virtual bool operator==(int kind) = 0;
 		virtual Type &operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
@@ -88,10 +90,12 @@ class TypeList : public Type {
 		// data members
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
-		TypeList(Tree *tree, Tree *&recallBinding);
+		TypeList(Tree *tree, Tree *&recall);
 		TypeList(Type *type);
 		TypeList();
 		~TypeList();
+		// core methods
+		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -103,6 +107,8 @@ class ErrorType : public Type {
 	public:
 		// allocators/deallocators
 		ErrorType();
+		// core methods
+		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -113,42 +119,41 @@ class ErrorType : public Type {
 // Type kind specifiers
 
 #define STD_NULL 0
-#define STD_NODE 1
 
-#define STD_MIN_COMPARABLE 2 /* anything in the range is considered comparable */
+#define STD_MIN_COMPARABLE 1 /* anything in the range is considered comparable */
 
-#define STD_INT 2
-#define STD_FLOAT 3
-#define STD_BOOL 4
-#define STD_CHAR 5
-#define STD_STRING 6
+#define STD_INT 1
+#define STD_FLOAT 2
+#define STD_BOOL 3
+#define STD_CHAR 4
+#define STD_STRING 5
 
-#define STD_MAX_COMPARABLE 6 /* anything in the range is considered comparable */
+#define STD_MAX_COMPARABLE 5 /* anything in the range is considered comparable */
 
-#define STD_NOT 7
-#define STD_COMPLEMENT 8
-#define STD_DPLUS 9
-#define STD_DMINUS 10
+#define STD_NOT 6
+#define STD_COMPLEMENT 7
+#define STD_DPLUS 8
+#define STD_DMINUS 9
 
-#define STD_DOR 11
-#define STD_DAND 12
-#define STD_OR 13
-#define STD_XOR 14
-#define STD_AND 15
-#define STD_DEQUALS 16
-#define STD_NEQUALS 17
-#define STD_LT 18
-#define STD_GT 19
-#define STD_LE 20
-#define STD_GE 21
-#define STD_LS 22
-#define STD_RS 23
-#define STD_TIMES 24
-#define STD_DIVIDE 25
-#define STD_MOD 26
+#define STD_DOR 10
+#define STD_DAND 11
+#define STD_OR 12
+#define STD_XOR 13
+#define STD_AND 14
+#define STD_DEQUALS 15
+#define STD_NEQUALS 16
+#define STD_LT 17
+#define STD_GT 18
+#define STD_LE 19
+#define STD_GE 20
+#define STD_LS 21
+#define STD_RS 22
+#define STD_TIMES 23
+#define STD_DIVIDE 24
+#define STD_MOD 25
 
-#define STD_PLUS 27
-#define STD_MINUS 28
+#define STD_PLUS 26
+#define STD_MINUS 27
 
 class StdType : public Type {
 	public:
@@ -175,6 +180,8 @@ class FilterType : public Type {
 		FilterType(Type *from, Type *to, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		FilterType(Type *from, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
+		// core methods
+		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -190,8 +197,10 @@ class ObjectType : public Type {
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
-		ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(SymbolTable *base, Tree *&recall, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
+		// core methods
+		bool isComparable();
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -199,39 +208,61 @@ class ObjectType : public Type {
 		operator string();
 };
 
+// typing status block
+
+class TypeStatus {
+	public:
+		// data members
+		Type *type; // the encapsulated type
+		Tree *recall; // the encapsulated recall binding
+		// allocators/deallocators
+		TypeStatus();
+		TypeStatus(Type *type, Tree *recall = NULL);
+		~TypeStatus();
+		// converters
+		operator Type *();
+		operator Tree *();
+		operator bool();
+		// operators
+		TypeStatus &operator=(Type *otherType);
+		Type &operator*();
+		bool operator==(Type &otherType);
+		bool operator!=(Type &otherType);
+};
+
 // forward declarations of mutually recursive typing functions
 
-Type *getTypeSuffixedIdentifier(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypePrefixOrMultiOp(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypePrimary(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeBracketedExp(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypePrimOpNode(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypePrimLiteral(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeBlock(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeFilterHeader(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeFilter(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeObjectBlock(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeTypeList(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeParamList(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeRetList(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeNodeInstantiation(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeNodeSoft(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeNode(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeTypedStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeDynamicTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeSimpleTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeSimpleCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeClosedTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeOpenTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeOpenCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeClosedCondTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeTerm(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeNonEmptyTerms(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree);
-Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree);
+TypeStatus getTypeSuffixedIdentifier(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypePrefixOrMultiOp(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypePrimary(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeBracketedExp(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeExp(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypePrimOpNode(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypePrimLiteral(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeBlock(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeFilterHeader(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeFilter(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeObjectBlock(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeTypeList(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeParamList(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeRetList(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeNodeInstantiation(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeNodeSoft(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeNode(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeTypedStaticTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeStaticTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeDynamicTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeSwitchTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeSimpleTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeSimpleCondTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeClosedTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeOpenTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeOpenCondTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeClosedCondTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeNonEmptyTerms(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypeDeclaration(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getTypePipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 
 // semantic analysis helper blocks
 
@@ -241,7 +272,8 @@ Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree);
 		return tree->type;\
 	}\
 	/* otherwise, compute the type normally */\
-	Type *type = NULL
+	TypeStatus outStatus;\
+	Type *&type = outStatus.type
 
 #define GET_TYPE_FOOTER \
 	/* if we could't resolve a valid type, use the error type */\
@@ -250,8 +282,8 @@ Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree);
 	}\
 	/* latch the type to the tree node */\
 	tree->type = type;\
-	/* return the derived type */\
-	return type
+	/* return the derived status block */\
+	return outStatus
 
 // main semantic analysis function
 

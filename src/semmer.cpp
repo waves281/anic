@@ -109,7 +109,7 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(Tree *tree, Tree *&recallBinding) {
+TypeList::TypeList(Tree *tree, Tree *&recall) {
 	category = CATEGORY_TYPELIST;
 	Tree *treeCur = tree;
 	for(;;) { // invariant: treeCur is either ParamList or TypeList
@@ -159,20 +159,20 @@ TypeList::TypeList(Tree *tree, Tree *&recallBinding) {
 			TypeList *to;
 			Tree *baseCur = base->child->next; // TypeList or RetList
 			if (*baseCur == TOKEN_TypeList) {
-				from = new TypeList(baseCur, recallBinding); // TypeList
+				from = new TypeList(baseCur, recall); // TypeList
 				// advance
 				baseCur = baseCur->next; // RetList or RSQUARE
 			} else {
 				from = new TypeList();
 			}
 			if (*baseCur == TOKEN_RetList) { // yes, if, as opposed to else if (see above)
-				to = new TypeList(baseCur->child->next, recallBinding); // TypeList
+				to = new TypeList(baseCur->child->next, recall); // TypeList
 			} else {
 				to = new TypeList();
 			}
 			curType = new FilterType(from, to, suffixVal, depthVal);
 		} else if (*base == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
-			curType = getTypeSuffixedIdentifier(nullType, recallBinding, base);
+			curType = getTypeSuffixedIdentifier(base);
 		}
 		// commit the type to the list
 		list.push_back(curType);
@@ -196,6 +196,7 @@ TypeList::~TypeList() {
 		}
 	}
 }
+bool TypeList::isComparable() {return (list.size() == 1 && (list[0])->isComparable());}
 bool TypeList::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -215,9 +216,6 @@ bool TypeList::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
-}
-bool TypeList::operator==(int kind) {
-	return (list.size() == 0 && *(list[0]) == kind);
 }
 Type &TypeList::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -269,15 +267,13 @@ TypeList::operator string() {
 
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
+bool ErrorType::isComparable() {return false;}
 bool ErrorType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
 	} else {
 		return false;
 	}
-}
-bool ErrorType::operator==(int kind) {
-	return false;
 }
 Type &ErrorType::operator>>(Type &otherType) {
 	return *this;
@@ -289,7 +285,7 @@ ErrorType::operator string() {
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
 StdType::~StdType() {category = CATEGORY_STDTYPE;}
-bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);}
+bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && (suffix == SUFFIX_CONSTANT || suffix == SUFFIX_LATCH));}
 bool StdType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
@@ -297,9 +293,6 @@ bool StdType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
-}
-bool StdType::operator==(int kind) {
-	return (this->kind == kind && (suffix == SUFFIX_CONSTANT || suffix == SUFFIX_LATCH));
 }
 Type &StdType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -339,8 +332,6 @@ StdType::operator string() {
 		case STD_NULL:
 			return "null";
 		// standard types
-		case STD_NODE:
-			return "node";
 		case STD_INT:
 			return "int";
 		case STD_FLOAT:
@@ -434,6 +425,7 @@ FilterType::~FilterType() {
 		delete to;
 	}
 }
+bool FilterType::isComparable() {return false;}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
@@ -441,9 +433,6 @@ bool FilterType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
-}
-bool FilterType::operator==(int kind) {
-	return false;
 }
 Type &FilterType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -491,7 +480,7 @@ FilterType::operator string() {
 
 // ObjectType functions
 // constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
-ObjectType::ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix, int depth) : base(base) {
+ObjectType::ObjectType(SymbolTable *base, Tree *&recall, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 	// build the list of constructors
 	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;
@@ -502,7 +491,7 @@ ObjectType::ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix, int 
 			curConsType = new TypeList();
 		} else if (*(c->child->next) == TOKEN_NonRetFilterHeader) {
 			Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
-			curConsType = new TypeList(paramList, recallBinding);
+			curConsType = new TypeList(paramList, recall);
 		}
 		// check if there's already a constructor of this type
 		vector<TypeList *>::iterator iter = constructorTypes.begin();
@@ -524,7 +513,7 @@ ObjectType::ObjectType(SymbolTable *base, Tree *&recallBinding, int suffix, int 
 	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		if (*(pipe->child) == TOKEN_Declaration) {
 			memberNames.push_back(pipe->child->child->t.s); // ID
-			Type *childType = getTypeDeclaration(nullType, recallBinding, pipe->child);
+			Type *childType = getTypeDeclaration(pipe->child);
 			memberTypes.push_back(childType);
 		}
 	}
@@ -541,6 +530,7 @@ ObjectType::~ObjectType() {
 		}
 	}
 }
+bool ObjectType::isComparable() {return false;}
 bool ObjectType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
@@ -574,9 +564,6 @@ bool ObjectType::operator==(Type &otherType) {
 	} else {
 		return false;
 	}
-}
-bool ObjectType::operator==(int kind) {
-	return false;
 }
 Type &ObjectType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -612,6 +599,24 @@ Type &ObjectType::operator>>(Type &otherType) {
 ObjectType::operator string() {
 	return base->id;
 }
+
+// typing status block functions
+TypeStatus::TypeStatus() : type(nullType), recall(NULL) {}
+TypeStatus::TypeStatus(Type *type, Tree *recall) : type(type), recall(recall) {}
+TypeStatus::~TypeStatus() {}
+TypeStatus::operator Type *() {return type;}
+TypeStatus::operator Tree *() {return recall;}
+TypeStatus::operator bool() {return (*type != *errType);}
+TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
+Type &TypeStatus::operator*() {
+	if (type != NULL) {
+		return (*type);
+	} else {
+		return (*errType);
+	}
+}
+bool TypeStatus::operator==(Type &otherType) {return (*type == otherType);}
+bool TypeStatus::operator!=(Type &otherType) {return (*type != otherType);}
 
 // Main semantic analysis functions
 
@@ -965,11 +970,11 @@ Type *getStType(SymbolTable *st) {
 // typing function definitions
 
 // reports errors
-Type *getTypeSuffixedIdentifier(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeSuffixedIdentifier(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	string id = sid2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
-	SymbolTable *st = bindId(inType, idCur, tree->env);
+	SymbolTable *st = bindId(inStatus, idCur, tree->env);
 	if (st != NULL) { // if we found a binding
 		type = getStType(st);
 	} else { // else if we couldn't find a binding
@@ -979,10 +984,10 @@ Type *getTypeSuffixedIdentifier(Type *inType, Tree *&recallBinding, Tree *tree) 
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrefixOrMultiOp(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypePrefixOrMultiOp(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *pomocc = tree->child->child;
-	Type *subType = getTypePrimary(inType, recallBinding, tree->next);
+	Type *subType = getTypePrimary(tree->next, inStatus);
 	if (*pomocc == TOKEN_NOT) {
 		if (*subType == STD_BOOL) {
 			type = subType;
@@ -1012,14 +1017,14 @@ Type *getTypePrefixOrMultiOp(Type *inType, Tree *&recallBinding, Tree *tree) {
 }
 
 // reports errors for TOKEN_SLASH case
-Type *getTypePrimary(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypePrimary(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_SuffixedIdentifier) {
-		type = getTypeSuffixedIdentifier(inType, recallBinding, primaryc);
+		type = getTypeSuffixedIdentifier(primaryc, inStatus);
 	} else if (*primaryc == TOKEN_SLASH) { // if it's a delatched term
 		Tree *subSI = primaryc->next; // SuffixedIdentifier
-		Type *subType = getTypeSuffixedIdentifier(inType, recallBinding, subSI); // SuffixedIdentifier
+		Type *subType = getTypeSuffixedIdentifier(subSI, inStatus); // SuffixedIdentifier
 		if (*subType != TYPE_ERROR) { // if we derived a subtype
 			if (subType->suffix != SUFFIX_NONE) { // if the derived type is a latch or a stream
 				// copy the subtype
@@ -1029,38 +1034,38 @@ Type *getTypePrimary(Type *inType, Tree *&recallBinding, Tree *tree) {
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*inType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*inStatus<<")");
 			}
 		}
 	} else if (*primaryc == TOKEN_PrimLiteral) {
-		type = getTypePrimLiteral(inType, recallBinding, primaryc);
+		type = getTypePrimLiteral(primaryc, inStatus);
 	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
-		type = getTypePrefixOrMultiOp(inType, recallBinding, primaryc);
+		type = getTypePrefixOrMultiOp(primaryc, inStatus);
 	} else if (*primaryc == TOKEN_LBRACKET) {
-		type = getTypeExp(inType, recallBinding, primaryc->next);
+		type = getTypeExp(primaryc->next, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeBracketedExp(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeBracketedExp(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *exp = tree->child->next; // Exp
-	return getTypeExp(inType, recallBinding, exp);
+	return getTypeExp(exp, inStatus);
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeExp(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *expc = tree->child;
 	if (*expc == TOKEN_Primary) {
-		type = getTypePrimary(inType, recallBinding, expc);
+		type = getTypePrimary(expc, inStatus);
 	} else if (*expc == TOKEN_Exp) {
 		Tree *expLeft = expc;
 		Tree *op = expLeft->next;
 		Tree *expRight = op->next;
-		Type *typeLeft = getTypeExp(inType, recallBinding, expLeft);
-		Type *typeRight = getTypeExp(inType, recallBinding, expRight);
+		Type *typeLeft = getTypeExp(expLeft, inStatus);
+		Type *typeRight = getTypeExp(expRight, inStatus);
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
 			case TOKEN_DAND:
@@ -1081,9 +1086,7 @@ Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree) {
 			case TOKEN_GT:
 			case TOKEN_LE:
 			case TOKEN_GE:
-				if (*typeLeft >= STD_MIN_COMPARABLE && *typeRight >= STD_MIN_COMPARABLE &&
-						*typeLeft <= STD_MAX_COMPARABLE && *typeRight <= STD_MAX_COMPARABLE &&
-						typeLeft->kind == typeRight->kind) {
+				if (typeLeft->isComparable() && typeRight->isComparable()) {
 					type = new Type(STD_BOOL);
 				}
 				break;
@@ -1117,12 +1120,12 @@ Type *getTypeExp(Type *inType, Tree *&recallBinding, Tree *tree) {
 	if (type == NULL) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrimOpNode(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypePrimOpNode(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *ponc = tree->child->child; // the operator token itself
 	// generate the type based on the specific operator it is
@@ -1197,7 +1200,7 @@ Type *getTypePrimOpNode(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePrimLiteral(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypePrimLiteral(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *plc = tree->child;
 	if (*plc == TOKEN_INUM) {
@@ -1212,13 +1215,13 @@ Type *getTypePrimLiteral(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeBlock(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeBlock(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *pipeCur = tree->child->next->child; // Pipe
 	bool pipeTypesValid = true;
 	while(pipeCur != NULL) {
 		// try to get a type for this pipe
-		Type *resultType = getTypePipe(inType, recallBinding, pipeCur);
+		Type *resultType = getTypePipe(pipeCur, inStatus);
 		// if we failed to find a type, flag this fact
 		if (*resultType == TYPE_ERROR) {
 			pipeTypesValid = false;
@@ -1233,82 +1236,82 @@ Type *getTypeBlock(Type *inType, Tree *&recallBinding, Tree *tree) {
 	// if we managed to derive a type for all of the enclosed pipes
 	if (pipeTypesValid) {
 		// set the result type to the input type being mapped to the null type
-		type = new Type(inType, nullType);
+		type = new FilterType(inStatus, nullType);
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeFilterHeader(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeFilterHeader(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Type *fromType = nullType;
 	Type *toType = nullType;
 
 	Tree *treeCur = tree->child->next; // ParamList
 	if (*treeCur == TOKEN_ParamList) {
-		fromType = getTypeParamList(inType, recallBinding, treeCur);
+		fromType = getTypeParamList(treeCur, inStatus);
 		treeCur = treeCur->next; // RetList or RSQUARE
 	}
 	if (*treeCur == TOKEN_RetList) {
-		fromType = getTypeRetList(inType, recallBinding, treeCur);
+		fromType = getTypeRetList(treeCur, inStatus);
 	}
 	if (*fromType != TYPE_ERROR && *toType != TYPE_ERROR) {
-		type = new Type(fromType, toType);
+		type = new FilterType(fromType, toType);
 	}
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeFilter(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeFilter(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child; // FilterHeader or Block
 	Type *headerType = nullType;
 	if (*tc == TOKEN_FilterHeader) { // if there is a header, derive its type
-		headerType = getTypeFilterHeader(inType, recallBinding, tc);
+		headerType = getTypeFilterHeader(tc, inStatus);
 	}
 	if (*headerType != TYPE_ERROR) { // if we end up with a non-erroneous type for the header
 // LOL
 	} else { // else if we derived an erroneous type for the header
 		Token curToken = tc->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node header type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeObjectBlock(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeObjectBlock(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTypeList(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeTypeList(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeParamList(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeParamList(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeRetList(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeRetList(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeNodeInstantiation(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *netl = tree->child->next; // TypeList
-	type = getTypeTypeList(inType, recallBinding, netl);
+	type = getTypeTypeList(netl, inStatus);
 	if (*type != TYPE_ERROR) { // if we derived a type for the instantiation
 		if (netl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
 			Tree *st = netl->next->next->next; // StaticTerm
-			Type *initType = getTypeStaticTerm(inType, recallBinding, st);
+			Type *initType = getTypeStaticTerm(st, inStatus);
 			if (*initType != TYPE_ERROR) { //  if we derived a type for the initializer
 				if (!(*initType >> *type)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
@@ -1319,79 +1322,79 @@ Type *getTypeNodeInstantiation(Type *inType, Tree *&recallBinding, Tree *tree) {
 			} else { // else if we couldn't derive a type for the initializer
 				Token curToken = st->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 			}
 		}
 	} else { // else if we couldn't derive a type for the instantiation
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instantiation type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
 // blindly derives types from headers: does not verify sub-blocks
-Type *getTypeNodeSoft(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeNodeSoft(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeNode(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeNode(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
-		type = getTypeSuffixedIdentifier(inType, recallBinding, nodec);
+		type = getTypeSuffixedIdentifier(nodec, inStatus);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
-		type = getTypeNodeInstantiation(inType, recallBinding, nodec);
+		type = getTypeNodeInstantiation(nodec, inStatus);
 	} else if (*nodec == TOKEN_Filter) {
-		type = getTypeFilter(inType, recallBinding, nodec);
-	} else if (*nodec == TOKEN_ObjectBlock) {
-		type = getTypeObjectBlock(inType, recallBinding, nodec);
+		type = getTypeFilter(nodec, inStatus);
+	} else if (*nodec == TOKEN_Object) {
+		type = getTypeObjectBlock(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimOpNode) {
-		type = getTypePrimOpNode(inType, recallBinding, nodec);
+		type = getTypePrimOpNode(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimLiteral) {
-		type = getTypePrimLiteral(inType, recallBinding, nodec);
+		type = getTypePrimLiteral(nodec, inStatus);
 
 	}
 	// if we couldn't resolve a type
 	if (type == NULL && *nodec != TOKEN_SuffixedIdentifier) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeTypedStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeTypedStaticTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
-		type = getTypeNode(inType, recallBinding, tstc);
+		type = getTypeNode(tstc, inStatus);
 	} else if (*tstc == TOKEN_LBRACKET) { // it's an expression
-		type = getTypeExp(inType, recallBinding, tstc->next); // move past the bracket to the actual Exp node
+		type = getTypeExp(tstc->next, inStatus); // move past the bracket to the actual Exp node
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeStaticTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeStaticTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
-		type = getTypeTypedStaticTerm(inType, recallBinding, stc);
+		type = getTypeTypedStaticTerm(stc, inStatus);
 	} else if (*stc == TOKEN_Access) {
 // LOL
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeDynamicTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeDynamicTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *dtc = tree->child;
 	if (*dtc == TOKEN_StaticTerm) {
-		type = getTypeStaticTerm(inType, recallBinding, dtc);
+		type = getTypeStaticTerm(dtc, inStatus);
 	} else if (*dtc == TOKEN_Compound) {
 // LOL
 	} else if (*dtc == TOKEN_Link) {
@@ -1404,7 +1407,7 @@ Type *getTypeDynamicTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeSwitchTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	vector<Type *> toTypes; // vector for logging the destination types of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
@@ -1414,17 +1417,17 @@ Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 		// if there is a non-default label on this pipe, check its validity
 		if (*lpc == TOKEN_StaticTerm) {
 			// derive the label's type
-			Type *labelType = getTypeStaticTerm(inType, recallBinding, lpc);
-			if (*inType != *labelType) { // if the type doesn't match, throw an error
+			Type *labelType = getTypeStaticTerm(lpc, inStatus);
+			if (*inStatus != *labelType) { // if the type doesn't match, throw an error
 				Token curToken = lpc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<*labelType<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 			}
 		}
 		// derive the to-type of this label
 		Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
-		Type *toType = getTypeSimpleTerm(inType, recallBinding, toTree);
+		Type *toType = getTypeSimpleTerm(toTree, inStatus);
 		// log the to-type and to-tree of this label
 		toTypes.push_back(toType);
 		toTrees.push_back(toTree);
@@ -1452,60 +1455,62 @@ Type *getTypeSwitchTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeSimpleTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeSimpleTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_DynamicTerm) {
-		type = getTypeDynamicTerm(inType, recallBinding, stc);
+		type = getTypeDynamicTerm(stc, inStatus);
 	} else if (*stc == TOKEN_SwitchTerm) {
-		type = getTypeSwitchTerm(inType, recallBinding, stc);
+		type = getTypeSwitchTerm(stc, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeSimpleCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeSimpleCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-	if (*inType == STD_BOOL) { // if what's coming in is a boolean
-		type = getTypeTerm(recallBinding->type, recallBinding, tree->child->next);
+	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
+		inStatus.type = inStatus.recall->type;
+		type = getTypeTerm(tree->child->next, inStatus);
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeClosedTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeClosedTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *ctc = tree->child;
 	if (*ctc == TOKEN_SimpleTerm) {
-		type = getTypeSimpleTerm(inType, recallBinding, ctc);
+		type = getTypeSimpleTerm(ctc, inStatus);
 	} else if (*ctc == TOKEN_ClosedCondTerm) {
-		type = getTypeClosedCondTerm(inType, recallBinding, ctc);
+		type = getTypeClosedCondTerm(ctc, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeOpenTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeOpenTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *otc = tree->child;
 	if (*otc == TOKEN_SimpleCondTerm) {
-		type = getTypeSimpleCondTerm(inType, recallBinding, otc);
+		type = getTypeSimpleCondTerm(otc, inStatus);
 	} else if (*otc == TOKEN_OpenCondTerm) {
-		type = getTypeOpenCondTerm(inType, recallBinding, otc);
+		type = getTypeOpenCondTerm(otc, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeOpenCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeOpenCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-	if (*inType == STD_BOOL) { // if what's coming in is a boolean
+	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
-		Type *falseType = getTypeOpenTerm(recallBinding->type, recallBinding, falseBranch);
+		inStatus.type = inStatus.recall->type;
+		Type *trueType = getTypeClosedTerm(trueBranch, inStatus);
+		Type *falseType = getTypeOpenTerm(falseBranch, inStatus);
 		if (*trueType == *falseType) { // if the two branches match in type
 			type = trueType;
 		} else { // else if the two branches don't match in type
@@ -1519,18 +1524,19 @@ Type *getTypeOpenCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeClosedCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeClosedCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-	if (*inType == STD_BOOL) { // if what's coming in is a boolean
+	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		Type *trueType = getTypeClosedTerm(recallBinding->type, recallBinding, trueBranch);
-		Type *falseType = getTypeClosedTerm(recallBinding->type, recallBinding, falseBranch);
+		inStatus.type = inStatus.recall->type;
+		Type *trueType = getTypeClosedTerm(trueBranch, inStatus);
+		Type *falseType = getTypeClosedTerm(falseBranch, inStatus);
 		if (*trueType == *falseType) { // if the two branches match in type
 			type = trueType;
 		} else { // else if the two branches don't match in type
@@ -1544,41 +1550,41 @@ Type *getTypeClosedCondTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeTerm(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeTerm(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *tc2 = tree->child->child;
 	if (*tc2 == TOKEN_SimpleCondTerm) {
-		type = getTypeSimpleCondTerm(inType, recallBinding, tc2);
+		type = getTypeSimpleCondTerm(tc2, inStatus);
 	} else if (*tc2 == TOKEN_OpenCondTerm) {
-		type = getTypeOpenCondTerm(inType, recallBinding, tc2);
+		type = getTypeOpenCondTerm(tc2, inStatus);
 	} else if (*tc2 == TOKEN_SimpleTerm) {
-		type = getTypeSimpleTerm(inType, recallBinding, tc2);
+		type = getTypeSimpleTerm(tc2, inStatus);
 	} else if (*tc2 == TOKEN_ClosedCondTerm) {
-		type = getTypeClosedCondTerm(inType, recallBinding, tc2);
+		type = getTypeClosedCondTerm(tc2, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
 
 // reports errors
-Type *getTypeNonEmptyTerms(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeNonEmptyTerms(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	// scan the pipe left to right
 	Tree *curTerm = tree->child; // Term
 	Type *outType = NULL;
 	while (curTerm != NULL) {
-		outType = getTypeTerm(inType, recallBinding, curTerm);
+		outType = getTypeTerm(curTerm, inStatus);
 		if (*outType) { // if we found a proper typing for this term, log it
 			curTerm->type = outType;
-			inType = outType;
+			inStatus = outType;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inType<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 			// log the fact that typing failed
 			outType = NULL;
 			break;
@@ -1588,12 +1594,12 @@ Type *getTypeNonEmptyTerms(Type *inType, Tree *&recallBinding, Tree *tree) {
 	}
 	// if we succeeded in deriving an output type, return the mapping of the imput type to the output type
 	if (outType != NULL) {
-		type = new Type(inType, outType);
+		type = new FilterType(inStatus, outType);
 	}
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypeDeclaration(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
@@ -1607,21 +1613,21 @@ Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree) {
 				Tree *tstc = declarationSub->child; // Node or LBRACKET
 				if (*tstc == TOKEN_Node) { // possibly recursive node declaration
 					// first, set the identifier's type to the declared type of the Node
-					type = getTypeNodeSoft(nullType, recallBinding, tstc);
+					type = getTypeNodeSoft(tstc);
 					if (*type) {
 						tree->type = type;
 						// then, verify types for the declaration sub-block
-						type = getTypeNode(nullType, recallBinding, tstc);
+						type = getTypeNode(tstc);
 					}
 				} else if (*tstc == TOKEN_BracketedExp) { // non-recursive expression declaration
 					// derive the type of the expression without doing any bindings, since expressions must be non-recursive
-					type = getTypeBracketedExp(inType, recallBinding, tstc);
+					type = getTypeBracketedExp(tstc, inStatus);
 				}
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
-				tree->type = new FilterType(inType);
+				tree->type = new FilterType(inStatus);
 				// then, verify types for the declaration sub-block
-				type = getTypeNonEmptyTerms(inType, recallBinding, declarationSub);
+				type = getTypeNonEmptyTerms(declarationSub, inStatus);
 				// delete the temporary filter type
 				delete (tree->type);
 			} // otherwise, if it's an import declaration, do nothing
@@ -1630,13 +1636,13 @@ Type *getTypeDeclaration(Type *inType, Tree *&recallBinding, Tree *tree) {
 	GET_TYPE_FOOTER;
 }
 
-Type *getTypePipe(Type *inType, Tree *&recallBinding, Tree *tree) {
+TypeStatus getTypePipe(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
-		type = getTypeNonEmptyTerms(inType, recallBinding, pipec);
+		type = getTypeNonEmptyTerms(pipec, inStatus);
 	} else if (*pipec == TOKEN_Declaration) { // else if it's a Declaration pipe
-		type = getTypeDeclaration(inType, recallBinding, pipec);
+		type = getTypeDeclaration(pipec, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }
@@ -1648,8 +1654,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (pipeCur->type == NULL) { // if we haven't derived a type for this pipe yet
-			Tree *recallBinding = NULL; // recall binding buffer
-			getTypePipe(nullType, recallBinding, pipeCur);
+			getTypePipe(pipeCur);
 		}
 	}
 }

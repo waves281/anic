@@ -67,7 +67,7 @@ class TypeList : public Type {
 		// data members
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
-		TypeList(Tree *tree, Tree *&recall);
+		TypeList(Tree *tree, Tree *recall);
 		TypeList(Type *type);
 		TypeList();
 		~TypeList();
@@ -173,7 +173,7 @@ class ObjectType : public Type {
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
-		ObjectType(SymbolTable *base, Tree *&recall, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(SymbolTable *base, Tree *recall, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable();

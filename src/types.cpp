@@ -25,7 +25,7 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(Tree *tree, Tree *&recall) {
+TypeList::TypeList(Tree *tree, Tree *recall) {
 	category = CATEGORY_TYPELIST;
 	Tree *treeCur = tree;
 	for(;;) { // invariant: treeCur is either ParamList or TypeList
@@ -389,7 +389,7 @@ FilterType::operator string() {
 
 // ObjectType functions
 // constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
-ObjectType::ObjectType(SymbolTable *base, Tree *&recall, int suffix, int depth) : base(base) {
+ObjectType::ObjectType(SymbolTable *base, Tree *recall, int suffix, int depth) : base(base) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
 	// build the list of constructors
 	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;

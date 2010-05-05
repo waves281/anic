@@ -790,9 +790,29 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 }
 
 // blindly derives types from headers: does not verify sub-blocks
-TypeStatus getStatusNodeSoft(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-// LOL
+	Tree *nodec = tree->child;
+	if (*nodec == TOKEN_SuffixedIdentifier) {
+		status = getStatusSuffixedIdentifier(nodec, inStatus);
+	} else if (*nodec == TOKEN_NodeInstantiation) {
+		status = getStatusNodeInstantiation(nodec, inStatus);
+	} else if (*nodec == TOKEN_Filter) {
+		Tree *filterc = nodec->child;
+		if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
+			status.type = new FilterType(inStatus);
+			status.recall = inStatus.recall;
+		} else if (*filterc == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
+			status = getStatusFilterHeader(filterc, inStatus);
+		}
+	} else if (*nodec == TOKEN_Object) {
+		status.type = new ObjectType(base, inStatus.recall);
+		status.recall = inStatus.recall;
+	} else if (*nodec == TOKEN_PrimOpNode) {
+		status = getStatusPrimOpNode(nodec, inStatus);
+	} else if (*nodec == TOKEN_PrimLiteral) {
+		status = getStatusPrimLiteral(nodec, inStatus);
+	}
 	GET_TYPE_FOOTER;
 }
 
@@ -1061,21 +1081,23 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
 		if (tree->handled) { // if this isn't the first time we're trying to derive the type of this node, flag recursion error
 			Token curDefToken = tree->child->t;
-			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"ambiguous recursive definition of '"<<curDefToken.s<<"'");
+			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"indeterminate recursive definition of '"<<curDefToken.s<<"'");
 			status = errType;
 		} else { // otherwise, proceed with normal type derivation
+			// flag this node as traversed for detecting ill-formed recursion
 			tree->handled = true;
+			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				Tree *tstc = declarationSub->child; // Node or LBRACKET
 				if (*tstc == TOKEN_Node) { // possibly recursive node declaration
 					// first, set the identifier's type to the declared type of the Node
-					status = getStatusNodeSoft(tstc);
-					if (*status) {
+					status = getStatusNodeSoft(tstc, tree->env);
+					if (*status) { // if the soft derivation succeeded
 						tree->status = status;
 						// then, verify types for the declaration sub-block
 						status = getStatusNode(tstc);
-					}
-				} else if (*tstc == TOKEN_BracketedExp) { // non-recursive expression declaration
+					} // else if the soft derivation failed, leave status as the error type
+				} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
 					// derive the type of the expression without doing any bindings, since expressions must be non-recursive
 					status = getStatusBracketedExp(tstc, inStatus);
 				}
@@ -1095,10 +1117,10 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *pipec = tree->child;
-	if (*pipec == TOKEN_NonEmptyTerms) { // if it's a raw NonEmptyTerms pipe
-		status = getStatusNonEmptyTerms(pipec, inStatus);
-	} else if (*pipec == TOKEN_Declaration) { // else if it's a Declaration pipe
+	if (*pipec == TOKEN_Declaration) { // if it's a Declaration pipe
 		status = getStatusDeclaration(pipec, inStatus);
+	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
+		status = getStatusNonEmptyTerms(pipec, inStatus);
 	}
 	GET_TYPE_FOOTER;
 }

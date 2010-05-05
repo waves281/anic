@@ -7,6 +7,7 @@
 
 #include "lexer.h"
 #include "../tmp/parserStruct.h"
+#include "types.h"
 
 // forward declarations
 class SymbolTable;

@@ -769,7 +769,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 			Tree *st = netl->next->next->next; // StaticTerm
 			TypeStatus init = getStatusStaticTerm(st, inStatus);
 			if (*init) { //  if we successfully derived a type for the initializer
-				if (!(*init >> *status)) { // if the types are incompatible, throw an error
+				if (!(*init , *status)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<*status<<")");

@@ -809,7 +809,7 @@ TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus)
 			status = getStatusFilterHeader(filterc, inStatus);
 		}
 	} else if (*nodec == TOKEN_Object) {
-		status.type = new ObjectType(base, inStatus.recall);
+		status.type = new ObjectType(base, inStatus.recall); // KOL
 		status.recall = inStatus.recall;
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		status = getStatusPrimOpNode(nodec, inStatus);

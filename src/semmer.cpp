@@ -762,18 +762,21 @@ TypeStatus getStatusRetList(Tree *tree, TypeStatus inStatus) {
 // reports errors
 TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-	Tree *netl = tree->child->next; // TypeList
-	status = getStatusTypeList(netl, inStatus);
-	if (*status) { // if we successfully derived a type for the instantiation
-		if (netl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
-			Tree *st = netl->next->next->next; // StaticTerm
-			TypeStatus init = getStatusStaticTerm(st, inStatus);
-			if (*init) { //  if we successfully derived a type for the initializer
-				if (!(*init , *status)) { // if the types are incompatible, throw an error
+	Tree *tl = tree->child->next; // TypeList
+	TypeStatus instantiation = getStatusTypeList(tl, inStatus);
+	if (*instantiation) { // if we successfully derived a type for the instantiation
+		if (tl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
+			Tree *st = tl->next->next->next; // StaticTerm
+			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
+			if (*initializer) { //  if we successfully derived a type for the initializer
+				// pipe the types into the status
+				status.type = (*initializer , *instantiation);
+				status.recall = instantiation.recall;
+				if (!(*status)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<*status<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<*init<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<*instantiation<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<*initializer<<")");
 				}
 			} else { // else if we couldn't derive a type for the initializer
 				Token curToken = st->t;

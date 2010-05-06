@@ -54,8 +54,8 @@ class Type {
 		// operators
 		// virtual
 		virtual bool operator==(Type &otherType) = 0;
-		virtual Type &operator,(Type &otherType) = 0;
-		virtual Type &operator>>(Type &otherType) = 0;
+		virtual Type *operator,(Type &otherType) = 0;
+		virtual Type *operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
 		operator bool();
@@ -77,8 +77,8 @@ class TypeList : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
-		Type &operator,(Type &otherType);
-		Type &operator>>(Type &otherType);
+		Type *operator,(Type &otherType);
+		Type *operator>>(Type &otherType);
 		operator string();
 };
 
@@ -91,8 +91,8 @@ class ErrorType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
-		Type &operator,(Type &otherType);
-		Type &operator>>(Type &otherType);
+		Type *operator,(Type &otherType);
+		Type *operator>>(Type &otherType);
 		operator string();
 };
 
@@ -147,8 +147,8 @@ class StdType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
-		Type &operator,(Type &otherType);
-		Type &operator>>(Type &otherType);
+		Type *operator,(Type &otherType);
+		Type *operator>>(Type &otherType);
 		operator string();
 };
 
@@ -165,8 +165,8 @@ class FilterType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
-		Type &operator,(Type &otherType);
-		Type &operator>>(Type &otherType);
+		Type *operator,(Type &otherType);
+		Type *operator>>(Type &otherType);
 		operator string();
 };
 
@@ -185,8 +185,8 @@ class ObjectType : public Type {
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
-		Type &operator,(Type &otherType);
-		Type &operator>>(Type &otherType);
+		Type *operator,(Type &otherType);
+		Type *operator>>(Type &otherType);
 		operator string();
 };
 

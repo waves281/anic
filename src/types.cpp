@@ -269,6 +269,7 @@ bool ErrorType::operator==(Type &otherType) {
 	}
 }
 Type *ErrorType::operator,(Type &otherType) {return this;}
+Type *ErrorType::operator>>(Type &otherType) {return this;}
 ErrorType::operator string() {
 	return "error";
 }
@@ -453,7 +454,7 @@ bool FilterType::operator==(Type &otherType) {
 		return false;
 	}
 }
-Type *FilterType::operator,(Type &otherType) {
+Type *FilterType::operator,(Type &otherType) { // KOL
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
@@ -619,7 +620,7 @@ bool ObjectType::operator==(Type &otherType) {
 		return false;
 	}
 }
-Type *ObjectType::operator,(Type &otherType) {
+Type *ObjectType::operator,(Type &otherType) { // KOL
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
@@ -650,41 +651,7 @@ Type *ObjectType::operator,(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *ObjectType::operator>>(Type &otherType) {
-	if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		if (base->id == otherTypeCast->base->id && constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberTypes.size() == otherTypeCast->memberTypes.size()) {
-			// verify that constructors match
-			vector<TypeList *>::iterator consIter1 = constructorTypes.begin();
-			vector<TypeList *>::iterator consIter2 = otherTypeCast->constructorTypes.begin();
-			while(consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
-				if (**consIter1 != **consIter2) {
-					return false;
-				}
-				// advance
-				consIter1++;
-				consIter2++;
-			}
-			// verify that regular members match
-			vector<Type *>::iterator memberIter1 = memberTypes.begin();
-			vector<Type *>::iterator memberIter2 = otherTypeCast->memberTypes.begin();
-			while(memberIter1 != memberTypes.end() && memberIter2 != otherTypeCast->memberTypes.end()) {
-				if (**memberIter1 != **memberIter2) {
-					return false;
-				}
-				// advance
-				memberIter1++;
-				memberIter2++;
-			}
-			return true;
-		} else {
-			return false;
-		}
-	} else {
-		return false;
-	}
-}
-Type *ObjectType::operator,(Type &otherType) { // KOL
+Type *ObjectType::operator>>(Type &otherType) { // KOL
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {

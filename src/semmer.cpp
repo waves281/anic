@@ -527,14 +527,14 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 			case TOKEN_DOR:
 			case TOKEN_DAND:
 				if (*left == STD_BOOL && *right == STD_BOOL) {
-					status = left;
+					status = left.type;
 				}
 				break;
 			case TOKEN_OR:
 			case TOKEN_XOR:
 			case TOKEN_AND:
 				if (*left == STD_INT && *right == STD_INT) {
-					status = left;
+					status = left.type;
 				}
 				break;
 			case TOKEN_DEQUALS:
@@ -543,14 +543,14 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 			case TOKEN_GT:
 			case TOKEN_LE:
 			case TOKEN_GE:
-				if ((*left).isComparable() && (*right).isComparable()) {
+				if (left->isComparable(*right)) {
 					status = new Type(STD_BOOL);
 				}
 				break;
 			case TOKEN_LS:
 			case TOKEN_RS:
 				if (*left == STD_INT && *right == STD_INT) {
-					status = left;
+					status = left.type;
 				}
 				break;
 			case TOKEN_TIMES:
@@ -561,9 +561,9 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 				if ( (*left == STD_INT || *left == STD_FLOAT) &&
 						(*right == STD_INT || *right == STD_FLOAT) ) {
 					if (*right != STD_FLOAT) {
-						status = left;
+						status = left.type;
 					} else {
-						status = right;
+						status = right.type;
 					}
 				}
 				break;

@@ -49,7 +49,7 @@ class Type {
 		virtual ~Type();
 		// core methods
 		// virtual
-		virtual bool isComparable() = 0;
+		virtual bool isComparable(Type &otherType) = 0;
 		// non-virtual
 		bool baseEquals(Type &otherType);
 		bool baseSendable(Type &otherType);
@@ -77,7 +77,7 @@ class TypeList : public Type {
 		TypeList();
 		~TypeList();
 		// core methods
-		bool isComparable();
+		bool isComparable(Type &otherType);
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -90,8 +90,9 @@ class ErrorType : public Type {
 	public:
 		// allocators/deallocators
 		ErrorType();
+		~ErrorType();
 		// core methods
-		bool isComparable();
+		bool isComparable(Type &otherType);
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -104,7 +105,7 @@ class ErrorType : public Type {
 
 #define STD_NULL 0
 
-#define STD_MIN_COMPARABLE 1 /* anything in the range is considered comparable */
+#define STD_MIN_COMPARABLE 1
 
 #define STD_INT 1
 #define STD_FLOAT 2
@@ -112,7 +113,7 @@ class ErrorType : public Type {
 #define STD_CHAR 4
 #define STD_STRING 5
 
-#define STD_MAX_COMPARABLE 5 /* anything in the range is considered comparable */
+#define STD_MAX_COMPARABLE 5
 
 #define STD_NOT 6
 #define STD_COMPLEMENT 7
@@ -142,12 +143,13 @@ class ErrorType : public Type {
 class StdType : public Type {
 	public:
 		// data members
-		int kind; // the class of type that this is
+		int kind; // the kind of standard type that this is
 		// allocators/deallocators
 		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~StdType();
 		// core methods
-		bool isComparable();
+		bool isComparable(Type &otherType);
+		int kindCompare(StdType &otherType); // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -165,7 +167,7 @@ class FilterType : public Type {
 		FilterType(Type *from, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
-		bool isComparable();
+		bool isComparable(Type &otherType);
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);
@@ -185,7 +187,7 @@ class ObjectType : public Type {
 		ObjectType(SymbolTable *base, Tree *recall, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
-		bool isComparable();
+		bool isComparable(Type &otherType);
 		// operators
 		bool operator==(Type &otherType);
 		bool operator==(int kind);

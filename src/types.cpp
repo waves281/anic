@@ -112,7 +112,7 @@ TypeList::~TypeList() {
 		}
 	}
 }
-bool TypeList::isComparable() {return (list.size() == 1 && (list[0])->isComparable());}
+bool TypeList::isComparable(Type &otherType) {return (list.size() == 1 && list[0]->isComparable(otherType));}
 bool TypeList::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -172,7 +172,7 @@ Type *TypeList::operator,(Type &otherType) {
 				}
 			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
 					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT || otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
-				if (thisTypeCast1->isComparable() && thisTypeCast2->isComparable()) {
+				if (thisTypeCast1->kindCompare(*thisTypeCast2)) {
 					if (thisTypeCast1->kind >= thisTypeCast2->kind) {
 						return (new StdType(thisTypeCast1->kind, SUFFIX_LATCH));
 					} else {
@@ -260,7 +260,8 @@ TypeList::operator string() {
 
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
-bool ErrorType::isComparable() {return false;}
+ErrorType::~ErrorType() {}
+bool ErrorType::isComparable(Type &otherType) {return false;}
 bool ErrorType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
@@ -277,7 +278,26 @@ ErrorType::operator string() {
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
 StdType::~StdType() {category = CATEGORY_STDTYPE;}
-bool StdType::isComparable() {return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && (suffix == SUFFIX_CONSTANT || suffix == SUFFIX_LATCH));}
+bool StdType::isComparable(Type &otherType) {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
+int StdType::kindCompare(StdType &otherType) {
+	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
+		return STD_NULL;
+	} else if (kind == otherType.kind) {
+		return kind;
+	} else if (kind < otherType.kind) {
+		if (kind == STD_INT && otherType.kind == STD_FLOAT) {
+			return STD_FLOAT;
+		} else if (kind == STD_INT && otherType.kind == STD_CHAR) {
+			return STD_CHAR;
+		} else if (kind == STD_CHAR && otherType.kind == STD_STRING) {
+			return STD_STRING;
+		} else {
+			return STD_NULL;
+		}
+	} else { // kind > otherType.kind
+		return STD_NULL;
+	}
+}
 bool StdType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
@@ -323,7 +343,7 @@ Type *StdType::operator>>(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (isComparable() && otherTypeCast->isComparable() && baseSendable(otherType) && kind <= otherTypeCast->kind) { // KOL
+		if (baseSendable(otherType) && kindCompare(*otherTypeCast) && kind <= otherTypeCast->kind) {
 			return nullType;
 		} else {
 			return errType;
@@ -431,7 +451,7 @@ FilterType::~FilterType() {
 		delete to;
 	}
 }
-bool FilterType::isComparable() {return false;}
+bool FilterType::isComparable(Type &otherType) {return false;}
 bool FilterType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
@@ -552,7 +572,7 @@ ObjectType::~ObjectType() {
 		}
 	}
 }
-bool ObjectType::isComparable() {return false;}
+bool ObjectType::isComparable(Type &otherType) {return false;}
 bool ObjectType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);

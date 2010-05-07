@@ -286,7 +286,7 @@ bool StdType::operator==(Type &otherType) {
 		return false;
 	}
 }
-Type *StdType::operator,(Type &otherType) { // KOL
+Type *StdType::operator,(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -295,12 +295,7 @@ Type *StdType::operator,(Type &otherType) { // KOL
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (isComparable() && otherTypeCast->isComparable() && kind <= otherTypeCast->kind && baseSendable(otherType)) {
-			return nullType;
-		} else {
-			return errType;
-		}
+		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*(*this >> *(otherTypeCast->from))) {
@@ -318,33 +313,24 @@ Type *StdType::operator,(Type &otherType) { // KOL
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *StdType::operator>>(Type &otherType) { // KOL
+Type *StdType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
+		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
 			return nullType;
 		} else {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (isComparable() && otherTypeCast->isComparable() && kind <= otherTypeCast->kind && baseSendable(otherType)) {
+		if (isComparable() && otherTypeCast->isComparable() && baseSendable(otherType) && kind <= otherTypeCast->kind) { // KOL
 			return nullType;
 		} else {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (*(*this >> *(otherTypeCast->from))) {
-			return (otherTypeCast->to);
-		}
+		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
 		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE

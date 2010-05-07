@@ -699,5 +699,6 @@ Type &TypeStatus::operator*() {
 		return (*errType);
 	}
 }
+Type *TypeStatus::operator->() {return type;}
 bool TypeStatus::operator==(Type &otherType) {return (*type == otherType);}
 bool TypeStatus::operator!=(Type &otherType) {return (*type != otherType);}

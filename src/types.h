@@ -35,6 +35,8 @@ class ObjectType;
 class ErrorType;
 class TypeStatus;
 
+// core Type class
+
 class Type {
 	public:
 		// data members
@@ -62,6 +64,8 @@ class Type {
 		bool operator!();
 		bool operator!=(Type &otherType);
 };
+
+// Type subclasses
 
 class TypeList : public Type {
 	public:
@@ -208,6 +212,7 @@ class TypeStatus {
 		// operators
 		TypeStatus &operator=(TypeStatus otherStatus);
 		Type &operator*();
+		Type *operator->();
 		bool operator==(Type &otherType);
 		bool operator!=(Type &otherType);
 };

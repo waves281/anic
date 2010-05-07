@@ -485,9 +485,9 @@ TypeStatus getStatusPrimary(Tree *tree, TypeStatus inStatus) {
 		if (*sub) { // if we successfully derived a subtype
 			if ((*sub).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
 				// copy the subtype
-				status = new Type(*sub);
+				status = TypeStatus(new Type(*sub), status);
 				// down-level the type
-				status.type->delatch();
+				status->delatch();
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
@@ -770,8 +770,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
 				// pipe the types into the status
-				status.type = (*initializer , *instantiation);
-				status.recall = instantiation.recall;
+				status = TypeStatus((*initializer , *instantiation), instantiation);
 				if (!(*status)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
@@ -803,14 +802,12 @@ TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus)
 	} else if (*nodec == TOKEN_Filter) {
 		Tree *filterc = nodec->child;
 		if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
-			status.type = new FilterType(inStatus);
-			status.recall = inStatus.recall;
+			status.type = TypeStatus(new FilterType(inStatus), inStatus);
 		} else if (*filterc == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
 			status = getStatusFilterHeader(filterc, inStatus);
 		}
 	} else if (*nodec == TOKEN_Object) {
-		status.type = new ObjectType(base, inStatus.recall); // KOL
-		status.recall = inStatus.recall;
+		status = TypeStatus(new ObjectType(base, inStatus.recall), inStatus); // KOL
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		status = getStatusPrimOpNode(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimLiteral) {

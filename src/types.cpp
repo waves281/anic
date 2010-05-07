@@ -480,7 +480,7 @@ Type *FilterType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		if (*this == otherType && baseSendable(otherType)) {
+		if (baseSendable(otherType) && *this == otherType) {
 			return &otherType;
 		} else {
 			return errType;
@@ -587,11 +587,11 @@ bool ObjectType::operator==(Type &otherType) {
 		return false;
 	}
 }
-Type *ObjectType::operator,(Type &otherType) { // KOL
+Type *ObjectType::operator,(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
-			return nullType;
+		if (otherTypeCast->list.size() == 1) {
+			return (*this , *(otherTypeCast->list[0]));
 		} else {
 			return errType;
 		}
@@ -599,29 +599,26 @@ Type *ObjectType::operator,(Type &otherType) { // KOL
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*this >> *(otherTypeCast->from));
+		if (*(*this >> *(otherTypeCast->from))) {
+			return (otherTypeCast->to);
+		} else {
+			return errType;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		// check if the target accepts this object as input
 		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return &otherType;
 			}
-		}
-		// otherwise, check if if this object is sendable to the target
-		if (*this == otherType && baseSendable(otherType)) {
-			return &otherType;
-		} else {
-			return errType;
 		}
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *ObjectType::operator>>(Type &otherType) { // KOL
+Type *ObjectType::operator>>(Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
+		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
 			return nullType;
 		} else {
 			return errType;
@@ -629,18 +626,9 @@ Type *ObjectType::operator>>(Type &otherType) { // KOL
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*this >> *(otherTypeCast->from));
+		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		// check if the target accepts this object as input
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
-		// otherwise, check if if this object is sendable to the target
-		if (*this == otherType && baseSendable(otherType)) {
+		if (baseSendable(otherType) && *this == otherType) {
 			return &otherType;
 		} else {
 			return errType;

@@ -415,8 +415,8 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-TypeStatus getStType(SymbolTable *st) {
-	if (st->defSite != NULL && st->defSite->status) { // if there is already a type logged for this st node
+Type *getStType(SymbolTable *st) {
+	if (st->defSite != NULL && st->defSite->status) { // if there is already a type logged for this st node, simply return it
 		return st->defSite->status;
 	} else { // else if we need to derive a type ourselves
 // LOL
@@ -433,7 +433,7 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, TypeStatus inStatus) {
 	string idCur = id; // a destructible copy for the recursion
 	SymbolTable *st = bindId(idCur, tree->env, inStatus);
 	if (st != NULL) { // if we found a binding
-		status = getStType(st);
+		status = TypeStatus(getStType(st), tree);
 	} else { // else if we couldn't find a binding
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve '"<<id<<"'");
@@ -485,7 +485,7 @@ TypeStatus getStatusPrimary(Tree *tree, TypeStatus inStatus) {
 		if (*sub) { // if we successfully derived a subtype
 			if ((*sub).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
 				// copy the subtype
-				status = TypeStatus(new Type(*sub), status);
+				status = new Type(*sub);
 				// down-level the type
 				status->delatch();
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
@@ -700,8 +700,8 @@ TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
 
 TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
-	TypeStatus from = nullType;
-	TypeStatus to = nullType;
+	TypeStatus from = TypeStatus(nullType, inStatus);
+	TypeStatus to = TypeStatus(nullType, inStatus);
 
 	Tree *treeCur = tree->child->next; // ParamList
 	if (*treeCur == TOKEN_ParamList) {
@@ -721,7 +721,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 	Tree *tc = tree->child; // FilterHeader or Block
-	TypeStatus header = nullType;
+	TypeStatus header = TypeStatus(nullType, inStatus);
 	if (*tc == TOKEN_FilterHeader) { // if there is a header, derive its type
 		header = getStatusFilterHeader(tc, inStatus);
 	}
@@ -802,7 +802,7 @@ TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus)
 	} else if (*nodec == TOKEN_Filter) {
 		Tree *filterc = nodec->child;
 		if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
-			status.type = TypeStatus(new FilterType(inStatus), inStatus);
+			status = TypeStatus(new FilterType(inStatus), inStatus);
 		} else if (*filterc == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
 			status = getStatusFilterHeader(filterc, inStatus);
 		}

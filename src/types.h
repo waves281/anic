@@ -203,7 +203,7 @@ class TypeStatus {
 		Tree *recall; // the encapsulated recall binding
 		// allocators/deallocators
 		TypeStatus();
-		TypeStatus(Type *type, Tree *recall = NULL);
+		TypeStatus(Type *type, Tree *recall);
 		~TypeStatus();
 		// converters
 		operator Type *();
@@ -211,6 +211,8 @@ class TypeStatus {
 		operator bool(); // tests for NULLity of type, not for whether it's the error type or not!
 		// operators
 		TypeStatus &operator=(TypeStatus otherStatus);
+		TypeStatus &operator=(Type *otherType);
+		TypeStatus &operator=(Tree *otherTree);
 		Type &operator*();
 		Type *operator->();
 		bool operator==(Type &otherType);

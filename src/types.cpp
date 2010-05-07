@@ -692,6 +692,8 @@ TypeStatus::operator Type *() {return type;}
 TypeStatus::operator Tree *() {return recall;}
 TypeStatus::operator bool() {return (type != NULL);}
 TypeStatus &TypeStatus::operator=(TypeStatus otherStatus) {type = otherStatus.type; recall = otherStatus.recall; return *this;}
+TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
+TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}
 Type &TypeStatus::operator*() {
 	if (type != NULL) {
 		return (*type);

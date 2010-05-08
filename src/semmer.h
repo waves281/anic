@@ -52,7 +52,7 @@ TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusObjectSoft(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus, TypeStatus softStatus);
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusType(Tree *tree, TypeStatus inStatus = TypeStatus(), int suffixVal, int depthVal);
+TypeStatus getStatusType(Tree *tree, int suffixVal, int depthVal, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus = TypeStatus());
@@ -81,8 +81,7 @@ TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 		return tree->status;\
 	}\
 	/* otherwise, compute the type normally */\
-	status.recall = inStatus.recall;\
-	TypeStatus status
+	TypeStatus status(NULL, inStatus.recall)
 
 #define GET_STATUS_FOOTER \
 	/* if we could't resolve a valid type, use the error type */\

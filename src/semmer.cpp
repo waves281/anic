@@ -793,7 +793,7 @@ TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusType(Tree *tree, TypeStatus inStatus, int suffixVal, int depthVal) {
+TypeStatus getStatusType(Tree *tree, int suffixVal, int depthVal, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	Tree *typec = tree->child; // FilterType or NonArraySuffixedIdentifier
 	if (*typec == TOKEN_FilterType) { // if it's a regular filter type
@@ -863,10 +863,10 @@ TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus) {
 			}
 		}
 		// construct the Type object
-		TypeStatus curTypeStatus = getStatusType(type, inStatus);
+		TypeStatus curTypeStatus = getStatusType(type, suffixVal, depthVal, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
 			// commit the type to the list
-			list.push_back(curType);
+			list.push_back(curTypeStatus.type);
 		} else { // else if we failed to derive a type for this node
 			failed = true;
 		}
@@ -925,10 +925,10 @@ TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus) {
 			}
 		}
 		// construct the Type object
-		TypeStatus curTypeStatus = getStatusType(type, inStatus);
+		TypeStatus curTypeStatus = getStatusType(type, suffixVal, depthVal, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
 			// commit the type to the list
-			list.push_back(curType);
+			list.push_back(curTypeStatus.type);
 		} else { // else if we failed to derive a type for this node
 			failed = true;
 		}

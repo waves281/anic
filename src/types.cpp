@@ -25,7 +25,7 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList(vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
+TypeList::TypeList(vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
 TypeList::TypeList(Type *type) {
 	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;
 	list.push_back(type);

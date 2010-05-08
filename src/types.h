@@ -179,12 +179,11 @@ class FilterType : public Type {
 class ObjectType : public Type {
 	public:
 		// data members
-		SymbolTable *base; // the Node that defines this type (base->defSite is Declaration->TypedStaticTerm->Node->Object)
 		vector<TypeList *> constructorTypes; // list of the types of this object's constructors (each one is a TypeList)
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
-		ObjectType(SymbolTable *base, Tree *recall, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable(Type &otherType);

@@ -735,9 +735,60 @@ TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_FOOTER;
 }
 
-TypeStatus getStatusObjectBlock(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus) {
 	GET_TYPE_HEADER;
 // LOL
+	GET_TYPE_FOOTER;
+}
+
+// blindly derives types from constructor headers: does not verify sub-blocks or add members to the ObjectType
+TypeStatus getStatusObjectSoft(Tree *tree, TypeStatus inStatus) {
+	GET_TYPE_HEADER;
+	// derive types for all of the contructors
+	vector<TypeList *> constructorTypes;
+	bool failed = false;
+	Tree *conss = tree->child->next; // Constructors
+	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next->next != NULL) ? cons->next->next->child : NULL) {
+		TypeStatus consStatus = getStatusConstructor(cons, inStatus);
+		if (*consStatus) { // if we successfully derived a type for this constructor
+			// check if there's already a constructor of this type
+			vector<TypeList *>::iterator iter = constructorTypes.begin();
+			while (iter != constructorTypes.end()) {
+				if (**iter == *consStatus) {
+					break;
+				}
+				// advance
+				iter++;
+			}
+			if (iter == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+				constructorTypes.push_back((TypeList *)(consStatus.type));
+			} else { // otherwise, flag the conflict as an error
+				Token curDefToken = cons->child->t;
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<*consStatus<<" in object definition");
+				failed = true;
+			}
+		} else { // otherwise, if we failed to derive a type for this constructor
+			failed = true;
+		}
+	}
+	if (!failed) {
+		status = TypeStatus(new ObjectType(constructorTypes), inStatus);
+	}
+	GET_TYPE_FOOTER;
+}
+
+// derives only member types for the constructor-typed ObjectType in softStatus
+TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus, TypeStatus softStatus) {
+	GET_TYPE_HEADER;
+// LOL
+	GET_TYPE_FOOTER;
+}
+
+// derives both constructor types and member types at the same time
+TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
+	GET_TYPE_HEADER;
+	TypeStatus softStatus = getStatusObjectSoft(tree, inStatus);
+	return getStatusObject(tree, inStatus, softStatus);
 	GET_TYPE_FOOTER;
 }
 
@@ -807,7 +858,7 @@ TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus)
 			status = getStatusFilterHeader(filterc, inStatus);
 		}
 	} else if (*nodec == TOKEN_Object) {
-		status = TypeStatus(new ObjectType(base, inStatus.recall), inStatus); // KOL
+		status = getStatusObjectSoft(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		status = getStatusPrimOpNode(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimLiteral) {
@@ -827,7 +878,7 @@ TypeStatus getStatusNode(Tree *tree, TypeStatus inStatus) {
 	} else if (*nodec == TOKEN_Filter) {
 		status = getStatusFilter(nodec, inStatus);
 	} else if (*nodec == TOKEN_Object) {
-		status = getStatusObjectBlock(nodec, inStatus);
+		status = getStatusObject(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		status = getStatusPrimOpNode(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimLiteral) {

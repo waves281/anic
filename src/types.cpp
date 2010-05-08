@@ -522,44 +522,7 @@ FilterType::operator string() {
 
 // ObjectType functions
 // constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
-ObjectType::ObjectType(SymbolTable *base, Tree *recall, int suffix, int depth) : base(base) {
-	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;
-	// build the list of constructors
-	Tree *cs = base->defSite/*Declaration*/->child->next->next/*TypedStaticTerm*/->child/*Node*/->child/*Object*/->child->next/*Constructors*/;
-	for (Tree *c = cs->child; c != NULL; c = (c->next->next != NULL) ? c->next->next->child : NULL) {
-		// derive the constructor's type
-		TypeList *curConsType;
-		if (*(c->child->next) == TOKEN_LSQUARE) {
-			curConsType = new TypeList();
-		} else if (*(c->child->next) == TOKEN_NonRetFilterHeader) {
-			Tree *paramList = c/*Constructor*/->child->next/*NonRetFilterHeader*/->child->next/*ParamList*/;
-			curConsType = new TypeList(paramList, recall);
-		}
-		// check if there's already a constructor of this type
-		vector<TypeList *>::iterator iter = constructorTypes.begin();
-		while (iter != constructorTypes.end()) {
-			if (**iter == *curConsType) {
-				break;
-			}
-			// advance
-			iter++;
-		}
-		if (iter == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
-			constructorTypes.push_back(curConsType);
-		} else { // otherwise, flag the conflict as an error
-			Token curDefToken = c->child->t;
-			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<(string)(*curConsType)<<" in "<<base->id);
-		}
-	}
-	// build the list of members
-	for (Tree *pipe = cs->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
-		if (*(pipe->child) == TOKEN_Declaration) {
-			memberNames.push_back(pipe->child->child->t.s); // ID
-			Type *childType = getStatusDeclaration(pipe->child);
-			memberTypes.push_back(childType);
-		}
-	}
-}
+ObjectType::ObjectType(vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {
@@ -576,11 +539,11 @@ bool ObjectType::isComparable(Type &otherType) {return false;}
 bool ObjectType::operator==(Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		if (base->id == otherTypeCast->base->id && constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberTypes.size() == otherTypeCast->memberTypes.size()) {
-			// verify that constructors match
+		if (constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberNames.size() == otherTypeCast->memberNames.size()) {
+			// verify that the constructors match
 			vector<TypeList *>::iterator consIter1 = constructorTypes.begin();
 			vector<TypeList *>::iterator consIter2 = otherTypeCast->constructorTypes.begin();
-			while(consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
+			while (consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
 				if (**consIter1 != **consIter2) {
 					return false;
 				}
@@ -588,16 +551,27 @@ bool ObjectType::operator==(Type &otherType) {
 				consIter1++;
 				consIter2++;
 			}
-			// verify that regular members match
-			vector<Type *>::iterator memberIter1 = memberTypes.begin();
-			vector<Type *>::iterator memberIter2 = otherTypeCast->memberTypes.begin();
-			while(memberIter1 != memberTypes.end() && memberIter2 != otherTypeCast->memberTypes.end()) {
-				if (**memberIter1 != **memberIter2) {
+			// verify that the member types match
+			vector<string>::iterator memberNameIter1 = memberNames.begin();
+			vector<string>::iterator memberNameIter2 = otherTypeCast->memberNames.begin();
+			while (memberNameIter1 != memberNames.end() && memberNameIter2 != otherTypeCast->memberNames.end()) {
+				if (*memberNameIter1 != *memberNameIter2) {
 					return false;
 				}
 				// advance
-				memberIter1++;
-				memberIter2++;
+				memberNameIter1++;
+				memberNameIter2++;
+			}
+			// verify that the member types match
+			vector<Type *>::iterator memberTypeIter1 = memberTypes.begin();
+			vector<Type *>::iterator memberTypeIter2 = otherTypeCast->memberTypes.begin();
+			while (memberTypeIter1 != memberTypes.end() && memberTypeIter2 != otherTypeCast->memberTypes.end()) {
+				if (**memberTypeIter1 != **memberTypeIter2) {
+					return false;
+				}
+				// advance
+				memberTypeIter1++;
+				memberTypeIter2++;
 			}
 			return true;
 		} else {
@@ -657,7 +631,33 @@ Type *ObjectType::operator>>(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-ObjectType::operator string() {return base->id;}
+ObjectType::operator string() {
+	string acc("{");
+	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+		acc += "=[";
+		acc += (string)(**iter);
+		acc += "]";
+		if (iter+1 != constructorTypes.end()) {
+			acc += ", ";
+		}
+	}
+	acc += ";";
+	vector<string>::iterator memberNameIter = memberNames.begin();
+	vector<Type *>::iterator memberTypeIter = memberTypes.begin();
+	while (memberNameIter != memberNames.end()) {
+		acc += *memberNameIter;
+		acc += "=";
+		acc += (string)(**memberTypeIter);
+		if (memberNameIter+1 != memberNames.end()) {
+			acc += ", ";
+		}
+		// advance
+		memberNameIter++;
+		memberTypeIter++;
+	}
+	acc += "}";
+	return acc;
+}
 
 // typing status block functions
 TypeStatus::TypeStatus() : type(nullType), recall(NULL) {}

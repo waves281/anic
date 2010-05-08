@@ -702,17 +702,18 @@ TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	TypeStatus from = TypeStatus(nullType, inStatus);
 	TypeStatus to = TypeStatus(nullType, inStatus);
-
-	Tree *treeCur = tree->child->next; // ParamList
+	Tree *treeCur = tree->child->next; // ParamList, RetList, or RSQUARE
 	if (*treeCur == TOKEN_ParamList) {
 		from = getStatusParamList(treeCur, inStatus);
+		// advance to handle the possible RetList
 		treeCur = treeCur->next; // RetList or RSQUARE
 	}
 	if (*treeCur == TOKEN_RetList) {
-		from = getStatusRetList(treeCur, inStatus);
+		to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
 	}
-	if (*from != TYPE_ERROR && *to != TYPE_ERROR) {
+	if (*from && *to) { // if we succeeded in deriving both the from- and to- statuses
 		status = new FilterType(from, to);
+		status = tree;
 	}
 	GET_STATUS_FOOTER;
 }
@@ -792,21 +793,156 @@ TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+TypeStatus getStatusType(Tree *tree, TypeStatus inStatus, int suffixVal, int depthVal) {
+	GET_STATUS_HEADER;
+	Tree *typec = tree->child; // FilterType or NonArraySuffixedIdentifier
+	if (*typec == TOKEN_FilterType) { // if it's a regular filter type
+		TypeStatus from = inStatus;
+		TypeStatus to = inStatus;
+		Tree *sub = typec->child->next; // TypeList, RetList, or RSQUARE
+		if (*sub == TOKEN_TypeList) { // if there was a from-list
+			from = getStatusTypeList(sub, inStatus); // TypeList
+			// advance (in order to properly handle the possible trailing RetList)
+			sub = sub->next; // RetList or RSQUARE
+		} else if (*sub == TOKEN_RetList) { // else if there was no from-list, but there's a RetList
+			from = new TypeList();
+		} else { // else if there was no from-list or RetList (it's a null filter)
+			from = new TypeList();
+			sub = NULL;
+		}
+		if (sub != NULL && *sub == TOKEN_RetList) { // if there was a RetList
+			to = getStatusTypeList(sub->child->next, inStatus); // TypeList
+		} else { // else if there was no RetList
+			to = new TypeList();
+		}
+		status = new FilterType(from, to, suffixVal, depthVal);
+	} else if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
+		status = getStatusSuffixedIdentifier(typec);
+	}
+	GET_STATUS_FOOTER;
+}
+
 TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-// LOL
+	vector<Type *> list;
+	Tree *treeCur = tree;
+	bool failed = false;
+	for(;;) { // invariant: treeCur is a TypeList
+		Tree *type = treeCur->child; // Type
+		Tree *typeSuffix = type->next; // TypeSuffix
+		// derive the suffix and depth first, since we'll need to know then to construct the Type object
+		int suffixVal;
+		int depthVal = 0;
+		if (typeSuffix->child == NULL) {
+			suffixVal = SUFFIX_CONSTANT;
+		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
+			suffixVal = SUFFIX_LATCH;
+		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
+			suffixVal = SUFFIX_STREAM;
+			Tree *sts = typeSuffix->child; // StreamTypeSuffix
+			for(;;) {
+				depthVal++;
+				// advance
+				if (sts->child->next != NULL) {
+					sts = sts->child->next; // StreamTypeSuffix
+				} else {
+					break;
+				}
+			}
+		} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
+			suffixVal = SUFFIX_ARRAY;
+			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
+			for(;;) {
+				depthVal++;
+				// advance
+				if (ats->child->next != NULL) {
+					ats = ats->child->next; // ArrayTypeSuffix
+				} else {
+					break;
+				}
+			}
+		}
+		// construct the Type object
+		TypeStatus curTypeStatus = getStatusType(type, inStatus);
+		if (*curTypeStatus) { // if we successfully derived a type for this node
+			// commit the type to the list
+			list.push_back(curType);
+		} else { // else if we failed to derive a type for this node
+			failed = true;
+		}
+		// advance
+		if (treeCur->child->next != NULL) {
+			treeCur = treeCur->child->next->next;
+		} else {
+			break;
+		}
+	}
+	if (!failed) {
+		status = new TypeList(list);
+		status = tree;
+	}
 	GET_STATUS_FOOTER;
 }
 
 TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-// LOL
-	GET_STATUS_FOOTER;
-}
-
-TypeStatus getStatusRetList(Tree *tree, TypeStatus inStatus) {
-	GET_STATUS_HEADER;
-// LOL
+	vector<Type *> list;
+	Tree *treeCur = tree;
+	bool failed = false;
+	for(;;) { // invariant: treeCur is a ParamList
+		Tree *type = treeCur->child->child; // Type
+		Tree *typeSuffix = type->next; // TypeSuffix
+		// derive the suffix and depth first, since we'll need to know then to construct the Type object
+		int suffixVal;
+		int depthVal = 0;
+		if (typeSuffix->child == NULL) {
+			suffixVal = SUFFIX_CONSTANT;
+		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
+			suffixVal = SUFFIX_LATCH;
+		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
+			suffixVal = SUFFIX_STREAM;
+			Tree *sts = typeSuffix->child; // StreamTypeSuffix
+			for(;;) {
+				depthVal++;
+				// advance
+				if (sts->child->next != NULL) {
+					sts = sts->child->next; // StreamTypeSuffix
+				} else {
+					break;
+				}
+			}
+		} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
+			suffixVal = SUFFIX_ARRAY;
+			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
+			for(;;) {
+				depthVal++;
+				// advance
+				if (ats->child->next != NULL) {
+					ats = ats->child->next; // ArrayTypeSuffix
+				} else {
+					break;
+				}
+			}
+		}
+		// construct the Type object
+		TypeStatus curTypeStatus = getStatusType(type, inStatus);
+		if (*curTypeStatus) { // if we successfully derived a type for this node
+			// commit the type to the list
+			list.push_back(curType);
+		} else { // else if we failed to derive a type for this node
+			failed = true;
+		}
+		// advance
+		if (treeCur->child->next != NULL) {
+			treeCur = treeCur->child->next->next;
+		} else {
+			break;
+		}
+	}
+	if (!failed) {
+		status = new TypeList(list);
+		status = tree;
+	}
 	GET_STATUS_FOOTER;
 }
 
@@ -936,7 +1072,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, TypeStatus inStatus) {
 
 TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-	vector<TypeStatus> toStatuses; // vector for logging the destination statuses of each branch
+	vector<TypeStatus> toes; // vector for logging the destination statuses of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
 	Tree *lpCur = tree->child->next->next; // LabeledPipes
 	for (;;) { // per-labeled pipe loop
@@ -954,9 +1090,9 @@ TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
 		}
 		// derive the to-type of this label
 		Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
-		TypeStatus toStatus = getStatusSimpleTerm(toTree, inStatus);
+		TypeStatus to = getStatusSimpleTerm(toTree, inStatus);
 		// log the to-type and to-tree of this label
-		toStatuses.push_back(toStatus);
+		toes.push_back(to);
 		toTrees.push_back(toTree);
 		// advance
 		if (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) {
@@ -966,16 +1102,16 @@ TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
 		}
 	} // per-labeled pipe loop
 	// verify that all of the to-types are the same
-	TypeStatus firstToStatus = toStatuses[0];
+	TypeStatus firstToStatus = toes[0];
 	Tree *firstToTree = toTrees[0];
-	for (unsigned int i=1; i < toStatuses.size(); i++) { // for each to-type
-		TypeStatus toStatus = toStatuses[i];
-		if (*toStatus != *firstToStatus) { // if the types don't match, throw an error
+	for (unsigned int i=1; i < toes.size(); i++) { // for each to-type
+		TypeStatus to = toes[i];
+		if (*to != *firstToStatus) { // if the types don't match, throw an error
 			Tree *toTree = toTrees[i];
 			Token curToken = toTree->t;
 			Token curToken2 = firstToTree->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"switch destination types are inconsistent");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<*toStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<*to<<")");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<*firstToStatus<<")");
 		}
 	}

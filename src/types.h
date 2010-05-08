@@ -72,7 +72,7 @@ class TypeList : public Type {
 		// data members
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
-		TypeList(Tree *tree, Tree *recall);
+		TypeList(Tree *tree, vector<Type *> &list);
 		TypeList(Type *type);
 		TypeList();
 		~TypeList();

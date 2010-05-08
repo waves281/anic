@@ -52,9 +52,9 @@ TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusObjectSoft(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus, TypeStatus softStatus);
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusType(Tree *tree, TypeStatus inStatus = TypeStatus(), int suffixVal, int depthVal);
 TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusRetList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNode(Tree *tree, TypeStatus inStatus = TypeStatus());
@@ -81,6 +81,7 @@ TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 		return tree->status;\
 	}\
 	/* otherwise, compute the type normally */\
+	status.recall = inStatus.recall;\
 	TypeStatus status
 
 #define GET_STATUS_FOOTER \

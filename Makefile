@@ -136,7 +136,7 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES)
 # INSTALLER
 
 $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
-	@echo Generating installater script...
+	@echo Generating installer script...
 	@mkdir -p tmp
 	@printf "#!/bin/sh\n\n\
 ### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
@@ -149,7 +149,7 @@ exit" > $(INSTALL_SCRIPT)
 	@chmod +x $(INSTALL_SCRIPT)
 
 $(UNINSTALL_SCRIPT): Makefile
-	@echo Generating uninstallater script...
+	@echo Generating uninstaller script...
 	@mkdir -p tmp
 	@printf "#!/bin/sh\n\n\
 ### $(UNINSTALL_SCRIPT) -- generated script for uninstalling $(TARGET) ANI Compiler\n\n\

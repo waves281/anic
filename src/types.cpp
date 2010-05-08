@@ -25,86 +25,12 @@ bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(Tree *tree, Tree *recall) {
-	category = CATEGORY_TYPELIST;
-	Tree *treeCur = tree;
-	for(;;) { // invariant: treeCur is either ParamList or TypeList
-		Tree *base; // NonArraySuffixedIdentifier or FilterType
-		if (*treeCur == TOKEN_ParamList) { // if we're working with a ParamList
-			base = treeCur->child->child->child; // NonArraySuffixedIdentifier or FilterType
-		} else { // otherwise we're working with a TypeList
-			base = treeCur->child->child; // NonArraySuffixedIdentifier or FilterType
-		}
-		Tree *typeSuffix = base->next; // TypeSuffix
-		// derive the suffix and depth first, since it's more convenient to do so
-		int suffixVal;
-		int depthVal = 0;
-		if (typeSuffix->child == NULL) {
-			suffixVal = SUFFIX_CONSTANT;
-		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
-			suffixVal = SUFFIX_LATCH;
-		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
-			suffixVal = SUFFIX_STREAM;
-			Tree *sts = typeSuffix->child; // StreamTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (sts->child->next != NULL) {
-					sts = sts->child->next; // StreamTypeSuffix
-				} else {
-					break;
-				}
-			}
-		} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
-			suffixVal = SUFFIX_ARRAY;
-			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (ats->child->next != NULL) {
-					ats = ats->child->next; // ArrayTypeSuffix
-				} else {
-					break;
-				}
-			}
-		}
-		// construct the type
-		Type *curType;
-		if (*base == TOKEN_FilterType) { // if it's a regular filter type
-			TypeList *from;
-			TypeList *to;
-			Tree *baseCur = base->child->next; // TypeList or RetList
-			if (*baseCur == TOKEN_TypeList) {
-				from = new TypeList(baseCur, recall); // TypeList
-				// advance
-				baseCur = baseCur->next; // RetList or RSQUARE
-			} else {
-				from = new TypeList();
-			}
-			if (*baseCur == TOKEN_RetList) { // yes, if, as opposed to else if (see above)
-				to = new TypeList(baseCur->child->next, recall); // TypeList
-			} else {
-				to = new TypeList();
-			}
-			curType = new FilterType(from, to, suffixVal, depthVal);
-		} else if (*base == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
-			curType = getStatusSuffixedIdentifier(base);
-		}
-		// commit the type to the list
-		list.push_back(curType);
-		// advance
-		if (treeCur->child->next != NULL) {
-			treeCur = treeCur->child->next->next;
-		} else {
-			break;
-		}
-	}
-}
+TypeList(vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
 TypeList::TypeList(Type *type) {
-	category = CATEGORY_TYPELIST;
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;
 	list.push_back(type);
 }
-TypeList::TypeList() {category = CATEGORY_TYPELIST;}
+TypeList::TypeList() {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {

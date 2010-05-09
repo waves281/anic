@@ -5,7 +5,6 @@
 // semmer-global variables
 
 int semmerErrorCode;
-bool semmerEventuallyGiveUp;
 
 Type *nullType = new StdType(STD_NULL);
 Type *errType = new ErrorType();
@@ -1350,7 +1349,6 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;
-	semmerEventuallyGiveUp = eventuallyGiveUp;
 
 	VERBOSE( printNotice("Collecting tree nodes..."); )
 

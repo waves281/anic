@@ -5,7 +5,6 @@
 // lexer-global variables
 
 int lexerErrorCode;
-bool lexerEventuallyGiveUp;
 
 // main lexing functions
 
@@ -80,7 +79,6 @@ vector<Token> *lex(ifstream *in, string &fileName) {
 
 	// initialize error variables
 	lexerErrorCode = 0;
-	lexerEventuallyGiveUp = eventuallyGiveUp;
 
 	// declare and initialize lexer structure
 #include "../tmp/lexerNodeRaw.h"

@@ -20,7 +20,7 @@ void die(void);
 
 #define lexerError(fn,r,c,str) if (!silentMode) { cerr << PROGRAM_STRING << ": ERROR: LEXER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; } \
 	lexerErrorCode++; \
-	if (lexerEventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
+	if (eventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
 #define parserError(fn,r,c,str) if (!silentMode) { cerr << PROGRAM_STRING << ": ERROR: PARSER: " << fn << ":" << r << ":" << c << ": " << str << ".\n"; } \
 	parserErrorCode++;

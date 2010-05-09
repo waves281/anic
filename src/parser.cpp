@@ -3,7 +3,6 @@
 // parser-global variables
 
 int parserErrorCode;
-bool parserEventuallyGiveUp;
 
 // tree functions
 
@@ -220,7 +219,6 @@ int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName) {
 
 	// initialize error code
 	parserErrorCode = 0;
-	parserEventuallyGiveUp = eventuallyGiveUp;
 
 	// initialize parser structures
 #include "../tmp/ruleRhsLengthRaw.h"

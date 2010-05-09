@@ -38,9 +38,8 @@ extern int tabModulus;
 extern bool eventuallyGiveUp;
 
 extern int lexerErrorCode;
-extern bool lexerEventuallyGiveUp;
 extern int parserErrorCode;
-extern bool parserEventuallyGiveUp;
 extern int semmerErrorCode;
-extern bool semmerEventuallyGiveUp;
+extern bool eventuallyGiveUp;
+
 #endif

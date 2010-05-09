@@ -24,7 +24,6 @@ class Tree {
 		Tree *parent;
 		SymbolTable *env; // the symbol environment in which this node occurs
 		TypeStatus status; // the status coming OUT of this node
-		bool handled; // whether we have already begun to derive the type of this node (to detect ill-formed recursive definitions)
 		// allocators/deallocators
 		Tree();
 		Tree(Token &t);

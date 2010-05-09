@@ -164,7 +164,7 @@ class FilterType : public Type {
 		TypeList *from; // the source of this object type
 		TypeList *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(Type *from, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *from = NULL, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
 		bool isComparable(Type &otherType);
@@ -183,6 +183,7 @@ class ObjectType : public Type {
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
+		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
 		ObjectType(vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods

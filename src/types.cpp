@@ -447,7 +447,7 @@ FilterType::operator string() {
 }
 
 // ObjectType functions
-// constructor works only if base->defSite is Declaration->TypedStaticTerm->Node->Object
+ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
 ObjectType::ObjectType(vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {

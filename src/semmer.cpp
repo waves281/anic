@@ -698,7 +698,8 @@ TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
+// typeToUse is the reference to place the new FilterType object into; if it's NULL, use a new instantiation
+TypeStatus getStatusFilterHeader(Tree *tree, FilterType *typeToUse, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	TypeStatus from = TypeStatus(nullType, inStatus);
 	TypeStatus to = TypeStatus(nullType, inStatus);
@@ -712,9 +713,21 @@ TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 		to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
 	}
 	if (*from && *to) { // if we succeeded in deriving both the from- and to- statuses
-		status = new FilterType(from, to);
+		if (typeToUse != NULL) {
+			typeToUse->from = (TypeList *)(from.type);
+			typeToUse->to = (TypeList *)(to.type);
+			status = typeToUse;
+		} else {
+			status = new FilterType(from, to);
+		}
 		status = tree;
 	}
+	GET_STATUS_FOOTER;
+}
+
+TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
+	GET_STATUS_HEADER;
+	status = getStatusFilterHeader(tree, NULL, inStatus);
 	GET_STATUS_FOOTER;
 }
 
@@ -743,8 +756,9 @@ TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus) {
 }
 
 // blindly derives types from constructor headers: does not verify sub-blocks or add members to the ObjectType
-TypeStatus getStatusObjectSoft(Tree *tree, TypeStatus inStatus) {
-	GET_STATUS_HEADER;
+void getStatusObjectSoft(Tree *tree, Type *&softType, TypeStatus inStatus) {
+	// fake a type for the declaration base
+	softType = new ObjectType();	
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
 	bool failed = false;
@@ -772,24 +786,35 @@ TypeStatus getStatusObjectSoft(Tree *tree, TypeStatus inStatus) {
 			failed = true;
 		}
 	}
-	if (!failed) {
-		status = TypeStatus(new ObjectType(constructorTypes), inStatus);
+	// derive names and types for all of the members
+	vector<string> memberNames;
+	vector<Type *> memberTypes;
+	Tree *pipes = conss->next; // Pipes
+	for (Tree *pipe = pipes->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
+		Tree *pipec = pipe->child; // Declaration or NonEmptyTerms
+		if (*pipec == TOKEN_Declaration) { // if it's a member declaration, log it in the lists
+			TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
+			if (*memberStatus) { // if we successfully derived a type for this Declaration
+				memberNames.push_back(pipec->child->t.s);
+				memberTypes.push_back(memberStatus.type);
+			} else { // else if we failed to derive a type
+				failed = true;
+			}
+		}
 	}
-	GET_STATUS_FOOTER;
+	if (!failed) { // if we successfully derived the lists
+		((ObjectType *)softType)->constructorTypes = constructorTypes;
+		((ObjectType *)softType)->memberNames = memberNames;
+		((ObjectType *)softType)->memberTypes = memberTypes;
+	} else { // else if we failed to derive the lists
+		delete softType; // delete the fake type
+		softType = errType; // replace the fake type with the error type
+	}
 }
 
-// derives only member types for the constructor-typed ObjectType in softStatus
-TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus, TypeStatus softStatus) {
-	GET_STATUS_HEADER;
-// LOL
-	GET_STATUS_FOOTER;
-}
-
-// derives both constructor types and member types at the same time
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-	TypeStatus softStatus = getStatusObjectSoft(tree, inStatus);
-	return getStatusObject(tree, inStatus, softStatus);
+// LOL
 	GET_STATUS_FOOTER;
 }
 
@@ -979,28 +1004,31 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 }
 
 // blindly derives types from headers: does not verify sub-blocks
-TypeStatus getStatusNodeSoft(Tree *tree, SymbolTable *base, TypeStatus inStatus) {
-	GET_STATUS_HEADER;
+void getStatusNodeSoft(Tree *tree, Type *&softType, TypeStatus inStatus) {
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
-		status = getStatusSuffixedIdentifier(nodec, inStatus);
+		softType = getStatusSuffixedIdentifier(nodec, inStatus);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
-		status = getStatusNodeInstantiation(nodec, inStatus);
+		softType = getStatusNodeInstantiation(nodec, inStatus);
 	} else if (*nodec == TOKEN_Filter) {
 		Tree *filterc = nodec->child;
 		if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
-			status = TypeStatus(new FilterType(inStatus), inStatus);
+			softType = TypeStatus(new FilterType(inStatus), inStatus);
 		} else if (*filterc == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
-			status = getStatusFilterHeader(filterc, inStatus);
+			softType = new FilterType(); // fake a type for the declaration base
+			TypeStatus tempStatus = getStatusFilterHeader(filterc, (FilterType *)softType, inStatus); // derive the (possibly recursive) type of the filter header
+			if (!(*tempStatus)) { // if we failed to derive a type for the header
+				delete softType; // delete the fake type
+				softType = errType; // replace the fake type with the error type
+			}
 		}
 	} else if (*nodec == TOKEN_Object) {
-		status = getStatusObjectSoft(nodec, inStatus);
+		getStatusObjectSoft(nodec, softType, inStatus); // recurse on the Object version of this function
 	} else if (*nodec == TOKEN_PrimOpNode) {
-		status = getStatusPrimOpNode(nodec, inStatus);
+		softType = getStatusPrimOpNode(nodec, inStatus);
 	} else if (*nodec == TOKEN_PrimLiteral) {
-		status = getStatusPrimLiteral(nodec, inStatus);
+		softType = getStatusPrimLiteral(nodec, inStatus);
 	}
-	GET_STATUS_FOOTER;
 }
 
 // reports errors
@@ -1265,38 +1293,31 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, TypeStatus inStatus) {
 TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-	if (declarationSub != NULL && (*declarationSub == TOKEN_TypedStaticTerm || *declarationSub == TOKEN_NonEmptyTerms)) {
-		if (tree->handled) { // if this isn't the first time we're trying to derive the type of this node, flag recursion error
-			Token curDefToken = tree->child->t;
-			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"indeterminate recursive definition of '"<<curDefToken.s<<"'");
-			status = errType;
-		} else { // otherwise, proceed with normal type derivation
-			// flag this node as traversed for detecting ill-formed recursion
-			tree->handled = true;
-			// attempt to derive the type of this Declaration
-			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
-				Tree *tstc = declarationSub->child; // Node or LBRACKET
-				if (*tstc == TOKEN_Node) { // possibly recursive node declaration
-					// first, set the identifier's type to the declared type of the Node
-					status = getStatusNodeSoft(tstc, tree->env);
-					if (*status) { // if the soft derivation succeeded
-						tree->status = status;
-						// then, verify types for the declaration sub-block
-						status = getStatusNode(tstc);
-					} // else if the soft derivation failed, leave status as the error type
-				} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
-					// derive the type of the expression without doing any bindings, since expressions must be non-recursive
-					status = getStatusBracketedExp(tstc, inStatus);
-				}
-			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
-				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
-				tree->status = new FilterType(inStatus);
-				// then, verify types for the declaration sub-block
-				status = getStatusNonEmptyTerms(declarationSub, inStatus);
-				// delete the temporary filter type
-				delete (tree->status.type);
-			} // otherwise, if it's an import declaration, do nothing
+	if (declarationSub != NULL) { // if it's a non-import declaration
+		// attempt to derive the type of this Declaration
+		if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
+			Tree *tstc = declarationSub->child; // Node or LBRACKET
+			if (*tstc == TOKEN_Node) { // possibly recursive node declaration
+				// first, set the identifier's type to the declared type of the Node
+				getStatusNodeSoft(tstc, tree->status.type);
+				if (*(tree->status)) { // if the soft derivation succeeded
+					// then, verify types for the declaration sub-block
+					status = getStatusNode(tstc);
+				} // else if the soft derivation failed, leave status as the error type
+			} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
+				// derive the type of the expression without doing any bindings, since expressions must be non-recursive
+				status = getStatusBracketedExp(tstc, inStatus);
+			}
+		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
+			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
+			tree->status = new FilterType(inStatus);
+			// then, verify types for the declaration sub-block
+			status = getStatusNonEmptyTerms(declarationSub, inStatus);
+			// delete the temporary filter type
+			delete (tree->status.type);
 		}
+	} else { // otherwise, if it's an import declaration
+// LOL
 	}
 	GET_STATUS_FOOTER;
 }

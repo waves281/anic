@@ -1135,10 +1135,10 @@ TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
 		TypeStatus to = toes[i];
 		if (*to != *firstToStatus) { // if the types don't match, throw an error
 			Tree *toTree = toTrees[i];
-			Token curToken = toTree->t;
+			Token curToken1 = toTree->t;
 			Token curToken2 = firstToTree->t;
-			semmerError(curToken.fileName,curToken.row,curToken.col,"switch destination types are inconsistent");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (this type is "<<*to<<")");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"switch destination types are inconsistent");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<*to<<")");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<*firstToStatus<<")");
 		}
 	}
@@ -1204,10 +1204,10 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, TypeStatus inStatus) {
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
-			Token curToken = tree->child->t; // QUESTION
+			Token curToken1 = tree->child->t; // QUESTION
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // OpenTerm
-			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueStatus<<")");
 			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*falseStatus<<")");
 		}
@@ -1230,10 +1230,10 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, TypeStatus inStatus) {
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
-			Token curToken = tree->child->t; // QUESTION
+			Token curToken1 = tree->child->t; // QUESTION
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // ClosedTerm
-			semmerError(curToken.fileName,curToken.row,curToken.col,"type mismatch in conditional operator branches");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueStatus<<")");
 			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*falseStatus<<")");
 		}

@@ -1316,7 +1316,7 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 			delete (tree->status.type);
 		}
 	} else { // otherwise, if it's an import declaration
-// LOL
+		status = nullType;
 	}
 	GET_STATUS_FOOTER;
 }

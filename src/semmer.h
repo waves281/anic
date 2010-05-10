@@ -23,7 +23,7 @@ class SymbolTable {
 		// data members
 		int kind;
 		string id;
-		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param); NULL for root block and standard nodes
+		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
 		SymbolTable *parent;
 		vector<SymbolTable *> children;
 		// allocators/deallocators
@@ -45,14 +45,14 @@ TypeStatus getStatusBracketedExp(Tree *tree, TypeStatus inStatus = TypeStatus())
 TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusPrimOpNode(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusBlock(Tree *tree, Type *retType = NULL, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusFilterHeader(Tree *tree, FilterType *typeToUse, TypeStatus inStatus);
 TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus = TypeStatus());
 void getStatusObjectSoft(Tree *tree, Type *&softType, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusType(Tree *tree, int suffixVal, int depthVal, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusType(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus = TypeStatus());
@@ -71,7 +71,7 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, TypeStatus inStatus = TypeStatus(
 TypeStatus getStatusTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNonEmptyTerms(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusPipe(Tree *tree, Type *&retType, TypeStatus inStatus = TypeStatus());
 
 // semantic analysis helper blocks
 

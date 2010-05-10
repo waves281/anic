@@ -414,13 +414,15 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-Type *getStType(SymbolTable *st) {
-	if (st->defSite != NULL && st->defSite->status) { // if there is already a type logged for this st node, simply return it
-		return st->defSite->status;
-	} else { // else if we need to derive a type ourselves
-// LOL
-		return errType;
+TypeStatus getStatusSymbolTable(SymbolTable *st, TypeStatus inStatus) {
+	Tree *tree = st->defSite; // set up the tree varaible that the header expects
+	GET_STATUS_HEADER;
+	if (*tree == TOKEN_Declaration) { // if the symbol was defined as a Declaration
+		status = getStatusDeclaration(tree, inStatus);
+	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
+		status = getStatusType(tree->child, inStatus); // Type
 	}
+	GET_STATUS_FOOTER;
 }
 
 // typing function definitions
@@ -432,7 +434,12 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, TypeStatus inStatus) {
 	string idCur = id; // a destructible copy for the recursion
 	SymbolTable *st = bindId(idCur, tree->env, inStatus);
 	if (st != NULL) { // if we found a binding
-		status = TypeStatus(getStType(st), tree);
+		TypeStatus stStatus = getStatusSymbolTable(st, inStatus);
+		if (*stStatus) { // if we successfully extracted a type for this SymbolTable entry
+			status = TypeStatus(stStatus, tree);
+		} else { // else if we failed to extract a type for this SymbolTable entry
+			status = errType;
+		}
 	} else { // else if we couldn't find a binding
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve '"<<id<<"'");
@@ -526,14 +533,14 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 			case TOKEN_DOR:
 			case TOKEN_DAND:
 				if (*left == STD_BOOL && *right == STD_BOOL) {
-					status = left.type;
+					status = new StdType(STD_BOOL, SUFFIX_LATCH);
 				}
 				break;
 			case TOKEN_OR:
 			case TOKEN_XOR:
 			case TOKEN_AND:
 				if (*left == STD_INT && *right == STD_INT) {
-					status = left.type;
+					status = new StdType(STD_INT, SUFFIX_LATCH);
 				}
 				break;
 			case TOKEN_DEQUALS:
@@ -543,13 +550,13 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 			case TOKEN_LE:
 			case TOKEN_GE:
 				if (left->isComparable(*right)) {
-					status = new Type(STD_BOOL);
+					status = new StdType(STD_BOOL, SUFFIX_LATCH);
 				}
 				break;
 			case TOKEN_LS:
 			case TOKEN_RS:
 				if (*left == STD_INT && *right == STD_INT) {
-					status = left.type;
+					status = new StdType(STD_INT, SUFFIX_LATCH);
 				}
 				break;
 			case TOKEN_TIMES:
@@ -557,16 +564,15 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 			case TOKEN_MOD:
 			case TOKEN_PLUS:
 			case TOKEN_MINUS:
-				if ( (*left == STD_INT || *left == STD_FLOAT) &&
-						(*right == STD_INT || *right == STD_FLOAT) ) {
-					if (*right != STD_FLOAT) {
-						status = left.type;
+				if ((*left == STD_INT || *left == STD_FLOAT) && (*right == STD_INT || *right == STD_FLOAT)) {
+					if (*left != STD_FLOAT && *right != STD_FLOAT) {
+						status = new StdType(STD_INT, SUFFIX_LATCH);
 					} else {
-						status = right.type;
+						status = new StdType(STD_FLOAT, SUFFIX_LATCH);
 					}
 				}
 				break;
-			default: // can't happen
+			default: // can't happen; the above should cover all cases
 				left.type = NULL;
 				right.type = NULL;
 				break;
@@ -587,70 +593,70 @@ TypeStatus getStatusPrimOpNode(Tree *tree, TypeStatus inStatus) {
 	// generate the type based on the specific operator it is
 	switch (ponc->t.tokenType) {
 		case TOKEN_NOT:
-			status = new Type(STD_NOT);
+			status = new StdType(STD_NOT, SUFFIX_LATCH);
 			break;
 		case TOKEN_COMPLEMENT:
-			status = new Type(STD_COMPLEMENT);
+			status = new StdType(STD_COMPLEMENT, SUFFIX_LATCH);
 			break;
 		case TOKEN_DPLUS:
-			status = new Type(STD_DPLUS);
+			status = new StdType(STD_DPLUS, SUFFIX_LATCH);
 			break;
 		case TOKEN_DMINUS:
-			status = new Type(STD_DMINUS);
+			status = new StdType(STD_DMINUS, SUFFIX_LATCH);
 			break;
 		case TOKEN_DOR:
-			status = new Type(STD_DOR);
+			status = new StdType(STD_DOR, SUFFIX_LATCH);
 			break;
 		case TOKEN_DAND:
-			status = new Type(STD_DAND);
+			status = new StdType(STD_DAND, SUFFIX_LATCH);
 			break;
 		case TOKEN_OR:
-			status = new Type(STD_OR);
+			status = new StdType(STD_OR, SUFFIX_LATCH);
 			break;
 		case TOKEN_XOR:
-			status = new Type(STD_XOR);
+			status = new StdType(STD_XOR, SUFFIX_LATCH);
 			break;
 		case TOKEN_AND:
-			status = new Type(STD_AND);
+			status = new StdType(STD_AND, SUFFIX_LATCH);
 			break;
 		case TOKEN_DEQUALS:
-			status = new Type(STD_DEQUALS);
+			status = new StdType(STD_DEQUALS, SUFFIX_LATCH);
 			break;
 		case TOKEN_NEQUALS:
-			status = new Type(STD_NEQUALS);
+			status = new StdType(STD_NEQUALS, SUFFIX_LATCH);
 			break;
 		case TOKEN_LT:
-			status = new Type(STD_LT);
+			status = new StdType(STD_LT, SUFFIX_LATCH);
 			break;
 		case TOKEN_GT:
-			status = new Type(STD_GT);
+			status = new StdType(STD_GT, SUFFIX_LATCH);
 			break;
 		case TOKEN_LE:
-			status = new Type(STD_LE);
+			status = new StdType(STD_LE, SUFFIX_LATCH);
 			break;
 		case TOKEN_GE:
-			status = new Type(STD_GE);
+			status = new StdType(STD_GE, SUFFIX_LATCH);
 			break;
 		case TOKEN_LS:
-			status = new Type(STD_LS);
+			status = new StdType(STD_LS, SUFFIX_LATCH);
 			break;
 		case TOKEN_RS:
-			status = new Type(STD_RS);
+			status = new StdType(STD_RS, SUFFIX_LATCH);
 			break;
 		case TOKEN_TIMES:
-			status = new Type(STD_TIMES);
+			status = new StdType(STD_TIMES, SUFFIX_LATCH);
 			break;
 		case TOKEN_DIVIDE:
-			status = new Type(STD_DIVIDE);
+			status = new StdType(STD_DIVIDE, SUFFIX_LATCH);
 			break;
 		case TOKEN_MOD:
-			status = new Type(STD_MOD);
+			status = new StdType(STD_MOD, SUFFIX_LATCH);
 			break;
 		case TOKEN_PLUS:
-			status = new Type(STD_PLUS);
+			status = new StdType(STD_PLUS, SUFFIX_LATCH);
 			break;
 		case TOKEN_MINUS:
-			status = new Type(STD_MINUS);
+			status = new StdType(STD_MINUS, SUFFIX_LATCH);
 			break;
 	}
 	GET_STATUS_FOOTER;
@@ -660,39 +666,33 @@ TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	Tree *plc = tree->child;
 	if (*plc == TOKEN_INUM) {
-		status = new Type(STD_INT);
+		status = new StdType(STD_INT, SUFFIX_LATCH);
 	} else if (*plc == TOKEN_FNUM) {
-		status = new Type(STD_FLOAT);
+		status = new StdType(STD_FLOAT, SUFFIX_LATCH);
 	} else if (*plc == TOKEN_CQUOTE) {
-		status = new Type(STD_CHAR);
+		status = new StdType(STD_CHAR, SUFFIX_LATCH);
 	} else if (*plc == TOKEN_SQUOTE) {
-		status = new Type(STD_STRING);
+		status = new StdType(STD_STRING, SUFFIX_LATCH);
 	}
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
+// retType is the type that we expect to be returned from this Block
+TypeStatus getStatusBlock(Tree *tree, Type *retType, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-	Tree *pipeCur = tree->child->next->child; // Pipe
 	bool pipeTypesValid = true;
-	while(pipeCur != NULL) {
+	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		// try to get a type for this pipe
-		TypeStatus result = getStatusPipe(pipeCur, inStatus);
-		// if we failed to find a type, flag this fact
-		if (!*result) {
+		TypeStatus thisPipeStatus = getStatusPipe(pipe, retType, inStatus);
+		if (!(*thisPipeStatus)) { // if we failed to derive a type for this Pipe, flag this fact
 			pipeTypesValid = false;
 		}
-		// advance
-		if (pipeCur->next != NULL) {
-			pipeCur = pipeCur->next->next->child; // Pipe
-		} else {
-			pipeCur = NULL;
-		}
 	}
-	// if we managed to derive a type for all of the enclosed pipes
-	if (pipeTypesValid) {
-		// set the result type to the input type being mapped to the null type
-		status = new FilterType(inStatus, nullType);
+	if (pipeTypesValid) { // if we managed to derive a type for all of the enclosed pipes, set the return status to be the appropriate filter type
+		if (retType == NULL) { // if there were no returns in this block, set this block as returning the null type
+			retType = nullType;
+		}
+		status = new FilterType(inStatus, retType);
 	}
 	GET_STATUS_FOOTER;
 }
@@ -733,15 +733,33 @@ TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 // reports errors
 TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-	Tree *tc = tree->child; // FilterHeader or Block
-	TypeStatus header = TypeStatus(nullType, inStatus);
-	if (*tc == TOKEN_FilterHeader) { // if there is a header, derive its type
-		header = getStatusFilterHeader(tc, inStatus);
+	TypeStatus header = TypeStatus(new FilterType(inStatus), inStatus); // assume that the filter is an inStatus consumer by default
+	TypeStatus startStatus = inStatus; // further, assume that the status at the start of the block is the inStatus
+	Tree *cur = tree->child; // FilterHeader or Block
+	if (*cur == TOKEN_FilterHeader) { // if there is a header
+		// override the default header type
+		delete header.type; // delete the assumed type
+		header.type = getStatusFilterHeader(cur, inStatus); // fix the type to be the true derived one
+		// further, override the default starting status with the null type
+		startStatus = nullType;
+		// advance to the Block after this FilterHeader
+		cur = cur->next;
 	}
 	if (*header) { // if we end up with a non-erroneous type for the header
-// LOL
+		// derive a status for the definition Block
+		TypeStatus blockStatus = getStatusBlock(cur, ((FilterType *)(header.type))->to, startStatus);
+		if (*blockStatus) { // if we successfully derived a type for the definition Block
+			// check that the Block returns the type that the header says it should
+			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)(header.type))->to )) { // if the header and Block match
+				status = header;
+			} else { // else if the header and Block don't match
+				Token curToken = cur->child->t; // LCURLY
+				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<*( ((FilterType *)(blockStatus.type))->to ));
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<*( ((FilterType *)(header.type))->to )<<")");
+			}
+		}
 	} else { // else if we derived an erroneous type for the header
-		Token curToken = tc->t;
+		Token curToken = cur->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve node header type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 	}
@@ -750,7 +768,12 @@ TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 
 TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
-// LOL
+	Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
+	if (*conscn == TOKEN_LSQUARE) {
+		status = new FilterType();
+	} else if (*conscn == TOKEN_NonRetFilterHeader) {
+		status = getStatusFilterHeader(conscn, inStatus);
+	}
 	GET_STATUS_FOOTER;
 }
 
@@ -817,8 +840,41 @@ TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusType(Tree *tree, int suffixVal, int depthVal, TypeStatus inStatus) {
+TypeStatus getStatusType(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
+	Tree *typeSuffix = tree->child->next; // TypeSuffix
+	// derive the suffix and depth first, since we'll need to know then to construct the Type object
+	int suffixVal;
+	int depthVal = 0;
+	if (typeSuffix->child == NULL) {
+		suffixVal = SUFFIX_CONSTANT;
+	} else if (*(typeSuffix->child) == TOKEN_SLASH) {
+		suffixVal = SUFFIX_LATCH;
+	} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
+		suffixVal = SUFFIX_STREAM;
+		Tree *sts = typeSuffix->child; // StreamTypeSuffix
+		for(;;) {
+			depthVal++;
+			// advance
+			if (sts->child->next != NULL) {
+				sts = sts->child->next; // StreamTypeSuffix
+			} else {
+				break;
+			}
+		}
+	} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
+		suffixVal = SUFFIX_ARRAY;
+		Tree *ats = typeSuffix->child; // ArrayTypeSuffix
+		for(;;) {
+			depthVal++;
+			// advance
+			if (ats->child->next != NULL) {
+				ats = ats->child->next; // ArrayTypeSuffix
+			} else {
+				break;
+			}
+		}
+	}
 	Tree *typec = tree->child; // FilterType or NonArraySuffixedIdentifier
 	if (*typec == TOKEN_FilterType) { // if it's a regular filter type
 		TypeStatus from = inStatus;
@@ -853,41 +909,7 @@ TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus) {
 	bool failed = false;
 	for(;;) { // invariant: treeCur is a TypeList
 		Tree *type = treeCur->child; // Type
-		Tree *typeSuffix = type->next; // TypeSuffix
-		// derive the suffix and depth first, since we'll need to know then to construct the Type object
-		int suffixVal;
-		int depthVal = 0;
-		if (typeSuffix->child == NULL) {
-			suffixVal = SUFFIX_CONSTANT;
-		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
-			suffixVal = SUFFIX_LATCH;
-		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
-			suffixVal = SUFFIX_STREAM;
-			Tree *sts = typeSuffix->child; // StreamTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (sts->child->next != NULL) {
-					sts = sts->child->next; // StreamTypeSuffix
-				} else {
-					break;
-				}
-			}
-		} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
-			suffixVal = SUFFIX_ARRAY;
-			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (ats->child->next != NULL) {
-					ats = ats->child->next; // ArrayTypeSuffix
-				} else {
-					break;
-				}
-			}
-		}
-		// construct the Type object
-		TypeStatus curTypeStatus = getStatusType(type, suffixVal, depthVal, inStatus);
+		TypeStatus curTypeStatus = getStatusType(type, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
 			// commit the type to the list
 			list.push_back(curTypeStatus.type);
@@ -915,41 +937,7 @@ TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus) {
 	bool failed = false;
 	for(;;) { // invariant: treeCur is a ParamList
 		Tree *type = treeCur->child->child; // Type
-		Tree *typeSuffix = type->next; // TypeSuffix
-		// derive the suffix and depth first, since we'll need to know then to construct the Type object
-		int suffixVal;
-		int depthVal = 0;
-		if (typeSuffix->child == NULL) {
-			suffixVal = SUFFIX_CONSTANT;
-		} else if (*(typeSuffix->child) == TOKEN_SLASH) {
-			suffixVal = SUFFIX_LATCH;
-		} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
-			suffixVal = SUFFIX_STREAM;
-			Tree *sts = typeSuffix->child; // StreamTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (sts->child->next != NULL) {
-					sts = sts->child->next; // StreamTypeSuffix
-				} else {
-					break;
-				}
-			}
-		} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
-			suffixVal = SUFFIX_ARRAY;
-			Tree *ats = typeSuffix->child; // ArrayTypeSuffix
-			for(;;) {
-				depthVal++;
-				// advance
-				if (ats->child->next != NULL) {
-					ats = ats->child->next; // ArrayTypeSuffix
-				} else {
-					break;
-				}
-			}
-		}
-		// construct the Type object
-		TypeStatus curTypeStatus = getStatusType(type, suffixVal, depthVal, inStatus);
+		TypeStatus curTypeStatus = getStatusType(type, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
 			// commit the type to the list
 			list.push_back(curTypeStatus.type);
@@ -1321,7 +1309,8 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus) {
+// retType is the type that we expect of a return value from this Pipe
+TypeStatus getStatusPipe(Tree *tree, Type *&retType = nullType, TypeStatus inStatus) { // KOL subcalls need to take into account retType
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_Declaration) { // if it's a Declaration pipe

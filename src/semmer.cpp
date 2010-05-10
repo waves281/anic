@@ -94,34 +94,6 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "string");
 }
 
-void catStdOps(SymbolTable *&stRoot) {
-	// prefix
-	*stRoot *= new SymbolTable(KIND_STD, "!");
-	*stRoot *= new SymbolTable(KIND_STD, "~");
-	*stRoot *= new SymbolTable(KIND_STD, "++");
-	*stRoot *= new SymbolTable(KIND_STD, "--");
-	// infix
-	*stRoot *= new SymbolTable(KIND_STD, "||");
-	*stRoot *= new SymbolTable(KIND_STD, "&&");
-	*stRoot *= new SymbolTable(KIND_STD, "|");
-	*stRoot *= new SymbolTable(KIND_STD, "^");
-	*stRoot *= new SymbolTable(KIND_STD, "&");
-	*stRoot *= new SymbolTable(KIND_STD, "==");
-	*stRoot *= new SymbolTable(KIND_STD, "!=");
-	*stRoot *= new SymbolTable(KIND_STD, "<");
-	*stRoot *= new SymbolTable(KIND_STD, ">");
-	*stRoot *= new SymbolTable(KIND_STD, "<=");
-	*stRoot *= new SymbolTable(KIND_STD, ">=");
-	*stRoot *= new SymbolTable(KIND_STD, "<<");
-	*stRoot *= new SymbolTable(KIND_STD, ">>");
-	*stRoot *= new SymbolTable(KIND_STD, "*");
-	*stRoot *= new SymbolTable(KIND_STD, "/");
-	*stRoot *= new SymbolTable(KIND_STD, "%");
-	// multi
-	*stRoot *= new SymbolTable(KIND_STD, "+");
-	*stRoot *= new SymbolTable(KIND_STD, "-");
-}
-
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
 	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING);
@@ -154,8 +126,6 @@ SymbolTable *genDefaultDefs() {
 	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING);
 	// concatenate in the standard types
 	catStdNodes(stRoot);
-	// concatenate in the standard operators
-	catStdOps(stRoot);
 	// concatenate in the standard library
 	catStdLib(stRoot);
 	// finally, return the generated default symtable

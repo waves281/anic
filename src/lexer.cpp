@@ -6,6 +6,11 @@
 
 int lexerErrorCode;
 
+// Token functions
+Token::Token() {}
+Token::Token(int tokenType, string &s, string &fileName, int row, int col) : tokenType(tokenType), s(s), fileName(fileName), row(row), col(col) {}
+Token::~Token() {}
+
 // main lexing functions
 
 int isWhiteSpace(unsigned char c) {
@@ -31,12 +36,7 @@ void resetState(string &s, int &state, int &tokenType) {
 
 void commitToken(string &s, int &state, int &tokenType, string &fileName, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
-	Token t;
-	t.tokenType = tokenType;
-	t.s = s;
-	t.fileName = fileName;
-	t.row = rowStart;
-	t.col = colStart;
+	Token t(tokenType, s, fileName, rowStart, colStart);
 	// now, commit it to the output vector
 	outputVector->push_back(t);
 	// finally, reset our state back to the default
@@ -344,12 +344,8 @@ lexerLoopTop: ;
 		return NULL;
 	} else {
 		// augment the vector with the end token
-		Token termToken;
-		termToken.tokenType = TOKEN_END;
-		termToken.s = "EOF";
-		termToken.fileName = fileName;
-		termToken.row = 0;
-		termToken.col = 0;
+		string eofString("EOF");
+		Token termToken(TOKEN_END, eofString, fileName, 0, 0);
 		outputVector->push_back(termToken);
 		// print out the lexeme if we're in verbose mode
 		VERBOSE(

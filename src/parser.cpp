@@ -4,12 +4,12 @@
 
 int parserErrorCode;
 
-// tree functions
+// Tree functions
 
 // constructors
-Tree::Tree() : next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()) {}
 Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()) {}
 Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), status(TypeStatus()) {}
+Tree::Tree(TypeStatus &status) : next(NULL), back(NULL), child(NULL), parent(NULL), status(status) {}
 
 // destructor
 Tree::~Tree() {

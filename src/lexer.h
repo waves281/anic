@@ -9,11 +9,16 @@
 
 class Token {
 	public:
+		// data members
 		int tokenType;
 		string s;
 		string fileName;
 		int row;
 		int col;
+		// allocators/deallocators
+		Token();
+		Token(int tokenType, string &s, string &fileName, int row, int col);
+		~Token();
 };
 
 vector<Token> *lex(ifstream *in, string &fileName);

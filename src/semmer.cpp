@@ -86,12 +86,19 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "node");
-	*stRoot *= new SymbolTable(KIND_STD, "int");
-	*stRoot *= new SymbolTable(KIND_STD, "float");
-	*stRoot *= new SymbolTable(KIND_STD, "bool");
-	*stRoot *= new SymbolTable(KIND_STD, "char");
-	*stRoot *= new SymbolTable(KIND_STD, "string");
+	TypeStatus status;
+	status = new StdType(STD_NODE);
+	*stRoot *= new SymbolTable(KIND_STD, "node", new Tree(status));
+	status = new StdType(STD_INT);
+	*stRoot *= new SymbolTable(KIND_STD, "int", new Tree(status));
+	status = new StdType(STD_FLOAT);
+	*stRoot *= new SymbolTable(KIND_STD, "float", new Tree(status));
+	status = new StdType(STD_BOOL);
+	*stRoot *= new SymbolTable(KIND_STD, "bool", new Tree(status));
+	status = new StdType(STD_CHAR);
+	*stRoot *= new SymbolTable(KIND_STD, "char", new Tree(status));
+	status = new StdType(STD_STRING);
+	*stRoot *= new SymbolTable(KIND_STD, "string", new Tree(status));
 }
 
 void catStdLib(SymbolTable *&stRoot) {

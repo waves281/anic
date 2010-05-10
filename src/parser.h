@@ -16,7 +16,7 @@ class TypeStatus;
 
 class Tree {
 	public:
-		// object-local variables
+		// data members
 		Token t;
 		Tree *next;
 		Tree *back;
@@ -25,9 +25,9 @@ class Tree {
 		SymbolTable *env; // the symbol environment in which this node occurs
 		TypeStatus status; // the status coming OUT of this node
 		// allocators/deallocators
-		Tree();
 		Tree(Token &t);
 		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
+		Tree(TypeStatus &status);
 		~Tree();
 		// comparison operators
 		bool operator==(int tokenType);

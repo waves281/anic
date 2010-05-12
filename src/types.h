@@ -205,9 +205,9 @@ class TypeStatus {
 		// data members
 		Type *type; // the encapsulated type
 		Tree *recall; // the encapsulated recall binding
+		Type *retType; // the return type for the current node
 		// allocators/deallocators
-		TypeStatus();
-		TypeStatus(Type *type, Tree *recall);
+		TypeStatus(Type *type = NULL, Tree *recall = NULL, Type *retType = NULL);
 		~TypeStatus();
 		// converters
 		operator Type *();

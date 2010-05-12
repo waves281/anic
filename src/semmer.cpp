@@ -640,22 +640,25 @@ TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-// retType is the type that we expect to be returned from this Block
-TypeStatus getStatusBlock(Tree *tree, Type *retType, TypeStatus inStatus) {
+TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	bool pipeTypesValid = true;
+	TypeStatus curStatus = inStatus;
+	curStatus.retType = NULL; // start out not knowing what Type this block is supposed to return
 	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
 		// try to get a type for this pipe
-		TypeStatus thisPipeStatus = getStatusPipe(pipe, retType, inStatus);
-		if (!(*thisPipeStatus)) { // if we failed to derive a type for this Pipe, flag this fact
+		TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
+		if (*thisPipeStatus) { // if we successfully derived a type for this Pipe, log its return type into the current status
+			curStatus.retType = thisPipeStatus.retType;
+		} else { // else if we failed to derive a type for this Pipe, flag this fact
 			pipeTypesValid = false;
 		}
 	}
 	if (pipeTypesValid) { // if we managed to derive a type for all of the enclosed pipes, set the return status to be the appropriate filter type
-		if (retType == NULL) { // if there were no returns in this block, set this block as returning the null type
-			retType = nullType;
+		if (curStatus.retType == NULL) { // if there were no returns in this block, set this block as returning the null type
+			curStatus.retType = nullType;
 		}
-		status = new FilterType(inStatus, retType);
+		status = new FilterType(inStatus, curStatus.retType);
 	}
 	GET_STATUS_FOOTER;
 }
@@ -710,7 +713,7 @@ TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 	}
 	if (*header) { // if we end up with a non-erroneous type for the header
 		// derive a status for the definition Block
-		TypeStatus blockStatus = getStatusBlock(cur, ((FilterType *)(header.type))->to, startStatus);
+		TypeStatus blockStatus = getStatusBlock(cur, startStatus);
 		if (*blockStatus) { // if we successfully derived a type for the definition Block
 			// check that the Block returns the type that the header says it should
 			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)(header.type))->to )) { // if the header and Block match
@@ -1272,8 +1275,7 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-// retType is the type that we expect of a return value from this Pipe
-TypeStatus getStatusPipe(Tree *tree, Type *&retType = nullType, TypeStatus inStatus) { // KOL subcalls need to take into account retType
+TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_Declaration) { // if it's a Declaration pipe

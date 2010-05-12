@@ -48,7 +48,7 @@ TypeStatus getStatusBracketedExp(Tree *tree, TypeStatus inStatus = TypeStatus())
 TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusPrimOpNode(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusBlock(Tree *tree, Type *retType = NULL, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusFilterHeader(Tree *tree, FilterType *typeToUse, TypeStatus inStatus);
 TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus = TypeStatus());
@@ -74,7 +74,7 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, TypeStatus inStatus = TypeStatus(
 TypeStatus getStatusTerm(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusNonEmptyTerms(Tree *tree, TypeStatus inStatus = TypeStatus());
 TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus = TypeStatus());
-TypeStatus getStatusPipe(Tree *tree, Type *&retType, TypeStatus inStatus = TypeStatus());
+TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 
 // semantic analysis helper blocks
 

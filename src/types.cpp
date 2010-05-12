@@ -586,13 +586,12 @@ ObjectType::operator string() {
 }
 
 // typing status block functions
-TypeStatus::TypeStatus() : type(nullType), recall(NULL) {}
-TypeStatus::TypeStatus(Type *type, Tree *recall) : type(type), recall(recall) {}
+TypeStatus::TypeStatus(Type *type, Tree *recall, Type *retType) : type(type), recall(recall), retType(retType) {}
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() {return type;}
 TypeStatus::operator Tree *() {return recall;}
 TypeStatus::operator bool() {return (type != NULL);}
-TypeStatus &TypeStatus::operator=(TypeStatus otherStatus) {type = otherStatus.type; recall = otherStatus.recall; return *this;}
+TypeStatus &TypeStatus::operator=(TypeStatus otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
 TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}
 Type &TypeStatus::operator*() {

@@ -27,7 +27,7 @@ class Tree {
 		// allocators/deallocators
 		Tree(Token &t);
 		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
-		Tree(TypeStatus &status);
+		Tree(TypeStatus status);
 		~Tree();
 		// comparison operators
 		bool operator==(int tokenType);

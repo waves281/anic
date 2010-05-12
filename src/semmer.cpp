@@ -12,12 +12,11 @@ Type *errType = new ErrorType();
 // SymbolTable functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(int kind, string id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
-
-SymbolTable::SymbolTable(SymbolTable &st) {
-	*this = st;
-}
-
+SymbolTable::SymbolTable(int kind, string &id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
+SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
+SymbolTable::SymbolTable(int kind, string &id, Type *defType) : kind(kind), id(id), defSite(new Tree(TypeStatus(defType, NULL))), parent(NULL) {}
+SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), defSite(new Tree(TypeStatus(defType, NULL))), parent(NULL) {}
+SymbolTable::SymbolTable(SymbolTable &st) {*this = st;}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
 	for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
@@ -86,44 +85,31 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	TypeStatus status;
-	status = new StdType(STD_NODE);
-	*stRoot *= new SymbolTable(KIND_STD, "node", new Tree(status));
-	status = new StdType(STD_INT);
-	*stRoot *= new SymbolTable(KIND_STD, "int", new Tree(status));
-	status = new StdType(STD_FLOAT);
-	*stRoot *= new SymbolTable(KIND_STD, "float", new Tree(status));
-	status = new StdType(STD_BOOL);
-	*stRoot *= new SymbolTable(KIND_STD, "bool", new Tree(status));
-	status = new StdType(STD_CHAR);
-	*stRoot *= new SymbolTable(KIND_STD, "char", new Tree(status));
-	status = new StdType(STD_STRING);
-	*stRoot *= new SymbolTable(KIND_STD, "string", new Tree(status));
+	*stRoot *= new SymbolTable(KIND_STD, "node", new StdType(STD_NODE));
+	*stRoot *= new SymbolTable(KIND_STD, "int", new StdType(STD_INT));
+	*stRoot *= new SymbolTable(KIND_STD, "float", new StdType(STD_FLOAT));
+	*stRoot *= new SymbolTable(KIND_STD, "bool", new StdType(STD_BOOL));
+	*stRoot *= new SymbolTable(KIND_STD, "char", new StdType(STD_CHAR));
+	*stRoot *= new SymbolTable(KIND_STD, "string", new StdType(STD_STRING));
 }
 
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
-	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING);
-
+	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, new StdType(STD_STD));
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable(KIND_STD, "in");
-	*stdLib *= new SymbolTable(KIND_STD, "out");
-	*stdLib *= new SymbolTable(KIND_STD, "err");
+	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "out", new StdType(STD_NODE, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "err", new StdType(STD_NODE, SUFFIX_STREAM, 1));
 	// control nodes
-	*stdLib *= new SymbolTable(KIND_STD, "rand");
-	*stdLib *= new SymbolTable(KIND_STD, "delay");
-
+	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
 	// standard library
-	// containers
-	*stdLib *= new SymbolTable(KIND_STD, "stack");
-	*stdLib *= new SymbolTable(KIND_STD, "map");
-	// filters
-	*stdLib *= new SymbolTable(KIND_STD, "filter");
-	*stdLib *= new SymbolTable(KIND_STD, "sort");
 	// generators
-	*stdLib *= new SymbolTable(KIND_STD, "gen");
-
+	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
 	// concatenate the library to the root
 	*stRoot *= stdLib;
 }

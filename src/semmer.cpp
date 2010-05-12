@@ -14,8 +14,8 @@ Type *errType = new ErrorType();
 // allocators/deallocators
 SymbolTable::SymbolTable(int kind, string &id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
 SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
-SymbolTable::SymbolTable(int kind, string &id, Type *defType) : kind(kind), id(id), defSite(new Tree(TypeStatus(defType, NULL))), parent(NULL) {}
-SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), defSite(new Tree(TypeStatus(defType, NULL))), parent(NULL) {}
+SymbolTable::SymbolTable(int kind, string &id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status);}
+SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status);}
 SymbolTable::SymbolTable(SymbolTable &st) {*this = st;}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes

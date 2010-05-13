@@ -80,7 +80,7 @@ TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus = TypeStatus());
 	if (tree->status) {\
 		return tree->status;\
 	}\
-	/* otherwise, compute the type normally */\
+	/* otherwise, prepare to compute the type normally */\
 	TypeStatus status(NULL, inStatus.recall)
 
 #define GET_STATUS_FOOTER \

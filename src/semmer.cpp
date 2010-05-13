@@ -483,6 +483,10 @@ TypeStatus getStatusBracketedExp(Tree *tree, TypeStatus inStatus) {
 // reports errors
 TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_HEADER;
+	Type *&fakeType = tree->status.type;
+	// fake a type for this node
+	fakeType = errType;
+	// derive the correct type of this expression
 	Tree *expc = tree->child;
 	if (*expc == TOKEN_Primary) {
 		status = getStatusPrimary(expc, inStatus);
@@ -536,13 +540,10 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 				}
 				break;
 			default: // can't happen; the above should cover all cases
-				left.type = NULL;
-				right.type = NULL;
 				break;
 		} // switch
 	} // if
-	// if we couldn't resolve a type
-	if (!status) {
+	if (!status) { // if we couldn't resolve a type for this expression
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
@@ -1207,7 +1208,6 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 			if (*tstc == TOKEN_Node) { // if it's a node declaration
 				status = getStatusNode(tstc);
 			} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
-				// derive the type of the expression without doing any bindings, since expressions must be non-recursive
 				status = getStatusBracketedExp(tstc, inStatus);
 			}
 		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration

@@ -7,9 +7,9 @@ int parserErrorCode;
 // Tree functions
 
 // constructors
-Tree::Tree(Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()) {}
-Tree::Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), status(TypeStatus()) {}
-Tree::Tree(TypeStatus &status) : next(NULL), back(NULL), child(NULL), parent(NULL), status(status) {}
+Tree::Tree(const Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()) {}
+Tree::Tree(const Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), status(TypeStatus()) {}
+Tree::Tree(const TypeStatus &status) : next(NULL), back(NULL), child(NULL), parent(NULL), status(status) {}
 
 // destructor
 Tree::~Tree() {
@@ -73,6 +73,7 @@ Tree *Tree::goParent(unsigned int n) {
 	}
 	return cur;
 }
+
 // binary attatchers
 void Tree::operator+=(Tree *next) {
 	this->next = next;
@@ -85,29 +86,6 @@ void Tree::operator*=(Tree *child) {
 }
 void Tree::operator&=(Tree *parent) {
 	this->parent = parent;
-}
-// generalized traverser
-Tree *Tree::operator()(char *s) {
-	Tree *cur = this;
-	for(;;) {
-		if (cur == NULL || s[0] == '\0') {
-			 return cur;
-		} else if (s[0] == '>') {
-			cur = cur->next;
-			s++;
-		} else if (s[0] == '<') {
-			cur = cur->back;
-			s++;
-		} else if (s[0] == 'v') {
-			cur = cur->child;
-			s++;
-		} else if (s[0] == '^') {
-			cur = cur->parent;
-			s++;
-		} else {
-			throw string("INTERNAL ERROR: illegal tree traverser");
-		}
-	}
 }
 
 // exported tree parsing functions

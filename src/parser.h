@@ -25,9 +25,9 @@ class Tree {
 		SymbolTable *env; // the symbol environment in which this node occurs
 		TypeStatus status; // the status coming OUT of this node
 		// allocators/deallocators
-		Tree(Token &t);
-		Tree(Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
-		Tree(TypeStatus &status);
+		Tree(const Token &t);
+		Tree(const Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
+		Tree(const TypeStatus &status);
 		~Tree();
 		// comparison operators
 		bool operator==(int tokenType);
@@ -42,8 +42,6 @@ class Tree {
 		void operator-=(Tree *back);
 		void operator*=(Tree *child);
 		void operator&=(Tree *parent);
-		// generalized traverser
-		Tree *operator()(char *s);
 };
 
 string sid2String(Tree *t);

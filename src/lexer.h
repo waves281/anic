@@ -16,9 +16,12 @@ class Token {
 		int row;
 		int col;
 		// allocators/deallocators
-		Token();
+		Token(int tokenType = TOKEN_STD);
 		Token(int tokenType, string &s, string &fileName, int row, int col);
+		Token(const Token &otherToken);
 		~Token();
+		// operators
+		Token &operator=(Token &otherToken);
 };
 
 vector<Token> *lex(ifstream *in, string &fileName);

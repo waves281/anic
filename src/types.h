@@ -49,20 +49,20 @@ class Type {
 		virtual ~Type();
 		// core methods
 		// virtual
-		virtual bool isComparable(Type &otherType) = 0;
+		virtual bool isComparable(const Type &otherType) = 0;
 		// non-virtual
-		bool baseEquals(Type &otherType);
-		bool baseSendable(Type &otherType);
+		bool baseEquals(const Type &otherType);
+		bool baseSendable(const Type &otherType);
 		// operators
 		// virtual
-		virtual bool operator==(Type &otherType) = 0;
+		virtual bool operator==(const Type &otherType) = 0;
 		virtual Type *operator,(Type &otherType) = 0;
 		virtual Type *operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
 		operator bool();
 		bool operator!();
-		bool operator!=(Type &otherType);
+		bool operator!=(const Type &otherType);
 };
 
 // Type subclasses
@@ -77,9 +77,9 @@ class TypeList : public Type {
 		TypeList();
 		~TypeList();
 		// core methods
-		bool isComparable(Type &otherType);
+		bool isComparable(const Type &otherType);
 		// operators
-		bool operator==(Type &otherType);
+		bool operator==(const Type &otherType);
 		bool operator==(int kind);
 		Type *operator,(Type &otherType);
 		Type *operator>>(Type &otherType);
@@ -92,9 +92,9 @@ class ErrorType : public Type {
 		ErrorType();
 		~ErrorType();
 		// core methods
-		bool isComparable(Type &otherType);
+		bool isComparable(const Type &otherType);
 		// operators
-		bool operator==(Type &otherType);
+		bool operator==(const Type &otherType);
 		bool operator==(int kind);
 		Type *operator,(Type &otherType);
 		Type *operator>>(Type &otherType);
@@ -150,10 +150,10 @@ class StdType : public Type {
 		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~StdType();
 		// core methods
-		bool isComparable(Type &otherType);
-		int kindCompare(StdType &otherType); // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
+		bool isComparable(const Type &otherType);
+		int kindCompare(const StdType &otherType); // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		// operators
-		bool operator==(Type &otherType);
+		bool operator==(const Type &otherType);
 		bool operator==(int kind);
 		Type *operator,(Type &otherType);
 		Type *operator>>(Type &otherType);
@@ -169,9 +169,9 @@ class FilterType : public Type {
 		FilterType(Type *from = NULL, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
-		bool isComparable(Type &otherType);
+		bool isComparable(const Type &otherType);
 		// operators
-		bool operator==(Type &otherType);
+		bool operator==(const Type &otherType);
 		bool operator==(int kind);
 		Type *operator,(Type &otherType);
 		Type *operator>>(Type &otherType);
@@ -189,9 +189,9 @@ class ObjectType : public Type {
 		ObjectType(vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
-		bool isComparable(Type &otherType);
+		bool isComparable(const Type &otherType);
 		// operators
-		bool operator==(Type &otherType);
+		bool operator==(const Type &otherType);
 		bool operator==(int kind);
 		Type *operator,(Type &otherType);
 		Type *operator>>(Type &otherType);
@@ -214,13 +214,13 @@ class TypeStatus {
 		operator Tree *();
 		operator bool(); // tests for NULLity of type, not for whether it's the error type or not!
 		// operators
-		TypeStatus &operator=(TypeStatus otherStatus);
+		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
 		TypeStatus &operator=(Tree *otherTree);
 		Type &operator*();
 		Type *operator->();
-		bool operator==(Type &otherType);
-		bool operator!=(Type &otherType);
+		bool operator==(const Type &otherType);
+		bool operator!=(const Type &otherType);
 };
 
 // external linkage specifiers

@@ -111,12 +111,13 @@ int main() {
 	fprintf(out, "#include \"../src/mainDefs.h\"\n\n");
 	fprintf(out, "#include \"../src/lexerNodeStruct.h\"\n\n");
 	// print out token definitions to the .h
-	fprintf(out, "#define NUM_TOKENS %u\n\n", ((unsigned int)tokenMap.size() + 1)); // plus 1 due to Token_END
+	fprintf(out, "#define NUM_TOKENS %u\n\n", ((unsigned int)tokenMap.size() + 2)); // plus 2 due to TOKEN_END and TOKEN_STD
 	for (map<string,int>::iterator queryBuf = tokenMap.begin(); queryBuf != tokenMap.end(); queryBuf++) {
 		fprintf(out, "#define TOKEN_%s %d\n", queryBuf->first.c_str(), queryBuf->second);
 	}
 	// print out additional $end token definition
 	fprintf(out, "#define TOKEN_END %u\n", (unsigned int)tokenMap.size());
+	fprintf(out, "#define TOKEN_STD %u\n", (unsigned int)tokenMap.size() + 1);
 	fprintf(out, "\n");
 	// print out the forward declarations to the .h
 	fprintf(out, "const char *tokenType2String(int tokenType);\n");

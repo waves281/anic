@@ -1,8 +1,8 @@
 #include "types.h"
 
 // Type functions
-bool Type::baseEquals(Type &otherType) {return (suffix == otherType.suffix && suffix == otherType.suffix);}
-bool Type::baseSendable(Type &otherType) { return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
+bool Type::baseEquals(const Type &otherType) {return (suffix == otherType.suffix && suffix == otherType.suffix);}
+bool Type::baseSendable(const Type &otherType) {return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
 Type::~Type() {}
 void Type::delatch() {
 	if (suffix == SUFFIX_LATCH) {
@@ -21,7 +21,7 @@ void Type::delatch() {
 }
 Type::operator bool() {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() {return (category == CATEGORY_ERRORTYPE);}
-bool Type::operator!=(Type &otherType) {return (!operator==(otherType));};
+bool Type::operator!=(const Type &otherType) {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
@@ -38,8 +38,8 @@ TypeList::~TypeList() {
 		}
 	}
 }
-bool TypeList::isComparable(Type &otherType) {return (list.size() == 1 && list[0]->isComparable(otherType));}
-bool TypeList::operator==(Type &otherType) {
+bool TypeList::isComparable(const Type &otherType) {return (list.size() == 1 && list[0]->isComparable(otherType));}
+bool TypeList::operator==(const Type &otherType) {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
@@ -187,8 +187,8 @@ TypeList::operator string() {
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
 ErrorType::~ErrorType() {}
-bool ErrorType::isComparable(Type &otherType) {return false;}
-bool ErrorType::operator==(Type &otherType) {
+bool ErrorType::isComparable(const Type &otherType) {return false;}
+bool ErrorType::operator==(const Type &otherType) {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
 	} else {
@@ -204,8 +204,8 @@ ErrorType::operator string() {
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
 StdType::~StdType() {category = CATEGORY_STDTYPE;}
-bool StdType::isComparable(Type &otherType) {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
-int StdType::kindCompare(StdType &otherType) {
+bool StdType::isComparable(const Type &otherType) {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
+int StdType::kindCompare(const StdType &otherType) {
 	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
@@ -224,7 +224,7 @@ int StdType::kindCompare(StdType &otherType) {
 		return STD_NULL;
 	}
 }
-bool StdType::operator==(Type &otherType) {
+bool StdType::operator==(const Type &otherType) {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
 		return (kind == otherTypeCast->kind && baseEquals(otherType));
@@ -377,8 +377,8 @@ FilterType::~FilterType() {
 		delete to;
 	}
 }
-bool FilterType::isComparable(Type &otherType) {return false;}
-bool FilterType::operator==(Type &otherType) {
+bool FilterType::isComparable(const Type &otherType) {return false;}
+bool FilterType::operator==(const Type &otherType) {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		return (*from == *(otherTypeCast->from) && *to == *(otherTypeCast->to) && baseEquals(otherType));
@@ -426,7 +426,7 @@ Type *FilterType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		if (baseSendable(otherType) && *this == otherType) {
+		if (baseSendable(otherType) && operator==(otherType)) {
 			return &otherType;
 		} else {
 			return errType;
@@ -461,8 +461,8 @@ ObjectType::~ObjectType() {
 		}
 	}
 }
-bool ObjectType::isComparable(Type &otherType) {return false;}
-bool ObjectType::operator==(Type &otherType) {
+bool ObjectType::isComparable(const Type &otherType) {return false;}
+bool ObjectType::operator==(const Type &otherType) {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		if (constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberNames.size() == otherTypeCast->memberNames.size()) {
@@ -548,7 +548,7 @@ Type *ObjectType::operator>>(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (baseSendable(otherType) && *this == otherType) {
+		if (baseSendable(otherType) && operator==(otherType)) {
 			return &otherType;
 		} else {
 			return errType;
@@ -591,7 +591,7 @@ TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() {return type;}
 TypeStatus::operator Tree *() {return recall;}
 TypeStatus::operator bool() {return (type != NULL);}
-TypeStatus &TypeStatus::operator=(TypeStatus otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
+TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
 TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}
 Type &TypeStatus::operator*() {
@@ -602,5 +602,5 @@ Type &TypeStatus::operator*() {
 	}
 }
 Type *TypeStatus::operator->() {return type;}
-bool TypeStatus::operator==(Type &otherType) {return (*type == otherType);}
-bool TypeStatus::operator!=(Type &otherType) {return (*type != otherType);}
+bool TypeStatus::operator==(const Type &otherType) {return (*type == otherType);}
+bool TypeStatus::operator!=(const Type &otherType) {return (*type != otherType);}

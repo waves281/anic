@@ -30,13 +30,13 @@ class Tree {
 		Tree(const TypeStatus &status);
 		~Tree();
 		// comparison operators
-		bool operator==(int tokenType);
-		bool operator!=(int tokenType);
+		bool operator==(int tokenType) const;
+		bool operator!=(int tokenType) const;
 		// traversal operators
-		Tree *goNext(unsigned int n);
-		Tree *goBack(unsigned int n);
-		Tree *goChild(unsigned int n);
-		Tree *goParent(unsigned int n);
+		Tree *goNext(unsigned int n) const;
+		Tree *goBack(unsigned int n) const;
+		Tree *goChild(unsigned int n) const;
+		Tree *goParent(unsigned int n) const;
 		// binary attatchers
 		void operator+=(Tree *next);
 		void operator-=(Tree *back);

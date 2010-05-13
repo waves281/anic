@@ -18,19 +18,17 @@ Tree::~Tree() {
 }
 
 // comparison oparators
-
-bool Tree::operator==(int tokenType) {
+bool Tree::operator==(int tokenType) const {
 	return (t.tokenType == tokenType);
 }
-
-bool Tree::operator!=(int tokenType) {
-	return (!operator==(tokenType));
+bool Tree::operator!=(int tokenType) const {
+	return (t.tokenType != tokenType);
 }
 
 // traversal operators
 // binary traversers
-Tree *Tree::goNext(unsigned int n) {
-	Tree *cur = this;
+Tree *Tree::goNext(unsigned int n) const {
+	const Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
 			cur = cur->next;
@@ -38,10 +36,10 @@ Tree *Tree::goNext(unsigned int n) {
 			return NULL;
 		}
 	}
-	return cur;
+	return (Tree *)cur;
 }
-Tree *Tree::goBack(unsigned int n) {
-	Tree *cur = this;
+Tree *Tree::goBack(unsigned int n) const {
+	const Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
 			cur = cur->back;
@@ -49,10 +47,10 @@ Tree *Tree::goBack(unsigned int n) {
 			return NULL;
 		}
 	}
-	return cur;
+	return (Tree *)cur;
 }
-Tree *Tree::goChild(unsigned int n) {
-	Tree *cur = this;
+Tree *Tree::goChild(unsigned int n) const {
+	const Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
 			cur = cur->child;
@@ -60,10 +58,10 @@ Tree *Tree::goChild(unsigned int n) {
 			return NULL;
 		}
 	}
-	return cur;
+	return (Tree *)cur;
 }
-Tree *Tree::goParent(unsigned int n) {
-	Tree *cur = this;
+Tree *Tree::goParent(unsigned int n) const {
+	const Tree *cur = this;
 	for (unsigned int i=0; i<n; i++) {
 		if (cur != NULL) {
 			cur = cur->parent;
@@ -71,7 +69,7 @@ Tree *Tree::goParent(unsigned int n) {
 			return NULL;
 		}
 	}
-	return cur;
+	return (Tree *)cur;
 }
 
 // binary attatchers

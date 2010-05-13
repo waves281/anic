@@ -40,6 +40,5 @@ extern bool eventuallyGiveUp;
 extern int lexerErrorCode;
 extern int parserErrorCode;
 extern int semmerErrorCode;
-extern bool eventuallyGiveUp;
 
 #endif

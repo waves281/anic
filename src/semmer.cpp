@@ -211,7 +211,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
 // also, updates id to contain the portion of the identifier that could not be bound
 // returns NULL if no binding whatsoever can be found
-SymbolTable *bindId(string &id, SymbolTable *env, TypeStatus inStatus = TypeStatus()) {
+SymbolTable *bindId(string &id, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
 	// base case
 	if (env == NULL) {
 		return NULL;
@@ -377,7 +377,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-TypeStatus getStatusSymbolTable(SymbolTable *st, TypeStatus inStatus) {
+TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
 	if (*tree == TOKEN_Declaration) { // if the symbol was defined as a Declaration
@@ -391,7 +391,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, TypeStatus inStatus) {
 // typing function definitions
 
 // reports errors
-TypeStatus getStatusSuffixedIdentifier(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	string id = sid2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
@@ -410,7 +410,7 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPrefixOrMultiOp(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pomocc = tree->child->child;
 	TypeStatus sub = getStatusPrimary(tree->next, inStatus);
@@ -443,7 +443,7 @@ TypeStatus getStatusPrefixOrMultiOp(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors for TOKEN_SLASH case
-TypeStatus getStatusPrimary(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_SuffixedIdentifier) {
@@ -473,7 +473,7 @@ TypeStatus getStatusPrimary(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusBracketedExp(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *exp = tree->child->next; // Exp
 	return getStatusExp(exp, inStatus);
@@ -481,7 +481,7 @@ TypeStatus getStatusBracketedExp(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Type *&fakeType = tree->status.type;
 	// fake a type for this node
@@ -551,7 +551,7 @@ TypeStatus getStatusExp(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPrimOpNode(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *ponc = tree->child->child; // the operator token itself
 	// generate the type based on the specific operator it is
@@ -626,7 +626,7 @@ TypeStatus getStatusPrimOpNode(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *plc = tree->child;
 	if (*plc == TOKEN_INUM) {
@@ -641,7 +641,7 @@ TypeStatus getStatusPrimLiteral(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	bool pipeTypesValid = true;
 	TypeStatus curStatus = inStatus;
@@ -664,7 +664,7 @@ TypeStatus getStatusBlock(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	TypeStatus from = TypeStatus(nullType, inStatus);
 	TypeStatus to = TypeStatus(nullType, inStatus);
@@ -685,7 +685,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Type *&fakeType = tree->status.type;
 	// fake a type for this node
@@ -725,7 +725,7 @@ TypeStatus getStatusFilter(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
 	if (*conscn == TOKEN_LSQUARE) {
@@ -737,7 +737,7 @@ TypeStatus getStatusConstructor(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Type *&fakeType = tree->status.type;
 	// fake a type for this node
@@ -797,7 +797,7 @@ TypeStatus getStatusObject(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusType(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *typeSuffix = tree->child->next; // TypeSuffix
 	// derive the suffix and depth first, since we'll need to know then to construct the Type object
@@ -859,7 +859,7 @@ TypeStatus getStatusType(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<Type *> list;
 	Tree *treeCur = tree;
@@ -887,7 +887,7 @@ TypeStatus getStatusTypeList(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<Type *> list;
 	Tree *treeCur = tree;
@@ -916,7 +916,7 @@ TypeStatus getStatusParamList(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *tl = tree->child->next; // TypeList
 	TypeStatus instantiation = getStatusTypeList(tl, inStatus);
@@ -947,7 +947,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusNode(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
@@ -967,7 +967,7 @@ TypeStatus getStatusNode(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusTypedStaticTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
@@ -978,7 +978,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusStaticTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
@@ -989,7 +989,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusDynamicTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *dtc = tree->child;
 	if (*dtc == TOKEN_StaticTerm) {
@@ -1006,7 +1006,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<TypeStatus> toes; // vector for logging the destination statuses of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
@@ -1054,7 +1054,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusSimpleTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_DynamicTerm) {
@@ -1066,11 +1066,10 @@ TypeStatus getStatusSimpleTerm(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusSimpleCondTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		inStatus = inStatus.recall->status;
-		status = getStatusTerm(tree->child->next, inStatus);
+		status = getStatusTerm(tree->child->next, inStatus.recall->status);
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
@@ -1079,7 +1078,7 @@ TypeStatus getStatusSimpleCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusClosedTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusClosedTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *ctc = tree->child;
 	if (*ctc == TOKEN_SimpleTerm) {
@@ -1090,7 +1089,7 @@ TypeStatus getStatusClosedTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusOpenTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusOpenTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *otc = tree->child;
 	if (*otc == TOKEN_SimpleCondTerm) {
@@ -1102,14 +1101,13 @@ TypeStatus getStatusOpenTerm(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusOpenCondTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		inStatus = inStatus.recall->status;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
-		TypeStatus falseStatus = getStatusOpenTerm(falseBranch, inStatus);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus.recall->status);
+		TypeStatus falseStatus = getStatusOpenTerm(falseBranch, inStatus.recall->status);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
@@ -1128,14 +1126,13 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusClosedCondTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		inStatus = inStatus.recall->status;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
-		TypeStatus falseStatus = getStatusClosedTerm(falseBranch, inStatus);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus.recall->status);
+		TypeStatus falseStatus = getStatusClosedTerm(falseBranch, inStatus.recall->status);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
@@ -1154,7 +1151,7 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusTerm(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *tc2 = tree->child->child;
 	if (*tc2 == TOKEN_SimpleCondTerm) {
@@ -1170,20 +1167,21 @@ TypeStatus getStatusTerm(Tree *tree, TypeStatus inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNonEmptyTerms(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// scan the pipe left to right
 	Tree *curTerm = tree->child; // Term
 	TypeStatus outStatus;
+	TypeStatus curStatus = inStatus;
 	while (curTerm != NULL) {
-		outStatus = getStatusTerm(curTerm, inStatus);
+		outStatus = getStatusTerm(curTerm, curStatus);
 		if (*outStatus) { // if we found a proper typing for this term, log it
 			curTerm->status = outStatus;
-			inStatus = outStatus;
+			curStatus = outStatus;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*curStatus<<")");
 			// log the fact that typing failed
 			outStatus.type = NULL;
 			break;
@@ -1198,7 +1196,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL) { // if it's a non-import declaration
@@ -1224,7 +1222,7 @@ TypeStatus getStatusDeclaration(Tree *tree, TypeStatus inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPipe(Tree *tree, TypeStatus inStatus) {
+TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child;
 	if (*pipec == TOKEN_Declaration) { // if it's a Declaration pipe

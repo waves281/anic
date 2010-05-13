@@ -1,8 +1,8 @@
 #include "types.h"
 
 // Type functions
-bool Type::baseEquals(const Type &otherType) {return (suffix == otherType.suffix && suffix == otherType.suffix);}
-bool Type::baseSendable(const Type &otherType) {return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
+bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && suffix == otherType.suffix);}
+bool Type::baseSendable(const Type &otherType) const {return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
 Type::~Type() {}
 void Type::delatch() {
 	if (suffix == SUFFIX_LATCH) {
@@ -19,9 +19,9 @@ void Type::delatch() {
 		}
 	}
 }
-Type::operator bool() {return (category != CATEGORY_ERRORTYPE);}
-bool Type::operator!() {return (category == CATEGORY_ERRORTYPE);}
-bool Type::operator!=(const Type &otherType) {return (!operator==(otherType));};
+Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
+bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}
+bool Type::operator!=(const Type &otherType) const {return (!operator==(otherType));};
 
 // TypeList functions
 // constructor works on ParamList and TypeList
@@ -38,15 +38,15 @@ TypeList::~TypeList() {
 		}
 	}
 }
-bool TypeList::isComparable(const Type &otherType) {return (list.size() == 1 && list[0]->isComparable(otherType));}
-bool TypeList::operator==(const Type &otherType) {
+bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
+bool TypeList::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
 			return false;
 		}
-		vector<Type *>::iterator iter1 = list.begin();
-		vector<Type *>::iterator iter2 = otherTypeCast->list.begin();
+		vector<Type *>::const_iterator iter1 = list.begin();
+		vector<Type *>::const_iterator iter2 = otherTypeCast->list.begin();
 		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
 			if (**iter1 != **iter2) {
 				return false;
@@ -59,7 +59,7 @@ bool TypeList::operator==(const Type &otherType) {
 		return false;
 	}
 }
-Type *TypeList::operator,(Type &otherType) {
+Type *TypeList::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		return errType;
 	} else if (otherType.category == CATEGORY_STDTYPE) {
@@ -127,7 +127,7 @@ Type *TypeList::operator,(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return &otherType;
 			}
@@ -137,14 +137,14 @@ Type *TypeList::operator,(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *TypeList::operator>>(Type &otherType) {
+Type *TypeList::operator>>(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
 			return errType;
 		}
-		vector<Type *>::iterator iter1 = list.begin();
-		vector<Type *>::iterator iter2 = otherTypeCast->list.begin();
+		vector<Type *>::const_iterator iter1 = list.begin();
+		vector<Type *>::const_iterator iter2 = otherTypeCast->list.begin();
 		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
 			if (!(*(**iter1 >> **iter2))) {
 				return errType;
@@ -163,7 +163,7 @@ Type *TypeList::operator>>(Type &otherType) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return nullType;
 			}
@@ -173,9 +173,9 @@ Type *TypeList::operator>>(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-TypeList::operator string() {
+TypeList::operator string() const {
 	string acc;
-	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
+	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
 		acc += (string)(**iter);
 		if ((iter+1) != list.end()) {
 			acc += ", ";
@@ -187,25 +187,25 @@ TypeList::operator string() {
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
 ErrorType::~ErrorType() {}
-bool ErrorType::isComparable(const Type &otherType) {return false;}
-bool ErrorType::operator==(const Type &otherType) {
+bool ErrorType::isComparable(const Type &otherType) const {return false;}
+bool ErrorType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
 	} else {
 		return false;
 	}
 }
-Type *ErrorType::operator,(Type &otherType) {return this;}
-Type *ErrorType::operator>>(Type &otherType) {return this;}
-ErrorType::operator string() {
+Type *ErrorType::operator,(Type &otherType) const {return errType;}
+Type *ErrorType::operator>>(Type &otherType) const {return errType;}
+ErrorType::operator string() const {
 	return "error";
 }
 
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
 StdType::~StdType() {category = CATEGORY_STDTYPE;}
-bool StdType::isComparable(const Type &otherType) {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
-int StdType::kindCompare(const StdType &otherType) {
+bool StdType::isComparable(const Type &otherType) const {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
+int StdType::kindCompare(const StdType &otherType) const {
 	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
@@ -224,7 +224,7 @@ int StdType::kindCompare(const StdType &otherType) {
 		return STD_NULL;
 	}
 }
-bool StdType::operator==(const Type &otherType) {
+bool StdType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
 		return (kind == otherTypeCast->kind && baseEquals(otherType));
@@ -232,7 +232,7 @@ bool StdType::operator==(const Type &otherType) {
 		return false;
 	}
 }
-Type *StdType::operator,(Type &otherType) {
+Type *StdType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -249,7 +249,7 @@ Type *StdType::operator,(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return &otherType;
 			}
@@ -259,7 +259,7 @@ Type *StdType::operator,(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *StdType::operator>>(Type &otherType) {
+Type *StdType::operator>>(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
@@ -282,7 +282,7 @@ Type *StdType::operator>>(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-StdType::operator string() {
+StdType::operator string() const {
 	switch(kind) {
 		// null type
 		case STD_NULL:
@@ -377,8 +377,8 @@ FilterType::~FilterType() {
 		delete to;
 	}
 }
-bool FilterType::isComparable(const Type &otherType) {return false;}
-bool FilterType::operator==(const Type &otherType) {
+bool FilterType::isComparable(const Type &otherType) const {return false;}
+bool FilterType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		return (*from == *(otherTypeCast->from) && *to == *(otherTypeCast->to) && baseEquals(otherType));
@@ -386,7 +386,7 @@ bool FilterType::operator==(const Type &otherType) {
 		return false;
 	}
 }
-Type *FilterType::operator,(Type &otherType) {
+Type *FilterType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -405,7 +405,7 @@ Type *FilterType::operator,(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return &otherType;
 			}
@@ -415,7 +415,7 @@ Type *FilterType::operator,(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *FilterType::operator>>(Type &otherType) {
+Type *FilterType::operator>>(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
@@ -437,7 +437,7 @@ Type *FilterType::operator>>(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-FilterType::operator string() {
+FilterType::operator string() const {
 	string acc("[");
 	acc += (string)(*from);
 	acc += " --> ";
@@ -461,14 +461,14 @@ ObjectType::~ObjectType() {
 		}
 	}
 }
-bool ObjectType::isComparable(const Type &otherType) {return false;}
-bool ObjectType::operator==(const Type &otherType) {
+bool ObjectType::isComparable(const Type &otherType) const {return false;}
+bool ObjectType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		if (constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberNames.size() == otherTypeCast->memberNames.size()) {
 			// verify that the constructors match
-			vector<TypeList *>::iterator consIter1 = constructorTypes.begin();
-			vector<TypeList *>::iterator consIter2 = otherTypeCast->constructorTypes.begin();
+			vector<TypeList *>::const_iterator consIter1 = constructorTypes.begin();
+			vector<TypeList *>::const_iterator consIter2 = otherTypeCast->constructorTypes.begin();
 			while (consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
 				if (**consIter1 != **consIter2) {
 					return false;
@@ -478,8 +478,8 @@ bool ObjectType::operator==(const Type &otherType) {
 				consIter2++;
 			}
 			// verify that the member types match
-			vector<string>::iterator memberNameIter1 = memberNames.begin();
-			vector<string>::iterator memberNameIter2 = otherTypeCast->memberNames.begin();
+			vector<string>::const_iterator memberNameIter1 = memberNames.begin();
+			vector<string>::const_iterator memberNameIter2 = otherTypeCast->memberNames.begin();
 			while (memberNameIter1 != memberNames.end() && memberNameIter2 != otherTypeCast->memberNames.end()) {
 				if (*memberNameIter1 != *memberNameIter2) {
 					return false;
@@ -489,8 +489,8 @@ bool ObjectType::operator==(const Type &otherType) {
 				memberNameIter2++;
 			}
 			// verify that the member types match
-			vector<Type *>::iterator memberTypeIter1 = memberTypes.begin();
-			vector<Type *>::iterator memberTypeIter2 = otherTypeCast->memberTypes.begin();
+			vector<Type *>::const_iterator memberTypeIter1 = memberTypes.begin();
+			vector<Type *>::const_iterator memberTypeIter2 = otherTypeCast->memberTypes.begin();
 			while (memberTypeIter1 != memberTypes.end() && memberTypeIter2 != otherTypeCast->memberTypes.end()) {
 				if (**memberTypeIter1 != **memberTypeIter2) {
 					return false;
@@ -507,7 +507,7 @@ bool ObjectType::operator==(const Type &otherType) {
 		return false;
 	}
 }
-Type *ObjectType::operator,(Type &otherType) {
+Type *ObjectType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -526,7 +526,7 @@ Type *ObjectType::operator,(Type &otherType) {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 			if (*(*this >> **iter)) {
 				return &otherType;
 			}
@@ -535,7 +535,7 @@ Type *ObjectType::operator,(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *ObjectType::operator>>(Type &otherType) {
+Type *ObjectType::operator>>(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
@@ -557,9 +557,9 @@ Type *ObjectType::operator>>(Type &otherType) {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-ObjectType::operator string() {
+ObjectType::operator string() const {
 	string acc("{");
-	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		acc += "=[";
 		acc += (string)(**iter);
 		acc += "]";
@@ -568,8 +568,8 @@ ObjectType::operator string() {
 		}
 	}
 	acc += ";";
-	vector<string>::iterator memberNameIter = memberNames.begin();
-	vector<Type *>::iterator memberTypeIter = memberTypes.begin();
+	vector<string>::const_iterator memberNameIter = memberNames.begin();
+	vector<Type *>::const_iterator memberTypeIter = memberTypes.begin();
 	while (memberNameIter != memberNames.end()) {
 		acc += *memberNameIter;
 		acc += "=";
@@ -587,20 +587,19 @@ ObjectType::operator string() {
 
 // typing status block functions
 TypeStatus::TypeStatus(Type *type, Tree *recall, Type *retType) : type(type), recall(recall), retType(retType) {}
+TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), recall(otherStatus.recall), retType(otherStatus.retType) {}
 TypeStatus::~TypeStatus() {}
-TypeStatus::operator Type *() {return type;}
-TypeStatus::operator Tree *() {return recall;}
-TypeStatus::operator bool() {return (type != NULL);}
+TypeStatus::operator Type *() const {return type;}
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
 TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}
-Type &TypeStatus::operator*() {
+Type &TypeStatus::operator*() const {
 	if (type != NULL) {
 		return (*type);
 	} else {
 		return (*errType);
 	}
 }
-Type *TypeStatus::operator->() {return type;}
-bool TypeStatus::operator==(const Type &otherType) {return (*type == otherType);}
-bool TypeStatus::operator!=(const Type &otherType) {return (*type != otherType);}
+Type *TypeStatus::operator->() const {return type;}
+bool TypeStatus::operator==(const Type &otherType) const {return (*type == otherType);}
+bool TypeStatus::operator!=(const Type &otherType) const {return (*type != otherType);}

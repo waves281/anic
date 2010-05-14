@@ -789,7 +789,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration, log it in the lists
 			TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
 			if (*memberStatus) { // if we successfully derived a type for this Declaration
-				memberNames.push_back(pipec->child->t.s);
+// KOL check for duplicate member names
+				memberNames.push_back(pipec->child->t.s); // ID
 				memberTypes.push_back(memberStatus.type);
 			} else { // else if we failed to derive a type
 				failed = true;
@@ -867,7 +868,35 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		}
 		status = new FilterType(from, to, suffixVal, depthVal);
 	} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
-// KOL needs to be implemented
+		Tree *otcn = typec->child->next; // RCURLY or ObjectTypeList
+		if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
+			status = new ObjectType(suffixVal, depthVal);
+		} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
+			vector<TypeList *> constructorTypes;
+			vector<string> memberNames;
+			vector<Type *> memberTypes;
+			bool failed = false;
+			Tree *cur;
+			for(cur = otcn->child; cur != NULL && *cur == TOKEN_ConstructorType; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a ConstructorType
+				TypeStatus subStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
+				if (*subStatus) { // if we succeeded in deriving a type for this constructor
+// KOL check for duplicate constructor types
+					constructorTypes.push_back((TypeList *)(subStatus.type));
+				} else { // else if we failed to derive a type for this constructor, flag this fact
+					failed = true;
+				}
+			}
+			// cur is now a MemberList or NULL
+			for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
+// KOL check for duplicate member names
+				memberNames.push_back(cur->child->t.s); // ID
+				TypeStatus subStatus = getStatusType(cur->child->next->next, inStatus); // Type
+				memberTypes.push_back(subStatus.type);
+			}
+			if (!failed) {
+				status = new ObjectType(constructorTypes, memberNames, memberTypes, suffixVal, depthVal);
+			}
+		}
 	}
 	GET_STATUS_FOOTER;
 }

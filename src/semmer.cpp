@@ -175,7 +175,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// recurse
 		buildSt(tree->child, newDef, importList); // child of Constructor
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Declaration) { // if it's a declaration node
+	} else if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if it's a Declaration-style node
 		Tree *bnc = tree->child->next;
 		if (*bnc == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
@@ -380,7 +380,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
-	if (*tree == TOKEN_Declaration) { // if the symbol was defined as a Declaration
+	if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if the symbol was defined as a Declaration-style node
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
 		status = getStatusType(tree->child, inStatus); // Type
@@ -646,7 +646,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	bool pipeTypesValid = true;
 	TypeStatus curStatus = inStatus;
 	curStatus.retType = NULL; // start out not knowing what Type this block is supposed to return
-	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = pipe->next->child) {
+	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		// try to get a type for this pipe
 		TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
 		if (*thisPipeStatus) { // if we successfully derived a type for this Pipe, log its return type into the current status
@@ -773,9 +773,9 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<string> memberNames;
 	vector<Type *> memberTypes;
 	Tree *pipes = conss->next; // Pipes
-	for (Tree *pipe = pipes->child; pipe != NULL; pipe = pipe->next->child) {
-		Tree *pipec = pipe->child; // Declaration or NonEmptyTerms
-		if (*pipec == TOKEN_Declaration) { // if it's a member declaration, log it in the lists
+	for (Tree *pipe = pipes->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
+		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
+		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration, log it in the lists
 			TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
 			if (*memberStatus) { // if we successfully derived a type for this Declaration
 				memberNames.push_back(pipec->child->t.s);
@@ -1224,8 +1224,8 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *pipec = tree->child;
-	if (*pipec == TOKEN_Declaration) { // if it's a Declaration pipe
+	Tree *pipec = tree->child; // Declaration, NonEmptyTerms, or LastDeclaration
+	if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a Declaration-style pipe
 		status = getStatusDeclaration(pipec, inStatus);
 	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		status = getStatusNonEmptyTerms(pipec, inStatus);
@@ -1234,13 +1234,20 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 }
 
 void traceTypes(vector<Tree *> *parseme) {
-	// get a list of Pipe nodes
+	// iterate through all Pipe nodes
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
-	// iterate through the list of Pipes and trace the type flow for each one
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
-		if (!pipeCur->status) { // if we haven't derived a type for this pipe yet
+		if (!(pipeCur->status)) { // if we haven't derived a type for this pipe yet
 			getStatusPipe(pipeCur);
+		}
+	}
+	// .. and all LastPipe nodes
+	vector<Tree *> &lastPipeList = parseme[TOKEN_LastPipe];
+	for (unsigned int i=0; i < lastPipeList.size(); i++) {
+		Tree *lastPipeCur = lastPipeList[i];
+		if (!(lastPipeCur->status)) { // if we haven't derived a type for this pipe yet
+			getStatusPipe(lastPipeCur);
 		}
 	}
 }

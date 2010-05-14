@@ -72,7 +72,11 @@
 Program : Pipes
 	;
 Pipes :
-	| Pipe Pipes
+	| LastPipe
+	| Pipe NonEmptyPipes
+	;
+NonEmptyPipes : LastPipe
+	| Pipe NonEmptyPipes
 	;
 LabeledPipes : StaticTerm COLON SimpleTerm
 	| StaticTerm COLON SimpleTerm LabeledPipes
@@ -81,11 +85,18 @@ LabeledPipes : StaticTerm COLON SimpleTerm
 Pipe : Declaration
 	| NonEmptyTerms SEMICOLON
 	;
+LastPipe : Declaration
+	| NonEmptyTerms SEMICOLON
+	| LastDeclaration
+	| NonEmptyTerms
+	;
 Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
 	| ID ERARROW NonEmptyTerms SEMICOLON
 	| AT SuffixedIdentifier
 	| AT SuffixedIdentifier SEMICOLON
+	;
+LastDeclaration : ID ERARROW NonEmptyTerms
 	;
 NonEmptyTerms : Term Terms
 	;

@@ -1198,7 +1198,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, LCURLY, or NULL
+	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 	if (declarationSub != NULL) { // if it's a non-import declaration
 		// attempt to derive the type of this Declaration
 		if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
@@ -1213,13 +1213,6 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			tree->status = new FilterType(inStatus);
 			// then, verify types for the declaration sub-block
 			status = getStatusNonEmptyTerms(declarationSub, inStatus);
-			// delete the temporary filter type
-			delete (tree->status.type);
-		} else if (*declarationSub == TOKEN_LCURLY) { // else if it's a brace-delimited flow-through declaration
-			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
-			tree->status = new FilterType(inStatus);
-			// then, verify types for the declaration sub-block
-			status = getStatusNonEmptyTerms(declarationSub->next, inStatus); // NonEmptyTerms
 			// delete the temporary filter type
 			delete (tree->status.type);
 		}

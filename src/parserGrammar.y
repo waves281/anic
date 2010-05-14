@@ -84,7 +84,6 @@ Pipe : Declaration
 Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
 	| ID ERARROW NonEmptyTerms SEMICOLON
-	| ID ERARROW LCURLY NonEmptyTerms RCURLY
 	| AT SuffixedIdentifier
 	| AT SuffixedIdentifier SEMICOLON
 	;

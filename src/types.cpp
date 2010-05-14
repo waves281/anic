@@ -25,7 +25,7 @@ bool Type::operator!=(const Type &otherType) const {return (!operator==(otherTyp
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
+TypeList::TypeList(const vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
 TypeList::TypeList(Type *type) {
 	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;
 	list.push_back(type);
@@ -448,7 +448,9 @@ FilterType::operator string() const {
 
 // ObjectType functions
 ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
-ObjectType::ObjectType(vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix, int depth) : 
+	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {

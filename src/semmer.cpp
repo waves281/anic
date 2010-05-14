@@ -85,7 +85,6 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "node", new StdType(STD_NODE));
 	*stRoot *= new SymbolTable(KIND_STD, "int", new StdType(STD_INT));
 	*stRoot *= new SymbolTable(KIND_STD, "float", new StdType(STD_FLOAT));
 	*stRoot *= new SymbolTable(KIND_STD, "bool", new StdType(STD_BOOL));
@@ -102,8 +101,23 @@ void catStdLib(SymbolTable *&stRoot) {
 	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "out", new StdType(STD_NODE, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "err", new StdType(STD_NODE, SUFFIX_STREAM, 1));
+	// create the stringer type that the outer type uses
+	vector<TypeList *> constructorTypes;
+	vector<string> memberNames;
+	memberNames.push_back("toString");
+	vector<Type *> memberTypes;
+	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH)));
+	Type *stringer = new ObjectType(constructorTypes, memberNames, memberTypes, SUFFIX_LATCH);
+	// create the outer type that the output streams use
+	constructorTypes.push_back(new TypeList(new StdType(STD_INT)));
+	constructorTypes.push_back(new TypeList(new StdType(STD_FLOAT)));
+	constructorTypes.push_back(new TypeList(new StdType(STD_BOOL)));
+	constructorTypes.push_back(new TypeList(new StdType(STD_CHAR)));
+	constructorTypes.push_back(new TypeList(new StdType(STD_STRING)));
+	constructorTypes.push_back(new TypeList(stringer));
+	Type *outer = new ObjectType(constructorTypes, SUFFIX_LATCH);
+	*stdLib *= new SymbolTable(KIND_STD, "out", outer);
+	*stdLib *= new SymbolTable(KIND_STD, "err", outer);
 	// control nodes
 	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));

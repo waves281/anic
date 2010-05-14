@@ -72,7 +72,7 @@ class TypeList : public Type {
 		// data members
 		vector<Type *> list; // pointers to the underlying list of types
 		// allocators/deallocators
-		TypeList(vector<Type *> &list);
+		TypeList(const vector<Type *> &list);
 		TypeList(Type *type);
 		TypeList();
 		~TypeList();
@@ -104,43 +104,42 @@ class ErrorType : public Type {
 // Type kind specifiers
 
 #define STD_NULL 0
-#define STD_NODE 1
-#define STD_STD 2
+#define STD_STD 1
 
-#define STD_MIN_COMPARABLE 3
+#define STD_MIN_COMPARABLE 2
 
-#define STD_INT 3
-#define STD_FLOAT 4
-#define STD_BOOL 5
-#define STD_CHAR 6
-#define STD_STRING 7
+#define STD_INT 2
+#define STD_FLOAT 3
+#define STD_BOOL 4
+#define STD_CHAR 5
+#define STD_STRING 6
 
-#define STD_MAX_COMPARABLE 7
+#define STD_MAX_COMPARABLE 6
 
-#define STD_NOT 8
-#define STD_COMPLEMENT 9
-#define STD_DPLUS 10
-#define STD_DMINUS 11
+#define STD_NOT 7
+#define STD_COMPLEMENT 8
+#define STD_DPLUS 9
+#define STD_DMINUS 10
 
-#define STD_DOR 12
-#define STD_DAND 13
-#define STD_OR 14
-#define STD_XOR 15
-#define STD_AND 16
-#define STD_DEQUALS 17
-#define STD_NEQUALS 18
-#define STD_LT 19
-#define STD_GT 20
-#define STD_LE 21
-#define STD_GE 22
-#define STD_LS 23
-#define STD_RS 24
-#define STD_TIMES 25
-#define STD_DIVIDE 26
-#define STD_MOD 27
+#define STD_DOR 11
+#define STD_DAND 12
+#define STD_OR 13
+#define STD_XOR 14
+#define STD_AND 15
+#define STD_DEQUALS 16
+#define STD_NEQUALS 17
+#define STD_LT 18
+#define STD_GT 19
+#define STD_LE 20
+#define STD_GE 21
+#define STD_LS 22
+#define STD_RS 23
+#define STD_TIMES 24
+#define STD_DIVIDE 25
+#define STD_MOD 26
 
-#define STD_PLUS 28
-#define STD_MINUS 29
+#define STD_PLUS 27
+#define STD_MINUS 28
 
 class StdType : public Type {
 	public:
@@ -186,7 +185,8 @@ class ObjectType : public Type {
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		// allocators/deallocators
 		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;

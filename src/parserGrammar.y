@@ -184,8 +184,13 @@ NonArraySuffixedIdentifier : ID
 	| DPERIOD
 	| DPERIOD PERIOD NonArraySuffixedIdentifier
 	;
-NodeInstantiation : LSQUARE TypeList RSQUARE
-	| LSQUARE TypeList RSQUARE LARROW StaticTerm
+NodeInstantiation : LSQUARE InstantiableTypeList RSQUARE
+	| LSQUARE InstantiableTypeList RSQUARE LARROW StaticTerm
+	;
+InstantiableTypeList : InstantiableType
+	| InstantiableType COMMA InstantiableTypeList
+	;
+InstantiableType : NonArraySuffixedIdentifier TypeSuffix
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE

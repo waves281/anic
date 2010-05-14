@@ -870,7 +870,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		}
 		status = new FilterType(from, to, suffixVal, depthVal);
 	} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
-// KOL
+// KOL needs to be implemented
 	}
 	GET_STATUS_FOOTER;
 }
@@ -932,7 +932,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) { // KOL needs to handle InstantiableTypeList
 	GET_STATUS_HEADER;
 	Tree *tl = tree->child->next; // TypeList
 	TypeStatus instantiation = getStatusTypeList(tl, inStatus);

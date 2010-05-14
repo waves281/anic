@@ -250,6 +250,7 @@ Param : Type ID
 	;
 Type : NonArraySuffixedIdentifier TypeSuffix
 	| FilterType TypeSuffix
+	| ObjectType TypeSuffix
 	;
 TypeSuffix :
 	| SLASH
@@ -269,6 +270,20 @@ FilterType : LSQUARE RSQUARE
 	| LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
+	;
+ObjectType : LCURLY RCURLY
+	| LCURLY ObjectTypeList RCURLY
+	;
+ObjectTypeList : ConstructorType
+	| ConstructorType COMMA ObjectTypeList
+	| ConstructorType COMMA MemberList
+	;
+ConstructorType : EQUALS LSQUARE TypeList RSQUARE
+	;
+MemberList : MemberType
+	| MemberType COMMA MemberList
+	;
+MemberType : ID EQUALS Type
 	;
 TypeList : Type
 	| Type COMMA TypeList

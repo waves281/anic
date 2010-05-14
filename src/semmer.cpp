@@ -846,8 +846,10 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
-	Tree *typec = tree->child; // FilterType or NonArraySuffixedIdentifier
-	if (*typec == TOKEN_FilterType) { // if it's a regular filter type
+	Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
+	if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
+		status = getStatusSuffixedIdentifier(typec);
+	} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
 		TypeStatus from = inStatus;
 		TypeStatus to = inStatus;
 		Tree *sub = typec->child->next; // TypeList, RetList, or RSQUARE
@@ -867,8 +869,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			to = new TypeList();
 		}
 		status = new FilterType(from, to, suffixVal, depthVal);
-	} else if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier (object) type
-		status = getStatusSuffixedIdentifier(typec);
+	} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
+// KOL
 	}
 	GET_STATUS_FOOTER;
 }

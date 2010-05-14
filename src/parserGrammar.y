@@ -72,19 +72,21 @@
 Program : Pipes
 	;
 Pipes :
-	| Pipe
-	| Pipe SEMICOLON Pipes
+	| Pipe Pipes
 	;
 LabeledPipes : StaticTerm COLON SimpleTerm
 	| StaticTerm COLON SimpleTerm LabeledPipes
 	| COLON SimpleTerm
 	;
 Pipe : Declaration
-	| NonEmptyTerms
+	| NonEmptyTerms SEMICOLON
 	;
 Declaration : ID EQUALS TypedStaticTerm
-	| ID ERARROW NonEmptyTerms
+	| ID EQUALS TypedStaticTerm SEMICOLON
+	| ID ERARROW NonEmptyTerms SEMICOLON
+	| ID ERARROW LCURLY NonEmptyTerms RCURLY
 	| AT SuffixedIdentifier
+	| AT SuffixedIdentifier SEMICOLON
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -265,11 +267,12 @@ Block : LCURLY Pipes RCURLY
 	;
 Object : LCURLY Constructors Pipes RCURLY
 	;
-Constructors : Constructor SEMICOLON
-	| Constructor SEMICOLON Constructors
+Constructors : Constructor
+	| Constructor Constructors
 	;
-Constructor : EQUALS LSQUARE RSQUARE
+Constructor : EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
+	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;
 Access : SLASH Node
 	| SSLASH Node

@@ -169,7 +169,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(block->child, blockDef, importList); // child of Block
 	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
 		// allocate the new definition node
-		SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
+		SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, CONSTRUCTOR_NODE_STRING, tree);
 		// ... and link it in
 		*st *= newDef;
 		// recurse
@@ -646,7 +646,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	bool pipeTypesValid = true;
 	TypeStatus curStatus = inStatus;
 	curStatus.retType = NULL; // start out not knowing what Type this block is supposed to return
-	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
+	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = pipe->next->child) {
 		// try to get a type for this pipe
 		TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
 		if (*thisPipeStatus) { // if we successfully derived a type for this Pipe, log its return type into the current status
@@ -746,7 +746,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<TypeList *> constructorTypes;
 	bool failed = false;
 	Tree *conss = tree->child->next; // Constructors
-	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next->next != NULL) ? cons->next->next->child : NULL) {
+	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
 		TypeStatus consStatus = getStatusConstructor(cons, inStatus);
 		if (*consStatus) { // if we successfully derived a type for this constructor
 			// check if there's already a constructor of this type
@@ -773,7 +773,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<string> memberNames;
 	vector<Type *> memberTypes;
 	Tree *pipes = conss->next; // Pipes
-	for (Tree *pipe = pipes->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->next->child : NULL) {
+	for (Tree *pipe = pipes->child; pipe != NULL; pipe = pipe->next->child) {
 		Tree *pipec = pipe->child; // Declaration or NonEmptyTerms
 		if (*pipec == TOKEN_Declaration) { // if it's a member declaration, log it in the lists
 			TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
@@ -1198,7 +1198,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, LCURLY, or NULL
 	if (declarationSub != NULL) { // if it's a non-import declaration
 		// attempt to derive the type of this Declaration
 		if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
@@ -1208,15 +1208,22 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
 				status = getStatusBracketedExp(tstc, inStatus);
 			}
-		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a flow-through declaration
+		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
 			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
 			tree->status = new FilterType(inStatus);
 			// then, verify types for the declaration sub-block
 			status = getStatusNonEmptyTerms(declarationSub, inStatus);
 			// delete the temporary filter type
 			delete (tree->status.type);
+		} else if (*declarationSub == TOKEN_LCURLY) { // else if it's a brace-delimited flow-through declaration
+			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
+			tree->status = new FilterType(inStatus);
+			// then, verify types for the declaration sub-block
+			status = getStatusNonEmptyTerms(declarationSub->next, inStatus); // NonEmptyTerms
+			// delete the temporary filter type
+			delete (tree->status.type);
 		}
-	} else { // otherwise, if it's an import declaration
+	} else { // otherwise, if it's an import declaration, do nothing; typing of the import will be handled at the definition site
 		status = nullType;
 	}
 	GET_STATUS_FOOTER;

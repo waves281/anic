@@ -37,6 +37,7 @@ class Tree {
 		Tree *goBack(unsigned int n) const;
 		Tree *goChild(unsigned int n) const;
 		Tree *goParent(unsigned int n) const;
+		Tree *bottom() const;
 		// binary attatchers
 		void operator+=(Tree *next);
 		void operator-=(Tree *back);

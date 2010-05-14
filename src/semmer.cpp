@@ -929,13 +929,13 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) { // KOL needs to handle InstantiableTypeList
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *tl = tree->child->next; // TypeList
-	TypeStatus instantiation = getStatusTypeList(tl, inStatus);
+	Tree *itl = tree->child->next; // InstantiableTypeList
+	TypeStatus instantiation = getStatusTypeList(itl, inStatus); // InstantiableTypeList (compatible as a TypeList)
 	if (*instantiation) { // if we successfully derived a type for the instantiation
-		if (tl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
-			Tree *st = tl->next->next->next; // StaticTerm
+		if (itl->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
+			Tree *st = itl->next->next->next; // StaticTerm
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
 				// pipe the types into the status
@@ -964,11 +964,9 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
-		tree->status.type = errType; // fake a type for this node in order to disallow recursion
-		status = getStatusSuffixedIdentifier(nodec, inStatus);
+		status = getStatusSuffixedIdentifier(nodec, inStatus); // erroneous recursion handled by Declaration derivation
 	} else if (*nodec == TOKEN_NodeInstantiation) {
-		tree->status.type = errType; // fake a type for this node in order to disallow recursion
-		status = getStatusNodeInstantiation(nodec, inStatus);
+		status = getStatusNodeInstantiation(nodec, inStatus); // erroneous recursion handled by Declaration derivation
 	} else if (*nodec == TOKEN_Filter) {
 		status = getStatusFilter(nodec, inStatus); // allows for recursive definitions
 	} else if (*nodec == TOKEN_Object) {
@@ -1213,27 +1211,37 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-	if (declarationSub != NULL) { // if it's a non-import declaration
-		// attempt to derive the type of this Declaration
-		if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
-			Tree *tstc = declarationSub->child; // Node or LBRACKET
-			if (*tstc == TOKEN_Node) { // if it's a node declaration
-				status = getStatusNode(tstc);
-			} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
-				tree->status.type = errType; // fake a type for this node in order to disallow recursion
-				status = getStatusBracketedExp(tstc, inStatus);
+	// check if this is a recursive invocation
+	if (tree->status.retType) { // if we previously logged a warning type here (and we don't have a true type to return), flag an ill-formed recursion error
+		tree->status.retType = NULL; // fix up the retType to serve its original purpose
+		Token curToken = tree->child->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of "<<curToken.s<<" in terms of itself");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		status = errType;
+	} else { // else if we haven't previously logged a warning type here, do so, then continue with the derivation
+		tree->status.retType = errType; // log the warning type to detect recursion
+		// proceed with the normal derivation
+		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+		if (declarationSub != NULL) { // if it's a non-import declaration
+			// attempt to derive the type of this Declaration
+			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
+				Tree *tstc = declarationSub->child; // Node or LBRACKET
+				if (*tstc == TOKEN_Node) { // if it's a node declaration
+					status = getStatusNode(tstc);
+				} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
+					status = getStatusBracketedExp(tstc, inStatus);
+				}
+			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
+				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
+				tree->status = new FilterType(inStatus);
+				// then, verify types for the declaration sub-block
+				status = getStatusNonEmptyTerms(declarationSub, inStatus);
+				// delete the temporary filter type
+				delete (tree->status.type);
 			}
-		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
-			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
-			tree->status = new FilterType(inStatus);
-			// then, verify types for the declaration sub-block
-			status = getStatusNonEmptyTerms(declarationSub, inStatus);
-			// delete the temporary filter type
-			delete (tree->status.type);
+		} else { // otherwise, if it's an import declaration, do nothing; typing of the import will be handled at the definition site
+			status = nullType;
 		}
-	} else { // otherwise, if it's an import declaration, do nothing; typing of the import will be handled at the definition site
-		status = nullType;
 	}
 	GET_STATUS_FOOTER;
 }

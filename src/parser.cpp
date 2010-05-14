@@ -71,6 +71,13 @@ Tree *Tree::goParent(unsigned int n) const {
 	}
 	return (Tree *)cur;
 }
+Tree *Tree::bottom() const {
+	const Tree *cur = this;
+	while (cur->child != NULL) {
+		cur = cur->child;
+	}
+	return (Tree *)cur;
+}
 
 // binary attatchers
 void Tree::operator+=(Tree *next) {

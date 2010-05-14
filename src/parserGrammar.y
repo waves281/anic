@@ -281,7 +281,7 @@ ObjectType : LCURLY RCURLY
 	;
 ObjectTypeList : ConstructorType
 	| ConstructorType COMMA ObjectTypeList
-	| ConstructorType COMMA MemberList
+	| MemberList
 	;
 ConstructorType : EQUALS LSQUARE TypeList RSQUARE
 	;

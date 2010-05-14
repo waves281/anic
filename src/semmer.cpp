@@ -497,9 +497,6 @@ TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Type *&fakeType = tree->status.type;
-	// fake a type for this node
-	fakeType = errType;
 	// derive the correct type of this expression
 	Tree *expc = tree->child;
 	if (*expc == TOKEN_Primary) {
@@ -701,8 +698,8 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
+	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
-	// fake a type for this node
 	fakeType = new FilterType(nullType, nullType, SUFFIX_LATCH);
 	// derive the declared type of the filter
 	Tree *filterc = tree->child; // Block or FilterHeader
@@ -753,8 +750,8 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
+	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
-	// fake a type for this node
 	fakeType = new ObjectType(SUFFIX_LATCH);
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
@@ -967,17 +964,19 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_SuffixedIdentifier) {
+		tree->status.type = errType; // fake a type for this node in order to disallow recursion
 		status = getStatusSuffixedIdentifier(nodec, inStatus);
 	} else if (*nodec == TOKEN_NodeInstantiation) {
+		tree->status.type = errType; // fake a type for this node in order to disallow recursion
 		status = getStatusNodeInstantiation(nodec, inStatus);
 	} else if (*nodec == TOKEN_Filter) {
-		status = getStatusFilter(nodec, inStatus);
+		status = getStatusFilter(nodec, inStatus); // allows for recursive definitions
 	} else if (*nodec == TOKEN_Object) {
-		status = getStatusObject(nodec, inStatus);
+		status = getStatusObject(nodec, inStatus); // allows for recursive definitions
 	} else if (*nodec == TOKEN_PrimOpNode) {
-		status = getStatusPrimOpNode(nodec, inStatus);
+		status = getStatusPrimOpNode(nodec, inStatus); // can't possibly be recursive
 	} else if (*nodec == TOKEN_PrimLiteral) {
-		status = getStatusPrimLiteral(nodec, inStatus);
+		status = getStatusPrimLiteral(nodec, inStatus); // can't possibly be recursive
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1222,10 +1221,11 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			if (*tstc == TOKEN_Node) { // if it's a node declaration
 				status = getStatusNode(tstc);
 			} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
+				tree->status.type = errType; // fake a type for this node in order to disallow recursion
 				status = getStatusBracketedExp(tstc, inStatus);
 			}
 		} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
-			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer)
+			// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
 			tree->status = new FilterType(inStatus);
 			// then, verify types for the declaration sub-block
 			status = getStatusNonEmptyTerms(declarationSub, inStatus);

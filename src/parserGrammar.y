@@ -268,9 +268,6 @@ StreamTypeSuffix : DSLASH
 ArrayTypeSuffix : LSQUARE RSQUARE
 	| LSQUARE RSQUARE ArrayTypeSuffix
 	;
-ComplexTypeSuffixNoArray : DSLASH
-	| DSLASH ComplexTypeSuffixNoArray
-	;
 FilterType : LSQUARE RSQUARE
 	| LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE

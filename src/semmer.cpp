@@ -824,9 +824,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		((ObjectType *)fakeType)->memberNames = memberNames;
 		((ObjectType *)fakeType)->memberTypes = memberTypes;
 		status = fakeType;
-	} else { // else if we failed to derive the lists, delete the fake type and return an error
+	} else { // else if we failed to derive the lists, delete the fake type
 		delete fakeType;
-		status = errType;
 	}
 	GET_STATUS_FOOTER;
 }
@@ -999,7 +998,6 @@ TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus) {
 		Token curToken = tree->child->next->t; // ID
 		semmerError(curToken.fileName,curToken.row,curToken.col,"recursive definition of parameter '"<<curToken.s<<"'");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
-		status = errType;
 	} else { // else if there is no recursion alert for this Param, log one, then continue
 		tree->status.retType = errType; // log a recursion alert
 		// derive the type normally
@@ -1097,8 +1095,46 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*stc == TOKEN_TypedStaticTerm) {
 		status = getStatusTypedStaticTerm(stc, inStatus);
 	} else if (*stc == TOKEN_Access) {
-		Type *inType = inStatus->copy();
-// LOL
+		// first, derive the Type of the Node that we're actuing upon
+		TypeStatus nodeStatus = getStatusNode(stc->child->next, inStatus); // Node
+		// then, copy the Type so that our mutations don't propagate to the Node
+		TypeStatus mutableNodeStatus = nodeStatus;
+		mutableNodeStatus.type = nodeStatus.type->copy();
+		// finally, do the mutation and see check it it worked
+		Tree *stcc = stc->child; // SLASH, SSLASH, DSLASH, or DSSLASH
+		if (*stcc == TOKEN_SLASH) {
+			if (mutableNodeStatus.type->delatch()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of a non-latch type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
+		} else if (*stcc == TOKEN_SSLASH) {
+			if (mutableNodeStatus.type->copyDelatch()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of a non-latch type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
+		} else if (*stcc == TOKEN_DSLASH) {
+			if (mutableNodeStatus.type->destream()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"destream of a non-stream type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
+		} else if (*stcc == TOKEN_DSSLASH) {
+			if (mutableNodeStatus.type->copyDestream()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of a non-stream type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
+		}
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1115,7 +1151,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Send) {
 // LOL
 	} else if (*dtc == TOKEN_Swap) {
-	// LOL
+// LOL
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1318,7 +1354,6 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
-		status = errType;
 	} else { // else if there is no recursion alert for this Declaration, continue
 		// if the sub-node is not recursion safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL

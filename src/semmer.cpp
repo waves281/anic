@@ -755,25 +755,28 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	fakeType = new ObjectType(SUFFIX_LATCH);
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
+	vector<Token> constructorTokens;
 	bool failed = false;
 	Tree *conss = tree->child->next; // Constructors
 	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
-		TypeStatus consStatus = getStatusConstructor(cons, inStatus);
+		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
 		if (*consStatus) { // if we successfully derived a type for this constructor
 			// check if there's already a constructor of this type
-			vector<TypeList *>::iterator iter = constructorTypes.begin();
-			while (iter != constructorTypes.end()) {
-				if (**iter == *consStatus) {
+			vector<TypeList *>::iterator iter1;
+			vector<Token>::iterator iter2;
+			for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
+				if (**iter1 == *consStatus) {
 					break;
 				}
-				// advance
-				iter++;
 			}
-			if (iter == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+			if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
 				constructorTypes.push_back((TypeList *)(consStatus.type));
+				constructorTokens.push_back(cons->child->t); // EQUALS
 			} else { // otherwise, flag the conflict as an error
-				Token curDefToken = cons->child->t;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<*consStatus<<" in object definition");
+				Token curDefToken = cons->child->t; // EQUALS
+				Token prevDefToken = *iter2;
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 				failed = true;
 			}
 		} else { // otherwise, if we failed to derive a type for this constructor
@@ -783,16 +786,35 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	// derive names and types for all of the members
 	vector<string> memberNames;
 	vector<Type *> memberTypes;
+	vector<Token> memberTokens;
 	Tree *pipes = conss->next; // Pipes
 	for (Tree *pipe = pipes->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
-		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration, log it in the lists
-			TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
-			if (*memberStatus) { // if we successfully derived a type for this Declaration
-// KOL check for duplicate member names
-				memberNames.push_back(pipec->child->t.s); // ID
-				memberTypes.push_back(memberStatus.type);
-			} else { // else if we failed to derive a type
+		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
+			// check for naming conflicts with this member
+			string &stringToAdd = pipec->child->t.s; // ID
+			vector<string>::iterator iter1;
+			vector<Token>::iterator iter2;
+			for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
+				if (*iter1 == stringToAdd) {
+					break;
+				}
+			}
+			if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
+				TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
+				if (*memberStatus) { // if we successfully derived a type for this Declaration
+					memberNames.push_back(stringToAdd); // ID
+					memberTypes.push_back(memberStatus.type);
+					memberTokens.push_back(pipec->child->t); // ID
+				} else { // else if we failed to derive a type
+					failed = true;
+				}
+				
+			} else { // else if there was a naming conflict with this member
+				Token curDefToken = pipec->child->t;
+				Token prevDefToken = *iter2;
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
+				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 				failed = true;
 			}
 		}
@@ -873,25 +895,65 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			status = new ObjectType(suffixVal, depthVal);
 		} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
 			vector<TypeList *> constructorTypes;
-			vector<string> memberNames;
-			vector<Type *> memberTypes;
+			vector<Token> constructorTokens;
 			bool failed = false;
 			Tree *cur;
 			for(cur = otcn->child; cur != NULL && *cur == TOKEN_ConstructorType; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a ConstructorType
-				TypeStatus subStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
-				if (*subStatus) { // if we succeeded in deriving a type for this constructor
-// KOL check for duplicate constructor types
-					constructorTypes.push_back((TypeList *)(subStatus.type));
-				} else { // else if we failed to derive a type for this constructor, flag this fact
+				TypeStatus consStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
+				if (*consStatus) { // if we successfully derived a type for this constructor
+					// check if there's already a constructor of this type
+					vector<TypeList *>::iterator iter1;
+					vector<Token>::iterator iter2;
+					for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
+						if (**iter1 == *consStatus) {
+							break;
+						}
+					}
+					if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+						constructorTypes.push_back((TypeList *)(consStatus.type));
+						constructorTokens.push_back(cur->child->t); // EQUALS
+					} else { // otherwise, flag the conflict as an error
+						Token curDefToken = cur->child->t; // EQUALS
+						Token prevDefToken = *iter2;
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+						failed = true;
+					}
+				} else { // otherwise, if we failed to derive a type for this constructor
 					failed = true;
 				}
 			}
 			// cur is now a MemberList or NULL
+			vector<string> memberNames;
+			vector<Type *> memberTypes;
+			vector<Token> memberTokens;
 			for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
-// KOL check for duplicate member names
-				memberNames.push_back(cur->child->t.s); // ID
-				TypeStatus subStatus = getStatusType(cur->child->next->next, inStatus); // Type
-				memberTypes.push_back(subStatus.type);
+				// check for naming conflicts with this member
+				string &stringToAdd = cur->child->t.s; // ID
+				vector<string>::iterator iter1;
+				vector<Token>::iterator iter2;
+				for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
+					if (*iter1 == stringToAdd) {
+						break;
+					}
+				}
+				if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
+					TypeStatus memberStatus = getStatusType(cur->child->next->next, inStatus); // Type
+					if (*memberStatus) { // if we successfully derived a type for this Declaration
+						memberNames.push_back(stringToAdd); // ID
+						memberTypes.push_back(memberStatus.type);
+						memberTokens.push_back(cur->child->t); // ID
+					} else { // else if we failed to derive a type
+						failed = true;
+					}
+					
+				} else { // else if there was a naming conflict with this member
+					Token curDefToken = cur->child->t;
+					Token prevDefToken = *iter2;
+					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
+					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+					failed = true;
+				}
 			}
 			if (!failed) {
 				status = new ObjectType(constructorTypes, memberNames, memberTypes, suffixVal, depthVal);

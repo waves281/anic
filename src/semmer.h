@@ -55,6 +55,7 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus = TypeSta
 TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus = TypeStatus());
 TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus = TypeStatus());
 TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus = TypeStatus());
+TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus = TypeStatus());
 TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus = TypeStatus());
 TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus = TypeStatus());
 TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus = TypeStatus());

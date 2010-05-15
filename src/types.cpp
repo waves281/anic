@@ -25,12 +25,12 @@ bool Type::operator!=(const Type &otherType) const {return (!operator==(otherTyp
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(const vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
+TypeList::TypeList(const vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;}
 TypeList::TypeList(Type *type) {
-	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;
 	list.push_back(type);
 }
-TypeList::TypeList() {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0;}
+TypeList::TypeList() {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {
@@ -173,19 +173,19 @@ Type *TypeList::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-TypeList::operator string() const {
-	string acc;
+TypeList::operator string() {
+	TYPE_TO_STRING_HEADER;
 	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
 		acc += (string)(**iter);
 		if ((iter+1) != list.end()) {
 			acc += ", ";
 		}
 	}
-	return acc;
+	TYPE_TO_STRING_FOOTER;
 }
 
 // ErrorType functions
-ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE;}
+ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false;}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
 bool ErrorType::operator==(const Type &otherType) const {
@@ -197,13 +197,11 @@ bool ErrorType::operator==(const Type &otherType) const {
 }
 Type *ErrorType::operator,(Type &otherType) const {return errType;}
 Type *ErrorType::operator>>(Type &otherType) const {return errType;}
-ErrorType::operator string() const {
-	return "error";
-}
+ErrorType::operator string() {return "error";}
 
 // StdType functions
-StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth;}
-StdType::~StdType() {category = CATEGORY_STDTYPE;}
+StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
+StdType::~StdType() {}
 bool StdType::isComparable(const Type &otherType) const {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
 int StdType::kindCompare(const StdType &otherType) const {
 	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
@@ -282,7 +280,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-StdType::operator string() const {
+StdType::operator string() {
 	switch(kind) {
 		// null type
 		case STD_NULL:
@@ -353,7 +351,7 @@ StdType::operator string() const {
 
 // FilterType functions
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
-	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth;
+	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
 	if (from->category == CATEGORY_TYPELIST) {
 		from = (TypeList *)from;
 	} else {
@@ -437,20 +435,24 @@ Type *FilterType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-FilterType::operator string() const {
-	string acc("[");
+FilterType::operator string() {
+	TYPE_TO_STRING_HEADER;
+	acc = "[";
 	acc += (string)(*from);
 	acc += " --> ";
 	acc += (string)(*to);
 	acc += "]";
-	return acc;
+	TYPE_TO_STRING_FOOTER;
 }
 
 // ObjectType functions
-ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
+ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes)
+	{category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
 ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix, int depth) : 
-	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth;}
+	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes) {
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
+}
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {
@@ -559,8 +561,9 @@ Type *ObjectType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-ObjectType::operator string() const {
-	string acc("{");
+ObjectType::operator string() {
+	TYPE_TO_STRING_HEADER;
+	acc = "{";
 	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		acc += "=[";
 		acc += (string)(**iter);
@@ -584,7 +587,7 @@ ObjectType::operator string() const {
 		memberTypeIter++;
 	}
 	acc += "}";
-	return acc;
+	TYPE_TO_STRING_FOOTER;
 }
 
 // typing status block functions

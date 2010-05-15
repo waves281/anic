@@ -1323,7 +1323,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node) &&
 				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter)) { // only Objects and Filters as exempt
-			tree->status.retType = errType; // log the recursion alert
+			tree->status.retType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
 		if (declarationSub != NULL) { // if it's a non-import declaration

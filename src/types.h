@@ -43,6 +43,7 @@ class Type {
 		int category; // the category that this type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
+		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
 		void delatch();
 		// allocators/deallocators
@@ -58,7 +59,7 @@ class Type {
 		virtual bool operator==(const Type &otherType) const = 0;
 		virtual Type *operator,(Type &otherType) const = 0;
 		virtual Type *operator>>(Type &otherType) const = 0;
-		virtual operator string() const = 0;
+		virtual operator string() = 0;
 		// non-virtual
 		operator bool() const;
 		bool operator!() const;
@@ -83,7 +84,7 @@ class TypeList : public Type {
 		bool operator==(int kind) const;
 		Type *operator,(Type &otherType) const;
 		Type *operator>>(Type &otherType) const;
-		operator string() const;
+		operator string();
 };
 
 class ErrorType : public Type {
@@ -98,7 +99,7 @@ class ErrorType : public Type {
 		bool operator==(int kind) const;
 		Type *operator,(Type &otherType) const;
 		Type *operator>>(Type &otherType) const;
-		operator string() const;
+		operator string();
 };
 
 // Type kind specifiers
@@ -156,7 +157,7 @@ class StdType : public Type {
 		bool operator==(int kind) const;
 		Type *operator,(Type &otherType) const;
 		Type *operator>>(Type &otherType) const;
-		operator string() const;
+		operator string();
 };
 
 class FilterType : public Type {
@@ -174,7 +175,7 @@ class FilterType : public Type {
 		bool operator==(int kind) const;
 		Type *operator,(Type &otherType) const;
 		Type *operator>>(Type &otherType) const;
-		operator string() const;
+		operator string();
 };
 
 class ObjectType : public Type {
@@ -195,7 +196,7 @@ class ObjectType : public Type {
 		bool operator==(int kind) const;
 		Type *operator,(Type &otherType) const;
 		Type *operator>>(Type &otherType) const;
-		operator string() const;
+		operator string();
 };
 
 // typing status block
@@ -228,5 +229,23 @@ extern Type *errType;
 
 // post-includes
 #include "parser.h"
+
+// Type to string helper blocks
+
+#define TYPE_TO_STRING_HEADER \
+	/* if we have reached a recursive loop, return this fact */\
+	if (toStringHandled) {\
+		return "<recursion>";\
+	} else { /* otherwise, set the recursive printing flag */\
+		toStringHandled = true;\
+	}\
+	/* prepare to compute the string normally */\
+	string acc
+
+#define TYPE_TO_STRING_FOOTER \
+	/* unset the recursive printing flag */\
+	toStringHandled = false;\
+	/* return the completed accumulator */\
+	return acc
 
 #endif

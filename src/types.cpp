@@ -39,6 +39,7 @@ TypeList::~TypeList() {
 	}
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
+Type *TypeList::copy() const {return new TypeList(*this);}
 bool TypeList::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -188,6 +189,7 @@ TypeList::operator string() {
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false;}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
+Type *ErrorType::copy() const {return new ErrorType(*this);}
 bool ErrorType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
@@ -222,6 +224,7 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return STD_NULL;
 	}
 }
+Type *StdType::copy() const {return new StdType(*this);}
 bool StdType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
@@ -376,6 +379,7 @@ FilterType::~FilterType() {
 	}
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
+Type *FilterType::copy() const {return new FilterType(*this);}
 bool FilterType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
@@ -466,6 +470,7 @@ ObjectType::~ObjectType() {
 	}
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
+Type *ObjectType::copy() const {return new ObjectType(*this);}
 bool ObjectType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);

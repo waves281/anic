@@ -1097,6 +1097,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*stc == TOKEN_TypedStaticTerm) {
 		status = getStatusTypedStaticTerm(stc, inStatus);
 	} else if (*stc == TOKEN_Access) {
+		Type *inType = inStatus->copy();
 // LOL
 	}
 	GET_STATUS_FOOTER;
@@ -1121,7 +1122,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	vector<TypeStatus> toes; // vector for logging the destination statuses of each branch
+	vector<TypeStatus> toStatus; // vector for logging the destination statuses of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
 	Tree *lpCur = tree->child->next->next; // LabeledPipes
 	for (;;) { // per-labeled pipe loop
@@ -1141,7 +1142,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 		Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
 		TypeStatus to = getStatusSimpleTerm(toTree, inStatus);
 		// log the to-type and to-tree of this label
-		toes.push_back(to);
+		toStatus.push_back(to);
 		toTrees.push_back(toTree);
 		// advance
 		if (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) {
@@ -1151,10 +1152,10 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} // per-labeled pipe loop
 	// verify that all of the to-types are the same
-	TypeStatus firstToStatus = toes[0];
+	TypeStatus firstToStatus = toStatus[0];
 	Tree *firstToTree = toTrees[0];
-	for (unsigned int i=1; i < toes.size(); i++) { // for each to-type
-		TypeStatus to = toes[i];
+	for (unsigned int i=1; i < toStatus.size(); i++) { // for each to-type
+		TypeStatus to = toStatus[i];
 		if (*to != *firstToStatus) { // if the types don't match, throw an error
 			Tree *toTree = toTrees[i];
 			Token curToken1 = toTree->t;

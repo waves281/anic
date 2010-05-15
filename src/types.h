@@ -51,6 +51,7 @@ class Type {
 		// core methods
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
+		virtual Type *copy() const = 0;
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
 		bool baseSendable(const Type &otherType) const;
@@ -79,6 +80,7 @@ class TypeList : public Type {
 		~TypeList();
 		// core methods
 		bool isComparable(const Type &otherType) const;
+		Type *copy() const;
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -94,6 +96,7 @@ class ErrorType : public Type {
 		~ErrorType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
+		Type *copy() const;
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -152,6 +155,7 @@ class StdType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
+		Type *copy() const;
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -170,6 +174,7 @@ class FilterType : public Type {
 		~FilterType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
+		Type *copy() const;
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -191,6 +196,7 @@ class ObjectType : public Type {
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
+		Type *copy() const;
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;

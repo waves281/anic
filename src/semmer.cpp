@@ -1306,13 +1306,17 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	if (tree->status.retType) { // if we previously logged a warning type here (and we don't have a true type to return), flag an ill-formed recursion error
 		tree->status.retType = NULL; // fix up the retType to serve its original purpose
 		Token curToken = tree->child->t;
-		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of "<<curToken.s<<" in terms of itself");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
 		status = errType;
-	} else { // else if we haven't previously logged a warning type here, do so, then continue with the derivation
-		tree->status.retType = errType; // log the warning type to detect recursion
-		// proceed with the normal derivation
+	} else { // else if there is no recursion alert for this Declaration, continue
+		// if the sub-node is not recursion safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node) &&
+				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter)) { // only Objects and Filters as exempt
+			tree->status.retType = errType; // log the warning type to detect recursion
+		}
+		// proceed with the normal derivation
 		if (declarationSub != NULL) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration

@@ -128,6 +128,7 @@ DynamicTerm : StaticTerm
 	| Link
 	| Send
 	| Swap
+	| Return
 	;
 StaticTerm : TypedStaticTerm
 	| Access
@@ -311,8 +312,9 @@ Compound : COMMA StaticTerm
 Link : DCOLON StaticTerm
 	;
 Send : RARROW Node
-	| DRARROW
 	;
 Swap : LRARROW Node
+	;
+Return : DRARROW
 	;
 %%

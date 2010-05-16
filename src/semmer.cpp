@@ -1139,6 +1139,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// reports errors
 TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *dtc = tree->child;
@@ -1152,6 +1153,22 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 // LOL
 	} else if (*dtc == TOKEN_Swap) {
 // LOL
+	} else if (*dtc == TOKEN_Return) {
+		Type *thisRetType = inStatus; // the type that we're returning, inferred from the incoming status
+		Type *curRetType = inStatus.retType; // the current return type (i.e. the one we're expecting, or otherwise NULL)
+		if (curRetType != NULL) { // if there's already a return type logged, make sure it matches this one
+			if (*curRetType == *thisRetType) { // if the logged return type matches this one, proceed normally
+				status.retType = curRetType;
+				status = nullType;
+			} else { // else if this return's type conflicts with a previous one
+				Token curToken = dtc->child->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<*thisRetType);
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<*curRetType<<")");
+			}
+		} else { // else if there is no return type logged, log this one and proceed normally
+			status.retType = thisRetType;
+			status = nullType;
+		}
 	}
 	GET_STATUS_FOOTER;
 }

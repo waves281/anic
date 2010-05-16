@@ -174,11 +174,9 @@ Node : SuffixedIdentifier
 SuffixedIdentifier : ID
 	| ID PERIOD SuffixedIdentifier
 	| ID PERIOD ArrayAccess
-	| ID PERIOD ArrayAccess PERIOD SuffixedIdentifier
 	| DPERIOD
 	| DPERIOD PERIOD SuffixedIdentifier
 	| DPERIOD PERIOD ArrayAccess
-	| DPERIOD PERIOD ArrayAccess PERIOD SuffixedIdentifier
 	;
 NonArraySuffixedIdentifier : ID
 	| ID PERIOD NonArraySuffixedIdentifier

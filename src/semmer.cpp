@@ -1146,7 +1146,19 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*dtc == TOKEN_StaticTerm) {
 		status = getStatusStaticTerm(dtc, inStatus);
 	} else if (*dtc == TOKEN_Compound) {
-// LOL
+		TypeStatus compoundStatus = getStatusStaticTerm(dtc->child->next, inStatus);
+		if (*compoundStatus) { // if we successfully derived to compounding term's type
+			Type *curType = inStatus;
+			TypeList *curTypeList;
+			if (curType->category == CATEGORY_TYPELIST) { // if the current type is already a TypeList, simply make a mutable copy of it
+				curTypeList = (TypeList *)(curType->copy()); // create a mutable copy of the incoming Type
+			} else { // else if the current type is not a TypeList, we must wrap it in one
+				curTypeList = new TypeList(curType);
+			}
+			// finally, add the compounding term to the ongoing TypeList
+			curTypeList->list.push_back(compoundStatus.type);
+			status = curTypeList;
+		}
 	} else if (*dtc == TOKEN_Link) {
 // LOL
 	} else if (*dtc == TOKEN_Send) {

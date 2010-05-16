@@ -1162,9 +1162,27 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Link) {
 // LOL
 	} else if (*dtc == TOKEN_Send) {
-// LOL
+		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
+		Type *resultType = (*inStatus >> *nodeStatus);
+		if (*resultType) { // if the Send is valid, proceed normally
+			status = resultType;
+		} else { // else if the Send is invalid, flag an error
+			Token curToken = tree->child->t; // RARROW
+			semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<*inStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<*nodeStatus<<")");
+		}
 	} else if (*dtc == TOKEN_Swap) {
-// LOL
+		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
+		Type *resultType = (*inStatus >> *nodeStatus);
+		if (*resultType) { // if the Swap is valid, proceed normally
+			status = nodeStatus.type; // inherit the type of the destination Node
+		} else { // else if the Send is invalid, flag an error
+			Token curToken = tree->child->t; // RARROW
+			semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<*inStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<*nodeStatus<<")");
+		}
 	} else if (*dtc == TOKEN_Return) {
 		Type *thisRetType = inStatus; // the type that we're returning, inferred from the incoming status
 		Type *curRetType = inStatus.retType; // the current return type (i.e. the one we're expecting, or otherwise NULL)
@@ -1173,7 +1191,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				status.retType = curRetType;
 				status = nullType;
 			} else { // else if this return's type conflicts with a previous one
-				Token curToken = dtc->child->t;
+				Token curToken = dtc->child->t; // DRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<*thisRetType);
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<*curRetType<<")");
 			}

@@ -1,8 +1,15 @@
 #include "types.h"
 
 // Type functions
-bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && suffix == otherType.suffix);}
-bool Type::baseSendable(const Type &otherType) const {return (suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM));}
+bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
+bool Type::baseSendable(const Type &otherType) const {
+	return (
+		(suffix == SUFFIX_CONSTANT && otherType.suffix == SUFFIX_CONSTANT) ||
+		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM)) ||
+		(suffix == SUFFIX_ARRAY && otherType.suffix == SUFFIX_ARRAY && depth == otherType.depth) ||
+		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
+	);
+}
 Type::~Type() {}
 bool Type::constant() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -35,9 +42,13 @@ bool Type::delatch() {
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
-	} else {
+	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
+	} else if (suffix == SUFFIX_POOL) {
+		return true;
 	}
+	// can't happen
+	return false;
 }
 bool Type::copyDelatch() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -51,9 +62,14 @@ bool Type::copyDelatch() {
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
-	} else {
-		return false;
+	} else if (suffix == SUFFIX_ARRAY) {
+		suffix = SUFFIX_POOL;
+		return true;
+	} else if (suffix == SUFFIX_POOL) {
+		return true;
 	}
+	// can't happen
+	return false;
 }
 bool Type::destream() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -66,9 +82,25 @@ bool Type::destream() {
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
-	} else {
-		return false;
+	} else if (suffix == SUFFIX_ARRAY) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_CONSTANT;
+			return true;
+		} else {
+			return false;
+		}
+	} else if (suffix == SUFFIX_POOL) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_LATCH;
+			return true;
+		} else {
+			return false;
+		}
 	}
+	// can't happen
+	return false;
 }
 bool Type::copyDestream() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -81,9 +113,25 @@ bool Type::copyDestream() {
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
-	} else {
-		return false;
+	} else if (suffix == SUFFIX_ARRAY) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_LATCH;
+			return true;
+		} else {
+			return false;
+		}
+	} else if (suffix == SUFFIX_POOL) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_LATCH;
+			return true;
+		} else {
+			return false;
+		}
 	}
+	// can't happen
+	return false;
 }
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}

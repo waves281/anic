@@ -405,7 +405,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 // typing function definitions
 
 // reports errors
-TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) { // LOL
 	GET_STATUS_HEADER;
 	string id = sid2String(tree); // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
@@ -834,128 +834,153 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *typeSuffix = tree->child->next; // TypeSuffix
 	// derive the suffix and depth first, since we'll need to know then to construct the Type object
+	bool failed = false;
 	int suffixVal;
 	int depthVal = 0;
 	if (typeSuffix->child == NULL) {
 		suffixVal = SUFFIX_CONSTANT;
-	} else if (*(typeSuffix->child) == TOKEN_SLASH) {
+	} else if (*(typeSuffix->child) == TOKEN_SLASH && typeSuffix->child->next == NULL) {
 		suffixVal = SUFFIX_LATCH;
-	} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
+	} else if (*(typeSuffix->child) == TOKEN_LSQUARE) {
+		suffixVal = SUFFIX_LIST;
+	} else if (*(typeSuffix->child) == TOKEN_SLASH && *(typeSuffix->child->next) == TOKEN_LSQUARE) {
 		suffixVal = SUFFIX_STREAM;
-		Tree *sts = typeSuffix->child; // StreamTypeSuffix
-		for(;;) {
-			depthVal++;
-			// advance
-			if (sts->child->next != NULL) {
-				sts = sts->child->next; // StreamTypeSuffix
-			} else {
-				break;
-			}
-		}
-	} else { // *(typeSuffix->child) == TOKEN_ArrayTypeSuffix
+	} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
 		suffixVal = SUFFIX_ARRAY;
 		Tree *ats = typeSuffix->child; // ArrayTypeSuffix
 		for(;;) {
 			depthVal++;
+			// validate that this suffix expression is valid
+			TypeStatus expStatus = getStatusExp(ats->child->next, inStatus); // Exp
+			StdType stdIntType(STD_INT); // temporary integer type for comparison
+			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+				Token curToken = ats->child->t; // LSQUARE
+				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is not an int");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<*expStatus<<")");
+				failed = true;
+			}
 			// advance
-			if (ats->child->next != NULL) {
-				ats = ats->child->next; // ArrayTypeSuffix
+			if (ats->child->next->next->next != NULL) {
+				ats = ats->child->next->next->next; // ArrayTypeSuffix
+			} else {
+				break;
+			}
+		}
+	} else { // *(typeSuffix->child) == TOKEN_PoolTypeSuffix
+		suffixVal = SUFFIX_POOL;
+		Tree *pts = typeSuffix->child; // PoolTypeSuffix
+		for(;;) {
+			depthVal++;
+			// validate that this suffix expression is valid
+			TypeStatus expStatus = getStatusExp(pts->child->next->next, inStatus); // Exp
+			StdType stdIntType(STD_INT); // temporary integer type for comparison
+			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+				Token curToken = pts->child->next->t; // LSQUARE
+				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is not an int");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<*expStatus<<")");
+				failed = true;
+			}
+			// advance
+			if (pts->child->next->next->next->next != NULL) {
+				pts = pts->child->next->next->next->next; // PoolTypeSuffix
 			} else {
 				break;
 			}
 		}
 	}
-	Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
-	if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
-		status = getStatusSuffixedIdentifier(typec);
-	} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
-		TypeStatus from = inStatus;
-		TypeStatus to = inStatus;
-		Tree *sub = typec->child->next; // TypeList, RetList, or RSQUARE
-		if (*sub == TOKEN_TypeList) { // if there was a from-list
-			from = getStatusTypeList(sub, inStatus); // TypeList
-			// advance (in order to properly handle the possible trailing RetList)
-			sub = sub->next; // RetList or RSQUARE
-		} else if (*sub == TOKEN_RetList) { // else if there was no from-list, but there's a RetList
-			from = new TypeList();
-		} else { // else if there was no from-list or RetList (it's a null filter)
-			from = new TypeList();
-			sub = NULL;
-		}
-		if (sub != NULL && *sub == TOKEN_RetList) { // if there was a RetList
-			to = getStatusTypeList(sub->child->next, inStatus); // TypeList
-		} else { // else if there was no RetList
-			to = new TypeList();
-		}
-		status = new FilterType(from, to, suffixVal, depthVal);
-	} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
-		Tree *otcn = typec->child->next; // RCURLY or ObjectTypeList
-		if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
-			status = new ObjectType(suffixVal, depthVal);
-		} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
-			vector<TypeList *> constructorTypes;
-			vector<Token> constructorTokens;
-			bool failed = false;
-			Tree *cur;
-			for(cur = otcn->child; cur != NULL && *cur == TOKEN_ConstructorType; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a ConstructorType
-				TypeStatus consStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
-				if (*consStatus) { // if we successfully derived a type for this constructor
-					// check if there's already a constructor of this type
-					vector<TypeList *>::iterator iter1;
+	if (!failed) { // if all of the suffixes were valid
+		Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
+		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
+			status = getStatusSuffixedIdentifier(typec);
+		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
+			TypeStatus from = inStatus;
+			TypeStatus to = inStatus;
+			Tree *sub = typec->child->next; // TypeList, RetList, or RSQUARE
+			if (*sub == TOKEN_TypeList) { // if there was a from-list
+				from = getStatusTypeList(sub, inStatus); // TypeList
+				// advance (in order to properly handle the possible trailing RetList)
+				sub = sub->next; // RetList or RSQUARE
+			} else if (*sub == TOKEN_RetList) { // else if there was no from-list, but there's a RetList
+				from = new TypeList();
+			} else { // else if there was no from-list or RetList (it's a null filter)
+				from = new TypeList();
+				sub = NULL;
+			}
+			if (sub != NULL && *sub == TOKEN_RetList) { // if there was a RetList
+				to = getStatusTypeList(sub->child->next, inStatus); // TypeList
+			} else { // else if there was no RetList
+				to = new TypeList();
+			}
+			status = new FilterType(from, to, suffixVal, depthVal);
+		} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
+			Tree *otcn = typec->child->next; // RCURLY or ObjectTypeList
+			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
+				status = new ObjectType(suffixVal, depthVal);
+			} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
+				vector<TypeList *> constructorTypes;
+				vector<Token> constructorTokens;
+				bool failed = false;
+				Tree *cur;
+				for(cur = otcn->child; cur != NULL && *cur == TOKEN_ConstructorType; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a ConstructorType
+					TypeStatus consStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
+					if (*consStatus) { // if we successfully derived a type for this constructor
+						// check if there's already a constructor of this type
+						vector<TypeList *>::iterator iter1;
+						vector<Token>::iterator iter2;
+						for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
+							if (**iter1 == *consStatus) {
+								break;
+							}
+						}
+						if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+							constructorTypes.push_back((TypeList *)(consStatus.type));
+							constructorTokens.push_back(cur->child->t); // EQUALS
+						} else { // otherwise, flag the conflict as an error
+							Token curDefToken = cur->child->t; // EQUALS
+							Token prevDefToken = *iter2;
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+							failed = true;
+						}
+					} else { // otherwise, if we failed to derive a type for this constructor
+						failed = true;
+					}
+				}
+				// cur is now a MemberList or NULL
+				vector<string> memberNames;
+				vector<Type *> memberTypes;
+				vector<Token> memberTokens;
+				for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
+					// check for naming conflicts with this member
+					string &stringToAdd = cur->child->t.s; // ID
+					vector<string>::iterator iter1;
 					vector<Token>::iterator iter2;
-					for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
-						if (**iter1 == *consStatus) {
+					for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
+						if (*iter1 == stringToAdd) {
 							break;
 						}
 					}
-					if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
-						constructorTypes.push_back((TypeList *)(consStatus.type));
-						constructorTokens.push_back(cur->child->t); // EQUALS
-					} else { // otherwise, flag the conflict as an error
-						Token curDefToken = cur->child->t; // EQUALS
+					if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
+						TypeStatus memberStatus = getStatusType(cur->child->next->next, inStatus); // Type
+						if (*memberStatus) { // if we successfully derived a type for this Declaration
+							memberNames.push_back(stringToAdd); // ID
+							memberTypes.push_back(memberStatus.type);
+							memberTokens.push_back(cur->child->t); // ID
+						} else { // else if we failed to derive a type
+							failed = true;
+						}
+						
+					} else { // else if there was a naming conflict with this member
+						Token curDefToken = cur->child->t;
 						Token prevDefToken = *iter2;
-						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 						failed = true;
 					}
-				} else { // otherwise, if we failed to derive a type for this constructor
-					failed = true;
 				}
-			}
-			// cur is now a MemberList or NULL
-			vector<string> memberNames;
-			vector<Type *> memberTypes;
-			vector<Token> memberTokens;
-			for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
-				// check for naming conflicts with this member
-				string &stringToAdd = cur->child->t.s; // ID
-				vector<string>::iterator iter1;
-				vector<Token>::iterator iter2;
-				for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
-					if (*iter1 == stringToAdd) {
-						break;
-					}
+				if (!failed) {
+					status = new ObjectType(constructorTypes, memberNames, memberTypes, suffixVal, depthVal);
 				}
-				if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
-					TypeStatus memberStatus = getStatusType(cur->child->next->next, inStatus); // Type
-					if (*memberStatus) { // if we successfully derived a type for this Declaration
-						memberNames.push_back(stringToAdd); // ID
-						memberTypes.push_back(memberStatus.type);
-						memberTokens.push_back(cur->child->t); // ID
-					} else { // else if we failed to derive a type
-						failed = true;
-					}
-					
-				} else { // else if there was a naming conflict with this member
-					Token curDefToken = cur->child->t;
-					Token prevDefToken = *iter2;
-					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
-					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
-					failed = true;
-				}
-			}
-			if (!failed) {
-				status = new ObjectType(constructorTypes, memberNames, memberTypes, suffixVal, depthVal);
 			}
 		}
 	}

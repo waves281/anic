@@ -171,17 +171,18 @@ Node : SuffixedIdentifier
 	| PrimOpNode
 	| PrimLiteral
 	;
-SuffixedIdentifier : ID
-	| ID PERIOD SuffixedIdentifier
-	| ID PERIOD ArrayAccess
-	| DPERIOD
-	| DPERIOD PERIOD SuffixedIdentifier
-	| DPERIOD PERIOD ArrayAccess
+SuffixedIdentifier : ID IdentifierSuffix
+	| DPERIOD IdentifierSuffix
 	;
-NonArraySuffixedIdentifier : ID
-	| ID PERIOD NonArraySuffixedIdentifier
-	| DPERIOD
-	| DPERIOD PERIOD NonArraySuffixedIdentifier
+IdentifierSuffix :
+	| PERIOD ID IdentifierSuffix
+	| PERIOD ArrayAccess IdentifierSuffix
+	;
+NonArraySuffixedIdentifier : ID NonArrayIdentifierSuffix
+	| DPERIOD NonArrayIdentifierSuffix
+	;
+NonArrayIdentifierSuffix :
+	| PERIOD ID NonArrayIdentifierSuffix
 	;
 NodeInstantiation : LSQUARE InstantiableTypeList RSQUARE
 	| LSQUARE InstantiableTypeList RSQUARE LARROW StaticTerm
@@ -258,14 +259,16 @@ Type : NonArraySuffixedIdentifier TypeSuffix
 	;
 TypeSuffix :
 	| SLASH
-	| StreamTypeSuffix
+	| LSQUARE RSQUARE
+	| SLASH LSQUARE RSQUARE
 	| ArrayTypeSuffix
+	| PoolTypeSuffix
 	;
-StreamTypeSuffix : DSLASH
-	| DSLASH StreamTypeSuffix
+ArrayTypeSuffix : LSQUARE Exp RSQUARE
+	| LSQUARE Exp RSQUARE ArrayTypeSuffix
 	;
-ArrayTypeSuffix : LSQUARE RSQUARE
-	| LSQUARE RSQUARE ArrayTypeSuffix
+PoolTypeSuffix : SLASH LSQUARE Exp RSQUARE
+	| SLASH LSQUARE Exp RSQUARE ArrayTypeSuffix
 	;
 FilterType : LSQUARE RSQUARE
 	| LSQUARE TypeList RSQUARE

@@ -21,8 +21,10 @@ class SymbolTable;
 // Type suffix specifiers
 #define SUFFIX_CONSTANT 0
 #define SUFFIX_LATCH 1
-#define SUFFIX_STREAM 2
-#define SUFFIX_ARRAY 3
+#define SUFFIX_LIST 2
+#define SUFFIX_STREAM 3
+#define SUFFIX_ARRAY 4
+#define SUFFIX_POOL 5
 
 // forward declarations
 class Type;
@@ -45,6 +47,7 @@ class Type {
 		int depth; // stream depth of arrays and streams
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
+		bool constant();
 		bool delatch();
 		bool copyDelatch();
 		bool destream();

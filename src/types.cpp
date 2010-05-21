@@ -11,25 +11,14 @@ bool Type::baseSendable(const Type &otherType) const {
 	);
 }
 Type::~Type() {}
-bool Type::constant() {
-	if (suffix == SUFFIX_CONSTANT) {
-		return true;
-	} else if (suffix == SUFFIX_LATCH) {
+void Type::constant() {
+	if (suffix == SUFFIX_LATCH) {
 		suffix = SUFFIX_CONSTANT;
-		return true;
-	} else if (suffix == SUFFIX_LIST) {
-		return true;
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LIST;
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		return true;
 	} else if (suffix == SUFFIX_POOL) {
 		suffix = SUFFIX_ARRAY;
-		return true;
 	}
-	// can't happen
-	return false;
 }
 bool Type::delatch() {
 	if (suffix == SUFFIX_CONSTANT) {

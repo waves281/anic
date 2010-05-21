@@ -47,7 +47,7 @@ class Type {
 		int depth; // stream depth of arrays and streams
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
-		bool constant();
+		void constant();
 		bool delatch();
 		bool copyDelatch();
 		bool destream();

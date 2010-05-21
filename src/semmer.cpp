@@ -479,7 +479,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 					} else {
 						Token curToken = accessorc->t;
 						semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*subStatus<<")");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
 					}
 				} else if (*accessorc == TOKEN_SSLASH) {
 					if (mutableSubStatus.type->copyDelatch()) {
@@ -487,7 +487,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 					} else {
 						Token curToken = accessorc->t;
 						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*subStatus<<")");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
 					}
 				} else if (*accessorc == TOKEN_ASLASH) {
 					if (mutableSubStatus.type->constantDelatch()) {
@@ -495,13 +495,13 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 					} else {
 						Token curToken = accessorc->t;
 						semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*subStatus<<")");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
 					}
 				}
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
 			}
 		}
 	} else if (*primaryc == TOKEN_PrimLiteral) {
@@ -584,7 +584,7 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	if (!status) { // if we couldn't resolve a type for this expression
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
@@ -751,14 +751,14 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 				status = blockStatus;
 			} else { // else if the header and Block don't match
 				Token curToken = filtercn->child->t; // LCURLY
-				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<*( ((FilterType *)(blockStatus.type))->to ));
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<*( ((FilterType *)fakeType)->to )<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<((FilterType *)(blockStatus.type))->to);
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<((FilterType *)fakeType)->to<<")");
 			}
 		}
 	} else { // else if we derived an erroneous type for the header
 		Token curToken = filterc->child->t; // LCURLY or LSQUARE
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
@@ -802,7 +802,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 			} else { // otherwise, flag the conflict as an error
 				Token curDefToken = cons->child->t; // EQUALS
 				Token prevDefToken = *iter2;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<consStatus);
 				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 				failed = true;
 			}
@@ -883,7 +883,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = ats->child->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is not an int");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<*expStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<expStatus<<")");
 				failed = true;
 			}
 			// advance
@@ -904,7 +904,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = pts->child->next->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is not an int");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<*expStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<expStatus<<")");
 				failed = true;
 			}
 			// advance
@@ -965,7 +965,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 						} else { // otherwise, flag the conflict as an error
 							Token curDefToken = cur->child->t; // EQUALS
 							Token prevDefToken = *iter2;
-							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<*consStatus);
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<consStatus);
 							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 							failed = true;
 						}
@@ -1049,7 +1049,7 @@ TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus) {
 		tree->status.retType = NULL; // fix up the retType to serve its original purpose
 		Token curToken = tree->child->next->t; // ID
 		semmerError(curToken.fileName,curToken.row,curToken.col,"recursive definition of parameter '"<<curToken.s<<"'");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	} else { // else if there is no recursion alert for this Param, log one, then continue
 		tree->status.retType = errType; // log a recursion alert
 		// derive the type normally
@@ -1093,19 +1093,19 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				if (!(*status)) { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<*instantiation<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<*initializer<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
 			} else { // else if we couldn't derive a type for the initializer
 				Token curToken = st->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
 		}
 	} else { // else if we couldn't derive a type for the instantiation
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instantiation type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1161,7 +1161,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			} else if (*accessorc == TOKEN_SSLASH) {
 				if (mutableNodeStatus.type->copyDelatch()) {
@@ -1169,7 +1169,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			} else if (*accessorc == TOKEN_ASLASH) {
 				if (mutableNodeStatus.type->constantDelatch()) {
@@ -1177,7 +1177,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			} else if (*accessorc == TOKEN_DSLASH) {
 				if (mutableNodeStatus.type->destream()) {
@@ -1185,7 +1185,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			} else if (*accessorc == TOKEN_DSSLASH) {
 				if (mutableNodeStatus.type->copyDestream()) {
@@ -1193,7 +1193,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			} else if (*accessorc == TOKEN_DASLASH) {
 				if (mutableNodeStatus.type->constantDestream()) {
@@ -1201,7 +1201,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = accessorc->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"constant destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 				}
 			}
 		}
@@ -1239,8 +1239,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		} else { // else if the Send is invalid, flag an error
 			Token curToken = tree->child->t; // RARROW
 			semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<*inStatus<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<*nodeStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 		}
 	} else if (*dtc == TOKEN_Swap) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
@@ -1250,8 +1250,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		} else { // else if the Send is invalid, flag an error
 			Token curToken = tree->child->t; // RARROW
 			semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<*inStatus<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<*nodeStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 		}
 	} else if (*dtc == TOKEN_Return) {
 		Type *thisRetType = inStatus; // the type that we're returning, inferred from the incoming status
@@ -1262,8 +1262,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				status = nullType;
 			} else { // else if this return's type conflicts with a previous one
 				Token curToken = dtc->child->t; // DRARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<*thisRetType);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<*curRetType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<thisRetType);
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<curRetType<<")");
 			}
 		} else { // else if there is no return type logged, log this one and proceed normally
 			status.retType = thisRetType;
@@ -1287,8 +1287,8 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 			if (*inStatus != *label) { // if the type doesn't match, throw an error
 				Token curToken = lpc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<*label<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<label<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
 		}
 		// derive the to-type of this label
@@ -1314,8 +1314,8 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken1 = toTree->t;
 			Token curToken2 = firstToTree->t;
 			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"switch destination types are inconsistent");
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<*to<<")");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<*firstToStatus<<")");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<to<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<firstToStatus<<")");
 		}
 	}
 	GET_STATUS_FOOTER;
@@ -1340,7 +1340,7 @@ TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1382,13 +1382,13 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // OpenTerm
 			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueStatus<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*falseStatus<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1407,28 +1407,28 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // ClosedTerm
 			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<*trueStatus<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<*falseStatus<<")");
+			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
+			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }
 
 TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *tc2 = tree->child->child;
-	if (*tc2 == TOKEN_SimpleCondTerm) {
-		status = getStatusSimpleCondTerm(tc2, inStatus);
-	} else if (*tc2 == TOKEN_OpenCondTerm) {
-		status = getStatusOpenCondTerm(tc2, inStatus);
-	} else if (*tc2 == TOKEN_SimpleTerm) {
-		status = getStatusSimpleTerm(tc2, inStatus);
-	} else if (*tc2 == TOKEN_ClosedCondTerm) {
-		status = getStatusClosedCondTerm(tc2, inStatus);
+	Tree *tcc = tree->child->child;
+	if (*tcc == TOKEN_SimpleCondTerm) {
+		status = getStatusSimpleCondTerm(tcc, inStatus);
+	} else if (*tcc == TOKEN_OpenCondTerm) {
+		status = getStatusOpenCondTerm(tcc, inStatus);
+	} else if (*tcc == TOKEN_SimpleTerm) {
+		status = getStatusSimpleTerm(tcc, inStatus);
+	} else if (*tcc == TOKEN_ClosedCondTerm) {
+		status = getStatusClosedCondTerm(tcc, inStatus);
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1448,7 +1448,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*curStatus<<")");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<curStatus<<")");
 			// log the fact that typing failed
 			outStatus.type = NULL;
 			break;
@@ -1470,7 +1470,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		tree->status.retType = NULL; // fix up the retType to serve its original purpose
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<*inStatus<<")");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	} else { // else if there is no recursion alert for this Declaration, continue
 		// if the sub-node is not recursion safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
@@ -1516,19 +1516,20 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 
 void traceTypes(vector<Tree *> *parseme) {
 	// iterate through all Pipe nodes
+	TypeStatus nullStatus(nullType);
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (!(pipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(pipeCur);
+			getStatusPipe(pipeCur, nullStatus);
 		}
 	}
-	// .. and all LastPipe nodes
+	// ... and all LastPipe nodes
 	vector<Tree *> &lastPipeList = parseme[TOKEN_LastPipe];
 	for (unsigned int i=0; i < lastPipeList.size(); i++) {
 		Tree *lastPipeCur = lastPipeList[i];
 		if (!(lastPipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(lastPipeCur);
+			getStatusPipe(lastPipeCur, nullStatus);
 		}
 	}
 }

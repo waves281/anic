@@ -11,5 +11,6 @@
 // string vector streaming operator overloads
 ostream &operator<< (ostream &os, Token &t);
 ostream &operator<< (ostream &os, SymbolTable *&st);
+ostream &operator<< (ostream &os, const TypeStatus &type);
 
 #endif

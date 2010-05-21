@@ -97,27 +97,17 @@ void Tree::operator&=(Tree *parent) {
 
 // SuffixedIdentifier -> string parser function
 string sid2String(Tree *sid) {
-	string retVal;
-	Tree *cur = sid; // SuffixedIdentifier
-	for(;;) { // interloop invariant: cur is a SuffixedIdentifier
-		// log this part of the name
-		retVal += cur->child->t.s; // ID or DPERIOD
-		// advance
-		cur = cur->child->next; // NULL or PERIOD
-		if (cur != NULL) { // if we're not at the end yet (this is a PERIOD)
-			retVal += '.';
-			cur = cur->next; // ArrayAccess or SuffixedIdentifier
-			if (cur->t.tokenType == TOKEN_ArrayAccess) { // skip over the ArrayAccess as necessary
-				retVal += "[]";
-				cur = cur->next; // NULL or PERIOD
-				if (cur != NULL) { // if we're not at the end yet (this is a PERIOD)
-					cur = cur->next; // SuffixedIdentifier
-				} else { // else if we're at the end
-					break;
-				}
-			}
-		} else { // else if we're at the end
-			break;
+	string retVal(sid->child->t.s); // ID or DPERIOD
+	 // SuffixedIdentifier
+	for(Tree *cur = sid->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of IdentifierSuffix
+		// log the period
+		retVal += '.';
+		// log the extension
+		Tree *curn = cur->next; // ID or ArrayAccess
+		if (*curn == TOKEN_ID) {
+			retVal += curn->t.s;
+		} else if (*curn == TOKEN_ArrayAccess) {
+			retVal += "[]";
 		}
 	}
 	return retVal;

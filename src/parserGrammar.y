@@ -161,7 +161,7 @@ Exp : Primary
 	| Exp MINUS Exp
 	;
 Primary : SuffixedIdentifier
-	| SLASH SuffixedIdentifier
+	| ExpAccessor SuffixedIdentifier
 	| PrimLiteral
 	| PrefixOrMultiOp Primary
 	| BracketedExp
@@ -305,12 +305,18 @@ Constructor : EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;
-Access : SLASH Node
-	| SSLASH Node
-	| ASLASH Node
-	| DSLASH Node
-	| DSSLASH Node
-	| DASLASH Node
+Access : Accessor Node
+	;
+Accessor : SLASH
+	| SSLASH
+	| ASLASH
+	| DSLASH
+	| DSSLASH
+	| DASLASH
+	;
+ExpAccessor : SLASH
+	| SSLASH
+	| ASLASH
 	;
 Compound : COMMA StaticTerm
 	;

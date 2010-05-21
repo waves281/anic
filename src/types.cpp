@@ -5,7 +5,7 @@ bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.
 bool Type::baseSendable(const Type &otherType) const {
 	return (
 		(suffix == SUFFIX_CONSTANT && otherType.suffix == SUFFIX_CONSTANT) ||
-		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM)) ||
+		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM)) ||
 		(suffix == SUFFIX_ARRAY && otherType.suffix == SUFFIX_ARRAY && depth == otherType.depth) ||
 		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
 	);

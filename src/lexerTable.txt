@@ -304,6 +304,7 @@
 // state 102 (\ seen)
 102 \ DSLASH 103
 102 * SSLASH -1
+102 & ASLASH -1
 
 // state 103 (\\ seen)
 103 * DSSLASH -1

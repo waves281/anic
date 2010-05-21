@@ -1143,6 +1143,14 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
 			}
+		} else if (*stcc == TOKEN_ASLASH) {
+			if (mutableNodeStatus.type->constantDelatch()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
 		} else if (*stcc == TOKEN_DSLASH) {
 			if (mutableNodeStatus.type->destream()) {
 				status = mutableNodeStatus;

@@ -24,6 +24,7 @@
 %token LRARROW
 %token SLASH
 %token SSLASH
+%token ASLASH
 %token DSLASH
 %token DSSLASH
 %token DASLASH
@@ -306,6 +307,7 @@ Constructor : EQUALS LSQUARE RSQUARE SEMICOLON
 	;
 Access : SLASH Node
 	| SSLASH Node
+	| ASLASH Node
 	| DSLASH Node
 	| DSSLASH Node
 	| DASLASH Node

@@ -11,14 +11,24 @@ bool Type::baseSendable(const Type &otherType) const {
 	);
 }
 Type::~Type() {}
-void Type::constantize() {
-	if (suffix == SUFFIX_LATCH) {
+bool Type::constantize() {
+	if (suffix == SUFFIX_CONSTANT) {
+		return true;
+	} else if (suffix == SUFFIX_LATCH) {
 		suffix = SUFFIX_CONSTANT;
+		return true;
+	} else if (suffix == SUFFIX_LIST) {
+		return false;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LIST;
+		return false;
+	} else if (suffix == SUFFIX_ARRAY) {
+		return true;
 	} else if (suffix == SUFFIX_POOL) {
 		suffix = SUFFIX_ARRAY;
+		return true;
 	}
+	// can't happen
+	return false;
 }
 bool Type::delatch() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -26,8 +36,7 @@ bool Type::delatch() {
 	} else if (suffix == SUFFIX_LATCH) {
 		return true;
 	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_CONSTANT;
-		return true;
+		return false;
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
@@ -56,6 +65,25 @@ bool Type::copyDelatch() {
 		return true;
 	} else if (suffix == SUFFIX_POOL) {
 		return true;
+	}
+	// can't happen
+	return false;
+}
+bool Type::constantDelatch() {
+	if (suffix == SUFFIX_CONSTANT) {
+		return false;
+	} else if (suffix == SUFFIX_LATCH) {
+		return false;
+	} else if (suffix == SUFFIX_LIST) {
+		suffix = SUFFIX_CONSTANT;
+		return true;
+	} else if (suffix == SUFFIX_STREAM) {
+		suffix = SUFFIX_CONSTANT;
+		return true;
+	} else if (suffix == SUFFIX_ARRAY) {
+		return false;
+	} else if (suffix == SUFFIX_POOL) {
+		return false;
 	}
 	// can't happen
 	return false;

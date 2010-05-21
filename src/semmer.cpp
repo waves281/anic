@@ -1132,7 +1132,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				status = mutableNodeStatus;
 			} else {
 				Token curToken = stcc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of a non-latch type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
 			}
 		} else if (*stcc == TOKEN_SSLASH) {
@@ -1140,7 +1140,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				status = mutableNodeStatus;
 			} else {
 				Token curToken = stcc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of a non-latch type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
 			}
 		} else if (*stcc == TOKEN_DSLASH) {
@@ -1148,7 +1148,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				status = mutableNodeStatus;
 			} else {
 				Token curToken = stcc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"destream of a non-stream type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"destream of incompatible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
 			}
 		} else if (*stcc == TOKEN_DSSLASH) {
@@ -1156,7 +1156,15 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				status = mutableNodeStatus;
 			} else {
 				Token curToken = stcc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of a non-stream type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
+			}
+		} else if (*stcc == TOKEN_DASLASH) {
+			if (mutableNodeStatus.type->constantDestream()) {
+				status = mutableNodeStatus;
+			} else {
+				Token curToken = stcc->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"constant destream of incompatible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<*nodeStatus<<")");
 			}
 		}

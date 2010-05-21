@@ -26,6 +26,7 @@
 %token SSLASH
 %token DSLASH
 %token DSSLASH
+%token DASLASH
 %token CQUOTE
 %token SQUOTE
 %token AT
@@ -307,6 +308,7 @@ Access : SLASH Node
 	| SSLASH Node
 	| DSLASH Node
 	| DSSLASH Node
+	| DASLASH Node
 	;
 Compound : COMMA StaticTerm
 	;

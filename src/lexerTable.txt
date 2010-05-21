@@ -307,6 +307,7 @@
 
 // state 103 (\\ seen)
 103 * DSSLASH -1
+103 & DASLASH -1
 
 // state 104 (+ seen)
 104 + DPLUS -1

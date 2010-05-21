@@ -11,7 +11,7 @@ bool Type::baseSendable(const Type &otherType) const {
 	);
 }
 Type::~Type() {}
-void Type::constant() {
+void Type::constantize() {
 	if (suffix == SUFFIX_LATCH) {
 		suffix = SUFFIX_CONSTANT;
 	} else if (suffix == SUFFIX_STREAM) {
@@ -66,19 +66,12 @@ bool Type::destream() {
 	} else if (suffix == SUFFIX_LATCH) {
 		return false;
 	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_CONSTANT;
-		return true;
+		return false;
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
-		if (depth == 1) {
-			depth = 0;
-			suffix = SUFFIX_CONSTANT;
-			return true;
-		} else {
-			return false;
-		}
+		return false;
 	} else if (suffix == SUFFIX_POOL) {
 		if (depth == 1) {
 			depth = 0;
@@ -114,6 +107,37 @@ bool Type::copyDestream() {
 		if (depth == 1) {
 			depth = 0;
 			suffix = SUFFIX_LATCH;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	// can't happen
+	return false;
+}
+bool Type::constantDestream() {
+	if (suffix == SUFFIX_CONSTANT) {
+		return false;
+	} else if (suffix == SUFFIX_LATCH) {
+		return false;
+	} else if (suffix == SUFFIX_LIST) {
+		suffix = SUFFIX_CONSTANT;
+		return true;
+	} else if (suffix == SUFFIX_STREAM) {
+		suffix = SUFFIX_CONSTANT;
+		return true;
+	} else if (suffix == SUFFIX_ARRAY) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_CONSTANT;
+			return true;
+		} else {
+			return false;
+		}
+	} else if (suffix == SUFFIX_POOL) {
+		if (depth == 1) {
+			depth = 0;
+			suffix = SUFFIX_CONSTANT;
 			return true;
 		} else {
 			return false;

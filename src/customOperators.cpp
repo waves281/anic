@@ -3,7 +3,7 @@
 // operator definitions
 
 ostream &operator<< (ostream &os, Token &t) {
-	os << "[" << tokenType2String(t.tokenType) << " " << t.s << " (" << t.row << "," << t.col << ")]";
+	os << "[" << tokenType2String(t.tokenType) << ' ' << t.s << " (" << t.row << ',' << t.col << ")]";
 	return os;
 }
 
@@ -11,20 +11,24 @@ void printDefs(SymbolTable *st, unsigned int depth) {
 	if (st == NULL) {
 		return;
 	}
-	cout << "\t";
+	cout << '\t';
 	for (unsigned int i = 0; i < depth; i++) {
 		if (i < (depth-1)) {
-			cout << "|";
+			cout << '|';
 		} else {
-			cout << "-";
+			cout << '-';
 		}
 	}
 	if (st->id != BLOCK_NODE_STRING) {
 		cout << st->id;
+		Type *defType = st->defSite->status.type;
+		if (defType != NULL) {
+			cout << " : " << defType;
+		}
 	} else {
 		cout << "{}";
 	}
-	cout << "\n";
+	cout << '\n';
 	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
 		printDefs(*childIter, depth+1);
 	}

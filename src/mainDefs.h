@@ -41,4 +41,8 @@ extern int lexerErrorCode;
 extern int parserErrorCode;
 extern int semmerErrorCode;
 
+class Type;
+extern Type *nullType;
+extern Type *errType;
+
 #endif

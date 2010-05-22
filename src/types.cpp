@@ -206,7 +206,10 @@ TypeList::TypeList(Type *type) {
 	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;
 	list.push_back(type);
 }
-TypeList::TypeList() {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;}
+TypeList::TypeList() {
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;
+	list.push_back(nullType);
+}
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType) {
@@ -563,18 +566,14 @@ StdType::operator string() {
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
 	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
 	if (from->category == CATEGORY_TYPELIST) {
-		from = (TypeList *)from;
+		this->from = (TypeList *)from;
 	} else {
-		from = new TypeList(from);
+		this->from = new TypeList(from);
 	}
-	if (to != NULL) {
-		if (to->category == CATEGORY_TYPELIST) {
-			to = (TypeList *)to;
-		} else {
-			to = new TypeList(to);
-		}
+	if (to->category == CATEGORY_TYPELIST) {
+		this->to = (TypeList *)to;
 	} else {
-		to = new TypeList();
+		this->to = new TypeList(to);
 	}
 }
 FilterType::~FilterType() {
@@ -776,21 +775,23 @@ Type *ObjectType::operator>>(Type &otherType) const {
 }
 ObjectType::operator string() {
 	TYPE_TO_STRING_HEADER;
-	acc = "{";
+	acc = '{';
 	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		acc += "=[";
 		acc += (string)(**iter);
-		acc += "]";
+		acc += ']';
 		if (iter+1 != constructorTypes.end()) {
 			acc += ", ";
 		}
 	}
-	acc += ";";
+	if (memberNames.size() > 0) {
+		acc += ", ";
+	}
 	vector<string>::const_iterator memberNameIter = memberNames.begin();
 	vector<Type *>::const_iterator memberTypeIter = memberTypes.begin();
 	while (memberNameIter != memberNames.end()) {
 		acc += *memberNameIter;
-		acc += "=";
+		acc += '=';
 		acc += (string)(**memberTypeIter);
 		if (memberNameIter+1 != memberNames.end()) {
 			acc += ", ";
@@ -799,7 +800,7 @@ ObjectType::operator string() {
 		memberNameIter++;
 		memberTypeIter++;
 	}
-	acc += "}";
+	acc += '}';
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }

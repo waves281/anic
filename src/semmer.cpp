@@ -1560,12 +1560,12 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
 	subImportDecls(importList); // resolve and substitute import declarations into the symbol table
 
-	VERBOSE( cout << stRoot; )
-
 	VERBOSE( printNotice("Tracing type flow..."); )
 
 	// assign types to all node streams
 	traceTypes(parseme);
+	
+	VERBOSE( cout << stRoot; )
 
 	// if there were no errors, free the error type node
 	if (!semmerErrorCode) {

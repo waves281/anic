@@ -179,7 +179,7 @@ class FilterType : public Type {
 		TypeList *from; // the source of this object type
 		TypeList *to; // the destination of this object type
 		// allocators/deallocators
-		FilterType(Type *from = NULL, Type *to = NULL, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *from = nullType, Type *to = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
 		bool isComparable(const Type &otherType) const;

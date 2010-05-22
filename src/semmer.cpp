@@ -90,6 +90,7 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "bool", new StdType(STD_BOOL));
 	*stRoot *= new SymbolTable(KIND_STD, "char", new StdType(STD_CHAR));
 	*stRoot *= new SymbolTable(KIND_STD, "string", new StdType(STD_STRING));
+	*stRoot *= new SymbolTable(KIND_STD, "null", new StdType(STD_NULL));
 }
 
 void catStdLib(SymbolTable *&stRoot) {

@@ -198,6 +198,7 @@ bool Type::constantDestream() {
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}
 bool Type::operator!=(const Type &otherType) const {return (!operator==(otherType));};
+bool Type::operator!=(int kind) const {return (!operator==(kind));}
 
 // TypeList functions
 // constructor works on ParamList and TypeList
@@ -239,6 +240,7 @@ bool TypeList::operator==(const Type &otherType) const {
 		return false;
 	}
 }
+bool TypeList::operator==(int kind) const {return (list.size() == 1 && list[0]->category == CATEGORY_STDTYPE && ((StdType *)(list[0]))->kind == kind);}
 Type *TypeList::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		return errType;
@@ -377,6 +379,7 @@ bool ErrorType::operator==(const Type &otherType) const {
 		return false;
 	}
 }
+bool ErrorType::operator==(int kind) const {return false;}
 Type *ErrorType::operator,(Type &otherType) const {return errType;}
 Type *ErrorType::operator>>(Type &otherType) const {return errType;}
 string ErrorType::toString(unsigned int tabDepth) {
@@ -416,6 +419,7 @@ bool StdType::operator==(const Type &otherType) const {
 		return false;
 	}
 }
+bool StdType::operator==(int kind) const {return (this->kind == kind);}
 Type *StdType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -599,6 +603,7 @@ bool FilterType::operator==(const Type &otherType) const {
 		return false;
 	}
 }
+bool FilterType::operator==(int kind) const {return false;}
 Type *FilterType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
@@ -729,6 +734,7 @@ bool ObjectType::operator==(const Type &otherType) const {
 		return false;
 	}
 }
+bool ObjectType::operator==(int kind) const {return false;}
 Type *ObjectType::operator,(Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);

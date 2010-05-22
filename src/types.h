@@ -68,6 +68,7 @@ class Type {
 		// operators
 		// virtual
 		virtual bool operator==(const Type &otherType) const = 0;
+		virtual bool operator==(int kind) const = 0;
 		virtual Type *operator,(Type &otherType) const = 0;
 		virtual Type *operator>>(Type &otherType) const = 0;
 		virtual operator string() = 0;
@@ -75,6 +76,7 @@ class Type {
 		operator bool() const;
 		bool operator!() const;
 		bool operator!=(const Type &otherType) const;
+		bool operator!=(int kind) const;
 };
 
 // Type subclasses

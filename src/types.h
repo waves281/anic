@@ -60,6 +60,7 @@ class Type {
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
 		virtual Type *copy() const = 0;
+		virtual void erase() = 0;
 		virtual string toString(unsigned int tabDepth) = 0;
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
@@ -93,6 +94,7 @@ class TypeList : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -110,6 +112,7 @@ class ErrorType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -170,6 +173,7 @@ class StdType : public Type {
 		bool isComparable(const Type &otherType) const;
 		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		Type *copy() const;
+		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -190,6 +194,7 @@ class FilterType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -213,6 +218,7 @@ class ObjectType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;

@@ -186,11 +186,8 @@ NonArraySuffixedIdentifier : ID NonArrayIdentifierSuffix
 NonArrayIdentifierSuffix :
 	| PERIOD ID NonArrayIdentifierSuffix
 	;
-NodeInstantiation : LSQUARE InstantiableTypeList RSQUARE
-	| LSQUARE InstantiableTypeList RSQUARE LARROW StaticTerm
-	;
-InstantiableTypeList : InstantiableType
-	| InstantiableType COMMA InstantiableTypeList
+NodeInstantiation : LSQUARE InstantiableType RSQUARE
+	| LSQUARE InstantiableType RSQUARE LARROW StaticTerm
 	;
 InstantiableType : NonArraySuffixedIdentifier TypeSuffix
 	;

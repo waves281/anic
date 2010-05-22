@@ -892,7 +892,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
 			StdType stdIntType(STD_INT); // temporary integer type for comparison
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = ats->child->t; // LSQUARE
-				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is not an int");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
 			}
@@ -913,7 +913,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
 			StdType stdIntType(STD_INT); // temporary integer type for comparison
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = pts->child->next->t; // LSQUARE
-				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is not an int");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
 			}

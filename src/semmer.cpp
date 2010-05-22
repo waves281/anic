@@ -926,9 +926,15 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
 		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
 			TypeStatus idStatus = getStatusSuffixedIdentifier(typec);
 			if (*idStatus) {
-				idStatus->suffix = suffixVal;
-				idStatus->depth = depthVal;
-				status = idStatus;
+				if (idStatus->suffix == SUFFIX_CONSTANT || idStatus->suffix == SUFFIX_LATCH) { // if the suffix is valid for instantiating a node out of
+					idStatus->suffix = suffixVal;
+					idStatus->depth = depthVal;
+					status = idStatus;
+				} else { // else if the suffix isn't valid for instantiating a node out of
+					Token curToken = typec->child->t; // ID
+					semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation from a non-constant, non-latch node");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<idStatus<<")");
+				}
 			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
 			TypeStatus from = inStatus;

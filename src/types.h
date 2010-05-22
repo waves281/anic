@@ -206,6 +206,7 @@ class ObjectType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -262,5 +263,10 @@ extern Type *errType;
 	toStringHandled = false;\
 	/* return the completed accumulator */\
 	return acc
+
+#define TYPE_TO_STRING_INDENT \
+	acc += '\n';\
+	for (unsigned int i=0; i < tabDepth; i++)\
+		acc += '\t'\
 
 #endif

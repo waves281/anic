@@ -773,10 +773,11 @@ Type *ObjectType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-ObjectType::operator string() {
+string ObjectType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
-	acc = '{';
+	acc = "{";
 	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+		TYPE_TO_STRING_INDENT;
 		acc += "=[";
 		acc += (string)(**iter);
 		acc += ']';
@@ -790,6 +791,7 @@ ObjectType::operator string() {
 	vector<string>::const_iterator memberNameIter = memberNames.begin();
 	vector<Type *>::const_iterator memberTypeIter = memberTypes.begin();
 	while (memberNameIter != memberNames.end()) {
+		TYPE_TO_STRING_INDENT;
 		acc += *memberNameIter;
 		acc += '=';
 		acc += (string)(**memberTypeIter);
@@ -800,9 +802,14 @@ ObjectType::operator string() {
 		memberNameIter++;
 		memberTypeIter++;
 	}
+	tabDepth--;
+	TYPE_TO_STRING_INDENT;
 	acc += '}';
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
+}
+ObjectType::operator string() {
+	return toString(2);
 }
 
 // typing status block functions

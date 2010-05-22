@@ -353,16 +353,17 @@ Type *TypeList::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-TypeList::operator string() {
+string TypeList::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
 	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
-		acc += (string)(**iter);
+		acc += (*iter)->toString(tabDepth);
 		if ((iter+1) != list.end()) {
 			acc += ", ";
 		}
 	}
 	TYPE_TO_STRING_FOOTER;
 }
+TypeList::operator string() {return toString();}
 
 // ErrorType functions
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false;}
@@ -378,7 +379,10 @@ bool ErrorType::operator==(const Type &otherType) const {
 }
 Type *ErrorType::operator,(Type &otherType) const {return errType;}
 Type *ErrorType::operator>>(Type &otherType) const {return errType;}
-ErrorType::operator string() {return "error";}
+string ErrorType::toString(unsigned int tabDepth) {
+	return "error";
+}
+ErrorType::operator string() {return toString();}
 
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
@@ -462,7 +466,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-StdType::operator string() {
+string StdType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
 	switch(kind) {
 		// null type
@@ -561,6 +565,7 @@ StdType::operator string() {
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
+StdType::operator string() {return toString();}
 
 // FilterType functions
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
@@ -645,16 +650,17 @@ Type *FilterType::operator>>(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-FilterType::operator string() {
+string FilterType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
 	acc = "[";
-	acc += (string)(*from);
+	acc += from->toString(tabDepth+1);
 	acc += " --> ";
-	acc += (string)(*to);
+	acc += to->toString(tabDepth+1);
 	acc += "]";
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
+FilterType::operator string() {return toString();}
 
 // ObjectType functions
 ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
@@ -779,13 +785,13 @@ string ObjectType::toString(unsigned int tabDepth) {
 	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
 		acc += "=[";
-		acc += (string)(**iter);
+		acc += (*iter)->toString(tabDepth+1);
 		acc += ']';
 		if (iter+1 != constructorTypes.end()) {
 			acc += ", ";
 		}
 	}
-	if (memberNames.size() > 0) {
+	if (constructorTypes.size() > 0 && memberNames.size() > 0) {
 		acc += ", ";
 	}
 	vector<string>::const_iterator memberNameIter = memberNames.begin();
@@ -794,7 +800,7 @@ string ObjectType::toString(unsigned int tabDepth) {
 		TYPE_TO_STRING_INDENT;
 		acc += *memberNameIter;
 		acc += '=';
-		acc += (string)(**memberTypeIter);
+		acc += (*memberTypeIter)->toString(tabDepth+1);
 		if (memberNameIter+1 != memberNames.end()) {
 			acc += ", ";
 		}
@@ -802,15 +808,12 @@ string ObjectType::toString(unsigned int tabDepth) {
 		memberNameIter++;
 		memberTypeIter++;
 	}
-	tabDepth--;
-	TYPE_TO_STRING_INDENT;
+	TYPE_TO_STRING_INDENT_CLOSE;
 	acc += '}';
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
-ObjectType::operator string() {
-	return toString(2);
-}
+ObjectType::operator string() {return toString();}
 
 // typing status block functions
 TypeStatus::TypeStatus(Type *type, Tree *recall, Type *retType) : type(type), recall(recall), retType(retType) {}

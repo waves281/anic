@@ -60,6 +60,7 @@ class Type {
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
 		virtual Type *copy() const = 0;
+		virtual string toString(unsigned int tabDepth) = 0;
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
 		bool baseSendable(const Type &otherType) const;
@@ -90,6 +91,7 @@ class TypeList : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -106,6 +108,7 @@ class ErrorType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -165,6 +168,7 @@ class StdType : public Type {
 		bool isComparable(const Type &otherType) const;
 		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		Type *copy() const;
+		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -184,6 +188,7 @@ class FilterType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
+		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -206,7 +211,7 @@ class ObjectType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -265,8 +270,13 @@ extern Type *errType;
 	return acc
 
 #define TYPE_TO_STRING_INDENT \
-	acc += '\n';\
+	acc += "\n\t| ";\
 	for (unsigned int i=0; i < tabDepth; i++)\
-		acc += '\t'\
+		acc += "  "
+
+#define TYPE_TO_STRING_INDENT_CLOSE \
+	acc += "\n\t| ";\
+	for (unsigned int i=0; i < tabDepth-1; i++)\
+		acc += "  "
 
 #endif

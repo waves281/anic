@@ -863,7 +863,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
 	GET_STATUS_HEADER;
 	Tree *typeSuffix = tree->child->next; // TypeSuffix
 	// derive the suffix and depth first, since we'll need to know then to construct the Type object
@@ -889,7 +889,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = ats->child->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is not an int");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<expStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
 			}
 			// advance
@@ -910,7 +910,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = pts->child->next->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is not an int");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<expStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
 			}
 			// advance
@@ -924,7 +924,12 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	if (!failed) { // if all of the suffixes were valid
 		Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
 		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
-			status = getStatusSuffixedIdentifier(typec);
+			TypeStatus idStatus = getStatusSuffixedIdentifier(typec);
+			if (*idStatus) {
+				idStatus->suffix = suffixVal;
+				idStatus->depth = depthVal;
+				status = idStatus;
+			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
 			TypeStatus from = inStatus;
 			TypeStatus to = inStatus;
@@ -1085,7 +1090,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) { // KOL
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *itl = tree->child->next; // InstantiableTypeList
 	TypeStatus instantiation = getStatusTypeList(itl, inStatus); // InstantiableTypeList (compatible as a TypeList)

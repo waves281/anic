@@ -478,6 +478,9 @@ string StdType::toString(unsigned int tabDepth) {
 			acc += "null";
 			break;
 		// standard types
+		case STD_STD:
+			acc += "std";
+			break;
 		case STD_INT:
 			acc += "int";
 			break;

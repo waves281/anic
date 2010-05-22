@@ -728,35 +728,41 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
 	fakeType = new FilterType(nullType, nullType, SUFFIX_LATCH);
+	TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
 	// derive the declared type of the filter
-	Tree *filterc = tree->child; // Block or FilterHeader
-	if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
+	Tree *filterCur = tree->child; // Block or FilterHeader
+	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
 		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)inStatus.type) : new TypeList(inStatus.type);
-	} else if (*filterc == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
-		TypeStatus tempStatus = getStatusFilterHeader(filterc, inStatus); // derive the (possibly recursive) type of the filter header
+		// use the input status as a base, since there is no explicit parameter list
+		startStatus = inStatus;
+	} else if (*filterCur == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
+		TypeStatus tempStatus = getStatusFilterHeader(filterCur, inStatus); // derive the (possibly recursive) type of the filter header
 		if (*tempStatus) { // if we successfully derived a type for the header
 			// log the derived type into the fake type that we previously created
 			((FilterType *)fakeType)->from = ((FilterType *)(tempStatus.type))->from;
 			((FilterType *)fakeType)->to = ((FilterType *)(tempStatus.type))->to;
+			// nullify the incoming type, since we have an explicit parameter list
+			startStatus = nullType;
+			// advance to the Block definition node
+			filterCur = filterCur->next;
 		} else { // else if we failed to derive a type for the header, delete the fake type and set it to be erroneous
 			delete fakeType; // delete the fake type
 			fakeType = errType;
 		}
 	}
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
-		Tree *filtercn = filterc->next; // Block
-		TypeStatus blockStatus = getStatusBlock(filtercn, inStatus); // derive the definition Block's Type
+		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully derived a type for the definition Block, check that the Block returns the type that the header says it should
 			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match
 				status = blockStatus;
 			} else { // else if the header and Block don't match
-				Token curToken = filtercn->child->t; // LCURLY
+				Token curToken = filterCur->child->t; // LCURLY
 				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<((FilterType *)(blockStatus.type))->to);
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<((FilterType *)fakeType)->to<<")");
 			}
 		}
 	} else { // else if we derived an erroneous type for the header
-		Token curToken = filterc->child->t; // LCURLY or LSQUARE
+		Token curToken = tree->child->child->t; // LCURLY or LSQUARE
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}

@@ -462,7 +462,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	Tree *primaryc = tree->child;
 	if (*primaryc == TOKEN_SuffixedIdentifier) {
 		status = getStatusSuffixedIdentifier(primaryc, inStatus);
-	} else if (*primaryc == TOKEN_ExpAccessor) { // if it's an accessed term
+	} else if (*primaryc == TOKEN_SingleAccessor) { // if it's an accessed term
 		// first, derive the subtype
 		Tree *subSI = primaryc->next; // SuffixedIdentifier
 		TypeStatus subStatus = getStatusSuffixedIdentifier(subSI, inStatus); // SuffixedIdentifier
@@ -1230,14 +1230,25 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			status = curTypeList;
 		}
 	} else if (*dtc == TOKEN_Link) {
-// LOL
+		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next, nullType);
+		if (*linkStatus) { // if we managed to derive a type for the Link subnode
+			Type *result = (*linkStatus >> *inStatus);
+			if (*result) { // if the result is a successful link, log the success
+				status = inStatus;
+			} else {
+				Token curToken = dtc->child->t; // DCOLON
+				semmerError(curToken.fileName,curToken.row,curToken.col,"link with incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (link type is "<<linkStatus<<")");
+			}
+		}
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		Type *resultType = (*inStatus >> *nodeStatus);
 		if (*resultType) { // if the Send is valid, proceed normally
 			status = resultType;
 		} else { // else if the Send is invalid, flag an error
-			Token curToken = tree->child->t; // RARROW
+			Token curToken = dtc->child->t; // RARROW
 			semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
@@ -1248,7 +1259,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*resultType) { // if the Swap is valid, proceed normally
 			status = nodeStatus.type; // inherit the type of the destination Node
 		} else { // else if the Send is invalid, flag an error
-			Token curToken = tree->child->t; // RARROW
+			Token curToken = dtc->child->t; // LRARROW
 			semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
@@ -1516,12 +1527,11 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 
 void traceTypes(vector<Tree *> *parseme) {
 	// iterate through all Pipe nodes
-	TypeStatus nullStatus(nullType);
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (!(pipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(pipeCur, nullStatus);
+			getStatusPipe(pipeCur, nullType);
 		}
 	}
 	// ... and all LastPipe nodes
@@ -1529,7 +1539,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < lastPipeList.size(); i++) {
 		Tree *lastPipeCur = lastPipeList[i];
 		if (!(lastPipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(lastPipeCur, nullStatus);
+			getStatusPipe(lastPipeCur, nullType);
 		}
 	}
 }

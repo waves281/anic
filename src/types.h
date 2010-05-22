@@ -63,6 +63,7 @@ class Type {
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
 		bool baseSendable(const Type &otherType) const;
+		string suffixString() const;
 		// operators
 		// virtual
 		virtual bool operator==(const Type &otherType) const = 0;

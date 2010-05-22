@@ -10,6 +10,27 @@ bool Type::baseSendable(const Type &otherType) const {
 		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
 	);
 }
+string Type::suffixString() const {
+	string acc;
+	if (suffix == SUFFIX_LATCH) {
+		acc = '\\';
+	} else if (suffix == SUFFIX_LIST) {
+		acc = "[]";
+	} else if (suffix == SUFFIX_STREAM) {
+		acc = "\\[]";
+	} else if (suffix == SUFFIX_ARRAY) {
+		acc = "[.]";
+		for (int i = 1; i < depth; i++) {
+			acc += "[.]";
+		}
+	} else if (suffix == SUFFIX_POOL) {
+		acc = "\\[.]";
+		for (int i = 1; i < depth; i++) {
+			acc += "[.]";
+		}
+	}
+	return acc;
+}
 Type::~Type() {}
 bool Type::constantize() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -439,72 +460,103 @@ Type *StdType::operator>>(Type &otherType) const {
 	return errType;
 }
 StdType::operator string() {
+	TYPE_TO_STRING_HEADER;
 	switch(kind) {
 		// null type
 		case STD_NULL:
-			return "null";
+			acc += "null";
+			break;
 		// standard types
 		case STD_INT:
-			return "int";
+			acc += "int";
+			break;
 		case STD_FLOAT:
-			return "float";
+			acc += "float";
+			break;
 		case STD_BOOL:
-			return "bool";
+			acc += "bool";
+			break;
 		case STD_CHAR:
-			return "char";
+			acc += "char";
+			break;
 		case STD_STRING:
-			return "string";
+			acc += "string";
+			break;
 		// prefix operators
 		case STD_NOT:
-			return "!";
+			acc += '!';
+			break;
 		case STD_COMPLEMENT:
-			return "~";
+			acc += '~';
+			break;
 		case STD_DPLUS:
-			return "++";
+			acc += "++";
+			break;
 		case STD_DMINUS:
-			return "--";
+			acc += "--";
+			break;
 		// infix operators
 		case STD_DOR:
-			return "||";
+			acc += "||";
+			break;
 		case STD_DAND:
-			return "&&";
+			acc += "&&";
+			break;
 		case STD_OR:
-			return "|";
+			acc += '|';
+			break;
 		case STD_XOR:
-			return "^";
+			acc += '^';
+			break;
 		case STD_AND:
-			return "&";
+			acc += '&';
+			break;
 		case STD_DEQUALS:
-			return "==";
+			acc += "==";
+			break;
 		case STD_NEQUALS:
-			return "!=";
+			acc += "!=";
+			break;
 		case STD_LT:
-			return "<";
+			acc += '<';
+			break;
 		case STD_GT:
-			return ">";
+			acc += '>';
+			break;
 		case STD_LE:
-			return "<=";
+			acc += "<=";
+			break;
 		case STD_GE:
-			return ">=";
+			acc += ">=";
+			break;
 		case STD_LS:
-			return "<<";
+			acc += "<<";
+			break;
 		case STD_RS:
-			return ">>";
+			acc += ">>";
+			break;
 		case STD_TIMES:
-			return "*";
+			acc += '*';
+			break;
 		case STD_DIVIDE:
-			return "/";
+			acc += '/';
+			break;
 		case STD_MOD:
-			return "%";
+			acc += '%';
+			break;
 		// multi operators
 		case STD_PLUS:
-			return "+";
+			acc += '+';
+			break;
 		case STD_MINUS:
-			return "-";
+			acc += '-';
+			break;
 		// can't happen
 		default:
-			return "";
+			break;
 	}
+	acc += suffixString();
+	TYPE_TO_STRING_FOOTER;
 }
 
 // FilterType functions
@@ -601,6 +653,7 @@ FilterType::operator string() {
 	acc += " --> ";
 	acc += (string)(*to);
 	acc += "]";
+	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
 
@@ -747,6 +800,7 @@ ObjectType::operator string() {
 		memberTypeIter++;
 	}
 	acc += "}";
+	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
 

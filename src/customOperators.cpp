@@ -35,6 +35,11 @@ ostream &operator<< (ostream &os, SymbolTable *&st) {
 	return os;
 }
 
+ostream &operator<< (ostream &os, Type *type) {
+	os << ((string)(*type));
+	return os;
+}
+
 ostream &operator<< (ostream &os, const TypeStatus &status) {
 	os << ((string)(*(status.type)));
 	return os;

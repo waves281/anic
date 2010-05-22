@@ -256,7 +256,7 @@ extern Type *errType;
 #define TYPE_TO_STRING_HEADER \
 	/* if we have reached a recursive loop, return this fact */\
 	if (toStringHandled) {\
-		return "<recursion>";\
+		return "<RECURSION>";\
 	} else { /* otherwise, set the recursive printing flag */\
 		toStringHandled = true;\
 	}\

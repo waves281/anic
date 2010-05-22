@@ -1230,7 +1230,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			status = curTypeList;
 		}
 	} else if (*dtc == TOKEN_Link) {
-		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next, nullType);
+		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next);
 		if (*linkStatus) { // if we managed to derive a type for the Link subnode
 			Type *result = (*linkStatus >> *inStatus);
 			if (*result) { // if the result is a successful link, log the success
@@ -1531,7 +1531,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < pipeList.size(); i++) {
 		Tree *pipeCur = pipeList[i];
 		if (!(pipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(pipeCur, nullType);
+			getStatusPipe(pipeCur);
 		}
 	}
 	// ... and all LastPipe nodes
@@ -1539,7 +1539,7 @@ void traceTypes(vector<Tree *> *parseme) {
 	for (unsigned int i=0; i < lastPipeList.size(); i++) {
 		Tree *lastPipeCur = lastPipeList[i];
 		if (!(lastPipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(lastPipeCur, nullType);
+			getStatusPipe(lastPipeCur);
 		}
 	}
 }

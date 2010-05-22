@@ -1085,7 +1085,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) { // KOL
 	GET_STATUS_HEADER;
 	Tree *itl = tree->child->next; // InstantiableTypeList
 	TypeStatus instantiation = getStatusTypeList(itl, inStatus); // InstantiableTypeList (compatible as a TypeList)
@@ -1095,10 +1095,12 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
 				// pipe the types into the status
-				status = TypeStatus((*initializer , *instantiation), instantiation);
-				if (!(*status)) { // if the types are incompatible, throw an error
+				Type *result = (*initializer >> *instantiation);
+				if (*result) {
+					status = TypeStatus(instantiation, instantiation);
+				} else { // if the types are incompatible, throw an error
 					Token curToken = st->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"initializer type incompatible with instantiation");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
@@ -1107,6 +1109,8 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
+		} else { // else if there is no initializer, simply set the status to be the type
+			status = TypeStatus(instantiation, instantiation);
 		}
 	} else { // else if we couldn't derive a type for the instantiation
 		Token curToken = tree->child->t;

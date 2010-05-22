@@ -380,7 +380,7 @@ bool ErrorType::operator==(const Type &otherType) const {
 Type *ErrorType::operator,(Type &otherType) const {return errType;}
 Type *ErrorType::operator>>(Type &otherType) const {return errType;}
 string ErrorType::toString(unsigned int tabDepth) {
-	return "error";
+	return "<error>";
 }
 ErrorType::operator string() {return toString();}
 

@@ -187,7 +187,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(block->child, blockDef, importList); // child of Block
 	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
 		// allocate the new definition node
-		SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, CONSTRUCTOR_NODE_STRING, tree);
+		SymbolTable *newDef = new SymbolTable(KIND_CONS, CONSTRUCTOR_NODE_STRING, tree);
 		// ... and link it in
 		*st *= newDef;
 		// recurse
@@ -197,14 +197,14 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		Tree *bnc = tree->child->next;
 		if (*bnc == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_STATIC_DECL, tree->child->t.s, tree);
+			SymbolTable *newDef = new SymbolTable(KIND_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
 		} else if (*bnc == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_THROUGH_DECL, tree->child->t.s, tree);
+			SymbolTable *newDef = new SymbolTable(KIND_DECL, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
@@ -335,7 +335,6 @@ SymbolTable *bindId(string &id, SymbolTable *env, const TypeStatus &inStatus = T
 
 void subImportDecls(vector<SymbolTable *> importList) {
 	bool stdExplicitlyImported = false;
-
 	for(;;) { // per-change loop
 		// per-import loop
 		vector<SymbolTable *> newImportList;
@@ -393,6 +392,19 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			importList = newImportList;
 		}
 	} // per-change loop
+}
+
+// derives the types of all user-defined nodes in the passed-in SymbolTable
+void typeSt(SymbolTable *root) {
+	if (root->kind == KIND_DECL || root->kind == KIND_PARAM || root->kind == KIND_CONS || root->kind == KIND_BLOCK) { // if it's a user-defined node or a block
+		if (root->kind != KIND_BLOCK) { // if it's not a block node, derive its type
+			getStatusSymbolTable(root);
+		}
+		// recurse on this node's children
+		for (vector<SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
+			typeSt(*iter);
+		}
+	}
 }
 
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
@@ -1617,7 +1629,9 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 
 	VERBOSE( printNotice("Tracing type flow..."); )
 
-	// assign types to all node streams
+	// derive types of all identifiers in the SymbolTable
+	typeSt(stRoot);
+	// derive types for the remaining pipes
 	traceTypes(parseme);
 	
 	VERBOSE( cout << stRoot; )

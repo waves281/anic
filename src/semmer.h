@@ -11,12 +11,12 @@
 
 // SymbolTable node kinds
 
-#define KIND_BLOCK 1
-#define KIND_STD 2
-#define KIND_IMPORT 3
-#define KIND_STATIC_DECL 4
-#define KIND_THROUGH_DECL 5
-#define KIND_PARAM 6
+#define KIND_STD 1
+#define KIND_IMPORT 2
+#define KIND_BLOCK 3
+#define KIND_DECL 4
+#define KIND_PARAM 5
+#define KIND_CONS 6
 
 class SymbolTable {
 	public:
@@ -41,6 +41,7 @@ class SymbolTable {
 
 // forward declarations of mutually recursive typing functions
 
+TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));

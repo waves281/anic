@@ -107,7 +107,7 @@ void catStdLib(SymbolTable *&stRoot) {
 	vector<string> memberNames;
 	memberNames.push_back("toString");
 	vector<Type *> memberTypes;
-	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH)));
+	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH), SUFFIX_LATCH));
 	Type *stringer = new ObjectType(constructorTypes, memberNames, memberTypes, SUFFIX_LATCH);
 	// create the outer type that the output streams use
 	constructorTypes.push_back(new TypeList(new StdType(STD_INT)));
@@ -401,7 +401,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if the symbol was defined as a Declaration-style node
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
-		status = getStatusType(tree->child, inStatus); // Type
+		status = getStatusParam(tree, inStatus); // Param
 	}
 	GET_STATUS_FOOTER;
 }
@@ -704,7 +704,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 		if (curStatus.retType == NULL) { // if there were no returns in this block, set this block as returning the null type
 			curStatus.retType = nullType;
 		}
-		status = new FilterType(inStatus, curStatus.retType);
+		status = new FilterType(inStatus, curStatus.retType, SUFFIX_LATCH);
 	}
 	GET_STATUS_FOOTER;
 }
@@ -723,7 +723,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 		to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
 	}
 	if (*from && *to) { // if we succeeded in deriving both the from- and to- statuses
-		status = new FilterType(from, to);
+		status = new FilterType(from, to, SUFFIX_LATCH);
 		status = tree;
 	}
 	GET_STATUS_FOOTER;
@@ -780,7 +780,7 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
 	if (*conscn == TOKEN_LSQUARE) {
-		status = new FilterType();
+		status = new FilterType(nullType, nullType, SUFFIX_LATCH);
 	} else if (*conscn == TOKEN_NonRetFilterHeader) {
 		status = getStatusFilterHeader(conscn, inStatus);
 	}
@@ -1523,7 +1523,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	}
 	// if we succeeded in deriving an output type, return the mapping of the imput type to the output type
 	if (outStatus) {
-		status = new FilterType(inStatus, outStatus);
+		status = new FilterType(inStatus, outStatus, SUFFIX_LATCH);
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1555,7 +1555,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
-				tree->status = new FilterType(inStatus);
+				tree->status = new FilterType(inStatus, nullType, SUFFIX_LATCH);
 				// then, verify types for the declaration sub-block
 				status = getStatusNonEmptyTerms(declarationSub, inStatus);
 				// delete the temporary filter type

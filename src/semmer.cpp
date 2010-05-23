@@ -1531,8 +1531,8 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// check if this is a recursive invocation
-	if (tree->status.retType != NULL) { // if we previously logged a recursion alert here (and we don't have a memoized type to return), flag an ill-formed recursion error
-		tree->status.retType = NULL; // fix up the retType to serve its original purpose
+	Type *&fakeRetType = tree->status.retType;
+	if (fakeRetType != NULL) { // if we previously logged a recursion alert here (and we don't have a memoized type to return), flag an ill-formed recursion error
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
@@ -1541,7 +1541,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node &&
 				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter))) { // only Objects and Filters are exempt
-			tree->status.retType = errType; // log a recursion alert
+			fakeRetType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
 		if (declarationSub != NULL) { // if it's a non-import declaration
@@ -1565,6 +1565,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			status = nullType;
 		}
 	}
+	fakeRetType = NULL; // fix up the retType to serve its original purpose
 	GET_STATUS_FOOTER;
 }
 

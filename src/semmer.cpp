@@ -713,7 +713,6 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	bool pipeTypesValid = true;
 	TypeStatus curStatus = inStatus;
-	curStatus.retType = NULL; // start out not knowing what Type this block is supposed to return
 	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		// try to get a type for this pipe
 		TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
@@ -758,13 +757,12 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
 	fakeType = new FilterType(nullType, nullType, SUFFIX_LATCH);
-	TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
+	TypeStatus startStatus = inStatus; // the status that we're going to feed into the Block subnode derivation
+	startStatus.retType = NULL; // make no initial presuppositions about what type the Block should return
 	// derive the declared type of the filter
 	Tree *filterCur = tree->child; // Block or FilterHeader
 	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
 		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)inStatus.type) : new TypeList(inStatus.type);
-		// use the input status as a base, since there is no explicit parameter list
-		startStatus = inStatus;
 	} else if (*filterCur == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
 		TypeStatus tempStatus = getStatusFilterHeader(filterCur, inStatus); // derive the (possibly recursive) type of the filter header
 		if (*tempStatus) { // if we successfully derived a type for the header
@@ -783,8 +781,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully derived a type for the definition Block, check that the Block returns the type that the header says it should
-			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match
-				status = blockStatus;
+			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match, log the header as the return status
+				status = fakeType;
 			} else { // else if the header and Block don't match
 				Token curToken = filterCur->child->t; // LCURLY
 				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<((FilterType *)(blockStatus.type))->to);
@@ -799,13 +797,33 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// reports errors
 TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
 	if (conscn == NULL || *conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
-		status = new FilterType(nullType, nullType, SUFFIX_LATCH);
+		status = TypeStatus(new FilterType(nullType, nullType, SUFFIX_LATCH), inStatus);
 	} else if (*conscn == TOKEN_NonRetFilterHeader) {
-		status = getStatusFilterHeader(conscn, inStatus);
+		TypeStatus headerStatus = getStatusFilterHeader(conscn, inStatus);
+		if (*headerStatus) { // if we managed to derive a type for the header
+			// fake a type for this node in order to allow for recursion in the upcoming Block
+			Type *&fakeType = tree->status.type;
+			fakeType = headerStatus.type;
+			// verify the constructor definition Block
+			Tree *block = conscn->next; // Block
+			TypeStatus startStatus = inStatus;
+			startStatus.retType = errType; // ensure that the Block does not return anything
+			TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
+			if (*blockStatus) { // if we successfully derived a type for the definition Block, log the header as the return status
+				status = headerStatus;
+			} else { // else if we failed to derive a type for the Block
+				delete fakeType; // delete the fake type
+				fakeType = errType;
+			}
+		} else { // else if we failed to derive a type for the header, flag an error
+			Token curToken = conscn->child->t; // LSQUARE
+			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve constructor's header type");
+		}
 	}
 	GET_STATUS_FOOTER;
 }

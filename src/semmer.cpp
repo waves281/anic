@@ -1525,26 +1525,41 @@ TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// scan the pipe left to right
-	Tree *curTerm = tree->child; // Term
-	TypeStatus outStatus;
 	TypeStatus curStatus = inStatus;
-	while (curTerm != NULL) {
-		outStatus = getStatusTerm(curTerm, curStatus);
-		if (*outStatus) { // if we found a proper typing for this term, log it
-			curStatus = outStatus;
-		} else { // otherwise, if we were unable to assign a type to the term, flag an error
+	Tree *curTerm;
+	Tree *prevTerm;
+	for (curTerm = prevTerm = tree->child; curTerm != NULL; prevTerm = curTerm, curTerm = curTerm->next->child) {
+		// derive a type for the next term in the sequence
+		TypeStatus nextTermStatus = getStatusTerm(curTerm, curStatus);
+		if (*nextTermStatus) { // if we managed to derive a type for this term
+			// derive a type for the flow of the current type into the next term in the sequence
+			Type *flowResult = (*curStatus , *nextTermStatus);
+			if (*flowResult) { // if the type flow is valid, log it as the current status
+				curStatus = TypeStatus(flowResult, nextTermStatus);
+			} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
+				curStatus = nextTermStatus;
+			} else { // else if the type flow is not valid and the incoming type is not null, flag an error
+				Token curToken = curTerm->t; // Term
+				Token prevToken = prevTerm->t; // Term
+				semmerError(curToken.fileName,curToken.row,curToken.col,"term does not accept incoming type");
+				semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
+				// short-circuit the derivation for this NonEmptyTerms
+				curStatus = errType;
+				break;
+			}
+		} else { // otherwise, if we failed to derive a type for this term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<curStatus<<")");
 			// short-circuit the derivation for this NonEmptyTerms
+			curStatus = errType;
 			break;
 		}
-		// advance
-		curTerm = curTerm->next->child; // Term or NULL
 	}
 	// if we succeeded in deriving an output type, return it
-	if (*outStatus) {
-		status = outStatus;
+	if (*curStatus) {
+		status = curStatus;
 	}
 	GET_STATUS_FOOTER;
 }

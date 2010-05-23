@@ -186,7 +186,17 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		SymbolTable *consDef = new SymbolTable(KIND_BLOCK, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
-// KOL need to add logic for extracting constructor parameters
+		// link in the arguments of this constructor, if any
+		Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
+		if (*conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this constructor
+			Tree *pl = conscn->child->next; // ParamList
+			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
+				// allocate the new parameter definition node
+				SymbolTable *paramDef = new SymbolTable(KIND_USR, param->child->next->t.s, param);
+				// ... and link it into the constructor definition node
+				*consDef *= paramDef;
+			}
+		}
 		// recurse
 		buildSt(tree->child, consDef, importList); // child of Constructor
 		buildSt(tree->next, st, importList); // right

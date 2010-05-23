@@ -183,7 +183,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
 		// allocate the new constructor definition node
-		SymbolTable *consDef = new SymbolTable(KIND_USR, CONSTRUCTOR_NODE_STRING, tree);
+		SymbolTable *consDef = new SymbolTable(KIND_BLOCK, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
 // KOL need to add logic for extracting constructor parameters
@@ -413,8 +413,6 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
 		status = getStatusParam(tree, inStatus); // Param
-	} else if (*tree == TOKEN_Constructor) { // else if the symbol was defined as a Constructor
-		status = getStatusConstructor(tree, inStatus); // Constructor
 	}
 	GET_STATUS_FOOTER;
 }

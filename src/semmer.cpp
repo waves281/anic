@@ -1540,7 +1540,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		// if the sub-node is not recursion-safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node &&
-				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter))) { // only Objects and Filters as exempt
+				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter))) { // only Objects and Filters are exempt
 			tree->status.retType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation

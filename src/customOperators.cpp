@@ -13,10 +13,12 @@ void printDefs(SymbolTable *st, unsigned int depth) {
 	}
 	cout << '\t';
 	for (unsigned int i = 0; i < depth; i++) {
-		if (i < (depth-1)) {
-			cout << '|';
-		} else {
-			cout << '-';
+		if (i < (depth-2)) {
+			cout << "| ";
+		} else if (i == (depth-2)) {
+			cout << "|-";
+		} else if (i == (depth-1)) {
+			cout << "--";
 		}
 	}
 	if (st->id != BLOCK_NODE_STRING) {

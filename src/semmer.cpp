@@ -996,7 +996,12 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				bool failed = false;
 				Tree *cur;
 				for(cur = otcn->child; cur != NULL && *cur == TOKEN_ConstructorType; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a ConstructorType
-					TypeStatus consStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
+					TypeStatus consStatus;
+					if (cur->child->next == NULL || cur->child->next->next == NULL) { // if it's an implicitly null constructor, log it as such
+						consStatus = TypeStatus(new FilterType(nullType, nullType, SUFFIX_LATCH), inStatus);
+					} else { // else if it's an explicitly described constructor, get its type from the subnode
+						consStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList
+					}
 					if (*consStatus) { // if we successfully derived a type for this constructor
 						// check if there's already a constructor of this type
 						vector<TypeList *>::iterator iter1;

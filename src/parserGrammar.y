@@ -281,7 +281,9 @@ ObjectTypeList : ConstructorType
 	| ConstructorType COMMA ObjectTypeList
 	| MemberList
 	;
-ConstructorType : EQUALS LSQUARE TypeList RSQUARE
+ConstructorType : EQUALS
+	| EQUALS LSQUARE RSQUARE
+	| EQUALS LSQUARE TypeList RSQUARE
 	;
 MemberList : MemberType
 	| MemberType COMMA MemberList

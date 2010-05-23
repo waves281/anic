@@ -21,14 +21,14 @@ void printDefs(SymbolTable *st, int depth) {
 			cout << "--";
 		}
 	}
-	if (st->id != BLOCK_NODE_STRING) {
+	if (st->kind != KIND_BLOCK) {
 		cout << st->id;
 		Type *defType = st->defSite->status.type;
 		if (defType != NULL) {
 			cout << " : " << defType;
 		}
 	} else {
-		cout << "{}";
+		cout << st->id;
 	}
 	cout << '\n';
 	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {

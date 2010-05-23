@@ -44,7 +44,7 @@ SymbolTable &SymbolTable::operator=(SymbolTable &st) {
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
-	if (st != NULL && st->id[0] != '_' && st->id[0] != '=') { // if this is not a special system-level binding
+	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_USR) && st->id[0] != '=') { // if this is not a special system-level binding
 		// per-symbol loop
 		for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 			if ((*childIter)->id == st->id) { // if we've found a conflict
@@ -166,19 +166,12 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// parse out the header's parameter declarations and add them to the st
 		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
 		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
-			Tree *param = pl->child; // Param
-			for (;;) { // per-param loop
+			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
 				SymbolTable *paramDef = new SymbolTable(KIND_USR, param->child->next->t.s, param);
 				// ... and link it into the filter definition node
 				*filterDef *= paramDef;
-				// advance
-				if (param->next != NULL) {
-					param = param->next->next->child; // Param
-				} else {
-					break;
-				}
-			} // per-param loop
+			}
 		} // if there is a parameter list to process
 		// recurse
 		buildSt(tree->child, filterDef, importList); // child of Filter
@@ -287,7 +280,7 @@ SymbolTable *bindId(string &id, SymbolTable *env, const TypeStatus &inStatus = T
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
 					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
-							if ((*blockIter)->id[0] != '_' && (*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
+							if (((*blockIter)->kind == KIND_STD || (*blockIter)->kind == KIND_USR) && (*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
 								match = *blockIter;
 								goto matchOK;
 							}
@@ -364,7 +357,8 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				// per-parent's children loop (parent must exist, since the root is a block st node)
 				vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 				while (childIter != (*importIter)->parent->children.end()) {
-					if ((*childIter)->id[0] != '_' && (*childIter)->id == importPathTip) { // if there's a conflict
+					// LOL need to check for type conflicts in constructors
+					if (((*childIter)->kind == KIND_STD || (*childIter)->kind == KIND_USR) && (*childIter)->id[0] != '=' && (*childIter)->id == importPathTip) { // if there's a conflict
 						Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
 						Token prevDefToken;
 						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol

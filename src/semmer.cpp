@@ -183,11 +183,11 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
 		// allocate the new constructor definition node
-		SymbolTable *consDef = new SymbolTable(KIND_BLOCK, CONSTRUCTOR_NODE_STRING, tree);
+		SymbolTable *consDef = new SymbolTable(KIND_USR, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this constructor, if any
-		Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
+		Tree *conscn = tree->child->next; // SEMICOLON, LSQUARE, or NonRetFilterHeader
 		if (*conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this constructor
 			Tree *pl = conscn->child->next; // ParamList
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
@@ -423,6 +423,8 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
 		status = getStatusParam(tree, inStatus); // Param
+	} else if (*tree == TOKEN_Constructor) { // else if the symbol was defined as a Constructor
+		status = getStatusConstructor(tree, inStatus); // Constructor
 	}
 	GET_STATUS_FOOTER;
 }
@@ -799,8 +801,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
-	if (*conscn == TOKEN_LSQUARE) {
+	Tree *conscn = tree->child->next; // SEMICOLON, LSQUARE, or NonRetFilterHeader
+	if (*conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
 		status = new FilterType(nullType, nullType, SUFFIX_LATCH);
 	} else if (*conscn == TOKEN_NonRetFilterHeader) {
 		status = getStatusFilterHeader(conscn, inStatus);

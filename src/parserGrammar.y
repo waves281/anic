@@ -298,7 +298,8 @@ Object : LCURLY Constructors Pipes RCURLY
 Constructors : Constructor
 	| Constructor Constructors
 	;
-Constructor : EQUALS LSQUARE RSQUARE SEMICOLON
+Constructor : EQUALS SEMICOLON
+	| EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;

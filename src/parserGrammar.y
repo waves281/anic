@@ -293,15 +293,23 @@ TypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
-Object : LCURLY Constructors Pipes RCURLY
+Object : LCURLY Constructors NonEmptyPipes RCURLY
+	| LCURLY OnlyConstructors RCURLY
 	;
 Constructors : Constructor
 	| Constructor Constructors
+	;
+OnlyConstructors : Constructor
+	| Constructor Constructors
+	| LastConstructor
 	;
 Constructor : EQUALS SEMICOLON
 	| EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
+	;
+LastConstructor : EQUALS
+	| EQUALS LSQUARE RSQUARE
 	;
 Access : SingleAccessor Node
 	| MultiAccessor Node

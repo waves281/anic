@@ -181,14 +181,14 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			delete filterDef;
 		}
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
+	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // if it's a Constructor-style node
 		// allocate the new constructor definition node
 		SymbolTable *consDef = new SymbolTable(KIND_USR, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this constructor, if any
-		Tree *conscn = tree->child->next; // SEMICOLON, LSQUARE, or NonRetFilterHeader
-		if (*conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this constructor
+		Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
+		if (conscn != NULL && *conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this constructor
 			Tree *pl = conscn->child->next; // ParamList
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
@@ -423,7 +423,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
 		status = getStatusParam(tree, inStatus); // Param
-	} else if (*tree == TOKEN_Constructor) { // else if the symbol was defined as a Constructor
+	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // else if the symbol was defined as a Constructor-style node
 		status = getStatusConstructor(tree, inStatus); // Constructor
 	}
 	GET_STATUS_FOOTER;
@@ -801,8 +801,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *conscn = tree->child->next; // SEMICOLON, LSQUARE, or NonRetFilterHeader
-	if (*conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
+	Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
+	if (conscn == NULL || *conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
 		status = new FilterType(nullType, nullType, SUFFIX_LATCH);
 	} else if (*conscn == TOKEN_NonRetFilterHeader) {
 		status = getStatusFilterHeader(conscn, inStatus);
@@ -850,8 +850,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<string> memberNames;
 	vector<Type *> memberTypes;
 	vector<Token> memberTokens;
-	Tree *pipes = conss->next; // Pipes
-	for (Tree *pipe = pipes->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
+	Tree *pipes = conss->next; // NonEmptyPipes or RCURLY
+	for (Tree *pipe = (*pipes == TOKEN_NonEmptyPipes) ? pipes->child : NULL; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
 		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
 			// check for naming conflicts with this member

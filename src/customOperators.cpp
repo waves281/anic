@@ -7,12 +7,12 @@ ostream &operator<< (ostream &os, Token &t) {
 	return os;
 }
 
-void printDefs(SymbolTable *st, unsigned int depth) {
+void printDefs(SymbolTable *st, int depth) {
 	if (st == NULL) {
 		return;
 	}
 	cout << '\t';
-	for (unsigned int i = 0; i < depth; i++) {
+	for (int i = 0; i < depth; i++) {
 		if (i < (depth-2)) {
 			cout << "| ";
 		} else if (i == (depth-2)) {

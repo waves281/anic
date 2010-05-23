@@ -782,7 +782,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else { // else if we derived an erroneous type for the header
 		Token curToken = tree->child->child->t; // LCURLY or LSQUARE
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header type");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header's type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;

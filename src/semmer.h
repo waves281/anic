@@ -14,9 +14,7 @@
 #define KIND_STD 1
 #define KIND_IMPORT 2
 #define KIND_BLOCK 3
-#define KIND_DECL 4
-#define KIND_PARAM 5
-#define KIND_CONS 6
+#define KIND_USR 4
 
 class SymbolTable {
 	public:

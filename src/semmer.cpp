@@ -151,30 +151,27 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// recursive cases
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
-		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
+		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, (*tree == TOKEN_Block) ? BLOCK_NODE_STRING : OBJECT_NODE_STRING, tree);
 		// recurse
-		buildSt(tree->child, blockDef, importList); // child of Block
+		buildSt(tree->child, blockDef, importList); // child of Block or Object
 		if (blockDef->children.size() > 0) { // if there are any subnodes, link the block node into the main trunk
 			*st *= blockDef;
-		} else { // else if there are no subnodes, don't bother linkinf the block node into the main trunk
+		} else { // else if there are no subnodes, don't bother linking the block node into the main trunk
 			delete blockDef;
 		}
-	} else if (*tree == TOKEN_FilterHeader || *tree == TOKEN_NonRetFilterHeader) { // if it's a filter header node
-		// locate the corresponding block and create an st node for it
-		Tree *block = tree->next; // Block
-		// allocate the new block definition node
-		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, block);
-		// finally, link the block node into the main trunk
-		*st *= blockDef;
+		buildSt(tree->next, st, importList); // right
+	} else if (*tree == TOKEN_Filter) { // if it's a filter node
+		// allocate the new filter definition node
+		SymbolTable *filterDef = new SymbolTable(KIND_BLOCK, FILTER_NODE_STRING, tree);
 		// parse out the header's parameter declarations and add them to the st
-		Tree *pl = tree->child->next; // ParamList or RetList
-		if (*pl == TOKEN_ParamList) { // if there is a parameter list to process
+		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
+		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
 			Tree *param = pl->child; // Param
 			for (;;) { // per-param loop
 				// allocate the new parameter definition node
-				SymbolTable *paramDef = new SymbolTable(KIND_PARAM, param->child->next->t.s, param);
-				// ... and link it into the block node
-				*blockDef *= paramDef;
+				SymbolTable *paramDef = new SymbolTable(KIND_USR, param->child->next->t.s, param);
+				// ... and link it into the filter definition node
+				*filterDef *= paramDef;
 				// advance
 				if (param->next != NULL) {
 					param = param->next->next->child; // Param
@@ -184,31 +181,40 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			} // per-param loop
 		} // if there is a parameter list to process
 		// recurse
-		buildSt(block->child, blockDef, importList); // child of Block
+		buildSt(tree->child, filterDef, importList); // child of Filter
+		if (filterDef->children.size() > 0) { // if there are any subnodes, link the filter node into the main trunk
+			*st *= filterDef;
+		} else { // else if there are no subnodes, don't bother linking the filter node into the main trunk
+			delete filterDef;
+		}
+		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor) { // if it's a constructor node
-		// allocate the new definition node
-		SymbolTable *newDef = new SymbolTable(KIND_CONS, CONSTRUCTOR_NODE_STRING, tree);
-		// ... and link it in
-		*st *= newDef;
+		// allocate the new constructor definition node
+		SymbolTable *consDef = new SymbolTable(KIND_USR, CONSTRUCTOR_NODE_STRING, tree);
+		// .. and link it in
+		*st *= consDef;
+// KOL need to add logic for extracting constructor parameters
 		// recurse
-		buildSt(tree->child, newDef, importList); // child of Constructor
+		buildSt(tree->child, consDef, importList); // child of Constructor
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if it's a Declaration-style node
 		Tree *bnc = tree->child->next;
 		if (*bnc == TOKEN_EQUALS) { // standard static declaration
-			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_DECL, tree->child->t.s, tree);
+			// allocate the new declaration node
+			SymbolTable *newDef = new SymbolTable(KIND_USR, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
+			buildSt(tree->next, st, importList); // right
 		} else if (*bnc == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_DECL, tree->child->t.s, tree);
+			SymbolTable *newDef = new SymbolTable(KIND_USR, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
+			buildSt(tree->next, st, importList); // right
 		} else if (*bnc == TOKEN_SuffixedIdentifier) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
@@ -218,6 +224,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			importList.push_back(newDef);
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
+			buildSt(tree->next, st, importList); // right
 		}
 	} else { // else if it's not a declaration node
 		// recurse normally
@@ -396,14 +403,12 @@ void subImportDecls(vector<SymbolTable *> importList) {
 
 // derives the types of all user-defined nodes in the passed-in SymbolTable
 void typeSt(SymbolTable *root) {
-	if (root->kind == KIND_DECL || root->kind == KIND_PARAM || root->kind == KIND_CONS || root->kind == KIND_BLOCK) { // if it's a user-defined node or a block
-		if (root->kind != KIND_BLOCK) { // if it's not a block node, derive its type
-			getStatusSymbolTable(root);
-		}
-		// recurse on this node's children
-		for (vector<SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
-			typeSt(*iter);
-		}
+	if (root->kind == KIND_USR) { // if it's a user-defined node, derive its type
+		getStatusSymbolTable(root);
+	}
+	// recurse on this node's children
+	for (vector<SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
+		typeSt(*iter);
 	}
 }
 
@@ -414,6 +419,8 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 		status = getStatusDeclaration(tree, inStatus);
 	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
 		status = getStatusParam(tree, inStatus); // Param
+	} else if (*tree == TOKEN_Constructor) { // else if the symbol was defined as a Constructor
+		status = getStatusConstructor(tree, inStatus); // Constructor
 	}
 	GET_STATUS_FOOTER;
 }
@@ -882,7 +889,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
+TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *typeSuffix = tree->child->next; // TypeSuffix
 	// derive the suffix and depth first, since we'll need to know then to construct the Type object
@@ -943,7 +950,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) { // KOL
 	if (!failed) { // if all of the suffixes were valid
 		Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
 		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
-			TypeStatus idStatus = getStatusSuffixedIdentifier(typec);
+			TypeStatus idStatus = getStatusSuffixedIdentifier(typec, inStatus); // NonArraySuffixedIdentifier
 			if (*idStatus) {
 				if (idStatus->suffix == SUFFIX_CONSTANT || idStatus->suffix == SUFFIX_LATCH) { // if the suffix is valid for instantiating a node out of
 					idStatus->suffix = suffixVal;
@@ -1078,6 +1085,7 @@ TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// reports errors
 TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// check if this is a recursive invocation
@@ -1109,7 +1117,6 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (!failed) {
 		status = new TypeList(list);
-		status = tree;
 	}
 	GET_STATUS_FOOTER;
 }

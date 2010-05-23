@@ -152,10 +152,13 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
 		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING, tree);
-		// finally, link the block node into the main trunk
-		*st *= blockDef;
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block
+		if (blockDef->children.size() > 0) { // if there are any subnodes, link the block node into the main trunk
+			*st *= blockDef;
+		} else { // else if there are no subnodes, don't bother linkinf the block node into the main trunk
+			delete blockDef;
+		}
 	} else if (*tree == TOKEN_FilterHeader || *tree == TOKEN_NonRetFilterHeader) { // if it's a filter header node
 		// locate the corresponding block and create an st node for it
 		Tree *block = tree->next; // Block

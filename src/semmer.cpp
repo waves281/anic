@@ -186,7 +186,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		SymbolTable *consDef = new SymbolTable(KIND_BLOCK, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
-		// link in the arguments of this constructor, if any
+		// link in the parameters of this constructor, if any
 		Tree *conscn = tree->child->next; // LSQUARE or NonRetFilterHeader
 		if (*conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this constructor
 			Tree *pl = conscn->child->next; // ParamList

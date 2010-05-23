@@ -1531,22 +1531,20 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	while (curTerm != NULL) {
 		outStatus = getStatusTerm(curTerm, curStatus);
 		if (*outStatus) { // if we found a proper typing for this term, log it
-			curTerm->status = outStatus;
 			curStatus = outStatus;
 		} else { // otherwise, if we were unable to assign a type to the term, flag an error
 			Token curToken = curTerm->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve term's output type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<curStatus<<")");
-			// log the fact that typing failed
-			outStatus.type = NULL;
+			// short-circuit the derivation for this NonEmptyTerms
 			break;
 		}
 		// advance
 		curTerm = curTerm->next->child; // Term or NULL
 	}
-	// if we succeeded in deriving an output type, return the mapping of the imput type to the output type
-	if (outStatus) {
-		status = new FilterType(inStatus, outStatus, SUFFIX_LATCH);
+	// if we succeeded in deriving an output type, return it
+	if (*outStatus) {
+		status = outStatus;
 	}
 	GET_STATUS_FOOTER;
 }

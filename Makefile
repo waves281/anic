@@ -21,7 +21,7 @@ PRINT_VERSION = @echo Version stamp is
 CORE_DEPENDENCIES = Makefile \
 	bin/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
 	src/mainDefs.h src/constantDefs.h src/system.h src/customOperators.h \
-	tmp/lexerStruct.h tmp/lexerStruct.o tmp/parserStruct.h \
+	tmp/lexerStruct.o tmp/parserStruct.h \
 	src/lexer.h src/parser.h src/types.h src/semmer.h \
 	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp
 
@@ -170,10 +170,12 @@ $(MAN_PAGE).gz: man/$(TARGET).1
 
 # LEXER
 
-tmp/lexerStruct.h tmp/lexerStruct.o: bin/lexerStructGen src/lexerTable.txt src/lexer.h
+tmp/lexerStruct.cpp: bin/lexerStructGen src/lexerTable.txt src/lexer.h
 	@echo Generating lexer structures...
 	@mkdir -p tmp
 	@./bin/lexerStructGen
+
+tmp/lexerStruct.o: tmp/lexerStruct.cpp
 	@echo Compiling lexer structure object...
 	@$(CXX) tmp/lexerStruct.cpp $(CFLAGS) -c -o tmp/lexerStruct.o
 
@@ -184,12 +186,12 @@ bin/lexerStructGen: bld/lexerStructGen.cpp src/mainDefs.h src/constantDefs.h
 
 # PARSER
 
-tmp/parserStruct.h: bin/parserStructGen tmp/parserTable.txt tmp/lexerStruct.h src/parserNodeStruct.h
+tmp/parserStruct.h: bin/parserStructGen tmp/parserTable.txt tmp/lexerStruct.o src/parserNodeStruct.h
 	@echo Generating parser structures...
 	@mkdir -p tmp
 	@./bin/parserStructGen
 
-bin/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.h tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
+bin/parserStructGen: bld/parserStructGen.cpp tmp/lexerStruct.o src/parserNodeStruct.h src/mainDefs.h src/constantDefs.h
 	@echo Building parser structure generator...
 	@mkdir -p bin
 	@$(CXX) bld/parserStructGen.cpp tmp/lexerStruct.o -o bin/parserStructGen

@@ -17,7 +17,7 @@ string Type::suffixString() const {
 	} else if (suffix == SUFFIX_LIST) {
 		acc = "[]";
 	} else if (suffix == SUFFIX_STREAM) {
-		acc = "\\[]";
+		acc = "\\\\";
 	} else if (suffix == SUFFIX_ARRAY) {
 		acc = "[.]";
 		for (int i = 1; i < depth; i++) {

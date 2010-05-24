@@ -259,7 +259,7 @@ Type : NonArraySuffixedIdentifier TypeSuffix
 TypeSuffix :
 	| SLASH
 	| LSQUARE RSQUARE
-	| SLASH LSQUARE RSQUARE
+	| DSLASH
 	| ArrayTypeSuffix
 	| PoolTypeSuffix
 	;

@@ -924,7 +924,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		suffixVal = SUFFIX_LATCH;
 	} else if (*(typeSuffix->child) == TOKEN_LSQUARE) {
 		suffixVal = SUFFIX_LIST;
-	} else if (*(typeSuffix->child) == TOKEN_SLASH && *(typeSuffix->child->next) == TOKEN_LSQUARE) {
+	} else if (*(typeSuffix->child) == TOKEN_DSLASH) {
 		suffixVal = SUFFIX_STREAM;
 	} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
 		suffixVal = SUFFIX_ARRAY;

@@ -497,7 +497,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 			if ((*subStatus).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
 				// copy the Type so that our mutations don't propagate to the SuffixedIdentifier
 				TypeStatus mutableSubStatus = subStatus;
-				mutableSubStatus.type = subStatus.type->copy();
+				mutableSubStatus.type = mutableSubStatus.type->copy();
 				// next, make sure the subtype is compatible with the accessor
 				Tree *accessorc = primaryc->child; // SLASH, SSLASH, or ASLASH
 				if (*accessorc == TOKEN_SLASH) {
@@ -1221,24 +1221,8 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
 		TypeStatus tstStatus = getStatusTypedStaticTerm(stc, inStatus);
-		if (*tstStatus) { // if we managed to derive a type for the subnode
-			Tree *stccc = stc->child->child; // SuffixedIdentifier, among other things; guaranteed non-NULL
-			if (*stccc == TOKEN_SuffixedIdentifier) { // if it's a node that requires constantization, constantize it
-				// copy the Type so that our mutations don't propagate to the Node
-				TypeStatus mutableTstStatus = tstStatus;
-				mutableTstStatus.type = tstStatus.type->copy();
-				// check to make sure that the TypedStaticTerm can be constantized, since this isn't an Access
-				if (mutableTstStatus.type->constantize()) { // if the TypedStaticTerm can be constantized, log it as the resulting status
-					status = mutableTstStatus;
-				} else { // else if the TypedStaticTerm cannot be constantized, flag an error
-					Token curToken = stc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<tstStatus<<")");
-					mutableTstStatus.type->erase();
-				}
-			} else { // else if it's a constantization-exempt node, simply log the status and proceed
-				status = tstStatus;
-			}
+		if (*tstStatus) { // if we managed to derive a type for the subnode, log it as the return status
+			status = tstStatus;
 		}
 	} else if (*stc == TOKEN_Access) {
 		// first, derive the Type of the Node that we're acting upon
@@ -1246,7 +1230,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*nodeStatus) { // if we managed to derive a type for the subnode
 			// copy the Type so that our mutations don't propagate to the Node
 			TypeStatus mutableNodeStatus = nodeStatus;
-			mutableNodeStatus.type = nodeStatus.type->copy();
+			mutableNodeStatus.type = mutableNodeStatus.type->copy();
 			// finally, do the mutation and see check it it worked
 			Tree *accessorc = stc->child->child; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			if (*accessorc == TOKEN_SLASH) {
@@ -1555,25 +1539,46 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 		// derive a type for the next term in the sequence
 		TypeStatus nextTermStatus = getStatusTerm(curTerm, curStatus);
 		if (*nextTermStatus) { // if we managed to derive a type for this term
-			if (true) { // if it's a flow-through Term KOL
+			if (*(curTerm->child->child) == TOKEN_SimpleTerm &&
+					*(curTerm->child->child->child) == TOKEN_DynamicTerm &&
+					*(curTerm->child->child->child->child->child) == TOKEN_TypedStaticTerm &&
+					*(curTerm->child->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
 				// derive a type for the flow of the current type into the next term in the sequence
 				Type *flowResult = (*curStatus , *nextTermStatus);
 				if (*flowResult) { // if the type flow is valid, log it as the current status
 					curStatus = TypeStatus(flowResult, nextTermStatus);
 				} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
-					curStatus = nextTermStatus;
+					// but first, check if the term needs to be constantized
+					if (*(curTerm->child->child) == TOKEN_SimpleTerm &&
+							*(curTerm->child->child->child) == TOKEN_DynamicTerm &&
+							*(curTerm->child->child->child->child->child) == TOKEN_TypedStaticTerm &&
+							*(curTerm->child->child->child->child->child->child->child) == TOKEN_SuffixedIdentifier) { // if the Term needs to be constantized
+						// copy the Type so that our mutations don't propagate to the Term
+						TypeStatus mutableNextTermStatus = nextTermStatus;
+						mutableNextTermStatus.type = mutableNextTermStatus.type->copy();
+						if (mutableNextTermStatus.type->constantize()) { // if the TypedStaticTerm can be constantized, log it as the resulting status
+							curStatus = mutableNextTermStatus;
+						} else { // else if the TypedStaticTerm cannot be constantized, flag an error
+							Token curToken = curTerm->child->child->child->child->child->child->child->t; // SuffixedIdentifier
+							semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nextTermStatus<<")");
+							mutableNextTermStatus.type->erase();
+						}
+					} else { // else if the Term doesn't need to be constantized
+						curStatus = nextTermStatus;
+					}
 				} else { // else if the type flow is not valid and the incoming type is not null, flag an error
 					Token curToken = curTerm->t; // Term
 					Token prevToken = prevTerm->t; // Term
 					semmerError(curToken.fileName,curToken.row,curToken.col,"term does not accept incoming type");
 					semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
-					// short-circuit the derivation for this NonEmptyTerms
+					// short-circuit the derivation of this NonEmptyTerms
 					curStatus = errType;
 					break;
 				}
-			} else { // else if it's not a flow-through Term
-				// KOL
+			} else { // else if it's not a flow-through Term, log the next term's status as the current one
+				status = nextTermStatus;
 			}
 		} else { // otherwise, if we failed to derive a type for this term, flag an error
 			Token curToken = curTerm->t;

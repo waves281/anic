@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 	bool tHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
-			if (argv[i][1] == 'o' && !oHandled) { // output file name
+			if (argv[i][1] == 'o' && argv[i][2] == '\0' && !oHandled) { // output file name
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-o expected file name argument");
 					die();
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 				outFileName = argv[i];
 				// flag this option as handled
 				oHandled = true;
-			} else if (argv[i][1] == 'p' && !pHandled) { // optimization level option
+			} else if (argv[i][1] == 'p' && argv[i][2] == '\0' && !pHandled) { // optimization level option
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-p expected optimization level argument");
 					die();
@@ -75,11 +75,11 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				pHandled = true;
-			} else if (argv[i][1] == 's' && !vHandled && !sHandled) { // silent compilation option
+			} else if (argv[i][1] == 's' && argv[i][2] == '\0' && !vHandled && !sHandled) { // silent compilation option
 				silentMode = true;
 				// flag this option as handled
 				sHandled = true;
-			} else if (argv[i][1] == 'v' && !vHandled && !sHandled) { // verbose output option
+			} else if (argv[i][1] == 'v' && argv[i][2] == '\0' && !vHandled && !sHandled) { // verbose output option
 				verboseOutput = true;
 				VERBOSE (
 					printNotice("verbose output enabled");
@@ -87,11 +87,11 @@ int main(int argc, char **argv) {
 				)
 				// flag this option as handled
 				vHandled = true;
-			} else if (argv[i][1] == 'e' && !eHandled && !sHandled) {
+			} else if (argv[i][1] == 'e' && argv[i][2] == '\0' && !eHandled && !sHandled) {
 				eventuallyGiveUp = false;
 				// flag this option as handled
 				eHandled = true;
-			} else if (argv[i][1] == 't' && !tHandled) {
+			} else if (argv[i][1] == 't' && argv[i][2] == '\0' && !tHandled) {
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-t expected tab modulus argument");
 					die();
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				tHandled = true;
-			} else if (argv[i][1] == 'h' && argc == 2) {
+			} else if (argv[i][1] == 'h' && argv[i][2] == '\0' && argc == 2) {
 				// test to see if a command interpreter is available
 				int systemRetVal = system(NULL);
 				if (!systemRetVal) {

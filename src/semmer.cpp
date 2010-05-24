@@ -1168,18 +1168,10 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
-			} else { // else if we couldn't derive a type for the initializer
-				Token curToken = st->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve initializer's type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
 		} else { // else if there is no initializer, simply set the status to be the type
 			status = TypeStatus(instantiation, instantiation);
 		}
-	} else { // else if we couldn't derive a type for the instantiation
-		Token curToken = tree->child->t;
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instantiation type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
 }

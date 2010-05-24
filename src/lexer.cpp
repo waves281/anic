@@ -281,7 +281,11 @@ lexerLoopTop: ;
 								row++;
 								col = 0;
 								goto lexerLoopTop;
-							} else if (c == termChar) { // else if we've found the end of the quote, commit the token and continue with processing
+							} else if (c == termChar) { // else if we've found the end of the quote
+								if (termChar == '\'' && s.size() > 1) { // if this is an overflowing CQUOTE, throw a CQUOTE overflow error
+									lexerError(fileName,rowStart,colStart,"character literal overflow");
+								}
+								// either way, commit the token and continue with processing
 								commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
 								break;
 							}

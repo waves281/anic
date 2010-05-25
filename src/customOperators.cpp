@@ -21,7 +21,7 @@ void printDefs(SymbolTable *st, int depth) {
 			cout << "--";
 		}
 	}
-	if (st->kind != KIND_BLOCK || st->id == FILTER_NODE_STRING) {
+	if (st->kind != KIND_BLOCK) {
 		cout << st->id;
 		Type *defType = st->defSite->status.type;
 		if (defType != NULL) {

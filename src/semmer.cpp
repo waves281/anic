@@ -44,7 +44,7 @@ SymbolTable &SymbolTable::operator=(SymbolTable &st) {
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
-	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_USR) && st->id[0] != '=') { // if this is not a special system-level binding
+	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER)) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
 		for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 			if ((*childIter)->id == st->id) { // if we've found a conflict
@@ -151,7 +151,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// recursive cases
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
-		SymbolTable *blockDef = new SymbolTable(KIND_BLOCK, (*tree == TOKEN_Block) ? BLOCK_NODE_STRING : OBJECT_NODE_STRING, tree);
+		SymbolTable *blockDef = new SymbolTable(KIND_OBJECT, (*tree == TOKEN_Block) ? BLOCK_NODE_STRING : OBJECT_NODE_STRING, tree);
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block or Object
 		if (blockDef->children.size() > 0) { // if there are any subnodes, link the block node into the main trunk
@@ -162,13 +162,13 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Filter) { // if it's a filter node
 		// allocate the new filter definition node
-		SymbolTable *filterDef = new SymbolTable(KIND_BLOCK, FILTER_NODE_STRING, tree);
+		SymbolTable *filterDef = new SymbolTable(KIND_FILTER, FILTER_NODE_STRING, tree);
 		// parse out the header's parameter declarations and add them to the st
 		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
 		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
-				SymbolTable *paramDef = new SymbolTable(KIND_USR, param->child->next->t.s, param);
+				SymbolTable *paramDef = new SymbolTable(KIND_PARAMETER, param->child->next->t.s, param);
 				// ... and link it into the filter definition node
 				*filterDef *= paramDef;
 			}
@@ -183,7 +183,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // if it's a Constructor-style node
 		// allocate the new constructor definition node
-		SymbolTable *consDef = new SymbolTable(KIND_USR, CONSTRUCTOR_NODE_STRING, tree);
+		SymbolTable *consDef = new SymbolTable(KIND_CONSTRUCTOR, CONSTRUCTOR_NODE_STRING, tree);
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this constructor, if any
@@ -192,7 +192,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			Tree *pl = conscn->child->next; // ParamList
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
-				SymbolTable *paramDef = new SymbolTable(KIND_USR, param->child->next->t.s, param);
+				SymbolTable *paramDef = new SymbolTable(KIND_PARAMETER, param->child->next->t.s, param);
 				// ... and link it into the constructor definition node
 				*consDef *= paramDef;
 			}
@@ -204,7 +204,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		Tree *bnc = tree->child->next;
 		if (*bnc == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new declaration node
-			SymbolTable *newDef = new SymbolTable(KIND_USR, tree->child->t.s, tree);
+			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
@@ -212,7 +212,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			buildSt(tree->next, st, importList); // right
 		} else if (*bnc == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_USR, tree->child->t.s, tree);
+			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
 			// ... and link it in
 			*st *= newDef;
 			// recurse
@@ -290,7 +290,10 @@ SymbolTable *bindId(string &id, SymbolTable *env, const TypeStatus &inStatus = T
 					// as a special case, look one block level deeper, since nested defs must be block-delimited
 					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
 						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
-							if (((*blockIter)->kind == KIND_STD || (*blockIter)->kind == KIND_USR) && (*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
+							if (((*blockIter)->kind == KIND_STD ||
+									(*blockIter)->kind == KIND_DECLARATION ||
+									(*blockIter)->kind == KIND_PARAMETER) &&
+									(*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
 								match = *blockIter;
 								goto matchOK;
 							}
@@ -368,7 +371,9 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 				while (childIter != (*importIter)->parent->children.end()) {
 					// LOL need to check for type conflicts in constructors
-					if (((*childIter)->kind == KIND_STD || (*childIter)->kind == KIND_USR) && (*childIter)->id[0] != '=' && (*childIter)->id == importPathTip) { // if there's a conflict
+					if (((*childIter)->kind == KIND_STD ||
+							(*childIter)->kind == KIND_DECLARATION ||
+							(*childIter)->kind == KIND_PARAMETER) && (*childIter)->id == importPathTip) { // if there's a conflict
 						Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
 						Token prevDefToken;
 						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
@@ -405,9 +410,9 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-// derives the types of all user-defined nodes in the passed-in SymbolTable
+// derives the types of all named nodes in the passed-in SymbolTable
 void typeSt(SymbolTable *root) {
-	if (root->kind == KIND_USR) { // if it's a user-defined node, derive its type
+	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_CONSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTable(root);
 	}
 	// recurse on this node's children
@@ -419,11 +424,11 @@ void typeSt(SymbolTable *root) {
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
-	if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if the symbol was defined as a Declaration-style node
+	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
 		status = getStatusDeclaration(tree, inStatus);
-	} else if (*tree == TOKEN_Param) { // else if the symbol was defined as a Param
+	} else if (st->kind == KIND_PARAMETER) { // else if the symbol was defined as a Param-style node
 		status = getStatusParam(tree, inStatus); // Param
-	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // else if the symbol was defined as a Constructor-style node
+	} else if (st->kind == KIND_CONSTRUCTOR) { // else if the symbol was defined as a Constructor-style node
 		status = getStatusConstructor(tree, inStatus); // Constructor
 	}
 	GET_STATUS_FOOTER;
@@ -780,7 +785,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
-		if (*blockStatus) { // if we successfully derived a type for the definition Block, check that the Block returns the type that the header says it should
+		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type violations)
 			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match, log the header as the return status
 				status = fakeType;
 			} else { // else if the header and Block don't match
@@ -1364,8 +1369,10 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<TypeStatus> toStatus; // vector for logging the destination statuses of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
-	Tree *lpCur = tree->child->next->next; // LabeledPipes
-	for (;;) { // per-labeled pipe loop
+	 // LabeledPipes
+	for (Tree *lpCur = tree->child->next->next;
+			lpCur != NULL;
+			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ? lpCur->child->next->next->next : NULL) { // invariant: lpCur is a LabeledPipes
 		Tree *lpc = lpCur->child; // StaticTerm or COLON
 		// if there is a non-default label on this pipe, check its validity
 		if (*lpc == TOKEN_StaticTerm) {
@@ -1384,12 +1391,6 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 		// log the to-type and to-tree of this label
 		toStatus.push_back(to);
 		toTrees.push_back(toTree);
-		// advance
-		if (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) {
-			lpCur = lpCur->child->next->next->next; // LabeledPipes
-		} else {
-			break;
-		}
 	} // per-labeled pipe loop
 	// verify that all of the to-types are the same
 	TypeStatus firstToStatus = toStatus[0];
@@ -1570,7 +1571,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					break;
 				}
 			} else { // else if it's not a flow-through Term, log the next term's status as the current one
-				status = nextTermStatus;
+				curStatus  = nextTermStatus;
 			}
 		} else { // otherwise, if we failed to derive a type for this term, flag an error
 			Token curToken = curTerm->t;

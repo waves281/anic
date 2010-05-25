@@ -237,7 +237,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 }
 
 // chops up the passed in string into its period-delimited components
-vector<string> chopId(string &s) {
+vector<string> chopId(const string &s) {
 	vector<string> retVal;
 	string acc;
 	for (unsigned int i=0; i < s.size(); i++) {
@@ -257,113 +257,80 @@ vector<string> chopId(string &s) {
 	return retVal;
 }
 
-// binds qualified identifiers in the given symtable environment; returns the tail of the binding
-// also, updates id to contain the portion of the identifier that could not be bound
-// returns NULL if no binding whatsoever can be found
-SymbolTable *bindId(string &id, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
-	// base case
-	if (env == NULL) {
-		return NULL;
-	}
-	// recall identifier case
-	if (id[0] == '.' && id[1] == '.') {
-
-		if (inStatus) { // if there is an input type
-			// update id to be the rest of the recall identifier
-			string idRest = "";
-			if (id.length() >= 3) { // if this recall identifier has a rest-part
-				idRest = id.substr(3, id.length()-3); // get the rest of the recall identifier string
+SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
+	vector<string> id = chopId(s); // chop up the input identifier into its components
+	if (id[0] == "..") { // if the identifier begins with a recall
+		return NULL; // KOL
+	} else { // else if it's a regular identifier
+		SymbolTable *latchPoint = NULL;
+		for (SymbolTable *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
+			if ((stCur->kind == KIND_STD ||
+					stCur->kind == KIND_DECLARATION ||
+					stCur->kind == KIND_PARAMETER) &&
+					stCur->id == id[0]) { // if this is a valid latch point, log it and break
+				latchPoint = stCur;
+				break;
+			} else if (stCur->kind == KIND_BLOCK ||
+					stCur->kind == KIND_OBJECT ||
+					stCur->kind == KIND_CONSTRUCTOR ||
+					stCur->kind == KIND_FILTER) { // else if this is a valid basis block, scan its children for a latch point
+				for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
+					if (((*iter)->kind == KIND_STD ||
+							(*iter)->kind == KIND_DECLARATION ||
+							(*iter)->kind == KIND_PARAMETER) &&
+							(*iter)->id == id[0]) { // if this is a valid latch point, log it and break
+						latchPoint = (*iter);
+						break;
+					}
+				}
 			}
-			id = idRest;
-
-			// return the binding of the current input type, since that's what the recall identifier implicitly binds to
-			if (*inStatus == *nullType) { // if the incoming type is null, we can't bind to it, so return an error
-				return NULL;
-			} else { // else if it's any other type, bind to it using its string representation
-// LOL
-				string recString = *inStatus; // statically get the string representation
-				return bindId(recString, env); // statically bind to the specific standard node
-			}
-		} else { // else if there is no input type
-			return NULL;
 		}
-	}
-	// recursive case
-	string tip = idHead(id);
-	string idCur = idTail(id);
-	SymbolTable *stCur = NULL;
-	// scan the current environment's children for a latch point
-	for (vector<SymbolTable *>::iterator latchIter = env->children.begin(); latchIter != env->children.end(); latchIter++) {
-		if ((*latchIter)->id == tip) { // if we've found a latch point
-
-			// verify that the latching holds for the rest of the identifier
-			stCur = *latchIter;
-			while (!idCur.empty()) { // while there's still more of the identifier to match
-
-				// find a static match in the current st node's children
-				SymbolTable *match = NULL;
-				for (vector<SymbolTable *>::iterator stcIter = stCur->children.begin(); stcIter != stCur->children.end(); stcIter++) {
-					string idCurHead = idHead(idCur);
-					if ((*stcIter)->id == idCurHead) { // if the identifiers are the same, we have a match
-						match = *stcIter;
-						goto matchOK;
-
-					// as a special case, look one block level deeper, since nested defs must be block-delimited
-					} else if (stCur->kind != KIND_BLOCK && (*stcIter)->kind == KIND_BLOCK) {
-						for (vector<SymbolTable *>::iterator blockIter = (*stcIter)->children.begin(); blockIter != (*stcIter)->children.end(); blockIter++) {
-							if (((*blockIter)->kind == KIND_STD ||
-									(*blockIter)->kind == KIND_DECLARATION ||
-									(*blockIter)->kind == KIND_PARAMETER) &&
-									(*blockIter)->id == idCurHead) { // if the identifiers are the same, we have a match
-								match = *blockIter;
-								goto matchOK;
-							}
+		if (latchPoint != NULL) { // if we managed to find an initial latch point, verify the rest of the bindind
+			SymbolTable *stCur2 = stCur; // the basis under which we're hoping to bind the current sub-identifier
+			for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
+				bool success = false;
+				if (stCur2->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
+					for (vector<SymbolTable *>::const_iterator iter = stCur2->children.begin(); iter != stCur2->children.end(); iter++) {
+						if ((*iter)->id == id[i]) { // if this child matches the sub-identifier, accept it and proceed deeper into the binding
+							stCur2 = (*iter);
+							success = true;
+							break;
 						}
 					}
-
-				} matchOK: ; // match verification loop
-
-				if (match != NULL) { // if we have a match for this part of the rest
-					// advance to the matched st node
-					stCur = match;
-					// advance to the next token in the id
-					idCur = idTail(idCur);
-				} else { // else if we don't have a match for this part of the rest
-					break;
+				} else { // otherwise if it's not a standard system-level binding, we must get at its subidentifiers through its type; thus, begin by deriving it
+					Type *stCur2Type = errType;
+					if (stCur2->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
+						Tree *discriminant = stCur2->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+						if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
+							stCur2Type = getStatusDeclaration(stCur2->defSite);
+						} else { // else if (*discriminant == TOKEN_NonEmptyTerms || *discriminant == TOKEN_NonEmptyTerms) -- neither are  valid sub-identifier sources, so return failure
+							return NULL;
+						}
+					} else { // else if it's a Param binding, naively get its type
+						stCur2Type = getStatusParam(stCur2->defSite);
+					}
+					if (stCur2Type->category == CATEGORY_OBJECT) { // if it's an Object type (the only category that can possibly contain sub-identifiers)
+						ObjectType *stCurTypeCast = ((ObjectType *)stCur2Type);
+						// first, try to find the sub-identifier in the Object's list of members
+						for (vector<string>:const_iterator iter = stCurTypeCast->memberNames.begin(); iter != stCurTypeCast->memberNames.end(); iter++) {
+							if (*iter == id[i]) { // if we have a match, accept it and proceed deeper into the binding
+								// KOL
+							}
+						}
+						// KOL
+					} else { // else if it's a type that cannot possibly contain sub-identifiers, return failure
+						return NULL;
+					}
 				}
-
+				if (!success) { // if we didn't find a binding for this sub-identifier, return failure
+					return NULL;
+				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
-			// no need to look through the rest of the children; we've already found the correctly named one on this level
-			break;
+			// if we managed to bind all of the sub-identifiers, return the root of the binding
+			return stCur;
+		} else { // else if we failed to find an initial latch point, return failure
+			return NULL;
 		}
-	} // per-latch point loop
-
-	// if we've verified the entire identifier, return the tail of the latch point
-	if (stCur != NULL && idCur.empty()) {
-		id.clear(); // clear id to signify that the latching is complete
-		return stCur; // return the tail of the latch point
-	}
-
-	// otherwise, compare the current binding with the alternate higher-level one
-	// but first, scan up to the next block level, since jumping to the enclosing identifier is a waste of time
-	SymbolTable *recurseSt = env->parent;
-	while (recurseSt != NULL && recurseSt->kind != KIND_BLOCK) {
-		recurseSt = recurseSt->parent;
-	}
-	string altId = id;
-	if (stCur != NULL) { // if there was some sort of binding, update id to be the rest of it
-		id = idCur;
-	}
-
-	// do the recursion
-	SymbolTable *altResult = bindId(altId, recurseSt, inStatus);
-
-	// check if the recursive solution is better
-	if (altResult != NULL  && ((altId.length() < id.length()) || stCur == NULL)) { // if the other binding succeeded and is better, return it
-		id = altId;
-		return altResult;
-	} else { // otherwise, return the local binding
-		return stCur;
 	}
 }
 
@@ -458,17 +425,14 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 // typing function definitions
 
 // reports errors
-TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) { // LOL
+TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	string id = *tree; // string representation of this identifier
-	string idCur = id; // a destructible copy for the recursion
-	SymbolTable *st = bindId(idCur, tree->env, inStatus);
+	SymbolTable *st = bindId(id, tree->env, inStatus);
 	if (st != NULL) { // if we found a binding
 		TypeStatus stStatus = getStatusSymbolTable(st, inStatus);
 		if (*stStatus) { // if we successfully extracted a type for this SymbolTable entry
 			status = TypeStatus(stStatus, tree);
-		} else { // else if we failed to extract a type for this SymbolTable entry
-			status = errType;
 		}
 	} else { // else if we couldn't find a binding
 		Token curToken = tree->t;

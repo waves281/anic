@@ -19,6 +19,7 @@
 #define KIND_CONSTRUCTOR 6
 #define KIND_FILTER 7
 #define KIND_OBJECT 8
+#define KIND_FAKE 9
 
 class SymbolTable {
 	public:

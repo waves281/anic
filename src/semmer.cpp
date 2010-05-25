@@ -331,8 +331,27 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 									stCur = ((stCurTypeCast->memberDefSites)[j])->env;
 									success = true;
 									break;
-								} else { // else if the member has no real definition site, we'll need to fake one
-									// KOL need to fake the definition site
+								} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
+									// but first, check if a SymbolTable node has already been faked for this member
+									vector<SymbolTable *>::const_iterator iter;
+									for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
+										if ((*iter)->kind == KIND_FAKE && (*iter)->id == id[i]) { // if we've already faked a SymbolTable node for this member, break
+											break;
+										}
+									}
+									if (iter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+										stCur = (*iter);
+										success = true;
+										break;
+									} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
+										// note that the member type that we're using here *will* be defined by this point;
+										// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
+										SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
+										// accept the new fake node and proceed deeper into the binding
+										stCur = fakeStNode;
+										success = true;
+										break;
+									}
 								}
 							}
 						}

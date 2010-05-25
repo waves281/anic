@@ -13,7 +13,7 @@ ostream &operator<< (ostream &os, Tree *&tree) {
 }
 
 void printDefs(SymbolTable *st, int depth) {
-	if (st == NULL) {
+	if (st == NULL || st->kind == KIND_FAKE) {
 		return;
 	}
 	cout << '\t';

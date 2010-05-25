@@ -678,8 +678,8 @@ FilterType::operator string() {return toString();}
 ObjectType::ObjectType(int suffix, int depth) : propagationHandled(false) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
 ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes), propagationHandled(false)
 	{category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix, int depth) : 
-	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes), propagationHandled(false) {
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix, int depth) : 
+	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes), memberDefSites(memberDefSites), propagationHandled(false) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
 }
 ObjectType::~ObjectType() {
@@ -696,7 +696,7 @@ ObjectType::~ObjectType() {
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
 Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); return retVal;}
-void ObjectType::erase() {constructorTypes.clear(); memberNames.clear(); memberTypes.clear(); delete this;}
+void ObjectType::erase() {constructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear(); delete this;}
 void ObjectType::propagateToCopies() {
 	if (propagationHandled) { // if we've already propagated to this node and got here through a recursive type loop, we're done
 		return;
@@ -706,6 +706,7 @@ void ObjectType::propagateToCopies() {
 		(*iter)->constructorTypes = constructorTypes;
 		(*iter)->memberNames = memberNames;
 		(*iter)->memberTypes = memberTypes;
+		(*iter)->memberDefSites = memberDefSites;
 		// recurse
 		(*iter)->propagateToCopies();
 	}

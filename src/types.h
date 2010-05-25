@@ -210,12 +210,13 @@ class ObjectType : public Type {
 		vector<TypeList *> constructorTypes; // list of the types of this object's constructors (each one is a TypeList)
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
+		vector<Tree *> memberDefSites; // list of the definition sites of raw non-constructor members of this object, used for sub-identifier binding
 		vector<ObjectType *> copyList; // used for propagating post-creation updates to recursively dependent copies created with copy()
 		bool propagationHandled; // used for recursively dependent copy update propagation
 		// allocators/deallocators
 		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
 		ObjectType(const vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;

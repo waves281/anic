@@ -108,7 +108,9 @@ void catStdLib(SymbolTable *&stRoot) {
 	memberNames.push_back("toString");
 	vector<Type *> memberTypes;
 	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH), SUFFIX_LATCH));
-	Type *stringer = new ObjectType(constructorTypes, memberNames, memberTypes, SUFFIX_LATCH);
+	vector<Tree *> memberDefSites;
+	memberDefSites.push_back(NULL);
+	Type *stringer = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
 	// create the outer type that the output streams use
 	constructorTypes.push_back(new TypeList(new StdType(STD_INT)));
 	constructorTypes.push_back(new TypeList(new StdType(STD_FLOAT)));
@@ -260,15 +262,15 @@ vector<string> chopId(const string &s) {
 SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
 	vector<string> id = chopId(s); // chop up the input identifier into its components
 	if (id[0] == "..") { // if the identifier begins with a recall
-		return NULL; // KOL
+		return NULL; // LOL need to implement recall identifier binding
 	} else { // else if it's a regular identifier
-		SymbolTable *latchPoint = NULL;
+		SymbolTable *stRoot = NULL;
 		for (SymbolTable *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
 			if ((stCur->kind == KIND_STD ||
 					stCur->kind == KIND_DECLARATION ||
 					stCur->kind == KIND_PARAMETER) &&
 					stCur->id == id[0]) { // if this is a valid latch point, log it and break
-				latchPoint = stCur;
+				stRoot = stCur;
 				break;
 			} else if (stCur->kind == KIND_BLOCK ||
 					stCur->kind == KIND_OBJECT ||
@@ -279,47 +281,54 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 							(*iter)->kind == KIND_DECLARATION ||
 							(*iter)->kind == KIND_PARAMETER) &&
 							(*iter)->id == id[0]) { // if this is a valid latch point, log it and break
-						latchPoint = (*iter);
+						stRoot = (*iter);
 						break;
 					}
 				}
 			}
 		}
-		if (latchPoint != NULL) { // if we managed to find an initial latch point, verify the rest of the bindind
-			SymbolTable *stCur2 = stCur; // the basis under which we're hoping to bind the current sub-identifier
+		if (stRoot != NULL) { // if we managed to find an initial latch point, verify the rest of the binding
+			// KOL need to take into account the referensability of bindings (e.g. cannot reference directly through a stream)
+			SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
 			for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
 				bool success = false;
-				if (stCur2->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
-					for (vector<SymbolTable *>::const_iterator iter = stCur2->children.begin(); iter != stCur2->children.end(); iter++) {
+				if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
+					for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
 						if ((*iter)->id == id[i]) { // if this child matches the sub-identifier, accept it and proceed deeper into the binding
-							stCur2 = (*iter);
+							stCur = (*iter);
 							success = true;
 							break;
 						}
 					}
-				} else { // otherwise if it's not a standard system-level binding, we must get at its subidentifiers through its type; thus, begin by deriving it
-					Type *stCur2Type = errType;
-					if (stCur2->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
-						Tree *discriminant = stCur2->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+				} else { // else if it's not a standard system-level binding, we must get at the sub-identifier binding based on this SymbolTable node's type
+					Type *stCurType = errType;
+					if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
+						Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 						if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
-							stCur2Type = getStatusDeclaration(stCur2->defSite);
-						} else { // else if (*discriminant == TOKEN_NonEmptyTerms || *discriminant == TOKEN_NonEmptyTerms) -- neither are  valid sub-identifier sources, so return failure
-							return NULL;
+							stCurType = getStatusDeclaration(stCur->defSite);
 						}
 					} else { // else if it's a Param binding, naively get its type
-						stCur2Type = getStatusParam(stCur2->defSite);
+						stCurType = getStatusParam(stCur->defSite);
 					}
-					if (stCur2Type->category == CATEGORY_OBJECT) { // if it's an Object type (the only category that can possibly contain sub-identifiers)
-						ObjectType *stCurTypeCast = ((ObjectType *)stCur2Type);
-						// first, try to find the sub-identifier in the Object's list of members
-						for (vector<string>:const_iterator iter = stCurTypeCast->memberNames.begin(); iter != stCurTypeCast->memberNames.end(); iter++) {
-							if (*iter == id[i]) { // if we have a match, accept it and proceed deeper into the binding
-								// KOL
+					if (*stCurType) { // if we managed to derive a type for this SymbolTable node
+						if (stCurType->category == CATEGORY_OBJECTTYPE) { // if it's an Object Declaration (the only category that can have sub-identifiers), try to find a match in the Object's members
+							ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
+							unsigned int j;
+							for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
+								if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
+									break;
+								}
+							}
+							if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
+								if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
+									stCur = ((stCurTypeCast->memberDefSites)[j])->env;
+									success = true;
+									break;
+								} else { // else if the member has no real definition site, we'll need to fake one
+									// KOL need to fake the definition site
+								}
 							}
 						}
-						// KOL
-					} else { // else if it's a type that cannot possibly contain sub-identifiers, return failure
-						return NULL;
 					}
 				}
 				if (!success) { // if we didn't find a binding for this sub-identifier, return failure
@@ -327,7 +336,7 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
 			// if we managed to bind all of the sub-identifiers, return the root of the binding
-			return stCur;
+			return stRoot;
 		} else { // else if we failed to find an initial latch point, return failure
 			return NULL;
 		}
@@ -825,11 +834,47 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
 	fakeType = new ObjectType(SUFFIX_LATCH);
+	// fake names and types for all members, and log their definition sites
+	bool failed = false;
+	vector<string> memberNames;
+	vector<Type *> memberTypes;
+	vector<Tree *> memberDefSites;
+	vector<Token> memberTokens;
+	Tree *conss = tree->child->next; // Constructors
+	Tree *pipes = conss->next; // NonEmptyPipes or RCURLY
+	for (Tree *pipe = (*pipes == TOKEN_NonEmptyPipes) ? pipes->child : NULL; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
+		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
+		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
+			// check for naming conflicts with this member
+			string &stringToAdd = pipec->child->t.s; // ID
+			vector<string>::iterator iter1;
+			vector<Token>::iterator iter2;
+			for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
+				if (*iter1 == stringToAdd) {
+					break;
+				}
+			}
+			if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
+				memberNames.push_back(stringToAdd);
+				memberTypes.push_back(NULL);
+				memberDefSites.push_back(pipec);
+				memberTokens.push_back(pipec->child->t); // ID
+			} else { // else if there was a naming conflict with this member
+				Token curDefToken = pipec->child->t;
+				Token prevDefToken = *iter2;
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
+				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+				failed = true;
+			}
+		}
+	}
+	// log the fake member names and types, as well as their definition sites
+	((ObjectType *)fakeType)->memberNames = memberNames;
+	((ObjectType *)fakeType)->memberTypes = memberTypes;
+	((ObjectType *)fakeType)->memberDefSites = memberDefSites;
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
 	vector<Token> constructorTokens;
-	bool failed = false;
-	Tree *conss = tree->child->next; // Constructors
 	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
 		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
 		if (*consStatus) { // if we successfully derived a type for this constructor
@@ -855,38 +900,14 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 			failed = true;
 		}
 	}
-	// derive names and types for all of the members
-	vector<string> memberNames;
-	vector<Type *> memberTypes;
-	vector<Token> memberTokens;
-	Tree *pipes = conss->next; // NonEmptyPipes or RCURLY
-	for (Tree *pipe = (*pipes == TOKEN_NonEmptyPipes) ? pipes->child : NULL; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
-		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
-		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
-			// check for naming conflicts with this member
-			string &stringToAdd = pipec->child->t.s; // ID
-			vector<string>::iterator iter1;
-			vector<Token>::iterator iter2;
-			for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
-				if (*iter1 == stringToAdd) {
-					break;
-				}
-			}
-			if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
-				TypeStatus memberStatus = getStatusDeclaration(pipec, inStatus);
-				if (*memberStatus) { // if we successfully derived a type for this Declaration
-					memberNames.push_back(stringToAdd); // ID
-					memberTypes.push_back(memberStatus.type);
-					memberTokens.push_back(pipec->child->t); // ID
-				} else { // else if we failed to derive a type
-					failed = true;
-				}
-				
-			} else { // else if there was a naming conflict with this member
-				Token curDefToken = pipec->child->t;
-				Token prevDefToken = *iter2;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
-				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+	// derive types for all of the members that haven't had their types derived already
+	for (unsigned int i=0; i < ((ObjectType *)fakeType)->memberTypes.size(); i++) {
+		if ((((ObjectType *)fakeType)->memberTypes)[i] == NULL) { // if we haven't yet derived a type for this member, do so now
+			TypeStatus memberStatus = getStatusDeclaration(memberDefSites[i], inStatus);
+			if (*memberStatus) { // if we successfully derived a type for this Declaration
+				(((ObjectType *)fakeType)->memberTypes)[i] = memberStatus.type;
+			} else { // else if we failed to derive a type
+				(((ObjectType *)fakeType)->memberTypes)[i] = errType;
 				failed = true;
 			}
 		}
@@ -894,8 +915,6 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	if (!failed) { // if we successfully derived the lists
 		// log the derived list into the fake type that we previously created
 		((ObjectType *)fakeType)->constructorTypes = constructorTypes;
-		((ObjectType *)fakeType)->memberNames = memberNames;
-		((ObjectType *)fakeType)->memberTypes = memberTypes;
 		// propagate the change to all copies
 		((ObjectType *)fakeType)->propagateToCopies();
 		// finally, log the completed type as the return status
@@ -1004,6 +1023,11 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
 				status = new ObjectType(suffixVal, depthVal);
 			} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
+			
+				// KOL make this work with memberDefSites, as done in getStatusObject
+				vector<Tree *> memberDefSites;
+				
+				
 				vector<TypeList *> constructorTypes;
 				vector<Token> constructorTokens;
 				bool failed = false;
@@ -1071,7 +1095,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 				if (!failed) {
-					status = new ObjectType(constructorTypes, memberNames, memberTypes, suffixVal, depthVal);
+					status = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, suffixVal, depthVal);
 				}
 			}
 		}

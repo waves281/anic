@@ -349,6 +349,8 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 										// note that the member type that we're using here *will* be defined by this point;
 										// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
 										SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
+										// attach the new fake node to the main SymbolTable
+										*stCur *= fakeStNode;
 										// accept the new fake node and proceed deeper into the binding
 										stCur = fakeStNode;
 										success = true;

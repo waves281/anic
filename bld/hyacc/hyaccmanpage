@@ -1,0 +1,386 @@
+HYACC(1)                                                              HYACC(1)
+
+
+
+NNAAMMEE
+       hyacc  -  LR(0)/LALR(1)/LR(1) parser generator. Similar utility as yacc
+       and bison.
+
+SSYYNNOOPPSSIISS
+       hhyyaacccc --??
+       hhyyaacccc --hh
+       hhyyaacccc ----hheellpp
+       hhyyaacccc --VV
+       hhyyaacccc ----vveerrssiioonn
+       hhyyaacccc [[--bbccCCddDDgghhllmmnnooOOPPQQRRSSttvvVV]]
+             [[--bb ffiillee--nnaammee--pprreeffiixx]] [[----ffiillee--pprreeffiixx====ffiillee--nnaammee--pprreeffiixx]]
+             [[--cc]] [[----nnoo--ccoommppiilleerr]]
+             [[--CC]] [[----kkeeeepp--uunniitt--pprroodduuccttiioonn--wwiitthh--aaccttiioonn]]
+             [[--dd]] [[----ddeeffiinneess]]
+             [[--DDii]] ((ii == 00~~1155))
+             [[--gg]] [[----ggrraapphhvviizz]]
+             [[--hh]] [[----hheellpp]]
+             [[--ll]] [[----nnoo--lliinneess]]
+             [[--mm]] [[----mmaann--ppaaggee]]
+             [[--oo oouuttppuutt--ffiillee--nnaammee]] [[----oouuttppuutt--ffiillee====oouuttppuutt--ffiillee--nnaammee]]
+             [[--OOii]] ((ii == 00~~33))
+             [[--PP]] [[----llaannee--ttrraacciinngg--ppggmm]]
+             [[--QQ]] [[----llaannee--ttrraacciinngg--lltttt]]
+             [[--RR]] [[----llaallrr11]]
+             [[--SS]] [[----llrr00]]
+             [[--tt]] [[----ddeebbuugg]]
+             [[--vv]] [[----vveerrbboossee]]
+             [[--VV]] [[----vveerrssiioonn]]
+
+
+DDEESSCCRRIIPPTTIIOONN
+       _H_y_a_c_c is a program similar to _y_a_c_c(1) and _b_i_s_o_n (LALR(1) parser genera-
+       tors),  but  which accepts all LR(1) grammars and thus is more powerful
+       than _y_a_c_c(1) and _b_i_s_o_n.  It is backward compatible with input files  of
+       _y_a_c_c(1) and _b_i_s_o_n.  Hyacc also supports LALR(1) (based on lane-tracing)
+       and LR(0).
+
+       Input files should better follow the yacc convention of ending  in  .y,
+       but don't have to. By default, the output file is y.tab.c. When you use
+       -d you also get y.tab.h, and when you use -v  you  also  get  y.output,
+       same  as  yacc.  The  user can use the -b or -o switches to specify the
+       output file names.
+
+       Hyacc supports both traditional single letter options and mnemonic long
+       option  names.  Long  option  names are indicated with -- instead of -.
+       When a long option takes an argument,  like  file-prefix,  connect  the
+       option name and the argument with ==.
+
+
+   OOPPTTIIOONNSS
+       Command line options are decribed below.
+
+       Most options may be give in one of two forms: either a dash followed by
+       a single letter, or two dashes followed by a long option name.
+
+
+       --bb ffiilleepprreeffiixx
+       ----ffiillee--pprreeffiixx====ffiilleepprreeffiixx
+              Specify a prefix to use for all hyacc output  file  names.   The
+              names are chosen as if the input file were named fileprefix.c.
+
+
+       --cc
+              Use  this  switch  to  not  generate  parser  files (y.tab.c and
+              y.tab.h).  This is useful when the user only wants to use the -v
+              and -D switches to parse the grammar and check the y.output file
+              about the grammar's information.
+
+              -c generally is used with -v, -D and -C.
+
+
+       --CC
+              For the unit production removal optimization (when -O2 or -O3 is
+              used), if a unit production rule has semantic action, when it is
+              removed the semantic action won't be preserved,  so  the  output
+              compiler will miss some code.
+
+              To  solve this problem, by default HYACC adds a placeholder non-
+              terminal to unit production rules with actions, so they won't be
+              removed. E.g., from
+              program : expression              {printf("answer = %d\n", $1);}
+                      ;
+              to
+              program : expression $PlaceHolder {printf("answer = %d\n", $1);}
+                      ;
+              $PlaceHolder : /* empty */
+                           ;
+
+              If the -C switch is used, this default action will not be taken.
+              This is used when the user wants to just parse the  grammar  and
+              does  not care about generating a useful compiler. Specifically,
+              -C is used together with switch -c.
+
+
+       --dd
+       ----ddeeffiinnee
+              Write an extra output file containing macro definitions for  the
+              token type names defined in the grammar.
+
+              The file is named y.tab.h.
+
+              This  output file is essential if you wish to put the definition
+              of yylex in a separate source file, because yylex  needs  to  be
+              able  to refer to token type codes and the variable yylaval.  In
+              such case y.tab.h should be included into  the  file  containing
+              yylex.
+
+
+       --DD
+              Change  the  print  option  to  debug  file y.output. A user who
+              checks the debug file should assume certain degree of  knowledge
+              to the LR(1) compiler theory and optimization algorithms.
+
+              If  the -v options is used, a debug file y.output will be gener-
+              ated when hyacc parses the grammar file. Use of -D  switch  will
+              automatically  turn  on the -v switch, and will allow to specify
+              what kind of information to be included into y.output.
+
+              By default, use -v will output the information about the states,
+              plus  a  short statistics summary of the number of the grammar's
+              terminals, nonterminals, grammar rules  and  states.   like  the
+              y.output file of yacc.
+
+              -D should be followed by a parameter from 0 ~ 14:
+
+              -D0
+              Include all the information available.
+
+              -D1
+              Include the grammar.
+
+              -D2
+              Include the parsing table.
+
+              -D3
+              Include  the  process  of  generating the parsing machine, basi-
+              cally, the number of states and the current state in each cycle.
+
+              -D4
+              This  is  useful  only  if  at  the  time of compilation, in y.h
+              USE_CONFIG_QUEUE_FOR_GET_CLOSURE is set to 0.   This  then  will
+              include  the information of combining compatible configurations:
+              the number of configurations before and after  the  combination.
+              -D4 can be used together with -D3.
+
+              -D5
+              Include  the  information  of the multi-rooted tree(s) built for
+              the optimization of removing unit productions.
+
+              -D6
+              Include the information in the  optimization  of  removing  unit
+              productions. Specifically, the new states created and the origi-
+              nal states from which the new states are combined from.
+
+              -D7
+              Include the information of the step 4  in  the  optimization  of
+              removing  unit  productions. Specifically, this shows the states
+              reachable from state 0.
+
+              -D8
+              Show the entire parsing table after removing  unit  productions,
+              including those states that will be removed.
+
+              -D9
+              Show  a  list  of  configurations  and the theads of the strings
+              after the scanning symbol.
+
+              -D10
+              Include information of the symbol hash table.
+
+              -D11
+              Include the information of shift/shift conflicts  if  any.  This
+              happens  when  the  input grammar is not LR(1) or ambiguous, and
+              the optimization of removing unit production is used. The occur-
+              rence  of shift/shift conflicts means the optimization of remov-
+              ing unit productions (-O2 and -O3) cannot  be  applied  to  this
+              grammar.
+
+              -D12
+              NOT  to include the default information about states when the -v
+              option is used. Use -D12 to show only the short statistics  sum-
+              mary, and not the states list.
+
+              -D13
+              Include  the  statistics  of  configurations for each state, and
+              also dump the state hash table.
+
+              -D14
+              Include the information  of  actual/pseudo  states.   An  actual
+              state  number is the row number of that state in the parsing ta-
+              ble. After the step of unit production removal, some states  are
+              removed  but  their rows still remain in the parsing table, thus
+              the state's pseudo  state  number  (counted  by  ignoring  those
+              removed states/rows) will be different.
+
+              -D15
+              Shows  the  originator and transitor list of each configuration,
+              as well as the parent state list of each state.  This  is  rele-
+              vant when lane tracing is used.
+
+
+
+       --gg
+       ----ggrraapphhvviizz
+              Generate a graphviz input file for the parsing machine.
+
+
+
+       --hh
+       ----hheellpp Print a usage summary of hyacc.
+
+
+
+       --ll
+       ----nnoolliinneess
+              Don't  put  any  #line preprocessor commands in the parser file.
+              Ordinarily hyacc puts them in the parser file so that the C com-
+              piler and debuggers will associate errors with your source file,
+              the grammar file. This options causes them to  associate  errors
+              with  the parser file, treating it as an independent source file
+              in its own right.
+
+
+       --mm
+       ----mmaann--ppaaggee
+              Show man page. Same as "man hyacc". This is used  when  the  man
+              page  file exists in the same directory as the hyacc executable.
+              So if installation moves this man page file to another location,
+              you must use "man hyacc".
+
+
+       --oo oouuttffiillee
+       ----oouuttppuutt--ffiillee====oouuttffiillee
+              Specify the name outfile for the parser file.
+
+              The  other  output  files' names are constructed from outfile as
+              described under the v and d switches.
+
+
+       --OO
+              Specify the kind of optimization used to parse  the  yacc  input
+              file.
+
+              Basically,  three  optimizations are used: 1) Combine compatible
+              states based on weak compatibility.  2) Remove unit productions.
+              3) Remove repeated states after optimization 2).
+
+              The -O switch should be followed by a parameter from 0 to 3:
+
+              -O0
+              No optimization is used.
+
+              -O1
+              Optimization 1) is used.
+
+              -O2
+              Optimizations 1) and 2) are used.
+
+              -O3
+              Optimizations 1), 2) and 3) are used.
+
+              By default, when -O switch is not specified, the optimization 1)
+              of combining compatible states is used.  So  "hyacc  file.y"  is
+              equivalent to "hyacc file.y -O1" or "hyacc -O1 file.y".
+
+
+       --PP
+       ----llaannee--ttrraacciinngg--ppggmm
+              Use  LR(1) based on the lane-tracing algorithm. The lane-tracing
+              algorithm starts from a LR(0) parsing machine, uses lane-tracing
+              to  obtain  contexts  to  resolve shift/reduce and reduce/reduce
+              conflicts. If some reduce/reduce  conflicts  are  not  resolved,
+              then  state-splitting  based  on the practical general method is
+              used to resolve such conflicts.
+
+
+       --QQ
+       ----llaannee--ttrraacciinngg--lltttt
+              Use LR(1) based on the lane-tracing algorithm. The  lane-tracing
+              algorithm starts from a LR(0) parsing machine, uses lane-tracing
+              to obtain contexts to  resolve  shift/reduce  and  reduce/reduce
+              conflicts.  If  some  reduce/reduce  conflicts are not resolved,
+              then state-splitting based on a lane-tracing table  is  used  to
+              resolve such conflicts.
+
+
+       --RR
+       ----llaallrr11
+              Use LALR(1) based on lane-tracing.
+
+
+       --SS
+       ----llrr00  Use LR(0).
+
+
+       --tt
+       ----ddeebbuugg
+              In  the parser files, define the macro YYDEBUG to 1 if it is not
+              already defined, so that the debugging facilities are  compiled.
+              When the generated compiler parses an input yacc file, the parse
+              process will be  recorded  in  an  output  file  y.parse,  which
+              includes  all  the shift/reduce actions, associated state number
+              and lookahead, as well as the content of state stack and  symbol
+              stack.
+
+
+       --vv
+       ----vveerrbboossee
+              Write  an  extra  output file containing verbose descriptions of
+              the parser states and what is done for each  type  of  lookahead
+              token in that state.
+
+              This  file also describes all the conflicts, both those resolved
+              by operator precedence and the unresolved ones.
+
+              The file's name is y.output.
+
+
+       --VV
+       ----vveerrssiioonn
+              Print the version number of hyacc and exit.
+
+
+
+   EEXXAAMMPPLLEESS
+       Assume the input grammar file is arith.y.
+
+
+       The user wants y.tab.c only:
+              hyacc arith.y
+
+
+       The user wants y.tab.c and y.tab.h:
+              hyacc -d arith.y
+
+
+       The user wants the generated compiler create  y.parse  when  parsing  a
+       program:
+              hyacc -dt arith.y
+              or
+              hyacc arith.y -d -t
+
+
+       The user wants y.ta.b, y.tab.h, and create a y.output file when parsing
+       the grammar:
+              hyacc -dv arith.y
+
+
+       The user wants, y.tab.c, y.tab.h, y.output  and  wants  to  include  no
+       other information than the short statistics summary in y.output:
+              hyacc -dD12 arith.y
+
+
+       Here -D12 will suppress the states list.
+
+
+       The user wants y.tab.c and y.tab.h, use optimization 1) only, and wants
+       a default y.output:
+              hyacc -d -O1 -v arith.y
+              or
+              hyacc -dO1v arith.y
+
+
+       The user wants to parse the grammar and check y.output for information,
+       and  doesn't need a compiler. While use all the optimizations, he wants
+       to keep those unit productions with semantic actions:
+              hyacc -cCv arith.y
+
+
+DDIIAAGGNNOOSSIITTIICCSS
+       Self explanatory.
+
+
+AAUUTTHHOORR
+       Xin Chen <chenx@hawaii.edu>
+       Send bug report or comments to the above address.
+
+
+
+
+                          Version 0.95: 15 March 2009                 HYACC(1)

@@ -12,11 +12,19 @@ Type *errType = new ErrorType();
 // SymbolTable functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(int kind, const string &id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
-SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {}
-SymbolTable::SymbolTable(int kind, const string &id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status);}
-SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status);}
-SymbolTable::SymbolTable(SymbolTable &st) {*this = st;}
+SymbolTable::SymbolTable(int kind, const string &id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {
+	if (defSite != NULL) {
+		defSite->env = this;
+	}
+}
+SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {
+	if (defSite != NULL) {
+		defSite->env = this;
+	}
+}
+SymbolTable::SymbolTable(int kind, const string &id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
+SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
+SymbolTable::SymbolTable(const SymbolTable &st) {*this = st;}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
 	for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
@@ -25,12 +33,12 @@ SymbolTable::~SymbolTable() {
 }
 
 // deep-copy assignment operator
-SymbolTable &SymbolTable::operator=(SymbolTable &st) {
+SymbolTable &SymbolTable::operator =(const SymbolTable &st) {
 	kind = st.kind;
 	id = st.id;
 	defSite = st.defSite;
 	parent = st.parent;
-	for (vector<SymbolTable *>::iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
+	for (vector<SymbolTable *>::const_iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
 		// copy the child node
 		SymbolTable *child = new SymbolTable(**childIter);
 		// fix the child's parent pointer to point up to this node
@@ -42,11 +50,11 @@ SymbolTable &SymbolTable::operator=(SymbolTable &st) {
 }
 
 // concatenators
-SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
+SymbolTable &SymbolTable::operator *=(SymbolTable *st) {
 	// first, check for conflicting bindings
 	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER)) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
-		for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+		for (vector<SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 			if ((*childIter)->id == st->id) { // if we've found a conflict
 				Token curDefToken;
 				if (st->defSite != NULL) { // if there is a definition site for the current symbol
@@ -71,7 +79,6 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 			} // if there's a conflict
 		} // for per-symbol loop
 	} // if this is not a special system-level binding
-
 	// binding is now known to be conflict-free, so log it normally
 	children.push_back(st);
 	if (st != NULL) {
@@ -148,7 +155,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	if (tree == NULL) {
 		return;
 	}
-	// log the current symbol environment in the tree
+	// log the current symbol environment in the tree (this pointer will potentially be overridden by a SymbolTable() constructor)
 	tree->env = st;
 	// recursive cases
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
@@ -1023,11 +1030,12 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
 				status = new ObjectType(suffixVal, depthVal);
 			} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
-			
+
+
 				// KOL make this work with memberDefSites, as done in getStatusObject
 				vector<Tree *> memberDefSites;
-				
-				
+
+
 				vector<TypeList *> constructorTypes;
 				vector<Token> constructorTokens;
 				bool failed = false;

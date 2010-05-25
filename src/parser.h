@@ -39,10 +39,10 @@ class Tree {
 		Tree *goParent(unsigned int n) const;
 		Tree *bottom() const;
 		// binary attatchers
-		void operator+=(Tree *next);
-		void operator-=(Tree *back);
-		void operator*=(Tree *child);
-		void operator&=(Tree *parent);
+		void operator +=(Tree *next);
+		void operator -=(Tree *back);
+		void operator *=(Tree *child);
+		void operator &=(Tree *parent);
 		// converters
 		operator string() const;
 };

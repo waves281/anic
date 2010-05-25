@@ -33,12 +33,12 @@ class SymbolTable {
 		SymbolTable(int kind, const char *id, Tree *defSite = NULL);
 		SymbolTable(int kind, const string &id, Type *defType);
 		SymbolTable(int kind, const char *id, Type *defType);
-		SymbolTable(SymbolTable &st);
+		SymbolTable(const SymbolTable &st);
 		~SymbolTable();
 		// deep-copy assignment operator
-		SymbolTable &operator=(SymbolTable &st);
+		SymbolTable &operator =(const SymbolTable &st);
 		// concatenators
-		SymbolTable &operator*=(SymbolTable *st);
+		SymbolTable &operator *=(SymbolTable *st);
 };
 
 // forward declarations of mutually recursive typing functions

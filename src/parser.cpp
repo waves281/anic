@@ -80,16 +80,16 @@ Tree *Tree::bottom() const {
 }
 
 // binary attatchers
-void Tree::operator+=(Tree *next) {
+void Tree::operator +=(Tree *next) {
 	this->next = next;
 }
-void Tree::operator-=(Tree *back) {
+void Tree::operator -=(Tree *back) {
 	this->back = back;
 }
-void Tree::operator*=(Tree *child) {
+void Tree::operator *=(Tree *child) {
 	this->child = child;
 }
-void Tree::operator&=(Tree *parent) {
+void Tree::operator &=(Tree *parent) {
 	this->parent = parent;
 }
 

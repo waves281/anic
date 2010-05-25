@@ -517,6 +517,8 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 		status = getStatusParam(tree, inStatus); // Param
 	} else if (st->kind == KIND_CONSTRUCTOR) { // else if the symbol was defined as a Constructor-style node
 		status = getStatusConstructor(tree, inStatus); // Constructor
+	} else if (st->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
+		status = TypeStatus(tree->status.type, inStatus);
 	}
 	GET_STATUS_FOOTER;
 }

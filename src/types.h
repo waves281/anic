@@ -47,7 +47,8 @@ class Type {
 		int depth; // stream depth of arrays and streams
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
-		bool constantize();
+		void constantizeType(); // for when sub-identifier's type is constrained by upstream identifiers
+		bool constantizeReference(); // for when an identifier is present without an accessor
 		bool delatch();
 		bool copyDelatch();
 		bool constantDelatch();

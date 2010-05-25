@@ -529,11 +529,15 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	string id = *tree; // string representation of this identifier
 	pair<SymbolTable *, bool> binding = bindId(id, tree->env, inStatus);
 	SymbolTable *st = binding.first;
-	// KOL do the constantization if necessary
 	if (st != NULL) { // if we found a binding
 		TypeStatus stStatus = getStatusSymbolTable(st, inStatus);
 		if (*stStatus) { // if we successfully extracted a type for this SymbolTable entry
-			status = TypeStatus(stStatus, tree);
+			Type *mutableStType = stStatus;
+			if (binding.second) { // do the upstream-mandated constantization if needed
+				mutableStType = mutableStType->copy();
+				mutableStType->constantizeType();
+			}
+			status = TypeStatus(mutableStType, tree);
 		}
 	} else { // else if we couldn't find a binding
 		Token curToken = tree->t;
@@ -1652,7 +1656,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 						// copy the Type so that our mutations don't propagate to the Term
 						TypeStatus mutableNextTermStatus = nextTermStatus;
 						mutableNextTermStatus.type = mutableNextTermStatus.type->copy();
-						if (mutableNextTermStatus.type->constantize()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
+						if (mutableNextTermStatus.type->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
 							curStatus = mutableNextTermStatus;
 						} else { // else if the SuffixedIdentifier cannot be constantized, flag an error
 							Token curToken = curTerm->t; // Term
@@ -1719,7 +1723,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 						// copy the Type so that our mutations don't propagate to the Node
 						TypeStatus mutableNodeStatus = nodeStatus;
 						mutableNodeStatus.type = mutableNodeStatus.type->copy();
-						if (mutableNodeStatus.type->constantize()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
+						if (mutableNodeStatus.type->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
 							status = mutableNodeStatus;
 						} else { // else if the SuffixedIdentifier cannot be constantized, flag an error
 							Token curToken = tstc->t; // Node

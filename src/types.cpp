@@ -32,7 +32,16 @@ string Type::suffixString() const {
 	return acc;
 }
 Type::~Type() {}
-bool Type::constantize() {
+void Type::constantizeType() {
+	if (suffix == SUFFIX_LATCH) {
+		suffix = SUFFIX_CONSTANT;
+	} else if (suffix == SUFFIX_STREAM) {
+		suffix = SUFFIX_ARRAY;
+	} else if (suffix == SUFFIX_POOL) {
+		suffix = SUFFIX_ARRAY;
+	}
+}
+bool Type::constantizeReference() {
 	if (suffix == SUFFIX_CONSTANT) {
 		return true;
 	} else if (suffix == SUFFIX_LATCH) {

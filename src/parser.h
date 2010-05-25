@@ -43,9 +43,10 @@ class Tree {
 		void operator-=(Tree *back);
 		void operator*=(Tree *child);
 		void operator&=(Tree *parent);
+		// converters
+		operator string() const;
 };
 
-string sid2String(Tree *t);
 string idHead(string &id);
 string idTail(string &id);
 string idEnd(string &id);

@@ -93,25 +93,29 @@ void Tree::operator&=(Tree *parent) {
 	this->parent = parent;
 }
 
-// exported tree parsing functions
-
-// SuffixedIdentifier -> string parser function
-string sid2String(Tree *sid) {
-	string retVal(sid->child->t.s); // ID or DPERIOD
-	 // SuffixedIdentifier
-	for(Tree *cur = sid->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of IdentifierSuffix
-		// log the period
-		retVal += '.';
-		// log the extension
-		Tree *curn = cur->next; // ID or ArrayAccess
-		if (*curn == TOKEN_ID) {
-			retVal += curn->t.s;
-		} else if (*curn == TOKEN_ArrayAccess) {
-			retVal += "[]";
+// converters
+Tree::operator string() const {
+	if (*this == TOKEN_SuffixedIdentifier || *this == TOKEN_NonArraySuffixedIdentifier) { // if this is an identifier-style Tree node, parse it
+		string retVal(this->child->t.s); // ID or DPERIOD
+		 // SuffixedIdentifier
+		for(const Tree *cur = this->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of IdentifierSuffix
+			// log the period
+			retVal += '.';
+			// log the extension
+			const Tree *curn = cur->next; // ID or ArrayAccess
+			if (*curn == TOKEN_ID) {
+				retVal += curn->t.s;
+			} else if (*curn == TOKEN_ArrayAccess) {
+				retVal += "[]";
+			}
 		}
+		return retVal;
+	} else { // else if this is not an identifier-style Tree node, return a blank string
+		return "";
 	}
-	return retVal;
 }
+
+// exported tree parsing functions
 
 string idHead(string &id) {
 	string retVal;

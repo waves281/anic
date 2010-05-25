@@ -236,6 +236,13 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	}
 }
 
+// chops up the passed in string into its period-delimited components
+vector<string> chopId(string &s) {
+	vector<string> retVal;
+	// KOL
+	return retVal;
+}
+
 // binds qualified identifiers in the given symtable environment; returns the tail of the binding
 // also, updates id to contain the portion of the identifier that could not be bound
 // returns NULL if no binding whatsoever can be found
@@ -353,7 +360,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		vector<SymbolTable *> newImportList;
 		for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
-			string importPath = sid2String((*importIter)->defSite->child->next);
+			string importPath = *((*importIter)->defSite->child->next);
 			// standard import special-casing
 			if (importPath == "std") { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -400,7 +407,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
-				string importPath = sid2String((*importIter)->defSite->child->next);
+				string importPath = *((*importIter)->defSite->child->next);
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
@@ -439,7 +446,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) { // LOL
 	GET_STATUS_HEADER;
-	string id = sid2String(tree); // string representation of this identifier
+	string id = *tree; // string representation of this identifier
 	string idCur = id; // a destructible copy for the recursion
 	SymbolTable *st = bindId(idCur, tree->env, inStatus);
 	if (st != NULL) { // if we found a binding
@@ -535,7 +542,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = primaryc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<sid2String(subSI)<<"'");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<subSI<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
 			}
 		}

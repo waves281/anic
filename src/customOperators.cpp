@@ -7,6 +7,11 @@ ostream &operator<< (ostream &os, Token &t) {
 	return os;
 }
 
+ostream &operator<< (ostream &os, Tree *&tree) {
+	os << ((string)(*tree));
+	return os;
+}
+
 void printDefs(SymbolTable *st, int depth) {
 	if (st == NULL) {
 		return;

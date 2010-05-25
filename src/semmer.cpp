@@ -239,7 +239,21 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 // chops up the passed in string into its period-delimited components
 vector<string> chopId(string &s) {
 	vector<string> retVal;
-	// KOL
+	string acc;
+	for (unsigned int i=0; i < s.size(); i++) {
+		if (s[i] != '.') { // if this character isn't a period
+			acc += s[i];
+		} else if (s[i+1] == '.') { // else if this character is a period and the next one is as well (can only occur at the beginning of an identifier)
+			i++;
+			acc += "..";
+		} else {
+			retVal.push_back(acc);
+			acc.clear();
+		}
+	}
+	if (acc.size() > 0) { // commit the last token if necessary
+		retVal.push_back(acc);
+	}
 	return retVal;
 }
 

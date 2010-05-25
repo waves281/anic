@@ -115,43 +115,6 @@ Tree::operator string() const {
 	}
 }
 
-// exported tree parsing functions
-
-string idHead(string &id) {
-	string retVal;
-	for (unsigned int i=0; i<id.size(); i++) {
-		if (id[i] == '.') {
-			break;
-		} else {
-			retVal += id[i];
-		}
-	}
-	return retVal;
-}
-
-string idTail(string &id) {
-	for (unsigned int i=0; i<id.size(); i++) {
-		if (id[i] == '.') {
-			if (id.length() > i) {
-				return id.substr(i+1);
-			}
-		}
-	}
-	return "";
-}
-
-string idEnd(string &id) {
-	string retVal;
-	for (unsigned int i=0; i<id.size(); i++) {
-		if (id[i] == '.') {
-			retVal.clear();
-		} else {
-			retVal += id[i];
-		}
-	}
-	return retVal;
-}
-
 // main parsing functions
 
 void shiftToken(Tree *&treeCur, Token &t) {

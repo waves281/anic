@@ -47,9 +47,6 @@ class Tree {
 		operator string() const;
 };
 
-string idHead(string &id);
-string idTail(string &id);
-string idEnd(string &id);
 int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName);
 
 // post-includes

@@ -295,7 +295,7 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 			}
 		}
 		if (stRoot != NULL) { // if we managed to find an initial latch point, verify the rest of the binding
-			// KOL need to take into account the referensability of bindings (e.g. cannot reference directly through a stream)
+			// KOL need to take into account the referensibility of bindings (e.g. cannot reference directly through a stream)
 			SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
 			for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
 				bool success = false;
@@ -1030,12 +1030,6 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
 				status = new ObjectType(suffixVal, depthVal);
 			} else if (*otcn == TOKEN_ObjectTypeList) { // else if it's a custom-defined object type
-
-
-				// KOL make this work with memberDefSites, as done in getStatusObject
-				vector<Tree *> memberDefSites;
-
-
 				vector<TypeList *> constructorTypes;
 				vector<Token> constructorTokens;
 				bool failed = false;
@@ -1073,6 +1067,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				// cur is now a MemberList or NULL
 				vector<string> memberNames;
 				vector<Type *> memberTypes;
+				vector<Tree *> memberDefSites;
 				vector<Token> memberTokens;
 				for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
 					// check for naming conflicts with this member
@@ -1089,6 +1084,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 						if (*memberStatus) { // if we successfully derived a type for this Declaration
 							memberNames.push_back(stringToAdd); // ID
 							memberTypes.push_back(memberStatus.type);
+							memberDefSites.push_back(NULL);
 							memberTokens.push_back(cur->child->t); // ID
 						} else { // else if we failed to derive a type
 							failed = true;

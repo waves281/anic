@@ -44,7 +44,7 @@ class Tree {
 		void operator *=(Tree *child);
 		void operator &=(Tree *parent);
 		// converters
-		operator string() const;
+		operator string() const; // only for SuffixedIdentifier or NonArraySuffixedIdentifier kinds
 };
 
 int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName);

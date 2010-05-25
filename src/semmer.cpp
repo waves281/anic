@@ -314,8 +314,10 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 						if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
 							stCurType = getStatusDeclaration(stCur->defSite);
 						}
-					} else { // else if it's a Param binding, naively get its type
+					} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Param binding, naively get its type
 						stCurType = getStatusParam(stCur->defSite);
+					} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
+						stCurType = stCur->defSite->status.type;
 					}
 					if (*stCurType) { // if we managed to derive a type for this SymbolTable node
 						if (stCurType->category == CATEGORY_OBJECTTYPE) { // if it's an Object Declaration (the only category that can have sub-identifiers), try to find a match in the Object's members

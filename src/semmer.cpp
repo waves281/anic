@@ -786,7 +786,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type violations)
-			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match, log the header as the return status
+			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match
+				// log the header type as the return status
 				status = fakeType;
 			} else { // else if the header and Block don't match
 				Token curToken = filterCur->child->t; // LCURLY
@@ -905,10 +906,14 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
-	if (!failed) { // if we successfully derived the lists, log them into the fake type that we previously created and return the type we just created
+	if (!failed) { // if we successfully derived the lists
+		// log the derived list into the fake type that we previously created
 		((ObjectType *)fakeType)->constructorTypes = constructorTypes;
 		((ObjectType *)fakeType)->memberNames = memberNames;
 		((ObjectType *)fakeType)->memberTypes = memberTypes;
+		// propagate the change to all copies
+		((ObjectType *)fakeType)->propagateToCopies();
+		// finally, log the completed type as the return status
 		status = fakeType;
 	} else { // else if we failed to derive the lists, delete the fake type
 		delete fakeType;

@@ -59,7 +59,7 @@ class Type {
 		// core methods
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
-		virtual Type *copy() const = 0;
+		virtual Type *copy() = 0;
 		virtual void erase() = 0;
 		virtual string toString(unsigned int tabDepth) = 0;
 		// non-virtual
@@ -93,7 +93,7 @@ class TypeList : public Type {
 		~TypeList();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy() const;
+		Type *copy();
 		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
@@ -111,7 +111,7 @@ class ErrorType : public Type {
 		~ErrorType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy() const;
+		Type *copy();
 		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
@@ -172,7 +172,7 @@ class StdType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
-		Type *copy() const;
+		Type *copy();
 		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
@@ -193,7 +193,7 @@ class FilterType : public Type {
 		~FilterType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy() const;
+		Type *copy();
 		void erase();
 		string toString(unsigned int tabDepth = 1);
 		// operators
@@ -210,6 +210,8 @@ class ObjectType : public Type {
 		vector<TypeList *> constructorTypes; // list of the types of this object's constructors (each one is a TypeList)
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
+		vector<ObjectType *> copyList; // used for propagating post-creation updates to recursively dependent copies created with copy()
+		bool propagationHandled; // used for recursively dependent copy update propagation
 		// allocators/deallocators
 		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
 		ObjectType(const vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
@@ -217,8 +219,9 @@ class ObjectType : public Type {
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy() const;
+		Type *copy();
 		void erase();
+		void propagateToCopies();
 		string toString(unsigned int tabDepth = 1);
 		// operators
 		bool operator==(const Type &otherType) const;

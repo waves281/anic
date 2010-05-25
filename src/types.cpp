@@ -219,7 +219,7 @@ TypeList::~TypeList() {
 	}
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
-Type *TypeList::copy() const {return new TypeList(*this);}
+Type *TypeList::copy() {return new TypeList(*this);}
 void TypeList::erase() {list.clear(); delete this;}
 bool TypeList::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
@@ -372,7 +372,7 @@ TypeList::operator string() {return toString();}
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false;}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
-Type *ErrorType::copy() const {return new ErrorType(*this);}
+Type *ErrorType::copy() {return new ErrorType(*this);}
 void ErrorType::erase() {delete this;}
 bool ErrorType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
@@ -412,7 +412,7 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return STD_NULL;
 	}
 }
-Type *StdType::copy() const {return new StdType(*this);}
+Type *StdType::copy() {return new StdType(*this);}
 void StdType::erase() {delete this;}
 bool StdType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_STDTYPE) {
@@ -600,7 +600,7 @@ FilterType::~FilterType() {
 	}
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
-Type *FilterType::copy() const {return new FilterType(*this);}
+Type *FilterType::copy() {return new FilterType(*this);}
 void FilterType::erase() {from = NULL; to = NULL; delete this;}
 bool FilterType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_FILTERTYPE) {
@@ -675,11 +675,11 @@ string FilterType::toString(unsigned int tabDepth) {
 FilterType::operator string() {return toString();}
 
 // ObjectType functions
-ObjectType::ObjectType(int suffix, int depth) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes)
+ObjectType::ObjectType(int suffix, int depth) : propagationHandled(false) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes), propagationHandled(false)
 	{category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
 ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, int suffix, int depth) : 
-	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes) {
+	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes), propagationHandled(false) {
 	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
 }
 ObjectType::~ObjectType() {
@@ -695,8 +695,22 @@ ObjectType::~ObjectType() {
 	}
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
-Type *ObjectType::copy() const {return new ObjectType(*this);}
+Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); return retVal;}
 void ObjectType::erase() {constructorTypes.clear(); memberNames.clear(); memberTypes.clear(); delete this;}
+void ObjectType::propagateToCopies() {
+	if (propagationHandled) { // if we've already propagated to this node and got here through a recursive type loop, we're done
+		return;
+	}
+	propagationHandled = true; // flag this filter as already iterated
+	for (vector<ObjectType *>::const_iterator iter = copyList.begin(); iter != copyList.end(); iter++) {
+		(*iter)->constructorTypes = constructorTypes;
+		(*iter)->memberNames = memberNames;
+		(*iter)->memberTypes = memberTypes;
+		// recurse
+		(*iter)->propagateToCopies();
+	}
+	propagationHandled = false; // unflag this filter as already iterated
+}
 bool ObjectType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);

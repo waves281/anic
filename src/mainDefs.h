@@ -28,6 +28,8 @@ using std::string;
 using std::vector;
 using std::map;
 using std::stack;
+using std::pair;
+using std::make_pair;
 
 // global variable linkage specifiers
 

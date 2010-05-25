@@ -266,10 +266,11 @@ vector<string> chopId(const string &s) {
 	return retVal;
 }
 
-SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
+pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
 	vector<string> id = chopId(s); // chop up the input identifier into its components
+	bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
 	if (id[0] == "..") { // if the identifier begins with a recall
-		return NULL; // LOL need to implement recall identifier binding
+		return make_pair((SymbolTable *)NULL, false); // LOL need to implement recall identifier binding
 	} else { // else if it's a regular identifier
 		SymbolTable *stRoot = NULL;
 		for (SymbolTable *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
@@ -362,13 +363,13 @@ SymbolTable *bindId(const string &s, SymbolTable *env, const TypeStatus &inStatu
 					}
 				}
 				if (!success) { // if we didn't find a binding for this sub-identifier, return failure
-					return NULL;
+					return make_pair((SymbolTable *)NULL, false);
 				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
 			// if we managed to bind all of the sub-identifiers, return the root of the binding
-			return stRoot;
+			return make_pair(stRoot, needsConstantization);
 		} else { // else if we failed to find an initial latch point, return failure
-			return NULL;
+			return make_pair((SymbolTable *)NULL, false);
 		}
 	}
 }
@@ -390,7 +391,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				}
 			}
 			// otherwise, try to find a non-std binding for this import
-			SymbolTable *binding = bindId(importPath, *importIter);
+			SymbolTable *binding = bindId(importPath, *importIter).first;
 			if (binding != NULL && importPath.empty()) { // if we found a complete static binding
 				// check to make sure that this import doesn't cause a binding conflict
 				string importPathTip = binding->id; // must exist if binding succeeed
@@ -467,7 +468,9 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	string id = *tree; // string representation of this identifier
-	SymbolTable *st = bindId(id, tree->env, inStatus);
+	pair<SymbolTable *, bool> binding = bindId(id, tree->env, inStatus);
+	SymbolTable *st = binding.first;
+	// KOL do the constantization if necessary
 	if (st != NULL) { // if we found a binding
 		TypeStatus stStatus = getStatusSymbolTable(st, inStatus);
 		if (*stStatus) { // if we successfully extracted a type for this SymbolTable entry

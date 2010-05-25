@@ -336,7 +336,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
 							Token curToken = stCur->defSite->t;
 							semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
-							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier is "<<stCurType<<")");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 							stCurType = errType;
 						} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
 							if (id[i] == "[]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
@@ -374,8 +374,8 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 								stCurType = errType; // this is only so that the below standard handling case doesn't execute
 							} else {
 								Token curToken = stCur->defSite->t;
-								semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
-								semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier is "<<stCurType<<")");
+								semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on subscripted identifier '"<<rebuildId(id, i)<<"'");
+								semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 								stCurType = errType;
 							}
 						} // else if it's a constant or a latch, handle it normally else 
@@ -425,7 +425,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 					return make_pair((SymbolTable *)NULL, false);
 				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
-			// if we managed to bind all of the sub-identifiers, return the root of the binding
+			// if we managed to bind all of the sub-identifiers, return the root of the binding as well as whether we need to post-constantize it
 			return make_pair(stRoot, needsConstantization);
 		} else { // else if we failed to find an initial latch point, return failure
 			return make_pair((SymbolTable *)NULL, false);

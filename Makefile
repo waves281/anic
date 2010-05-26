@@ -25,7 +25,7 @@ CORE_DEPENDENCIES = Makefile \
 	src/lexer.h src/parser.h src/types.h src/semmer.h \
 	src/core.cpp src/system.cpp src/customOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp
 
-TEST_FILES = tst/test.ani
+TEST_FILES = tst/debug.ani
 
 
 

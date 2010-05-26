@@ -1,0 +1,6 @@
+ // debug.ani -- test file for anic debugging purposes
+ obj = {
+	=;
+	mem = 1;
+}
+ref = obj.mem;

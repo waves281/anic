@@ -425,8 +425,8 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 					return make_pair((SymbolTable *)NULL, false);
 				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
-			// if we managed to bind all of the sub-identifiers, return the root of the binding as well as whether we need to post-constantize it
-			return make_pair(stRoot, needsConstantization);
+			// if we managed to bind all of the sub-identifiers, return the tail of the binding as well as whether we need to post-constantize it
+			return make_pair(stCur, needsConstantization);
 		} else { // else if we failed to find an initial latch point, return failure
 			return make_pair((SymbolTable *)NULL, false);
 		}
@@ -1272,15 +1272,27 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			Tree *st = it->next->next->next; // StaticTerm
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
+				// copy the Type so that our mutations don't propagate to the StaticTerm
+				TypeStatus mutableInitializer = initializer;
+				mutableInitializer.type = mutableInitializer.type->copy();
+				if (*(st->child->child) == TOKEN_Node && *(st->child->child->child) == TOKEN_SuffixedIdentifier) { // if the initializer needs to be constantized
+					if (!(mutableInitializer->constantizeReference())) { // if the SuffixedIdentifier cannot be constantized, flag an error
+						Token curToken = st->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<initializer<<")");
+						mutableInitializer->erase();
+					}
+				}
 				// pipe the types into the status
-				Type *result = (*initializer >> *instantiation);
+				Type *result = (*mutableInitializer >> *instantiation);
 				if (*result) {
-					status = TypeStatus(instantiation, instantiation);
+					status = instantiation;
 				} else { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<mutableInitializer<<")");
+					mutableInitializer->erase();
 				}
 			}
 		} else { // else if there is no initializer, simply set the status to be the type

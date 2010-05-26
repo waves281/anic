@@ -3,4 +3,4 @@
 	=;
 	mem = 1;
 }
-ref = obj.mem;
+ref = [int\] <- \obj.mem;

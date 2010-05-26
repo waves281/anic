@@ -1272,27 +1272,15 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			Tree *st = it->next->next->next; // StaticTerm
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
-				// copy the Type so that our mutations don't propagate to the StaticTerm
-				TypeStatus mutableInitializer = initializer;
-				mutableInitializer.type = mutableInitializer.type->copy();
-				if (*(st->child->child) == TOKEN_Node && *(st->child->child->child) == TOKEN_SuffixedIdentifier) { // if the initializer needs to be constantized
-					if (!(mutableInitializer->constantizeReference())) { // if the SuffixedIdentifier cannot be constantized, flag an error
-						Token curToken = st->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<initializer<<")");
-						mutableInitializer->erase();
-					}
-				}
 				// pipe the types into the status
-				Type *result = (*mutableInitializer >> *instantiation);
+				Type *result = (*initializer >> *instantiation);
 				if (*result) {
 					status = instantiation;
 				} else { // if the types are incompatible, throw an error
 					Token curToken = st->t;
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<mutableInitializer<<")");
-					mutableInitializer->erase();
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
 			}
 		} else { // else if there is no initializer, simply set the status to be the type
@@ -1300,7 +1288,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 		}
 	}
 	GET_STATUS_FOOTER;
-}
+} 
 
 TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
@@ -1326,7 +1314,22 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
-		status = getStatusNode(tstc, inStatus);
+		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
+		if (*(tstc->child) == TOKEN_SuffixedIdentifier) { // if the Node needs to be constantized
+			// first, copy the Type so that our mutations don't propagate to the StaticTerm
+			TypeStatus mutableNodeStatus = nodeStatus;
+			mutableNodeStatus.type = mutableNodeStatus.type->copy();
+			if (mutableNodeStatus->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the return status
+				status = mutableNodeStatus;
+			} else { // if the SuffixedIdentifier cannot be constantized, flag an error
+				Token curToken = tstc->child->child->t;
+				semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
+				mutableNodeStatus->erase();
+			}
+		} else { // else if the node doesn't need to be constatnized, just return the nodeStatus
+			status = nodeStatus;
+		}
 	} else if (*tstc == TOKEN_LBRACKET) { // it's an expression
 		status = getStatusExp(tstc->next, inStatus); // move past the bracket to the actual Exp node
 	}
@@ -1662,25 +1665,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 				if (*flowResult) { // if the type flow is valid, log it as the current status
 					curStatus = TypeStatus(flowResult, nextTermStatus);
 				} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
-					// but first, check if the Term needs to be constantized
-					if (*(curTerm->child->child) == TOKEN_SimpleTerm &&
-							*(curTerm->child->child->child) == TOKEN_DynamicTerm &&
-							*(curTerm->child->child->child->child->child) == TOKEN_TypedStaticTerm &&
-							*(curTerm->child->child->child->child->child->child->child) == TOKEN_SuffixedIdentifier) { // if the Term needs to be constantized
-						// copy the Type so that our mutations don't propagate to the Term
-						TypeStatus mutableNextTermStatus = nextTermStatus;
-						mutableNextTermStatus.type = mutableNextTermStatus.type->copy();
-						if (mutableNextTermStatus.type->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
-							curStatus = mutableNextTermStatus;
-						} else { // else if the SuffixedIdentifier cannot be constantized, flag an error
-							Token curToken = curTerm->t; // Term
-							semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nextTermStatus<<")");
-							mutableNextTermStatus.type->erase();
-						}
-					} else { // else if the Term doesn't need to be constantized
-						curStatus = nextTermStatus;
-					}
+					curStatus = nextTermStatus;
 				} else { // else if the type flow is not valid and the incoming type is not null, flag an error
 					Token curToken = curTerm->t; // Term
 					Token prevToken = prevTerm->t; // Term
@@ -1729,28 +1714,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		if (declarationSub != NULL) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
-				Tree *tstc = declarationSub->child; // Node or LBRACKET
-				if (*tstc == TOKEN_Node) { // if it's a node declaration, log its status as the return status
-					TypeStatus nodeStatus = getStatusNode(tstc);
-					// but first, check if the Node needs to be constantized
-					if (*(tstc->child) == TOKEN_SuffixedIdentifier) { // if the Node needs to be constantized
-						// copy the Type so that our mutations don't propagate to the Node
-						TypeStatus mutableNodeStatus = nodeStatus;
-						mutableNodeStatus.type = mutableNodeStatus.type->copy();
-						if (mutableNodeStatus.type->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the resulting status
-							status = mutableNodeStatus;
-						} else { // else if the SuffixedIdentifier cannot be constantized, flag an error
-							Token curToken = tstc->t; // Node
-							semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
-							mutableNodeStatus.type->erase();
-						}
-					} else { // else if the Term doesn't need to be constantized
-						status = nodeStatus;
-					}
-				} else if (*tstc == TOKEN_BracketedExp) { // else if it's a non-recursive expression declaration
-					status = getStatusBracketedExp(tstc, inStatus);
-				}
+				status = getStatusTypedStaticTerm(declarationSub);
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
 				tree->status = new FilterType(inStatus, nullType, SUFFIX_LATCH);

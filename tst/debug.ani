@@ -3,4 +3,5 @@ obj = {
 	=;
 	mem = 1;
 }
-ref = [int\] <- \obj.mem;
+constMemRef = obj.mem;
+latchMemRef = [int\] <- \obj.mem;

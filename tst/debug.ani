@@ -1,5 +1,5 @@
- // debug.ani -- test file for anic debugging purposes
- obj = {
+// debug.ani -- test file for anic debugging purposes
+obj = {
 	=;
 	mem = 1;
 }

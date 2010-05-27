@@ -1548,7 +1548,7 @@ TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		status = getStatusTerm(tree->child->next, inStatus.recall->status);
+		status = getStatusTerm(tree->child->next, inStatus);
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
@@ -1585,8 +1585,8 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus.recall->status);
-		TypeStatus falseStatus = getStatusOpenTerm(falseBranch, inStatus.recall->status);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
+		TypeStatus falseStatus = getStatusOpenTerm(falseBranch, inStatus);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
@@ -1610,8 +1610,8 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus.recall->status);
-		TypeStatus falseStatus = getStatusClosedTerm(falseBranch, inStatus.recall->status);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
+		TypeStatus falseStatus = getStatusClosedTerm(falseBranch, inStatus);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			status = trueStatus;
 		} else { // else if the two branches don't match in type
@@ -1734,15 +1734,13 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child; // Declaration, NonEmptyTerms, or LastDeclaration
-	if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a Declaration-style pipe
-		status = getStatusDeclaration(pipec, inStatus);
-	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
+	if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		status = getStatusNonEmptyTerms(pipec, inStatus);
-	}
+	} // Declaration and LastDeclaration nodes have their types derived by typeSt()
 	GET_STATUS_FOOTER;
 }
 
-void traceTypes(vector<Tree *> *parseme) {
+void tracePipes(vector<Tree *> *parseme) {
 	// iterate through all Pipe nodes
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
 	for (unsigned int i=0; i < pipeList.size(); i++) {
@@ -1782,7 +1780,7 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 	// derive types of all identifiers in the SymbolTable
 	typeSt(stRoot);
 	// derive types for the remaining pipes
-	traceTypes(parseme);
+	tracePipes(parseme);
 	
 	VERBOSE( cout << stRoot; )
 

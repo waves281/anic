@@ -239,10 +239,9 @@ class TypeStatus {
 	public:
 		// data members
 		Type *type; // the encapsulated type
-		Tree *recall; // the encapsulated recall binding
 		Type *retType; // the return type for the current node
 		// allocators/deallocators
-		TypeStatus(Type *type = NULL, Tree *recall = NULL, Type *retType = NULL);
+		TypeStatus(Type *type = NULL, Type *retType = NULL);
 		TypeStatus(Type *type, const TypeStatus &otherStatus);
 		~TypeStatus();
 		// converters
@@ -251,7 +250,6 @@ class TypeStatus {
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
-		TypeStatus &operator=(Tree *otherTree);
 		Type &operator*() const;
 		Type *operator->() const;
 		bool operator==(const Type &otherType) const;

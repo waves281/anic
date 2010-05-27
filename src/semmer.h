@@ -85,18 +85,30 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	if (tree->status.type != NULL) {\
 		return tree->status;\
 	}\
-	/* otherwise, prepare to compute the type normally */\
-	TypeStatus status(NULL, inStatus.recall)
+	/* otherwise, compute the type normally */
+
+#define returnType(x) \
+	/* memoize the return value */\
+	tree->status = TypeStatus((x), tree->status.retType);\
+	/* do the actual return */\
+	return (tree->status)
+
+#define returnTypeRet(x,y) \
+	/* memoize the return value */\
+	tree->status = TypeStatus((x),(y));\
+	/* do the actual return */\
+	return (tree->status)
+
+#define returnStatus(x) \
+	/* memoize the return value */\
+	tree->status = (x);\
+	/* do the actual return */\
+	return (tree->status)
 
 #define GET_STATUS_FOOTER \
-	/* if we could't resolve a valid type, use the error type */\
-	if (status.type == NULL) {\
-		status.type = errType;\
-	}\
-	/* latch the status to the tree node */\
-	tree->status = status;\
-	/* return the derived status block */\
-	return status
+	/* if we couldn't resolve a valid type, memoize and return the error type */\
+	tree->status = TypeStatus(errType, NULL);\
+	return (tree->status)
 
 // main semantic analysis function
 

@@ -854,14 +854,13 @@ string ObjectType::toString(unsigned int tabDepth) {
 ObjectType::operator string() {return toString();}
 
 // typing status block functions
-TypeStatus::TypeStatus(Type *type, Tree *recall, Type *retType) : type(type), recall(recall), retType(retType) {}
-TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), recall(otherStatus.recall), retType(otherStatus.retType) {}
+TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType) {}
+TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType) {}
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}
-TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
+TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
-TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}
 Type &TypeStatus::operator*() const {
 	if (type != NULL) {
 		return (*type);

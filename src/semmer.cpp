@@ -451,16 +451,16 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			}
 			// otherwise, try to find a non-std binding for this import
 			SymbolTable *binding = bindId(importPath, *importIter).first;
-			if (binding != NULL && importPath.empty()) { // if we found a complete static binding
+			if (binding != NULL) { // if we found a valid binding
 				// check to make sure that this import doesn't cause a binding conflict
+				bool failed = false;
 				string importPathTip = binding->id; // must exist if binding succeeed
 				// per-parent's children loop (parent must exist, since the root is a block st node)
 				vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
 				while (childIter != (*importIter)->parent->children.end()) {
-					// LOL need to check for type conflicts in constructors
 					if (((*childIter)->kind == KIND_STD ||
 							(*childIter)->kind == KIND_DECLARATION ||
-							(*childIter)->kind == KIND_PARAMETER) && (*childIter)->id == importPathTip) { // if there's a conflict
+							(*childIter)->kind == KIND_PARAMETER) && (*childIter)->id == importPathTip) { // if there's a standard naming conflict
 						Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
 						Token prevDefToken;
 						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
@@ -472,17 +472,17 @@ void subImportDecls(vector<SymbolTable *> importList) {
 						}
 						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-						goto nextImport;
+						failed = true;
 					}
 					// advance
 					childIter++;
 				}
-				// there was no conflict, so just deep-copy the binding in place of the import placeholder node
-				**importIter = *binding;
+				if (!failed) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
+					**importIter = *binding;
+				}
 			} else { // else if no binding could be found
 				newImportList.push_back(*importIter); // log the failed node for rebinding during the next round
 			}
-			nextImport: ;
 		} // per-import loop
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {

@@ -281,11 +281,23 @@ string rebuildId(const vector<string> &choppedList, unsigned int depth) {
 // reports errors
 pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
 	vector<string> id = chopId(s); // chop up the input identifier into its components
-	bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
+	SymbolTable *stRoot = NULL; // the latch point of the binding
 	if (id[0] == "..") { // if the identifier begins with a recall
-		return make_pair((SymbolTable *)NULL, false); // LOL need to implement recall identifier binding
+		Tree *recall = inStatus.recall;
+		if (recall != NULL) { // if there's a recall binding known, create a fake latch point to use
+			// generate a fake identifier from a hash of the recall identifier's Type object
+			string fakeId(FAKE_RECALL_NODE_PREFIX);
+			fakeId += (unsigned int)inStatus;
+			// create the fake node object
+			SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, fakeId, inStatus);
+			// attach the new fake node to the main SymbolTable
+			*(recall->env) *= fakeStNode;
+			// accept the new fake node as the latch point
+			stRoot = fakeStNode;
+		} else { // else if there is no known recall binding, return an error
+			return make_pair((SymbolTable *)NULL, false);
+		}
 	} else { // else if it's a regular identifier
-		SymbolTable *stRoot = NULL;
 		for (SymbolTable *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
 			if ((stCur->kind == KIND_STD ||
 					stCur->kind == KIND_DECLARATION ||
@@ -308,43 +320,97 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				}
 			}
 		}
-		if (stRoot != NULL) { // if we managed to find an initial latch point, verify the rest of the binding
-			SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
-			for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
-				bool success = false;
-				Type *stCurType = errType;
-				if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
-					for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-						if ((*iter)->id == id[i]) { // if this child matches the sub-identifier, accept it and proceed deeper into the binding
-							stCurType = (*iter)->defSite->status.type;
-							break;
-						}
+	}
+	if (stRoot != NULL) { // if we managed to find a latch point, verify the rest of the binding
+		bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
+		SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
+		for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
+			bool success = false;
+			Type *stCurType = errType;
+			if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
+				for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
+					if ((*iter)->id == id[i]) { // if this child matches the sub-identifier, accept it and proceed deeper into the binding
+						stCurType = (*iter)->defSite->status.type;
+						break;
 					}
-				} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
-					Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-					if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
-						stCurType = getStatusDeclaration(stCur->defSite);
-					}
-				} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Param binding, naively get its type
-					stCurType = getStatusParam(stCur->defSite);
-				} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
-					stCurType = stCur->defSite->status.type;
 				}
-				if (*stCurType) { // if we managed to derive a type for this SymbolTable node
-					if (stCurType->category == CATEGORY_OBJECTTYPE) { // if it's an Object Declaration (the only category that can have sub-identifiers)
-						// handle some special cases based on the suffix of the type we just derived
-						if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
+			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
+				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
+				if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
+					stCurType = getStatusDeclaration(stCur->defSite);
+				}
+			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Param binding, naively get its type
+				stCurType = getStatusParam(stCur->defSite);
+			} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
+				stCurType = stCur->defSite->status.type;
+			}
+			if (*stCurType) { // if we managed to derive a type for this SymbolTable node
+				if (stCurType->category == CATEGORY_OBJECTTYPE) { // if it's an Object Declaration (the only category that can have sub-identifiers)
+					// handle some special cases based on the suffix of the type we just derived
+					if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
+						Token curToken = stCur->defSite->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
+						stCurType = errType;
+					} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
+						if (id[i] == "[]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
+							// if it's an array type, flag the fact that it must be constantized
+							if (stCurType->suffix == SUFFIX_ARRAY) {
+								needsConstantization = true;
+							}
+							// we're about to fake a SymbolTable node for this subscript access
+							// but first, check if a SymbolTable node has already been faked for this member
+							vector<SymbolTable *>::const_iterator iter;
+							for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
+								if ((*iter)->kind == KIND_FAKE && (*iter)->id == id[i]) { // if we've already faked a SymbolTable node for this member, break
+									break;
+								}
+							}
+							if (iter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+								stCur = (*iter);
+							} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
+								// note that the member type that we're using here *will* be defined by this point;
+								// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
+								Type *mutableStCurType = stCurType->copy();
+								// decide which type of mutation to perform based on what the suffix is
+								if (mutableStCurType->suffix == SUFFIX_ARRAY) {
+									mutableStCurType->constantDestream();
+								} else if (mutableStCurType->suffix == SUFFIX_POOL) {
+									mutableStCurType->destream();
+								}
+								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
+								// attach the new fake node to the main SymbolTable
+								*stCur *= fakeStNode;
+								// accept the new fake node and proceed deeper into the binding
+								stCur = fakeStNode;
+							}
+							success = true; // all of the above branches lead to success
+							stCurType = errType; // this is only so that the below standard handling case doesn't execute
+						} else {
 							Token curToken = stCur->defSite->t;
-							semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on subscripted identifier '"<<rebuildId(id, i)<<"'");
 							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 							stCurType = errType;
-						} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
-							if (id[i] == "[]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
-								// if it's an array type, flag the fact that it must be constantized
-								if (stCurType->suffix == SUFFIX_ARRAY) {
-									needsConstantization = true;
-								}
-								// we're about to fake a SymbolTable node for this subscript access
+						}
+					} // else if it's a constant or a latch, handle it normally else 
+					if (*stCurType) { // if the above special-cases haven't caused an error 
+						// if it's a constant type, flag the fact that it must be constantized
+						if (stCurType->suffix == SUFFIX_CONSTANT) {
+							needsConstantization = true;
+						}
+						// proceed with binding the sub-identifier as normal by trying to find a match in the Object's members
+						ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
+						unsigned int j;
+						for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
+							if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
+								break;
+							}
+						}
+						if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
+							if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
+								stCur = ((stCurTypeCast->memberDefSites)[j])->env;
+								success = true;
+							} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
 								// but first, check if a SymbolTable node has already been faked for this member
 								vector<SymbolTable *>::const_iterator iter;
 								for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
@@ -357,79 +423,26 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 								} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
 									// note that the member type that we're using here *will* be defined by this point;
 									// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-									Type *mutableStCurType = stCurType->copy();
-									// decide which type of mutation to perform based on what the suffix is
-									if (mutableStCurType->suffix == SUFFIX_ARRAY) {
-										mutableStCurType->constantDestream();
-									} else if (mutableStCurType->suffix == SUFFIX_POOL) {
-										mutableStCurType->destream();
-									}
-									SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
+									SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
 									// attach the new fake node to the main SymbolTable
 									*stCur *= fakeStNode;
 									// accept the new fake node and proceed deeper into the binding
 									stCur = fakeStNode;
 								}
 								success = true; // all of the above branches lead to success
-								stCurType = errType; // this is only so that the below standard handling case doesn't execute
-							} else {
-								Token curToken = stCur->defSite->t;
-								semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on subscripted identifier '"<<rebuildId(id, i)<<"'");
-								semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
-								stCurType = errType;
-							}
-						} // else if it's a constant or a latch, handle it normally else 
-						if (*stCurType) { // if the above special-cases haven't caused an error 
-							// if it's a constant type, flag the fact that it must be constantized
-							if (stCurType->suffix == SUFFIX_CONSTANT) {
-								needsConstantization = true;
-							}
-							// proceed with binding the sub-identifier as normal by trying to find a match in the Object's members
-							ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
-							unsigned int j;
-							for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
-								if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
-									break;
-								}
-							}
-							if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
-								if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
-									stCur = ((stCurTypeCast->memberDefSites)[j])->env;
-									success = true;
-								} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
-									// but first, check if a SymbolTable node has already been faked for this member
-									vector<SymbolTable *>::const_iterator iter;
-									for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-										if ((*iter)->kind == KIND_FAKE && (*iter)->id == id[i]) { // if we've already faked a SymbolTable node for this member, break
-											break;
-										}
-									}
-									if (iter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
-										stCur = (*iter);
-									} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
-										// note that the member type that we're using here *will* be defined by this point;
-										// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-										SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
-										// attach the new fake node to the main SymbolTable
-										*stCur *= fakeStNode;
-										// accept the new fake node and proceed deeper into the binding
-										stCur = fakeStNode;
-									}
-									success = true; // all of the above branches lead to success
-								}
 							}
 						}
 					}
 				}
-				if (!success) { // if we didn't find a binding for this sub-identifier, return failure
-					return make_pair((SymbolTable *)NULL, false);
-				} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 			}
-			// if we managed to bind all of the sub-identifiers, return the tail of the binding as well as whether we need to post-constantize it
-			return make_pair(stCur, needsConstantization);
-		} else { // else if we failed to find an initial latch point, return failure
-			return make_pair((SymbolTable *)NULL, false);
+			if (!success) { // if we didn't find a binding for this sub-identifier, return failure
+				return make_pair((SymbolTable *)NULL, false);
+			} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 		}
+		// if we managed to bind all of the sub-identifiers, return the tail of the binding as well as whether we need to post-constantize it
+		return make_pair(stCur, needsConstantization);
+	} else { // else if we failed to find an initial latch point, return failure
+		return make_pair((SymbolTable *)NULL, false);
 	}
 }
 

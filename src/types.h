@@ -247,6 +247,7 @@ class TypeStatus {
 		~TypeStatus();
 		// converters
 		operator Type *() const;
+		operator unsigned int() const;
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);

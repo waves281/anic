@@ -858,6 +858,7 @@ TypeStatus::TypeStatus(Type *type, Tree *recall, Type *retType) : type(type), re
 TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), recall(otherStatus.recall), retType(otherStatus.retType) {}
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
+TypeStatus::operator unsigned int() const {return (unsigned int)type;}
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; recall = otherStatus.recall; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
 TypeStatus &TypeStatus::operator=(Tree *otherTree) {recall = otherTree; return *this;}

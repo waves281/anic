@@ -47,4 +47,8 @@ class Type;
 extern Type *nullType;
 extern Type *errType;
 
+// global function forward declarations
+
+unsigned int getUniqueInt();
+
 #endif

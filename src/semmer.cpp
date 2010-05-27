@@ -1734,13 +1734,15 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child; // Declaration, NonEmptyTerms, or LastDeclaration
-	if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
+	if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a Declaration-style pipe
+		status = getStatusDeclaration(pipec, inStatus);
+	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		status = getStatusNonEmptyTerms(pipec, inStatus);
-	} // Declaration and LastDeclaration nodes have their types derived by typeSt()
+	}
 	GET_STATUS_FOOTER;
 }
 
-void tracePipes(vector<Tree *> *parseme) {
+void typePipes(vector<Tree *> *parseme) {
 	// iterate through all Pipe nodes
 	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
 	for (unsigned int i=0; i < pipeList.size(); i++) {
@@ -1780,7 +1782,7 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 	// derive types of all identifiers in the SymbolTable
 	typeSt(stRoot);
 	// derive types for the remaining pipes
-	tracePipes(parseme);
+	typePipes(parseme);
 	
 	VERBOSE( cout << stRoot; )
 

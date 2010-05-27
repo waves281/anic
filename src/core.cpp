@@ -17,6 +17,11 @@ bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // core helper functions
 
+unsigned int nextUniqueInt = 0;
+unsigned int getUniqueInt() {
+	return (nextUniqueInt++);
+}
+
 int containsString(vector<string> inFileNames, string &s) {
 	for (unsigned int i=0; i < inFileNames.size(); i++) { // scan the vector for matches
 		if (inFileNames[i] == s) { // if we have a match at this index, return true

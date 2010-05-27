@@ -27,7 +27,7 @@ SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), 
 SymbolTable::SymbolTable(const SymbolTable &st) {*this = st;}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
-	for (vector<SymbolTable *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+	for (vector<SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 		delete *childIter;
 	}
 }
@@ -284,16 +284,27 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 	SymbolTable *stRoot = NULL; // the latch point of the binding
 	if (id[0] == "..") { // if the identifier begins with a recall
 		Tree *recall = inStatus.recall;
-		if (recall != NULL) { // if there's a recall binding known, create a fake latch point to use
-			// generate a fake identifier from a hash of the recall identifier's Type object
+		SymbolTable *env = recall->env;
+		if (recall != NULL) { // if there's a recall binding passed in, use a fake SymbolTable node for it
+			// generate a fake identifier for the recall binding node from a hash of the recall identifier's Type object
 			string fakeId(FAKE_RECALL_NODE_PREFIX);
 			fakeId += (unsigned int)inStatus;
-			// create the fake node object
-			SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, fakeId, inStatus);
-			// attach the new fake node to the main SymbolTable
-			*(recall->env) *= fakeStNode;
-			// accept the new fake node as the latch point
-			stRoot = fakeStNode;
+			// check if a SymbolTable node with this identifier already exists -- if so, use it
+			vector<SymbolTable *>::const_iterator iter;
+			for (iter = env->children.begin(); iter != env->children.end(); iter++) {
+				if ((*iter)->id == fakeId) { // if we have a match, break
+					break;
+				}
+			}
+			if (iter != env->children.end()) { // if we found a match, use it
+				stRoot = *iter;
+			} else { // else if we didn't find a match, create a new fake latch point to use
+				SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, fakeId, inStatus);
+				// attach the new fake node to the main SymbolTable
+				*env *= fakeStNode;
+				// accept the new fake node as the latch point
+				stRoot = fakeStNode;
+			}
 		} else { // else if there is no known recall binding, return an error
 			return make_pair((SymbolTable *)NULL, false);
 		}
@@ -451,7 +462,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	for(;;) { // per-change loop
 		// per-import loop
 		vector<SymbolTable *> newImportList;
-		for (vector<SymbolTable *>::iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
+		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
 			string importPath = *((*importIter)->defSite->child->next);
 			// standard import special-casing
@@ -469,7 +480,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				bool failed = false;
 				string importPathTip = binding->id; // must exist if binding succeeed
 				// per-parent's children loop (parent must exist, since the root is a block st node)
-				vector<SymbolTable *>::iterator childIter = (*importIter)->parent->children.begin();
+				vector<SymbolTable *>::const_iterator childIter = (*importIter)->parent->children.begin();
 				while (childIter != (*importIter)->parent->children.end()) {
 					if (((*childIter)->kind == KIND_STD ||
 							(*childIter)->kind == KIND_DECLARATION ||
@@ -498,7 +509,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			}
 		} // per-import loop
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
-			for (vector<SymbolTable *>::iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
+			for (vector<SymbolTable *>::const_iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
 				string importPath = *((*importIter)->defSite->child->next);
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
@@ -958,8 +969,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
 			// check for naming conflicts with this member
 			string &stringToAdd = pipec->child->t.s; // ID
-			vector<string>::iterator iter1;
-			vector<Token>::iterator iter2;
+			vector<string>::const_iterator iter1;
+			vector<Token>::const_iterator iter2;
 			for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
 				if (*iter1 == stringToAdd) {
 					break;
@@ -990,8 +1001,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
 		if (*consStatus) { // if we successfully derived a type for this constructor
 			// check if there's already a constructor of this type
-			vector<TypeList *>::iterator iter1;
-			vector<Token>::iterator iter2;
+			vector<TypeList *>::const_iterator iter1;
+			vector<Token>::const_iterator iter2;
 			for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
 				if (**iter1 == *consStatus) {
 					break;
@@ -1147,8 +1158,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					}
 					if (*consStatus) { // if we successfully derived a type for this constructor
 						// check if there's already a constructor of this type
-						vector<TypeList *>::iterator iter1;
-						vector<Token>::iterator iter2;
+						vector<TypeList *>::const_iterator iter1;
+						vector<Token>::const_iterator iter2;
 						for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
 							if (**iter1 == *consStatus) {
 								break;
@@ -1176,8 +1187,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				for(cur = (cur != NULL) ? cur->child : NULL; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a MemberType
 					// check for naming conflicts with this member
 					string &stringToAdd = cur->child->t.s; // ID
-					vector<string>::iterator iter1;
-					vector<Token>::iterator iter2;
+					vector<string>::const_iterator iter1;
+					vector<Token>::const_iterator iter2;
 					for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
 						if (*iter1 == stringToAdd) {
 							break;
@@ -1359,7 +1370,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 			status = tstStatus;
 		}
 	} else if (*stc == TOKEN_Access) {
-		// first, derive the Type of the Node that we're acting upon
+		// derive the Type of the Node that we're acting upon
 		TypeStatus nodeStatus = getStatusNode(stc->child->next, inStatus); // Node
 		if (*nodeStatus) { // if we managed to derive a type for the subnode
 			// copy the Type so that our mutations don't propagate to the Node

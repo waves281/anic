@@ -1370,7 +1370,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 			status = tstStatus;
 		}
 	} else if (*stc == TOKEN_Access) {
-		// derive the Type of the Node that we're acting upon
+		// first, derive the Type of the Node that we're acting upon
 		TypeStatus nodeStatus = getStatusNode(stc->child->next, inStatus); // Node
 		if (*nodeStatus) { // if we managed to derive a type for the subnode
 			// copy the Type so that our mutations don't propagate to the Node

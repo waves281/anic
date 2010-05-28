@@ -332,7 +332,9 @@ Type *TypeList::operator,(Type &otherType) const {
 	return errType;
 }
 Type *TypeList::operator>>(Type &otherType) const {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (this == &otherType) { // if the lists are actually the same object instance
+		return nullType;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
 			return errType;
@@ -654,7 +656,9 @@ Type *FilterType::operator,(Type &otherType) const {
 	return errType;
 }
 Type *FilterType::operator>>(Type &otherType) const {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (this == &otherType) { // if the filters are actually the same object instance
+		return nullType;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
 			return nullType;
@@ -802,9 +806,11 @@ Type *ObjectType::operator,(Type &otherType) const {
 	return errType;
 }
 Type *ObjectType::operator>>(Type &otherType) const {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (this == &otherType) { // if the objects are actually the same object instance
+		return nullType;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
+		if (otherTypeCast->list.size() == 1 && (*(*this >> *(otherTypeCast->list[0])))) {
 			return nullType;
 		} else {
 			return errType;

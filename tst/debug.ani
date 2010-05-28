@@ -1,7 +1,12 @@
 // debug.ani -- test file for anic debugging purposes
+// object sub-identifier testing
 obj = {
 	=;
 	mem = 1;
+	rec = obj;
 }
 constMemRef = obj.mem;
 latchMemRef = [int\] <- \obj.mem;
+recObjRef = obj.rec;
+recMemRef = obj.rec.mem;
+objLatchRef = [obj\] <- \obj;

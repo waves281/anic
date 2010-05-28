@@ -206,8 +206,8 @@ bool Type::constantDestream() {
 }
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}
-bool Type::operator!=(const Type &otherType) const {return (!operator==(otherType));};
-bool Type::operator!=(int kind) const {return (!operator==(kind));}
+bool Type::operator!=(const Type &otherType) const {return (!(operator==(otherType)));};
+bool Type::operator!=(int kind) const {return (!(operator==(kind)));}
 
 // TypeList functions
 // constructor works on ParamList and TypeList
@@ -231,7 +231,9 @@ bool TypeList::isComparable(const Type &otherType) const {return (list.size() ==
 Type *TypeList::copy() {return new TypeList(*this);}
 void TypeList::erase() {list.clear(); delete this;}
 bool TypeList::operator==(const Type &otherType) const {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (this == &otherType) { // if the lists are actually the same object instance, return true
+		return true;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (list.size() != otherTypeCast->list.size()) {
 			return false;
@@ -612,7 +614,9 @@ bool FilterType::isComparable(const Type &otherType) const {return false;}
 Type *FilterType::copy() {return new FilterType(*this);}
 void FilterType::erase() {from = NULL; to = NULL; delete this;}
 bool FilterType::operator==(const Type &otherType) const {
-	if (otherType.category == CATEGORY_FILTERTYPE) {
+	if (this == &otherType) { // if the filters are actually the same object instance, return true
+		return true;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		return (*from == *(otherTypeCast->from) && *to == *(otherTypeCast->to) && baseEquals(otherType));
 	} else {
@@ -722,7 +726,9 @@ void ObjectType::propagateToCopies() {
 	propagationHandled = false; // unflag this filter as already iterated
 }
 bool ObjectType::operator==(const Type &otherType) const {
-	if (otherType.category == CATEGORY_OBJECTTYPE) {
+	if (this == &otherType) { // if the objects are actually the same object instance, return true
+		return true;
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		if (constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberNames.size() == otherTypeCast->memberNames.size()) {
 			// verify that the constructors match

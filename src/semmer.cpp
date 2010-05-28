@@ -677,52 +677,65 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		Tree *expRight = op->next;
 		TypeStatus left = getStatusExp(expLeft, inStatus);
 		TypeStatus right = getStatusExp(expRight, inStatus);
-		switch (op->t.tokenType) {
-			case TOKEN_DOR:
-			case TOKEN_DAND:
-				if (*left == STD_BOOL && *right == STD_BOOL) {
-					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-				break;
-			case TOKEN_OR:
-			case TOKEN_XOR:
-			case TOKEN_AND:
-				if (*left == STD_INT && *right == STD_INT) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				break;
-			case TOKEN_DEQUALS:
-			case TOKEN_NEQUALS:
-			case TOKEN_LT:
-			case TOKEN_GT:
-			case TOKEN_LE:
-			case TOKEN_GE:
-				if (left->isComparable(*right)) {
-					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-				break;
-			case TOKEN_LS:
-			case TOKEN_RS:
-				if (*left == STD_INT && *right == STD_INT) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				break;
-			case TOKEN_TIMES:
-			case TOKEN_DIVIDE:
-			case TOKEN_MOD:
-			case TOKEN_PLUS:
-			case TOKEN_MINUS:
-				if ((*left == STD_INT || *left == STD_FLOAT) && (*right == STD_INT || *right == STD_FLOAT)) {
-					if (*left != STD_FLOAT && *right != STD_FLOAT) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
-					} else {
-						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+		if (!(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH)) {
+			Token curToken = expLeft->t; // Exp
+			semmerError(curToken.fileName,curToken.row,curToken.col,"left operand of expression is not a constant or latch");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<left<<")");
+		} else if (!(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) {
+			Token curToken = expRight->t; // Exp
+			semmerError(curToken.fileName,curToken.row,curToken.col,"right operand of expression is not a constant or latch");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<right<<")");
+		} else {
+			switch (op->t.tokenType) {
+				case TOKEN_DOR:
+				case TOKEN_DAND:
+					if (*left == STD_BOOL && *right == STD_BOOL) {
+						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 					}
-				}
-				break;
-			default: // can't happen; the above should cover all cases
-				break;
-		} // switch
+					break;
+				case TOKEN_OR:
+				case TOKEN_XOR:
+				case TOKEN_AND:
+					if (*left == STD_INT && *right == STD_INT) {
+						returnType(new StdType(STD_INT, SUFFIX_LATCH));
+					}
+					break;
+				case TOKEN_DEQUALS:
+				case TOKEN_NEQUALS:
+				case TOKEN_LT:
+				case TOKEN_GT:
+				case TOKEN_LE:
+				case TOKEN_GE:
+					if (left->isComparable(*right)) {
+						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+					}
+					break;
+				case TOKEN_LS:
+				case TOKEN_RS:
+					if (*left == STD_INT && *right == STD_INT) {
+						returnType(new StdType(STD_INT, SUFFIX_LATCH));
+					}
+					break;
+				case TOKEN_TIMES:
+				case TOKEN_DIVIDE:
+				case TOKEN_MOD:
+				case TOKEN_PLUS:
+				case TOKEN_MINUS:
+					if ((*left == STD_INT || *left == STD_FLOAT) && (*right == STD_INT || *right == STD_FLOAT)) {
+						if (*left != STD_FLOAT && *right != STD_FLOAT) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						} else {
+							returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+						}
+					} else if (op->t.tokenType == TOKEN_PLUS &&
+							((*left == STD_STRING && right->category == CATEGORY_STDTYPE) || (*right == STD_STRING && left->category == CATEGORY_STDTYPE))) {
+						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
+					}
+					break;
+				default: // can't happen; the above should cover all cases
+					break;
+			} // switch
+		} // if
 	} // if
 	// if we couldn't resolve a type for this expression
 	Token curToken = tree->t;

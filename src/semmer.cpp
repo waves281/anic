@@ -735,12 +735,12 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				default: // can't happen; the above should cover all cases
 					break;
 			} // switch
+			// if we couldn't resolve a type for this expression (or else we would have returned it above)
+			Token curToken = tree->t;
+			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 		} // if
 	} // if
-	// if we couldn't resolve a type for this expression
-	Token curToken = tree->t;
-	semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-	semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	GET_STATUS_FOOTER;
 }
 

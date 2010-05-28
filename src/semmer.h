@@ -48,7 +48,6 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = Ty
 TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));

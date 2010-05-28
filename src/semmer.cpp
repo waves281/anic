@@ -658,16 +658,9 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		returnStatus(getStatusPrimLiteral(primaryc, inStatus));
 	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
 		returnStatus(getStatusPrefixOrMultiOp(primaryc, inStatus));
-	} else if (*primaryc == TOKEN_LBRACKET) {
-		returnStatus(getStatusExp(primaryc->next, inStatus));
+	} else if (*primaryc == TOKEN_BracketedExp) {
+		returnStatus(getStatusExp(primaryc->child->next, inStatus)); // move past the bracket to the actual Exp node
 	}
-	GET_STATUS_FOOTER;
-}
-
-TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	Tree *exp = tree->child->next; // Exp
-	returnStatus(getStatusExp(exp, inStatus));
 	GET_STATUS_FOOTER;
 }
 
@@ -690,12 +683,14 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				if (*left == STD_BOOL && *right == STD_BOOL) {
 					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 				}
+				break;
 			case TOKEN_OR:
 			case TOKEN_XOR:
 			case TOKEN_AND:
 				if (*left == STD_INT && *right == STD_INT) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
+				break;
 			case TOKEN_DEQUALS:
 			case TOKEN_NEQUALS:
 			case TOKEN_LT:
@@ -705,11 +700,13 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				if (left->isComparable(*right)) {
 					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 				}
+				break;
 			case TOKEN_LS:
 			case TOKEN_RS:
 				if (*left == STD_INT && *right == STD_INT) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
+				break;
 			case TOKEN_TIMES:
 			case TOKEN_DIVIDE:
 			case TOKEN_MOD:
@@ -722,6 +719,7 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 					}
 				}
+				break;
 			default: // can't happen; the above should cover all cases
 				break;
 		} // switch
@@ -1345,8 +1343,8 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 		} else { // else if the node doesn't need to be constantized, just return the nodeStatus
 			returnStatus(nodeStatus);
 		}
-	} else if (*tstc == TOKEN_LBRACKET) { // it's an expression
-		returnStatus(getStatusExp(tstc->next, inStatus)); // move past the bracket to the actual Exp node
+	} else if (*tstc == TOKEN_BracketedExp) { // it's an expression
+		returnStatus(getStatusExp(tstc->child->next, inStatus)); // move past the bracket to the actual Exp node
 	}
 	GET_STATUS_FOOTER;
 }

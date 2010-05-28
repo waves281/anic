@@ -142,7 +142,7 @@ $(INSTALL_SCRIPT): Makefile var/versionStamp.txt
 ### $(INSTALL_SCRIPT) -- generated script for installing $(TARGET) ANI Compiler v.[$(VERSION_STRING).`cat var/versionStamp.txt`]\n\n\
 echo Installing binary...\n\
 cp -f $(TARGET) $(INSTALL_PATH)/$(TARGET)\n\
-echo Installing manpage...\n\
+echo Installing man page...\n\
 cp -f $(MAN_PAGE).gz $(MAN_PATH)\n\
 echo Installation complete.\n\
 exit" > $(INSTALL_SCRIPT)
@@ -157,6 +157,7 @@ echo Uninstalling man page...\n\
 rm -f $(MAN_PATH)/$(TARGET).1.gz\n\
 echo Uninstalling binary...\n\
 rm -f $(INSTALL_PATH)/$(TARGET)\n\
+echo Uninstallation complete.\n\
 exit" > $(UNINSTALL_SCRIPT)
 	@chmod +x $(UNINSTALL_SCRIPT)
 

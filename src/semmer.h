@@ -12,14 +12,15 @@
 // SymbolTable node kinds
 
 #define KIND_STD 1
-#define KIND_IMPORT 2
-#define KIND_BLOCK 3
-#define KIND_DECLARATION 4
-#define KIND_PARAMETER 5
-#define KIND_CONSTRUCTOR 6
-#define KIND_FILTER 7
-#define KIND_OBJECT 8
-#define KIND_FAKE 9
+#define KIND_CLOSED_IMPORT 2
+#define KIND_OPEN_IMPORT 3
+#define KIND_BLOCK 4
+#define KIND_DECLARATION 5
+#define KIND_PARAMETER 6
+#define KIND_CONSTRUCTOR 7
+#define KIND_FILTER 8
+#define KIND_OBJECT 9
+#define KIND_FAKE 10
 
 class SymbolTable {
 	public:
@@ -37,9 +38,9 @@ class SymbolTable {
 		SymbolTable(const SymbolTable &st);
 		~SymbolTable();
 		// deep-copy assignment operator
-		SymbolTable &operator =(const SymbolTable &st);
+		SymbolTable &operator=(const SymbolTable &st);
 		// concatenators
-		SymbolTable &operator *=(SymbolTable *st);
+		SymbolTable &operator*=(SymbolTable *st);
 };
 
 // forward declarations of mutually recursive typing functions

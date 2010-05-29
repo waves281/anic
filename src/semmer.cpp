@@ -33,7 +33,7 @@ SymbolTable::~SymbolTable() {
 }
 
 // deep-copy assignment operator
-SymbolTable &SymbolTable::operator =(const SymbolTable &st) {
+SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 	kind = st.kind;
 	id = st.id;
 	defSite = st.defSite;
@@ -50,7 +50,7 @@ SymbolTable &SymbolTable::operator =(const SymbolTable &st) {
 }
 
 // concatenators
-SymbolTable &SymbolTable::operator *=(SymbolTable *st) {
+SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
 	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER)) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
@@ -229,7 +229,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			buildSt(tree->next, st, importList); // right
 		} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
 			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
+			SymbolTable *newDef = new SymbolTable((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
 			// ... and link it in
 			*st *= newDef;
 			// also, since it's an import declaration, log it to the import list
@@ -479,33 +479,88 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			// otherwise, try to find a non-std binding for this import
 			SymbolTable *binding = bindId(importPath, *importIter).first;
 			if (binding != NULL) { // if we found a valid binding
-				// check to make sure that this import doesn't cause a binding conflict
-				bool failed = false;
 				string importPathTip = binding->id; // must exist if binding succeeed
-				// per-parent's children loop (parent must exist, since the root is a block st node)
-				vector<SymbolTable *>::const_iterator childIter = importParent->children.begin();
-				while (childIter != importParent->children.end()) {
-					if (((*childIter)->kind == KIND_STD ||
-							(*childIter)->kind == KIND_DECLARATION ||
-							(*childIter)->kind == KIND_PARAMETER) && (*childIter)->id == importPathTip) { // if there's a standard naming conflict
+				if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import
+					// check to make sure that this import doesn't cause a binding conflict
+					bool failed = false;
+					string importPathTip = binding->id; // must exist if binding succeeed
+					// per-parent's children loop (parent must exist, since the root is a block st node)
+					for (vector<SymbolTable *>::const_iterator conflictIter = importParent->children.begin();
+							conflictIter != importParent->children.end();
+							conflictIter++) {
+						if (((*conflictIter)->kind == KIND_STD ||
+								(*conflictIter)->kind == KIND_DECLARATION ||
+								(*conflictIter)->kind == KIND_PARAMETER) && (*conflictIter)->id == importPathTip) { // if there's a standard naming conflict
+							Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+							Token prevDefToken;
+							if ((*conflictIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+								prevDefToken = (*conflictIter)->defSite->t;
+							} else { // otherwise, it must be a standard definition, so make up the token as if it was
+								prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+								prevDefToken.row = 0;
+								prevDefToken.col = 0;
+							}
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
+							failed = true;
+						}
+					}
+					if (!failed) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
+						**importIter = *binding;
+					}
+				} else if ((*importIter)->kind == KIND_OPEN_IMPORT) { // else if this is an open-import
+					if (binding->children.size() == 1 && (binding->children)[0]->kind == KIND_OBJECT) { // if this open-import binding is an object
+						SymbolTable *bindingBase = binding->children[0]; // KIND_OBJECT; this node's children are the ones we're going to import in
+						// add in the imported nodes, scanning for conflicts along the way
+						bool firstInsert = true;
+						for (vector<SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
+								bindingBaseIter != bindingBase->children.end();
+								bindingBaseIter++) {
+								// check for member naming conflicts (constructor type conflicts will be resolved later)
+								bool foundConflict = false;
+								for (vector<SymbolTable *>::const_iterator conflictIter = (*importIter)->children.begin();
+										conflictIter != (*importIter)->children.end();
+										conflictIter++) {
+									if ((*conflictIter)->kind == (*bindingBaseIter)->kind &&
+											(*conflictIter)->kind == KIND_DECLARATION &&
+											(*conflictIter)->id == (*importIter)->id) { // if there is a regular member naming conflict
+										Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+										Token prevDefToken;
+										if ((*conflictIter)->defSite != NULL) { // if there is a definition site for the previous symbol
+											prevDefToken = (*conflictIter)->defSite->t;
+										} else { // otherwise, it must be a standard definition, so make up the token as if it was
+											prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+											prevDefToken.row = 0;
+											prevDefToken.col = 0;
+										}
+										semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+										semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
+										foundConflict = true;
+										break;
+									}
+								}
+								if (!foundConflict) {
+									if (firstInsert) { // if this is the first insertion, deep-copy in place of the import placeholder node
+										**importIter = **bindingBaseIter;
+										firstInsert = false;
+									} else { // else if this is not the first insertion, katch in a deep-copy of the child
+										*((*importIter)->parent) *= new SymbolTable(**bindingBaseIter);
+									}
+								}
+						}
+					} else { // else if this open-import binding is not an object, flag an error
 						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
 						Token prevDefToken;
-						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-							prevDefToken = (*childIter)->defSite->t;
+						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
+							prevDefToken = binding->defSite->t;
 						} else { // otherwise, it must be a standard definition, so make up the token as if it was
 							prevDefToken.fileName = STANDARD_LIBRARY_STRING;
 							prevDefToken.row = 0;
 							prevDefToken.col = 0;
 						}
-						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
-						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-						failed = true;
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"open import on non-object '"<<importPathTip<<"'");
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (importing from here)");
 					}
-					// advance
-					childIter++;
-				}
-				if (!failed) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
-					**importIter = *binding;
 				}
 			} else { // else if no binding could be found
 				newImportList.push_back(*importIter); // log the failed node for rebinding during the next round
@@ -1008,7 +1063,6 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<Token> constructorTokens;
 	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
 		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
-		cout << endl << "LOL: " << (consStatus->category) << " : " << consStatus << endl << "END" << endl;
 		if (*consStatus) { // if we successfully derived a type for this constructor
 			// check if there's already a constructor of this type
 			vector<TypeList *>::const_iterator iter1;
@@ -1736,7 +1790,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			fakeRetType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
-		if (!(*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_AT)) { // if it's a non-import declaration
+		if (!(*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT)) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);

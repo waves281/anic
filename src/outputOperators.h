@@ -1,5 +1,5 @@
-#ifndef _CUSTOM_OPERATORS_H_
-#define _CUSTOM_OPERATORS_H_
+#ifndef _OUTPUT_OPERATORS_H_
+#define _OUTPUT_OPERATORS_H_
 
 #include "mainDefs.h"
 #include "constantDefs.h"

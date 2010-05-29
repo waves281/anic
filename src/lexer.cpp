@@ -1,6 +1,6 @@
 #include "lexer.h"
 
-#include "customOperators.h"
+#include "outputOperators.h"
 
 // lexer-global variables
 

@@ -1,7 +1,7 @@
 #include "mainDefs.h"
 #include "constantDefs.h"
 #include "system.h"
-#include "customOperators.h"
+#include "outputOperators.h"
 
 #include "lexer.h"
 #include "parser.h"

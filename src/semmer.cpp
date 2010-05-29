@@ -1,6 +1,6 @@
 #include "semmer.h"
 
-#include "customOperators.h"
+#include "outputOperators.h"
 
 // semmer-global variables
 

@@ -17,3 +17,14 @@ selfConsObj = {
 	=[selfConsObj\ self] {};
 }
 selfConsObjIns = [selfConsObj\];
+
+// basic import testing
+impObj = {
+	=;
+	mem1 = 1;
+	mem2 = "Hi";
+}
+useObj = {
+	@impObj.mem1;
+	mem = [int] <- mem1;
+}

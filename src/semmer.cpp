@@ -210,8 +210,8 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->child, consDef, importList); // child of Constructor
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if it's a Declaration-style node
-		Tree *bnc = tree->child->next;
-		if (*bnc == TOKEN_EQUALS) { // standard static declaration
+		Tree *dcn = tree->child->next;
+		if (*dcn == TOKEN_EQUALS) { // standard static declaration
 			// allocate the new declaration node
 			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
 			// ... and link it in
@@ -219,7 +219,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
 			buildSt(tree->next, st, importList); // right
-		} else if (*bnc == TOKEN_ERARROW) { // flow-through declaration
+		} else if (*dcn == TOKEN_ERARROW) { // flow-through declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
 			// ... and link it in
@@ -227,7 +227,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
 			buildSt(tree->next, st, importList); // right
-		} else if (*bnc == TOKEN_SuffixedIdentifier) { // import declaration
+		} else if (*(tree->child) == TOKEN_AT) { // import declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
 			// ... and link it in
@@ -463,7 +463,11 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		vector<SymbolTable *> newImportList;
 		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
-			string importPath = *((*importIter)->defSite->child->next);
+			Tree *importSid = (*((*importIter)->defSite->child->next) == TOKEN_SuffixedIdentifier) ?
+				(*importIter)->defSite->child->next :
+				(*importIter)->defSite->child->next->next; // SuffixedIdentifier
+			string importPath = *importSid; // SuffixedIdentifier
+			SymbolTable *importParent = (*importIter)->parent;
 			// standard import special-casing
 			if (importPath == "std") { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -479,12 +483,12 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				bool failed = false;
 				string importPathTip = binding->id; // must exist if binding succeeed
 				// per-parent's children loop (parent must exist, since the root is a block st node)
-				vector<SymbolTable *>::const_iterator childIter = (*importIter)->parent->children.begin();
-				while (childIter != (*importIter)->parent->children.end()) {
+				vector<SymbolTable *>::const_iterator childIter = importParent->children.begin();
+				while (childIter != importParent->children.end()) {
 					if (((*childIter)->kind == KIND_STD ||
 							(*childIter)->kind == KIND_DECLARATION ||
 							(*childIter)->kind == KIND_PARAMETER) && (*childIter)->id == importPathTip) { // if there's a standard naming conflict
-						Token curDefToken = (*importIter)->defSite->child->next->child->t; // child of Identifier
+						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
 						Token prevDefToken;
 						if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
 							prevDefToken = (*childIter)->defSite->t;
@@ -510,7 +514,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::const_iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
-				string importPath = *((*importIter)->defSite->child->next);
+				Tree *importSid = (*((*importIter)->defSite->child->next) == TOKEN_SuffixedIdentifier) ?
+					(*importIter)->defSite->child->next :
+					(*importIter)->defSite->child->next->next; // SuffixedIdentifier
+				string importPath = *importSid; // SuffixedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
@@ -897,7 +904,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 			startStatus = nullType;
 			// advance to the Block definition node
 			filterCur = filterCur->next;
-		} else { // else if we failed to derive a type for the header, move the fakeType to the LCURLY or LSQUARE below, and set is as erroneous
+		} else { // else if we failed to derive a type for the header, move the fakeType to the LCURLY or LSQUARE below, and set it as erroneous
 			tree->child->child->status = fakeType; // LCURLY or LSQUARE
 			fakeType = errType;
 		}
@@ -1729,7 +1736,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			fakeRetType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
-		if (declarationSub != NULL) { // if it's a non-import declaration
+		if (*(tree->child) != TOKEN_AT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);

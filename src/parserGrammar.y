@@ -97,6 +97,8 @@ Declaration : ID EQUALS TypedStaticTerm
 	| ID ERARROW NonEmptyTerms SEMICOLON
 	| AT SuffixedIdentifier
 	| AT SuffixedIdentifier SEMICOLON
+	| AT LSQUARE SuffixedIdentifier RSQUARE
+	| AT LSQUARE SuffixedIdentifier RSQUARE SEMICOLON
 	;
 LastDeclaration : ID ERARROW NonEmptyTerms
 	;

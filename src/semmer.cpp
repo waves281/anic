@@ -500,7 +500,8 @@ void subImportDecls(vector<SymbolTable *> importList) {
 								prevDefToken.row = 0;
 								prevDefToken.col = 0;
 							}
-							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in open-importing '"<<importPathTip<<"'");
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"-- (conflicting identifier is '"<<(*conflictIter)->id<<"')");
 							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 							failed = true;
 						}

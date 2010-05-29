@@ -160,7 +160,18 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 	// recursive cases
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
-		SymbolTable *blockDef = new SymbolTable(KIND_OBJECT, (*tree == TOKEN_Block) ? BLOCK_NODE_STRING : OBJECT_NODE_STRING, tree);
+		// generate an identifier for the node
+		int kind;
+		string fakeId;
+		if (*tree == TOKEN_Block) { // if it's a block node, use a regular identifier
+			kind = KIND_BLOCK;
+			fakeId = BLOCK_NODE_STRING;
+		} else { // else if it's an object node, generate a fake identifier from a hash of the Tree node
+			kind = KIND_OBJECT;
+			fakeId = OBJECT_NODE_STRING;
+			fakeId += (unsigned int)tree;
+		}
+		SymbolTable *blockDef = new SymbolTable(kind, fakeId, tree);
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block or Object
 		if (blockDef->children.size() > 0) { // if there are any subnodes, link the block node into the main trunk
@@ -171,7 +182,10 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Filter) { // if it's a filter node
 		// allocate the new filter definition node
-		SymbolTable *filterDef = new SymbolTable(KIND_FILTER, FILTER_NODE_STRING, tree);
+		// generate a fake identifier for the filter node from a hash of the Tree node
+		string fakeId(FILTER_NODE_STRING);
+		fakeId += (unsigned int)tree;
+		SymbolTable *filterDef = new SymbolTable(KIND_FILTER, fakeId, tree);
 		// parse out the header's parameter declarations and add them to the st
 		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
 		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
@@ -192,7 +206,10 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // if it's a Constructor-style node
 		// allocate the new constructor definition node
-		SymbolTable *consDef = new SymbolTable(KIND_CONSTRUCTOR, CONSTRUCTOR_NODE_STRING, tree);
+		// generate a fake identifier for the constructor node from a hash of the Tree node
+		string fakeId(CONSTRUCTOR_NODE_STRING);
+		fakeId += (unsigned int)tree;
+		SymbolTable *consDef = new SymbolTable(KIND_CONSTRUCTOR, fakeId, tree);
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this constructor, if any
@@ -1031,7 +1048,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	Tree *pipes = conss->next; // NonEmptyPipes or RCURLY
 	for (Tree *pipe = (*pipes == TOKEN_NonEmptyPipes) ? pipes->child : NULL; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
-		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a member declaration
+		if ((*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) &&
+				(*(pipec->child) != TOKEN_AT && *(pipec->child) != TOKEN_DAT)) { // if it's a non-import member declaration
 			// check for naming conflicts with this member
 			string &stringToAdd = pipec->child->t.s; // ID
 			vector<string>::const_iterator iter1;

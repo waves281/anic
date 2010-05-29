@@ -26,11 +26,21 @@ void printDefs(SymbolTable *st, int depth) {
 			cout << "--";
 		}
 	}
-	if (st->kind != KIND_BLOCK && st->kind != KIND_OBJECT) {
-		cout << st->id;
-		Type *defType = st->defSite->status.type;
-		if (defType != NULL) {
-			cout << " : " << defType;
+	if (st->kind != KIND_BLOCK) {
+		if (st->kind == KIND_CONSTRUCTOR) {
+			cout << CONSTRUCTOR_NODE_STRING;
+		} else if (st->kind == KIND_FILTER) {
+			cout << FILTER_NODE_STRING;
+		} else if (st->kind == KIND_OBJECT) {
+			cout << OBJECT_NODE_STRING;
+		} else {
+			cout << st->id;
+		}
+		if (st->kind != KIND_OBJECT) {
+			Type *defType = st->defSite->status.type;
+			if (defType != NULL) {
+				cout << " : " << defType;
+			}
 		}
 	} else {
 		cout << st->id;

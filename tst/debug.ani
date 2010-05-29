@@ -25,6 +25,7 @@ impObj = {
 	mem2 = "Hi";
 }
 useObj = {
+	=[int x] {};
 	@impObj.mem1;
 	mem = [int] <- mem1;
 }

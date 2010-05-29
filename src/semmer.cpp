@@ -1033,7 +1033,7 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) { // KOL
 	GET_STATUS_HEADER;
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
@@ -1044,65 +1044,50 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<Type *> memberTypes;
 	vector<Tree *> memberDefSites;
 	vector<Token> memberTokens;
-	Tree *conss = tree->child->next; // Constructors
-	Tree *pipes = conss->next; // NonEmptyPipes or RCURLY
-	for (Tree *pipe = (*pipes == TOKEN_NonEmptyPipes) ? pipes->child : NULL; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
-		Tree *pipec = pipe->child; // Declaration, NonEmptyTerms, or LastDeclaration
-		if ((*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) &&
-				(*(pipec->child) != TOKEN_AT && *(pipec->child) != TOKEN_DAT)) { // if it's a non-import member declaration
-			// check for naming conflicts with this member
-			string &stringToAdd = pipec->child->t.s; // ID
-			vector<string>::const_iterator iter1;
-			vector<Token>::const_iterator iter2;
-			for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
-				if (*iter1 == stringToAdd) {
-					break;
-				}
-			}
-			if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
-				memberNames.push_back(stringToAdd);
-				memberTypes.push_back(NULL);
-				memberDefSites.push_back(pipec);
-				memberTokens.push_back(pipec->child->t); // ID
-			} else { // else if there was a naming conflict with this member
-				Token curDefToken = pipec->child->t;
-				Token prevDefToken = *iter2;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
-				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
-				failed = true;
-			}
+	SymbolTable *objectSt = tree->env;
+	for (vector<SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+		if ((*memberIter)->kind == KIND_DECLARATION) { // if it's a declaration-style node
+			Tree *defSite = (*memberIter)->defSite; // Declaration
+			Token defToken = defSite->child->t; // ID
+			memberNames.push_back(defToken.s); // ID
+			memberTypes.push_back(NULL);
+			memberDefSites.push_back(defSite); // Declaration
+			memberTokens.push_back(defToken); // ID
 		}
 	}
-	// log the fake member names and types, as well as their definition sites
+	// commit the fake member names and types, as well as their definition sites
 	((ObjectType *)fakeType)->memberNames = memberNames;
 	((ObjectType *)fakeType)->memberTypes = memberTypes;
 	((ObjectType *)fakeType)->memberDefSites = memberDefSites;
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
 	vector<Token> constructorTokens;
-	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
-		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
-		if (*consStatus) { // if we successfully derived a type for this constructor
-			// check if there's already a constructor of this type
-			vector<TypeList *>::const_iterator iter1;
-			vector<Token>::const_iterator iter2;
-			for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
-				if (**iter1 == *consStatus) { // if we've found a constructor with this same type, break
-					break;
+	for (vector<SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+		if ((*memberIter)->kind == KIND_CONSTRUCTOR) { // if it's a constructor-style node, derive its type
+			Tree *defSite = (*memberIter)->defSite; // Constructor
+			TypeStatus consStatus = getStatusConstructor(defSite, inStatus); // Constructor
+			if (*consStatus) { // if we successfully derived a type for this constructor
+				// check if there's already a constructor of this type
+				vector<TypeList *>::const_iterator iter1;
+				vector<Token>::const_iterator iter2;
+				for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
+					if (**iter1 == *consStatus) { // if we've found a constructor with this same type, break
+						break;
+					}
 				}
-			}
-			if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's from-type to the list
-				constructorTypes.push_back((TypeList *)(consStatus.type));
-				constructorTokens.push_back(cons->child->t); // EQUALS
-			} else { // otherwise, flag the conflict as an error
-				Token curDefToken = cons->child->t; // EQUALS
-				Token prevDefToken = *iter2;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<consStatus);
-				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+				if (iter1 == constructorTypes.end()) { // if there were no conflicts, log the constructor's type in the list
+					constructorTypes.push_back((TypeList *)(consStatus.type));
+					constructorTokens.push_back(defSite->child->t); // EQUALS
+				} else { // otherwise, flag the conflict as an error
+					Token curDefToken = defSite->child->t; // EQUALS
+					Token prevDefToken = *iter2;
+					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<consStatus);
+					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+					failed = true;
+				}
+			} else { // otherwise, if we failed to derive a type for this constructor
 				failed = true;
 			}
-		} else { // otherwise, if we failed to derive a type for this constructor
-			failed = true;
 		}
 	}
 	// derive types for all of the members that haven't had their types derived already
@@ -1793,6 +1778,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// reports errors
 TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// check if this is a recursive invocation

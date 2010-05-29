@@ -31,6 +31,7 @@
 %token CQUOTE
 %token SQUOTE
 %token AT
+%token DAT
 
 /* arithmetic tokens */
 %token DOR
@@ -99,6 +100,10 @@ Declaration : ID EQUALS TypedStaticTerm
 	| AT SuffixedIdentifier SEMICOLON
 	| AT LSQUARE SuffixedIdentifier RSQUARE
 	| AT LSQUARE SuffixedIdentifier RSQUARE SEMICOLON
+	| DAT SuffixedIdentifier
+	| DAT SuffixedIdentifier SEMICOLON
+	| DAT LSQUARE SuffixedIdentifier RSQUARE
+	| DAT LSQUARE SuffixedIdentifier RSQUARE SEMICOLON
 	;
 LastDeclaration : ID ERARROW NonEmptyTerms
 	;

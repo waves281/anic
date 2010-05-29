@@ -227,7 +227,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			// recurse
 			buildSt(tree->child, newDef, importList); // child of Declaration
 			buildSt(tree->next, st, importList); // right
-		} else if (*(tree->child) == TOKEN_AT) { // import declaration
+		} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
 			// allocate the new definition node
 			SymbolTable *newDef = new SymbolTable(KIND_IMPORT, IMPORT_DECL_STRING, tree);
 			// ... and link it in
@@ -1736,7 +1736,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			fakeRetType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
-		if (*(tree->child) != TOKEN_AT) { // if it's a non-import declaration
+		if (!(*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_AT)) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);

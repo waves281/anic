@@ -372,7 +372,7 @@ Type *TypeList::operator>>(Type &otherType) const {
 string TypeList::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
 	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
-		acc += (*iter)->toString(tabDepth);
+		acc += ((*iter)->toString(tabDepth));
 		if ((iter+1) != list.end()) {
 			acc += ", ";
 		}

@@ -10,3 +10,10 @@ latchMemRef = [int\] <- \obj.mem;
 recObjRef = obj.rec;
 recMemRef = obj.rec.mem;
 objLatchRef = [obj\] <- \obj;
+
+// self-constructing object testing
+selfConsObj = {
+	=;
+	=[selfConsObj\ self] {};
+}
+selfConsObjIns = [selfConsObj\];

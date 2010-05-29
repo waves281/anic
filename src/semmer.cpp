@@ -897,8 +897,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 			startStatus = nullType;
 			// advance to the Block definition node
 			filterCur = filterCur->next;
-		} else { // else if we failed to derive a type for the header, delete the fake type and set it to be erroneous
-			delete fakeType; // delete the fake type
+		} else { // else if we failed to derive a type for the header, move the fakeType to the LCURLY or LSQUARE below, and set is as erroneous
+			tree->child->child->status = fakeType; // LCURLY or LSQUARE
 			fakeType = errType;
 		}
 	}
@@ -927,23 +927,22 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
 	if (conscn == NULL || *conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
-		returnType(new FilterType(nullType, nullType, SUFFIX_LATCH));
+		returnType(new TypeList());
 	} else if (*conscn == TOKEN_NonRetFilterHeader) {
 		TypeStatus headerStatus = getStatusFilterHeader(conscn, inStatus);
 		if (*headerStatus) { // if we managed to derive a type for the header
 			// fake a type for this node in order to allow for recursion in the upcoming Block
 			Type *&fakeType = tree->status.type;
-			fakeType = headerStatus.type;
+			fakeType = ((FilterType *)(headerStatus.type))->from;
 			// verify the constructor definition Block
 			Tree *block = conscn->next; // Block
 			TypeStatus startStatus = inStatus;
 			startStatus.retType = errType; // ensure that the Block does not return anything
 			TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
 			if (*blockStatus) { // if we successfully derived a type for the definition Block, log the header as the return status
-				returnStatus(headerStatus);
-			} else { // else if we failed to derive a type for the Block
-				delete fakeType; // delete the fake type
-				fakeType = errType;
+				returnType(((FilterType *)(headerStatus.type))->from);
+			} else { // else if we failed to derive a type for the Block, move the fakeType to the EQUALS below
+				tree->child->status = fakeType; // EQUALS
 			}
 		} else { // else if we failed to derive a type for the header, flag an error
 			Token curToken = conscn->child->t; // LSQUARE
@@ -1002,22 +1001,23 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	vector<Token> constructorTokens;
 	for (Tree *cons = conss->child; cons != NULL; cons = (cons->next != NULL) ? cons->next->child : NULL) {
 		TypeStatus consStatus = getStatusConstructor(cons, inStatus); // Constructor
+		cout << endl << "LOL: " << (consStatus->category) << " : " << consStatus << endl << "END" << endl;
 		if (*consStatus) { // if we successfully derived a type for this constructor
 			// check if there's already a constructor of this type
 			vector<TypeList *>::const_iterator iter1;
 			vector<Token>::const_iterator iter2;
 			for (iter1 = constructorTypes.begin(), iter2 = constructorTokens.begin(); iter1 != constructorTypes.end(); iter1++, iter2++) {
-				if (**iter1 == *consStatus) {
+				if (**iter1 == *consStatus) { // if we've found a constructor with this same type, break
 					break;
 				}
 			}
-			if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's type to the list
+			if (iter1 == constructorTypes.end()) { // if there were no conflicts, add the constructor's from-type to the list
 				constructorTypes.push_back((TypeList *)(consStatus.type));
 				constructorTokens.push_back(cons->child->t); // EQUALS
 			} else { // otherwise, flag the conflict as an error
 				Token curDefToken = cons->child->t; // EQUALS
 				Token prevDefToken = *iter2;
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<consStatus);
+				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<consStatus);
 				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 				failed = true;
 			}
@@ -1044,8 +1044,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		((ObjectType *)fakeType)->propagateToCopies();
 		// finally, log the completed type as the return status
 		returnType(fakeType);
-	} else { // else if we failed to derive the lists, delete the fake type
-		delete fakeType;
+	} else { // else if we failed to derive the lists, move the fakeType to the LCURLY below
+		tree->child->status = fakeType; // LCURLY
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1174,7 +1174,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 						} else { // otherwise, flag the conflict as an error
 							Token curDefToken = cur->child->t; // EQUALS
 							Token prevDefToken = *iter2;
-							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate object constructor of type "<<consStatus);
+							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate constructor of type "<<consStatus);
 							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
 							failed = true;
 						}
@@ -1228,9 +1228,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<Type *> list;
-	Tree *treeCur = tree;
 	bool failed = false;
-	for(;;) { // invariant: treeCur is a TypeList
+	for(Tree *treeCur = tree; treeCur != NULL; treeCur = (treeCur->child->next != NULL) ? treeCur->child->next->next : NULL) { // invariant: treeCur is a TypeList
 		Tree *type = treeCur->child; // Type
 		TypeStatus curTypeStatus = getStatusType(type, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
@@ -1238,11 +1237,6 @@ TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 			list.push_back(curTypeStatus.type);
 		} else { // else if we failed to derive a type for this node
 			failed = true;
-		}
-		// advance
-		if (treeCur->child->next != NULL) {
-			treeCur = treeCur->child->next->next;
-		} else {
 			break;
 		}
 	}

@@ -46,8 +46,8 @@ void printDefs(SymbolTable *st, int depth) {
 		cout << st->id;
 	}
 	cout << '\n';
-	for (vector<SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
-		printDefs(*childIter, depth+1);
+	for (map<string, SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
+		printDefs((*childIter).second, depth+1);
 	}
 }
 

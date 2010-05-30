@@ -29,7 +29,7 @@ class SymbolTable {
 		string id;
 		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
 		SymbolTable *parent;
-		vector<SymbolTable *> children;
+		map<string, SymbolTable *> children;
 		// allocators/deallocators
 		SymbolTable(int kind, const string &id, Tree *defSite = NULL);
 		SymbolTable(int kind, const char *id, Tree *defSite = NULL);

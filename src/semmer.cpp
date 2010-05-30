@@ -27,8 +27,8 @@ SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), 
 SymbolTable::SymbolTable(const SymbolTable &st) {*this = st;}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
-	for (vector<SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
-		delete *childIter;
+	for (map<string, SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+		delete (*childIter).second;
 	}
 }
 
@@ -38,13 +38,13 @@ SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 	id = st.id;
 	defSite = st.defSite;
 	parent = st.parent;
-	for (vector<SymbolTable *>::const_iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
+	for (map<string, SymbolTable *>::const_iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
 		// copy the child node
-		SymbolTable *child = new SymbolTable(**childIter);
+		SymbolTable *child = new SymbolTable(*((*childIter).second));
 		// fix the child's parent pointer to point up to this node
 		child->parent = this;
 		// finally, log the child in the copied child into the children list
-		children.push_back(child);
+		children.insert(make_pair(child->id, child));
 	}
 	return *this;
 }
@@ -54,33 +54,33 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
 	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER)) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
-		for (vector<SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
-			if ((*childIter)->id == st->id) { // if we've found a conflict
-				Token curDefToken;
-				if (st->defSite != NULL) { // if there is a definition site for the current symbol
-					curDefToken = st->defSite->t;
-				} else { // otherwise, it must be a standard definition, so make up the token as if it was
-					curDefToken.fileName = STANDARD_LIBRARY_STRING;
-					curDefToken.row = 0;
-					curDefToken.col = 0;
-				}
-				Token prevDefToken;
-				if ((*childIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-					prevDefToken = (*childIter)->defSite->t;
-				} else { // otherwise, it must be a standard definition, so make up the token as if it was
-					prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-					prevDefToken.row = 0;
-					prevDefToken.col = 0;
-				}
-				semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'");
-				semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
-				delete st;
-				return *this;
-			} // if there's a conflict
-		} // for per-symbol loop
+		map<string, SymbolTable *>::const_iterator conflictFind = children.find(st->id);
+		if (conflictFind != children.end()) { // if we've found a conflict
+			SymbolTable *conflictSt = (*conflictFind).second;
+			Token curDefToken;
+			if (st->defSite != NULL) { // if there is a definition site for the current symbol
+				curDefToken = st->defSite->t;
+			} else { // otherwise, it must be a standard definition, so make up the token as if it was
+				curDefToken.fileName = STANDARD_LIBRARY_STRING;
+				curDefToken.row = 0;
+				curDefToken.col = 0;
+			}
+			Token prevDefToken;
+			if (conflictSt->defSite != NULL) { // if there is a definition site for the previous symbol
+				prevDefToken = conflictSt->defSite->t;
+			} else { // otherwise, it must be a standard definition, so make up the token as if it was
+				prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+				prevDefToken.row = 0;
+				prevDefToken.col = 0;
+			}
+			semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'");
+			semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+			delete st;
+			return *this;
+		}
 	} // if this is not a special system-level binding
 	// binding is now known to be conflict-free, so log it normally
-	children.push_back(st);
+	children.insert(make_pair(st->id, st));
 	if (st != NULL) {
 		st->parent = this;
 		return *st;
@@ -306,14 +306,9 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 			string fakeId(FAKE_RECALL_NODE_PREFIX);
 			fakeId += (unsigned int)inStatus;
 			// check if a SymbolTable node with this identifier already exists -- if so, use it
-			vector<SymbolTable *>::const_iterator iter;
-			for (iter = env->children.begin(); iter != env->children.end(); iter++) {
-				if ((*iter)->id == fakeId) { // if we have a match, break
-					break;
-				}
-			}
-			if (iter != env->children.end()) { // if we found a match, use it
-				stRoot = *iter;
+			map<string, SymbolTable *>::const_iterator fakeFind = env->children.find(fakeId);
+			if (fakeFind != env->children.end()) { // if we found a match, use it
+				stRoot = (*fakeFind).second;
 			} else { // else if we didn't find a match, create a new fake latch point to use
 				SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, fakeId);
 				// attach the new fake node to the main SymbolTable
@@ -336,18 +331,15 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 					stCur->kind == KIND_OBJECT ||
 					stCur->kind == KIND_CONSTRUCTOR ||
 					stCur->kind == KIND_FILTER) { // else if this is a valid basis block, scan its children for a latch point
-				for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-					if (((*iter)->kind == KIND_STD ||
-							(*iter)->kind == KIND_DECLARATION ||
-							(*iter)->kind == KIND_PARAMETER) &&
-							(*iter)->id == id[0]) { // if this is a valid latch point, log it and break
-						stRoot = (*iter);
-						break;
-					}
+				map<string, SymbolTable *>::const_iterator latchFind = stCur->children.find(id[0]);
+				if (latchFind != stCur->children.end()) { // if we've found a latch point in the children
+					stRoot = (*latchFind).second;
+					break;
 				}
 			}
 		}
 	}
+	cout << endl << "LOL: " << id[0] << " : " << (stRoot != NULL) << endl;
 	if (stRoot != NULL) { // if we managed to find a latch point, verify the rest of the binding
 		bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
 		SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
@@ -355,11 +347,9 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 			bool success = false;
 			Type *stCurType = errType;
 			if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
-				for (vector<SymbolTable *>::const_iterator iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-					if ((*iter)->id == id[i]) { // if this child matches the sub-identifier, accept it and proceed deeper into the binding
-						stCurType = (*iter)->defSite->status.type;
-						break;
-					}
+				map<string, SymbolTable *>::const_iterator childFind = stCur->children.find(id[i]);
+				if (childFind != stCur->children.end()) { // if there's a match to this sub-identifier
+					stCurType = (*childFind).second->defSite->status.type;
 				}
 			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
 				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
@@ -387,14 +377,9 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 							}
 							// we're about to fake a SymbolTable node for this subscript access
 							// but first, check if a SymbolTable node has already been faked for this member
-							vector<SymbolTable *>::const_iterator iter;
-							for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-								if ((*iter)->kind == KIND_FAKE && (*iter)->id == id[i]) { // if we've already faked a SymbolTable node for this member, break
-									break;
-								}
-							}
-							if (iter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
-								stCur = (*iter);
+							map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
+							if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+								stCur = (*fakeFind).second;
 							} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
 								// note that the member type that we're using here *will* be defined by this point;
 								// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
@@ -439,14 +424,9 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 								success = true;
 							} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
 								// but first, check if a SymbolTable node has already been faked for this member
-								vector<SymbolTable *>::const_iterator iter;
-								for (iter = stCur->children.begin(); iter != stCur->children.end(); iter++) {
-									if ((*iter)->kind == KIND_FAKE && (*iter)->id == id[i]) { // if we've already faked a SymbolTable node for this member, break
-										break;
-									}
-								}
-								if (iter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
-									stCur = (*iter);
+								map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
+								if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+									stCur = (*fakeFind).second;
 								} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
 									// note that the member type that we're using here *will* be defined by this point;
 									// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
@@ -499,71 +479,53 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				string importPathTip = binding->id; // must exist if binding succeeed
 				if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import
 					// check to make sure that this import doesn't cause a binding conflict
-					bool failed = false;
 					string importPathTip = binding->id; // must exist if binding succeeed
-					// per-parent's children loop (parent must exist, since the root is a block st node)
-					for (vector<SymbolTable *>::const_iterator conflictIter = importParent->children.begin();
-							conflictIter != importParent->children.end();
-							conflictIter++) {
-						if (((*conflictIter)->kind == KIND_STD ||
-								(*conflictIter)->kind == KIND_DECLARATION ||
-								(*conflictIter)->kind == KIND_PARAMETER) && (*conflictIter)->id == importPathTip) { // if there's a standard naming conflict
-							Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
-							Token prevDefToken;
-							if ((*conflictIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-								prevDefToken = (*conflictIter)->defSite->t;
-							} else { // otherwise, it must be a standard definition, so make up the token as if it was
-								prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-								prevDefToken.row = 0;
-								prevDefToken.col = 0;
-							}
-							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in open-importing '"<<importPathTip<<"'");
-							semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"-- (conflicting identifier is '"<<(*conflictIter)->id<<"')");
-							semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-							failed = true;
-						}
-					}
-					if (!failed) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
+					map<string, SymbolTable *>::const_iterator conflictFind = importParent->children.find(importPathTip);
+					if (conflictFind == importParent->children.end()) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
 						**importIter = *binding;
+					} else { // else if there was a conflict, flag an error
+						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+						Token prevDefToken;
+						if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
+							prevDefToken = (*conflictFind).second->defSite->t;
+						} else { // otherwise, it must be a standard definition, so make up the token as if it was
+							prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+							prevDefToken.row = 0;
+							prevDefToken.col = 0;
+						}
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in open-importing '"<<importPathTip<<"'");
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"-- (conflicting identifier is '"<<(*conflictFind).second->id<<"')");
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					}
 				} else if ((*importIter)->kind == KIND_OPEN_IMPORT) { // else if this is an open-import
 					if (binding->children.size() == 1 && (binding->children)[0]->kind == KIND_OBJECT) { // if this open-import binding is an object
 						SymbolTable *bindingBase = binding->children[0]; // KIND_OBJECT; this node's children are the ones we're going to import in
 						// add in the imported nodes, scanning for conflicts along the way
 						bool firstInsert = true;
-						for (vector<SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
+						for (map<string, SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
 								bindingBaseIter != bindingBase->children.end();
 								bindingBaseIter++) {
 								// check for member naming conflicts (constructor type conflicts will be resolved later)
-								bool foundConflict = false;
-								for (vector<SymbolTable *>::const_iterator conflictIter = (*importIter)->children.begin();
-										conflictIter != (*importIter)->children.end();
-										conflictIter++) {
-									if ((*conflictIter)->kind == (*bindingBaseIter)->kind &&
-											(*conflictIter)->kind == KIND_DECLARATION &&
-											(*conflictIter)->id == (*importIter)->id) { // if there is a regular member naming conflict
-										Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
-										Token prevDefToken;
-										if ((*conflictIter)->defSite != NULL) { // if there is a definition site for the previous symbol
-											prevDefToken = (*conflictIter)->defSite->t;
-										} else { // otherwise, it must be a standard definition, so make up the token as if it was
-											prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-											prevDefToken.row = 0;
-											prevDefToken.col = 0;
-										}
-										semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
-										semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-										foundConflict = true;
-										break;
-									}
-								}
-								if (!foundConflict) {
+								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*importIter)->id);
+								if (conflictFind == (*importIter)->children.end()) { // if there were no regular member naming conflicts
 									if (firstInsert) { // if this is the first insertion, deep-copy in place of the import placeholder node
-										**importIter = **bindingBaseIter;
+										**importIter = *((*bindingBaseIter).second);
 										firstInsert = false;
 									} else { // else if this is not the first insertion, katch in a deep-copy of the child
-										*((*importIter)->parent) *= new SymbolTable(**bindingBaseIter);
+										*((*importIter)->parent) *= new SymbolTable(*((*bindingBaseIter).second));
 									}
+								} else { // else if there is a regular member naming conflict
+									Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+									Token prevDefToken;
+									if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
+										prevDefToken = (*conflictFind).second->defSite->t;
+									} else { // otherwise, it must be a standard definition, so make up the token as if it was
+										prevDefToken.fileName = STANDARD_LIBRARY_STRING;
+										prevDefToken.row = 0;
+										prevDefToken.col = 0;
+									}
+									semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+									semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 								}
 						}
 					} else { // else if this open-import binding is not an object, flag an error
@@ -606,8 +568,8 @@ void typeSt(SymbolTable *root) {
 		getStatusSymbolTable(root);
 	}
 	// recurse on this node's children
-	for (vector<SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
-		typeSt(*iter);
+	for (map<string, SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
+		typeSt((*iter).second);
 	}
 }
 
@@ -1033,7 +995,7 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) { // KOL
+TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
@@ -1045,9 +1007,9 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) { // KOL
 	vector<Tree *> memberDefSites;
 	vector<Token> memberTokens;
 	SymbolTable *objectSt = tree->env;
-	for (vector<SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
-		if ((*memberIter)->kind == KIND_DECLARATION) { // if it's a declaration-style node
-			Tree *defSite = (*memberIter)->defSite; // Declaration
+	for (map<string, SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+		if ((*memberIter).second->kind == KIND_DECLARATION) { // if it's a declaration-style node
+			Tree *defSite = (*memberIter).second->defSite; // Declaration
 			Token defToken = defSite->child->t; // ID
 			memberNames.push_back(defToken.s); // ID
 			memberTypes.push_back(NULL);
@@ -1062,9 +1024,9 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) { // KOL
 	// derive types for all of the contructors
 	vector<TypeList *> constructorTypes;
 	vector<Token> constructorTokens;
-	for (vector<SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
-		if ((*memberIter)->kind == KIND_CONSTRUCTOR) { // if it's a constructor-style node, derive its type
-			Tree *defSite = (*memberIter)->defSite; // Constructor
+	for (map<string, SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+		if ((*memberIter).second->kind == KIND_CONSTRUCTOR) { // if it's a constructor-style node, derive its type
+			Tree *defSite = (*memberIter).second->defSite; // Constructor
 			TypeStatus consStatus = getStatusConstructor(defSite, inStatus); // Constructor
 			if (*consStatus) { // if we successfully derived a type for this constructor
 				// check if there's already a constructor of this type

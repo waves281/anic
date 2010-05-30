@@ -35,9 +35,15 @@ SymbolTable::~SymbolTable() {
 // deep-copy assignment operator
 SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 	kind = st.kind;
-	id = st.id;
 	defSite = st.defSite;
-	parent = st.parent;
+	if (id != st.id) { // if the id is changing
+		if (parent != NULL) { // ... and there exists a parent, fix up the parent's children map to use the new id
+			parent->children.erase(id);
+			parent->children.insert(make_pair(st.id, this));
+		}
+		id = st.id; // either way, update the id
+	}
+	// recurse
 	for (map<string, SymbolTable *>::const_iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
 		// copy the child node
 		SymbolTable *child = new SymbolTable(*((*childIter).second));
@@ -339,7 +345,6 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 			}
 		}
 	}
-	cout << endl << "LOL: " << id[0] << " : " << (stRoot != NULL) << endl;
 	if (stRoot != NULL) { // if we managed to find a latch point, verify the rest of the binding
 		bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
 		SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)

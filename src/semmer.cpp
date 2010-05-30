@@ -32,7 +32,7 @@ SymbolTable::~SymbolTable() {
 	}
 }
 
-// deep-copy assignment operator
+// copy assignment operator
 SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 	kind = st.kind;
 	defSite = st.defSite;
@@ -43,22 +43,14 @@ SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 		}
 		id = st.id; // either way, update the id
 	}
-	// recurse
-	for (map<string, SymbolTable *>::const_iterator childIter = st.children.begin(); childIter != st.children.end(); childIter++) {
-		// copy the child node
-		SymbolTable *child = new SymbolTable(*((*childIter).second));
-		// fix the child's parent pointer to point up to this node
-		child->parent = this;
-		// finally, log the child in the copied child into the children list
-		children.insert(make_pair(child->id, child));
-	}
+	children = st.children;
 	return *this;
 }
 
 // concatenators
 SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 	// first, check for conflicting bindings
-	if (st != NULL && (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER)) { // if this is a conflictable (non-special system-level binding)
+	if (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
 		map<string, SymbolTable *>::const_iterator conflictFind = children.find(st->id);
 		if (conflictFind != children.end()) { // if we've found a conflict
@@ -486,7 +478,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					// check to make sure that this import doesn't cause a binding conflict
 					string importPathTip = binding->id; // must exist if binding succeeed
 					map<string, SymbolTable *>::const_iterator conflictFind = importParent->children.find(importPathTip);
-					if (conflictFind == importParent->children.end()) { // there was no conflict, so just deep-copy the binding in place of the import placeholder node
+					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
 						**importIter = *binding;
 					} else { // else if there was a conflict, flag an error
 						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
@@ -513,10 +505,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 								// check for member naming conflicts (constructor type conflicts will be resolved later)
 								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*importIter)->id);
 								if (conflictFind == (*importIter)->children.end()) { // if there were no regular member naming conflicts
-									if (firstInsert) { // if this is the first insertion, deep-copy in place of the import placeholder node
+									if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
 										**importIter = *((*bindingBaseIter).second);
 										firstInsert = false;
-									} else { // else if this is not the first insertion, katch in a deep-copy of the child
+									} else { // else if this is not the first insertion, latch in a copy of the child
 										*((*importIter)->parent) *= new SymbolTable(*((*bindingBaseIter).second));
 									}
 								} else { // else if there is a regular member naming conflict
@@ -1243,8 +1235,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					} else { // else if there was a naming conflict with this member
 						Token curDefToken = cur->child->t;
 						Token prevDefToken = *iter2;
-						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate definition of object member '"<<stringToAdd<<"'");
-						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate declaration of object type member '"<<stringToAdd<<"'");
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous declaration was here)");
 						failed = true;
 					}
 				}

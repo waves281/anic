@@ -37,7 +37,7 @@ class SymbolTable {
 		SymbolTable(int kind, const char *id, Type *defType);
 		SymbolTable(const SymbolTable &st);
 		~SymbolTable();
-		// deep-copy assignment operator
+		// copy assignment operator
 		SymbolTable &operator=(const SymbolTable &st);
 		// concatenators
 		SymbolTable &operator*=(SymbolTable *st);

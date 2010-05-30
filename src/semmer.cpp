@@ -190,11 +190,10 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 				*filterDef *= paramDef;
 			}
 		} // if there is a parameter list to process
-		// recurse
-		buildSt(tree->child, filterDef, importList); // child of Filter
 		// latch the new node into the SymbolTable trunk
 		*st *= filterDef;
 		// recurse
+		buildSt(tree->child, filterDef, importList); // child of Filter
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // if it's a Constructor-style node
 		// allocate the new constructor definition node

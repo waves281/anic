@@ -1717,8 +1717,8 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					Token curToken = curTerm->t; // Term
 					Token prevToken = prevTerm->t; // Term
 					semmerError(curToken.fileName,curToken.row,curToken.col,"term does not accept incoming type");
-					semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
+					semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
 					// short-circuit the derivation of this NonEmptyTerms
 					curStatus = errType;
 					break;

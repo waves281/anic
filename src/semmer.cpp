@@ -1707,21 +1707,32 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					*(curTerm->child->child->child) == TOKEN_DynamicTerm &&
 					*(curTerm->child->child->child->child->child) == TOKEN_TypedStaticTerm &&
 					*(curTerm->child->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
-				// derive a type for the flow of the current type into the next term in the sequence
-				Type *flowResult = (*curStatus , *nextTermStatus);
-				if (*flowResult) { // if the type flow is valid, log it as the current status
-					curStatus = TypeStatus(flowResult, nextTermStatus);
-				} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
-					curStatus = nextTermStatus;
-				} else { // else if the type flow is not valid and the incoming type is not null, flag an error
-					Token curToken = curTerm->t; // Term
-					Token prevToken = prevTerm->t; // Term
-					semmerError(curToken.fileName,curToken.row,curToken.col,"term does not accept incoming type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
-					semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
-					// short-circuit the derivation of this NonEmptyTerms
-					curStatus = errType;
-					break;
+				pair<Type *, bool> stdFlowResult(errType, false);
+				if (nextTermStatus->category == CATEGORY_STDTYPE) { // if this Term's type is a STDTYPE, try to derive a three-term exceptional type for it
+					stdFlowResult = ((StdType *)(nextTermStatus.type))->stdFlowDerivation(*curStatus, curTerm->next->child);
+				}
+				if (*(stdFlowResult.first)) { // if we managed to derive a three-term exceptional type for this term
+					curStatus = TypeStatus(stdFlowResult.first, nextTermStatus); // log the three-term exceptional type as the current status
+					if (stdFlowResult.second) { // if we used a third term for the derivation, advance curTerm past it
+						curTerm = curTerm->next->child;
+					}
+				} else { // else if this is not a STDTYPE filter exception case
+					// derive a type for the flow of the current type into the next term in the sequence
+					Type *flowResult = (*curStatus , *nextTermStatus);
+					if (*flowResult) { // if the type flow is valid, log it as the current status
+						curStatus = TypeStatus(flowResult, nextTermStatus);
+					} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
+						curStatus = nextTermStatus;
+					} else { // else if the type flow is not valid and the incoming type is not null, flag an error
+						Token curToken = curTerm->t; // Term
+						Token prevToken = prevTerm->t; // Term
+						semmerError(curToken.fileName,curToken.row,curToken.col,"term does not accept incoming type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
+						semmerError(prevToken.fileName,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
+						// short-circuit the derivation of this NonEmptyTerms
+						curStatus = errType;
+						break;
+					}
 				}
 			} else { // else if it's not a flow-through Term, log the next term's status as the current one
 				curStatus  = nextTermStatus;

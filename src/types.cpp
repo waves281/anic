@@ -425,6 +425,9 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return STD_NULL;
 	}
 }
+pair<Type *, bool> StdType::stdFlowDerivation(const Type &prevType, Tree *nextTerm) const {
+	return make_pair(errType, false); // KOL
+}
 Type *StdType::copy() {return new StdType(*this);}
 void StdType::erase() {delete this;}
 bool StdType::operator==(const Type &otherType) const {

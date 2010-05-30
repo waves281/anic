@@ -1,4 +1,10 @@
 // debug.ani -- test file for anic debugging purposes
+
+// basic expression testing
+exp1 = 5;
+exp2 = (7+5*2);
+exp3 = [int\]; 1 + 2 ->exp3;
+
 // object sub-identifier testing
 obj = {
 	=;

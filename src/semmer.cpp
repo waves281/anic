@@ -361,7 +361,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 						stCurType = errType;
 					} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
-						if (id[i] == "[]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
+						if (id[i] == "[]" || id[i] == "[:]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
 							// if it's an array type, flag the fact that it must be constantized
 							if (stCurType->suffix == SUFFIX_ARRAY) {
 								needsConstantization = true;
@@ -375,11 +375,13 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 								// note that the member type that we're using here *will* be defined by this point;
 								// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
 								Type *mutableStCurType = stCurType->copy();
-								// decide which type of mutation to perform based on what the suffix is
-								if (mutableStCurType->suffix == SUFFIX_ARRAY) {
-									mutableStCurType->constantDestream();
-								} else if (mutableStCurType->suffix == SUFFIX_POOL) {
-									mutableStCurType->destream();
+								// decide which type of mutation to perform based on whether it's an array access (only those are mutated), and what the suffix is
+								if (id[i] == "[]") { // if it's an array access
+									if (mutableStCurType->suffix == SUFFIX_ARRAY) {
+										mutableStCurType->constantDestream();
+									} else if (mutableStCurType->suffix == SUFFIX_POOL) {
+										mutableStCurType->destream();
+									}
 								}
 								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
 								// attach the new fake node to the main SymbolTable
@@ -395,7 +397,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 							stCurType = errType;
 						}
-					} // else if it's a constant or a latch, handle it normally else 
+					} // else if it's a constant or a latch, handle it normally 
 					if (*stCurType) { // if the above special-cases haven't caused an error 
 						// if it's a constant type, flag the fact that it must be constantized
 						if (stCurType->suffix == SUFFIX_CONSTANT) {

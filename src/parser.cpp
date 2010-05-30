@@ -1,5 +1,7 @@
 #include "parser.h"
 
+#include "outputOperators.h"
+
 // parser-global variables
 
 int parserErrorCode;
@@ -106,7 +108,31 @@ Tree::operator string() const {
 			if (*curn == TOKEN_ID) {
 				retVal += curn->t.s;
 			} else if (*curn == TOKEN_ArrayAccess) {
-				retVal += "[]";
+				// check to make sure that the expressions are compatible with STD_INT
+				StdType stdIntType(STD_INT); // temporary integer type for comparison
+				if (curn->child->next->next->next == NULL) { // if there's only one subscript
+					TypeStatus expStatus = getStatusExp(curn->child->next);
+					if (!(*(*expStatus >> stdIntType))) { // if the types are incompatible, flag an error
+						Token curToken = curn->child->next->t; // Exp
+						semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
+					}
+					retVal += "[]";
+				} else { // else if this is an extent subscript
+					TypeStatus leftExpStatus = getStatusExp(curn->child->next);
+					if (!(*(*leftExpStatus >> stdIntType))) { // if the types are incompatible, flag an error
+						Token curToken = curn->child->next->t; // Exp
+						semmerError(curToken.fileName,curToken.row,curToken.col,"left extent subscript is invalid");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<leftExpStatus<<")");
+					}
+					TypeStatus rightExpStatus = getStatusExp(curn->child->next);
+					if (!(*(*rightExpStatus >> stdIntType))) { // if the types are incompatible, flag an error
+						Token curToken = curn->child->next->next->next->t; // Exp
+						semmerError(curToken.fileName,curToken.row,curToken.col,"right extent subscript is invalid");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<rightExpStatus<<")");
+					}
+					retVal += "[:]";
+				}
 			}
 		}
 		return retVal;

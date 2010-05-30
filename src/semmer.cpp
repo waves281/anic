@@ -24,7 +24,7 @@ SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), 
 }
 SymbolTable::SymbolTable(int kind, const string &id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
 SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
-SymbolTable::SymbolTable(const SymbolTable &st) {*this = st;}
+SymbolTable::SymbolTable(const SymbolTable &st) : kind(st.kind), id(st.id), defSite(st.defSite), parent(st.parent), children(st.children) {}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
 	for (map<string, SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
@@ -76,8 +76,7 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 			delete st;
 			return *this;
 		}
-	} // if this is not a special system-level binding
-	// binding is now known to be conflict-free, so log it normally
+	}	// binding is now known to be conflict-free, so log it normally
 	children.insert(make_pair(st->id, st));
 	if (st != NULL) {
 		st->parent = this;
@@ -353,7 +352,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
 					stCurType = getStatusDeclaration(stCur->defSite);
 				}
-			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Param binding, naively get its type
+			} else if (stCur->kind == KIND_PARAMETER) { // else if it's a Param binding, naively get its type
 				stCurType = getStatusParam(stCur->defSite);
 			} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
 				stCurType = stCur->defSite->status.type;
@@ -495,23 +494,31 @@ void subImportDecls(vector<SymbolTable *> importList) {
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					}
 				} else if ((*importIter)->kind == KIND_OPEN_IMPORT) { // else if this is an open-import
-					if (binding->children.size() == 1 && (binding->children)[0]->kind == KIND_OBJECT) { // if this open-import binding is an object
-						SymbolTable *bindingBase = binding->children[0]; // KIND_OBJECT; this node's children are the ones we're going to import in
+					// try to find an object-style child in the binding's children
+					map<string, SymbolTable *>::const_iterator bindingChildIter;
+					for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
+						if ((*bindingChildIter).second->kind == KIND_OBJECT) {
+							break;
+						}
+					}
+					if (bindingChildIter != binding->children.end()) { // if we found an object in the open-import binding's children
+						SymbolTable *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
 						// add in the imported nodes, scanning for conflicts along the way
 						bool firstInsert = true;
 						for (map<string, SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
 								bindingBaseIter != bindingBase->children.end();
 								bindingBaseIter++) {
 								// check for member naming conflicts (constructor type conflicts will be resolved later)
-								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*importIter)->id);
-								if (conflictFind == (*importIter)->children.end()) { // if there were no regular member naming conflicts
+								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
+								if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
 									if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
 										**importIter = *((*bindingBaseIter).second);
 										firstInsert = false;
 									} else { // else if this is not the first insertion, latch in a copy of the child
-										*((*importIter)->parent) *= new SymbolTable(*((*bindingBaseIter).second));
+										SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second));
+										*((*importIter)->parent) *= baseChildCopy;
 									}
-								} else { // else if there is a regular member naming conflict
+								} else { // else if there is a member naming conflict
 									Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
 									Token prevDefToken;
 									if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
@@ -525,7 +532,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 									semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 								}
 						}
-					} else { // else if this open-import binding is not an object, flag an error
+					} else { // else if we didn't find a binding in the open-import's children, flag an error
 						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
 						Token prevDefToken;
 						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
@@ -1538,7 +1545,9 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	 // LabeledPipes
 	for (Tree *lpCur = tree->child->next->next;
 			lpCur != NULL;
-			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ? lpCur->child->next->next->next : NULL) { // invariant: lpCur is a LabeledPipes
+			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ?
+				lpCur->child->next->next->next :
+				NULL) { // invariant: lpCur is a LabeledPipes
 		Tree *lpc = lpCur->child; // StaticTerm or COLON
 		// if there is a non-default label on this pipe, check its validity
 		if (*lpc == TOKEN_StaticTerm) {
@@ -1754,7 +1763,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			fakeRetType = errType; // log a recursion alert
 		}
 		// proceed with the normal derivation
-		if (!(*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT)) { // if it's a non-import declaration
+		if (*(tree->child) != TOKEN_AT && *(tree->child) != TOKEN_DAT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);

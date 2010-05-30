@@ -29,3 +29,14 @@ useObj = {
 	@impObj.mem1;
 	mem = [int] <- mem1;
 }
+
+//basic inheritance testing
+inhObj = {
+	=[int\ initX] {\initX;};
+	inhMem = [int\];
+}
+subObj = {
+	=;
+	@@[inhObj];
+	subMem = [float\];
+}

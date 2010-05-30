@@ -169,13 +169,10 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			fakeId += (unsigned int)tree;
 		}
 		SymbolTable *blockDef = new SymbolTable(kind, fakeId, tree);
+		// latch the new node into the SymbolTable trunk
+		*st *= blockDef;
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block or Object
-		if (blockDef->children.size() > 0) { // if there are any subnodes, link the block node into the main trunk
-			*st *= blockDef;
-		} else { // else if there are no subnodes, don't bother linking the block node into the main trunk
-			delete blockDef;
-		}
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Filter) { // if it's a filter node
 		// allocate the new filter definition node
@@ -195,11 +192,9 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		} // if there is a parameter list to process
 		// recurse
 		buildSt(tree->child, filterDef, importList); // child of Filter
-		if (filterDef->children.size() > 0) { // if there are any subnodes, link the filter node into the main trunk
-			*st *= filterDef;
-		} else { // else if there are no subnodes, don't bother linking the filter node into the main trunk
-			delete filterDef;
-		}
+		// latch the new node into the SymbolTable trunk
+		*st *= filterDef;
+		// recurse
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Constructor || *tree == TOKEN_LastConstructor) { // if it's a Constructor-style node
 		// allocate the new constructor definition node

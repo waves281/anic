@@ -46,6 +46,11 @@ extern int semmerErrorCode;
 class Type;
 extern Type *nullType;
 extern Type *errType;
+class StdType;
+extern StdType *stdBoolType;
+extern StdType *stdIntType;
+extern StdType *stdFloatType;
+extern StdType *stdStringType;
 
 // global function forward declarations
 

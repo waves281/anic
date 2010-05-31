@@ -8,6 +8,10 @@ int semmerErrorCode;
 
 Type *nullType = new StdType(STD_NULL);
 Type *errType = new ErrorType();
+StdType *stdBoolType = new StdType(STD_BOOL);
+StdType *stdIntType = new StdType(STD_INT);
+StdType *stdFloatType = new StdType(STD_FLOAT);
+StdType *stdStringType = new StdType(STD_STRING);
 
 // SymbolTable functions
 
@@ -682,8 +686,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		} else { // else if it's a PostFixOp'ed basic Primary node
 			TypeStatus baseStatus = getStatusPrimaryBase(primaryc, inStatus); // derive the status of the base node
 			if (*baseStatus) { // if we managed to derive the status of the base node
-				StdType stdIntType(STD_INT); // temporary integer type for comparison
-				if (*(*baseStatus >> stdIntType)) { // if the base can be converted into an int, return int
+				if (*(*baseStatus >> *stdIntType)) { // if the base can be converted into an int, return int
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
 			}
@@ -693,31 +696,18 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		if (*subStatus) { // if we managed to derive the status of the sub-node
 			Tree *pomocc = primaryc->child->child;
 			if (*pomocc == TOKEN_NOT) {
-				StdType stdBoolType(STD_BOOL); // temporary bool type for comparison
-				if (*(*subStatus >> stdBoolType)) {
+				if (*(*subStatus >> *stdBoolType)) {
 					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 				}
 			} else if (*pomocc == TOKEN_COMPLEMENT) {
-				StdType stdIntType(STD_INT); // temporary int type for comparison
-				if (*(*subStatus >> stdIntType)) {
+				if (*(*subStatus >> *stdIntType)) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
-			} else if (*pomocc == TOKEN_PLUS) {
-				StdType stdIntType(STD_INT); // temporary int type for comparison
-				if (*(*subStatus >> stdIntType)) {
+			} else if (*pomocc == TOKEN_PLUS || *pomocc == TOKEN_MINUS) {
+				if (*(*subStatus >> *stdIntType)) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
-				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
-				if (*(*subStatus >> stdFloatType)) {
-					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
-				}
-			} else if (*pomocc == TOKEN_MINUS) {
-				StdType stdIntType(STD_INT); // temporary int type for comparison
-				if (*(*subStatus >> stdIntType)) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
-				if (*(*subStatus >> stdFloatType)) {
+				if (*(*subStatus >> *stdFloatType)) {
 					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 				}
 			}
@@ -750,20 +740,16 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		} else {
 			switch (op->t.tokenType) {
 				case TOKEN_DOR:
-				case TOKEN_DAND: {
-						StdType stdBoolType(STD_BOOL); // temporary bool type for comparison
-						if (*(*left >> stdBoolType) && *(*right >> stdBoolType)) {
-							returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-						}
+				case TOKEN_DAND:
+					if (*(*left >> *stdBoolType) && *(*right >> *stdBoolType)) {
+						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 					}
 					break;
 				case TOKEN_OR:
 				case TOKEN_XOR:
-				case TOKEN_AND: {
-						StdType stdIntType(STD_INT); // temporary integer type for comparison
-						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
-							returnType(new StdType(STD_INT, SUFFIX_LATCH));
-						}
+				case TOKEN_AND:
+					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+						returnType(new StdType(STD_INT, SUFFIX_LATCH));
 					}
 					break;
 				case TOKEN_DEQUALS:
@@ -777,11 +763,9 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 					}
 					break;
 				case TOKEN_LS:
-				case TOKEN_RS: {
-						StdType stdIntType(STD_INT); // temporary integer type for comparison
-						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
-							returnType(new StdType(STD_INT, SUFFIX_LATCH));
-						}
+				case TOKEN_RS:
+					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+						returnType(new StdType(STD_INT, SUFFIX_LATCH));
 					}
 					break;
 				case TOKEN_TIMES:
@@ -789,19 +773,16 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				case TOKEN_MOD:
 				case TOKEN_PLUS:
 				case TOKEN_MINUS: {
-						StdType stdIntType(STD_INT); // temporary integer type for comparison
-						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
+						if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
 							returnType(new StdType(STD_INT, SUFFIX_LATCH));
 						}
-						StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
-						if (*(*left >> stdFloatType) && *(*right >> stdFloatType)) {
+						if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
 							returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 						}
-						StdType stdStringType(STD_STRING); // temporary string type for comparison
 						// if one of the terms is a string and the other is a StdType constant or latch, return string
-						if ((*(*left >> stdStringType) && right->category == CATEGORY_STDTYPE &&
+						if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
 								(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
-							(*(*right >> stdStringType) && left->category == CATEGORY_STDTYPE &&
+							(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
 								(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
 							returnType(new StdType(STD_STRING, SUFFIX_LATCH));
 						}
@@ -1132,8 +1113,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(ats->child->next, inStatus); // Exp
-			StdType stdIntType(STD_INT); // temporary integer type for comparison
-			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+			if (!(*(*expStatus >> *stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = ats->child->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
@@ -1153,8 +1133,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(pts->child->next->next, inStatus); // Exp
-			StdType stdIntType(STD_INT); // temporary integer type for comparison
-			if (!(*(*expStatus >> stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+			if (!(*(*expStatus >> *stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = pts->child->next->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");

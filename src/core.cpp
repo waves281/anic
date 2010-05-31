@@ -262,7 +262,7 @@ int main(int argc, char **argv) {
 
 	// perform semantic analysis
 
-	VERBOSE(printNotice("Mapping semantics...");)
+	VERBOSE(printNotice("Verifying semantics...");)
 
 	// allocate symbol table root (will be filled by user-level definitions during parsing)
 	SymbolTable *stRoot;
@@ -271,12 +271,12 @@ int main(int argc, char **argv) {
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(
-			printNotice("Semantic mapping generated inconsistencies");
+			printNotice("Semantic verification discovered inconsistencies");
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice("Semantics successfully mapped");
+			printNotice("Semantics successfully verified");
 			print(""); // new line
 		)
 	}

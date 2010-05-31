@@ -437,19 +437,16 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 			if (nextTerm != NULL) {
 				TypeStatus nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);
 				if (*nextTermStatus) {
-					StdType stdIntType(STD_INT); // temporary integer type for comparison
-					if (*(*prevTermStatus >> stdIntType) && *(*nextTermStatus >> stdIntType)) { // if both terms can be converted to int, return int
+					if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
 						return make_pair(new StdType(STD_INT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
 					}
-					StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
-					if (*(*prevTermStatus >> stdFloatType) && *(*nextTermStatus >> stdFloatType)) { // if both terms can be converted to float, return float
+					if (*(*prevTermStatus >> *stdFloatType) && *(*nextTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
 						return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
 					}
-					StdType stdStringType(STD_STRING); // temporary string type for comparison
 					// if one of the terms is a string and the other is a StdType constant or latch, return string
-					if ((*(*prevTermStatus >> stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
+					if ((*(*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
 							(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
-						(*(*nextTermStatus >> stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
+						(*(*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
 							(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH))) {
 						return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
 					}
@@ -457,18 +454,15 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 			}
 			// if we got here, we failed to derive a three-term type, so now we try using STD_PLUS and STD_MINUS in their unary form
 			if (kind == STD_PLUS || kind == STD_MINUS) { // if it's an operator with a unary form that accepts both ints an floats
-				StdType stdIntType(STD_INT); // temporary integer type for comparison
-				if (*(*prevTermStatus >> stdIntType)) { // if both terms can be converted to int, return int
+				if (*(*prevTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
 					return make_pair(new StdType(STD_INT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
 				}
-				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
-				if (*(*prevTermStatus >> stdFloatType)) { // if both terms can be converted to float, return float
+				if (*(*prevTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
 					return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
 				}
 			}
 			if (kind == STD_DPLUS || kind == STD_DMINUS) { // if it's an operator with a unary form that accepts only ints
-				StdType stdIntType(STD_INT); // temporary integer type for comparison
-				if (*(*prevTermStatus >> stdIntType)) { // if both terms can be converted to int, return int
+				if (*(*prevTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
 					return make_pair(new StdType(STD_INT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
 				}
 			}

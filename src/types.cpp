@@ -425,8 +425,50 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return STD_NULL;
 	}
 }
-pair<Type *, bool> StdType::stdFlowDerivation(const Type &prevType, Tree *nextTerm) const {
-	return make_pair(errType, false); // KOL
+pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, Tree *nextTerm) const {
+	switch(kind) {
+		case STD_TIMES:
+		case STD_DIVIDE:
+		case STD_MOD:
+		case STD_PLUS:
+		case STD_MINUS:
+			if (nextTerm != NULL) {
+				TypeStatus nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);
+				if (*nextTermStatus) {
+					StdType stdIntType(STD_INT); // temporary integer type for comparison
+					if (*(*prevTermStatus >> stdIntType) && *(*nextTermStatus >> stdIntType)) { // if both terms can be converted to int, return int
+						return make_pair(new StdType(STD_INT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+					}
+					StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
+					if (*(*prevTermStatus >> stdFloatType) && *(*nextTermStatus >> stdFloatType)) { // if both terms can be converted to float, return float
+						return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+					}
+					StdType stdStringType(STD_STRING); // temporary string type for comparison
+					// if one of the terms is a string and the other is a StdType constant or latch, return string
+					if ((*(*prevTermStatus >> stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
+							(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
+						(*(*nextTermStatus >> stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
+							(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH))) {
+						return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
+					}
+				}
+			}
+			// if we got here, we failed to derive a three-term type, so now we try using STD_PLUS and STD_MINUS in their unary form
+			if (kind == STD_PLUS || kind == STD_MINUS) { // if it's an operator with a unary form
+				StdType stdIntType(STD_INT); // temporary integer type for comparison
+				if (*(*prevTermStatus >> stdIntType)) { // if both terms can be converted to int, return int
+					return make_pair(new StdType(STD_INT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
+				}
+				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
+				if (*(*prevTermStatus >> stdFloatType)) { // if both terms can be converted to float, return float
+					return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
+				}
+			}
+			break;
+		default:
+			break;
+	}
+	return make_pair(errType, false); // return false, since we're not consuming the nextTerm (though this doesn't really matter -- it's an error anyway)
 }
 Type *StdType::copy() {return new StdType(*this);}
 void StdType::erase() {delete this;}

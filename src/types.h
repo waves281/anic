@@ -173,7 +173,7 @@ class StdType : public Type {
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
-		pair<Type *, bool> stdFlowDerivation(const Type &prevType, Tree *nextTerm) const;
+		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
 		Type *copy();
 		void erase();
 		string toString(unsigned int tabDepth = 1);

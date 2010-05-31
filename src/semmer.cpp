@@ -1709,7 +1709,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					*(curTerm->child->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
 				pair<Type *, bool> stdFlowResult(errType, false);
 				if (nextTermStatus->category == CATEGORY_STDTYPE) { // if this Term's type is a STDTYPE, try to derive a three-term exceptional type for it
-					stdFlowResult = ((StdType *)(nextTermStatus.type))->stdFlowDerivation(*curStatus, curTerm->next->child);
+					stdFlowResult = ((StdType *)(nextTermStatus.type))->stdFlowDerivation(curStatus, curTerm->next->child);
 				}
 				if (*(stdFlowResult.first)) { // if we managed to derive a three-term exceptional type for this term
 					curStatus = TypeStatus(stdFlowResult.first, nextTermStatus); // log the three-term exceptional type as the current status

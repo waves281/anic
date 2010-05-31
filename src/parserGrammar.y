@@ -207,6 +207,7 @@ ArrayAccess : LSQUARE Exp RSQUARE
 PrimOpNode : PrefixOp
 	| InfixOp
 	| MultiOp
+	| PostfixOp
 	;
 PrefixOp : NOT
 	| COMPLEMENT
@@ -228,11 +229,11 @@ InfixOp : DOR
 	| DIVIDE
 	| MOD
 	;
-PostfixOp : DPLUS
-	| DMINUS
-	;
 MultiOp : PLUS
 	| MINUS
+	;
+PostfixOp : DPLUS
+	| DMINUS
 	;
 PrefixOrMultiOp : PrefixOp
 	| MultiOp

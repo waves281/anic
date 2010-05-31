@@ -167,10 +167,13 @@ Exp : Primary
 	| Exp PLUS Exp
 	| Exp MINUS Exp
 	;
-Primary : SuffixedIdentifier
+Primary : PrimaryBase
+	| PrefixOrMultiOp Primary
+	| PrimaryBase PostfixOp
+	;
+PrimaryBase : SuffixedIdentifier
 	| SingleAccessor SuffixedIdentifier
 	| PrimLiteral
-	| PrefixOrMultiOp Primary
 	| BracketedExp
 	;
 Node : SuffixedIdentifier
@@ -207,8 +210,6 @@ PrimOpNode : PrefixOp
 	;
 PrefixOp : NOT
 	| COMPLEMENT
-	| DPLUS
-	| DMINUS
 	;
 InfixOp : DOR
 	| DAND
@@ -226,6 +227,9 @@ InfixOp : DOR
 	| TIMES
 	| DIVIDE
 	| MOD
+	;
+PostfixOp : DPLUS
+	| DMINUS
 	;
 MultiOp : PLUS
 	| MINUS

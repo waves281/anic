@@ -613,47 +613,15 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus) {
+// reports errors
+TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	TypeStatus subStatus = getStatusPrimary(tree->next, inStatus);
-	Tree *pomocc = tree->child->child;
-	if (*pomocc == TOKEN_NOT) {
-		if (*subStatus == STD_BOOL) {
-			returnStatus(subStatus);
-		}
-	} else if (*pomocc == TOKEN_COMPLEMENT) {
-		if (*subStatus == STD_INT) {
-			returnStatus(subStatus);
-		}
-	} else if (*pomocc == TOKEN_DPLUS) {
-		if (*subStatus == STD_INT) {
-			returnStatus(subStatus);
-		}
-	} else if (*pomocc == TOKEN_DMINUS) {
-		if (*subStatus == STD_INT) {
-			returnStatus(subStatus);
-		}
-	} else if (*pomocc == TOKEN_PLUS) {
-		if (*subStatus == STD_INT || *subStatus == STD_FLOAT) {
-			returnStatus(subStatus);
-		}
-	} else if (*pomocc == TOKEN_MINUS) {
-		if (*subStatus == STD_INT || *subStatus == STD_FLOAT) {
-			returnStatus(subStatus);
-		}
-	}
-	GET_STATUS_FOOTER;
-}
-
-// reports errors for TOKEN_SLASH case
-TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	Tree *primaryc = tree->child;
-	if (*primaryc == TOKEN_SuffixedIdentifier) {
-		returnStatus(getStatusSuffixedIdentifier(primaryc, inStatus));
-	} else if (*primaryc == TOKEN_SingleAccessor) { // if it's an accessed term
+	Tree *pbc = tree->child; // SuffixedIdentifier, SingleAccessor, PrimLiteral, or BracketedExp
+	if (*pbc == TOKEN_SuffixedIdentifier) {
+		returnStatus(getStatusSuffixedIdentifier(pbc, inStatus));
+	} else if (*pbc == TOKEN_SingleAccessor) { // if it's an accessed term
 		// first, derive the subtype
-		Tree *subSI = primaryc->next; // SuffixedIdentifier
+		Tree *subSI = pbc->next; // SuffixedIdentifier
 		TypeStatus subStatus = getStatusSuffixedIdentifier(subSI, inStatus); // SuffixedIdentifier
 		if (*subStatus) { // if we successfully derived a subtype
 			if ((*subStatus).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
@@ -661,7 +629,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 				TypeStatus mutableSubStatus = subStatus;
 				mutableSubStatus.type = mutableSubStatus.type->copy();
 				// next, make sure the subtype is compatible with the accessor
-				Tree *accessorc = primaryc->child; // SLASH, SSLASH, or ASLASH
+				Tree *accessorc = pbc->child; // SLASH, SSLASH, or ASLASH
 				if (*accessorc == TOKEN_SLASH) {
 					if (mutableSubStatus.type->delatch()) {
 						returnStatus(mutableSubStatus);
@@ -691,17 +659,69 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
-				Token curToken = primaryc->t;
+				Token curToken = pbc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<subSI<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
 			}
 		}
-	} else if (*primaryc == TOKEN_PrimLiteral) {
-		returnStatus(getStatusPrimLiteral(primaryc, inStatus));
-	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
-		returnStatus(getStatusPrefixOrMultiOp(primaryc, inStatus));
-	} else if (*primaryc == TOKEN_BracketedExp) {
-		returnStatus(getStatusExp(primaryc->child->next, inStatus)); // move past the bracket to the actual Exp node
+	} else if (*pbc == TOKEN_PrimLiteral) {
+		returnStatus(getStatusPrimLiteral(pbc, inStatus));
+	} else if (*pbc == TOKEN_BracketedExp) {
+		returnStatus(getStatusExp(pbc->child->next, inStatus)); // move past the bracket to the actual Exp node
+	}
+	GET_STATUS_FOOTER;
+}
+
+// reports errors
+TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *primaryc = tree->child; // PrimaryBase or PrefixOrMultiOp
+	if (*primaryc == TOKEN_PrimaryBase) { // if the Primary begins with a base
+		if (primaryc->next == NULL) { // if it's a non-opped basic Primary node
+			returnStatus(getStatusPrimaryBase(primaryc, inStatus));
+		} else { // else if it's a PostFixOp'ed basic Primary node
+			TypeStatus baseStatus = getStatusPrimaryBase(primaryc, inStatus); // derive the status of the base node
+			if (*baseStatus) { // if we managed to derive the status of the base node
+				StdType stdIntType(STD_INT); // temporary integer type for comparison
+				if (*(*baseStatus >> stdIntType)) { // if the base can be converted into an int, return int
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+			}
+		}
+	} else if (*primaryc == TOKEN_PrefixOrMultiOp) { // else if it's a PrefixOrMultiOp'ed Primary node
+		TypeStatus subStatus = getStatusPrimary(primaryc->next, inStatus); // derive the status of the sub-node
+		if (*subStatus) { // if we managed to derive the status of the sub-node
+			Tree *pomocc = primaryc->child->child;
+			if (*pomocc == TOKEN_NOT) {
+				StdType stdBoolType(STD_BOOL); // temporary bool type for comparison
+				if (*(*subStatus >> stdBoolType)) {
+					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+				}
+			} else if (*pomocc == TOKEN_COMPLEMENT) {
+				StdType stdIntType(STD_INT); // temporary int type for comparison
+				if (*(*subStatus >> stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+			} else if (*pomocc == TOKEN_PLUS) {
+				StdType stdIntType(STD_INT); // temporary int type for comparison
+				if (*(*subStatus >> stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
+				if (*(*subStatus >> stdFloatType)) {
+					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+				}
+			} else if (*pomocc == TOKEN_MINUS) {
+				StdType stdIntType(STD_INT); // temporary int type for comparison
+				if (*(*subStatus >> stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+				StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
+				if (*(*subStatus >> stdFloatType)) {
+					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+				}
+			}
+		}
 	}
 	GET_STATUS_FOOTER;
 }

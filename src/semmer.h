@@ -47,7 +47,7 @@ class SymbolTable {
 
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
+TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));

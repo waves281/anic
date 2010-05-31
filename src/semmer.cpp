@@ -750,16 +750,20 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		} else {
 			switch (op->t.tokenType) {
 				case TOKEN_DOR:
-				case TOKEN_DAND:
-					if (*left == STD_BOOL && *right == STD_BOOL) {
-						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+				case TOKEN_DAND: {
+						StdType stdBoolType(STD_BOOL); // temporary bool type for comparison
+						if (*(*left >> stdBoolType) && *(*right >> stdBoolType)) {
+							returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+						}
 					}
 					break;
 				case TOKEN_OR:
 				case TOKEN_XOR:
-				case TOKEN_AND:
-					if (*left == STD_INT && *right == STD_INT) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				case TOKEN_AND: {
+						StdType stdIntType(STD_INT); // temporary integer type for comparison
+						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						}
 					}
 					break;
 				case TOKEN_DEQUALS:
@@ -773,25 +777,34 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 					}
 					break;
 				case TOKEN_LS:
-				case TOKEN_RS:
-					if (*left == STD_INT && *right == STD_INT) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				case TOKEN_RS: {
+						StdType stdIntType(STD_INT); // temporary integer type for comparison
+						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						}
 					}
 					break;
 				case TOKEN_TIMES:
 				case TOKEN_DIVIDE:
 				case TOKEN_MOD:
 				case TOKEN_PLUS:
-				case TOKEN_MINUS:
-					if ((*left == STD_INT || *left == STD_FLOAT) && (*right == STD_INT || *right == STD_FLOAT)) {
-						if (*left != STD_FLOAT && *right != STD_FLOAT) {
+				case TOKEN_MINUS: {
+						StdType stdIntType(STD_INT); // temporary integer type for comparison
+						if (*(*left >> stdIntType) && *(*right >> stdIntType)) {
 							returnType(new StdType(STD_INT, SUFFIX_LATCH));
-						} else {
+						}
+						StdType stdFloatType(STD_FLOAT); // temporary float type for comparison
+						if (*(*left >> stdFloatType) && *(*right >> stdFloatType)) {
 							returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 						}
-					} else if (op->t.tokenType == TOKEN_PLUS &&
-							((*left == STD_STRING && right->category == CATEGORY_STDTYPE) || (*right == STD_STRING && left->category == CATEGORY_STDTYPE))) {
-						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
+						StdType stdStringType(STD_STRING); // temporary string type for comparison
+						// if one of the terms is a string and the other is a StdType constant or latch, return string
+						if ((*(*left >> stdStringType) && right->category == CATEGORY_STDTYPE &&
+								(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
+							(*(*right >> stdStringType) && left->category == CATEGORY_STDTYPE &&
+								(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
+							returnType(new StdType(STD_STRING, SUFFIX_LATCH));
+						}
 					}
 					break;
 				default: // can't happen; the above should cover all cases

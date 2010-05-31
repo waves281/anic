@@ -615,8 +615,8 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusPrefixOrMultiOp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *pomocc = tree->child->child;
 	TypeStatus subStatus = getStatusPrimary(tree->next, inStatus);
+	Tree *pomocc = tree->child->child;
 	if (*pomocc == TOKEN_NOT) {
 		if (*subStatus == STD_BOOL) {
 			returnStatus(subStatus);

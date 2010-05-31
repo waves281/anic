@@ -1,9 +1,11 @@
 // debug.ani -- test file for anic debugging purposes
 
 // basic expression testing
-exp1 = 5;
-exp2 = (7+5*2);
+exp1 = [float\] <- 5;
+exp2 = (-7+(-5-(-1))*2-100.0e+10);
 exp3 = [int\]; 1 + 2 ->exp3;
+exp4 = [float\]; 1.0 - ->exp4;
+exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 
 // object sub-identifier testing
 obj = {

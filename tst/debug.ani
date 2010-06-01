@@ -7,6 +7,14 @@ exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 
+// basic construct testing
+{
+	someInt = [int] <- 10;
+	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);
+	true ? {"Hi" std.out};
+	false ? {"Bye" std.out};
+};
+
 // object sub-identifier testing
 obj = {
 	=;

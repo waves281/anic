@@ -99,6 +99,8 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "char", new StdType(STD_CHAR));
 	*stRoot *= new SymbolTable(KIND_STD, "string", new StdType(STD_STRING));
 	*stRoot *= new SymbolTable(KIND_STD, "null", new StdType(STD_NULL));
+	*stRoot *= new SymbolTable(KIND_STD, "true", new StdType(STD_BOOL));
+	*stRoot *= new SymbolTable(KIND_STD, "false", new StdType(STD_BOOL));
 }
 
 void catStdLib(SymbolTable *&stRoot) {
@@ -342,8 +344,13 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 			Type *stCurType = errType;
 			if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
 				map<string, SymbolTable *>::const_iterator childFind = stCur->children.find(id[i]);
-				if (childFind != stCur->children.end()) { // if there's a match to this sub-identifier
-					stCurType = (*childFind).second->defSite->status.type;
+				if (childFind != stCur->children.end()) { // if there's a match to this sub-identifier, proceed
+					if (*(stCur->defSite->status.type) == STD_STD) { // if it's the root std node, just log the child as stCur and continue in the derivation
+						stCur = (*childFind).second;
+						continue; // continue to the next part of the binding
+					} else { // else if it's not the root std node, use the subidentifier's type for derivation, as usual
+						stCurType = (*childFind).second->defSite->status.type;
+					}
 				}
 			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
 				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
@@ -396,7 +403,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 							stCurType = errType; // this is only so that the below standard handling case doesn't execute
 						} else {
 							Token curToken = stCur->defSite->t;
-							semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on subscripted identifier '"<<rebuildId(id, i)<<"'");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on identifier '"<<rebuildId(id, i)<<"'");
 							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 							stCurType = errType;
 						}
@@ -1481,7 +1488,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		returnStatus(getStatusStaticTerm(dtc, inStatus));
 	} else if (*dtc == TOKEN_Compound) {
 		TypeStatus compoundStatus = getStatusStaticTerm(dtc->child->next, inStatus);
-		if (*compoundStatus) { // if we successfully derived to compounding term's type
+		if (*compoundStatus) { // if we managed to derive the compounding term's type
 			Type *curType = inStatus;
 			TypeList *curTypeList;
 			if (curType->category == CATEGORY_TYPELIST) { // if the current type is already a TypeList, simply make a mutable copy of it
@@ -1508,25 +1515,29 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
-		Type *resultType = (*inStatus >> *nodeStatus);
-		if (*resultType) { // if the Send is valid, proceed normally
-			returnType(resultType);
-		} else { // else if the Send is invalid, flag an error
-			Token curToken = dtc->child->t; // RARROW
-			semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+		if (*nodeStatus) { // if we managed to derive a type for the send destination
+			Type *resultType = (*inStatus >> *nodeStatus);
+			if (*resultType) { // if the Send is valid, proceed normally
+				returnType(resultType);
+			} else { // else if the Send is invalid, flag an error
+				Token curToken = dtc->child->t; // RARROW
+				semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+			}
 		}
 	} else if (*dtc == TOKEN_Swap) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
-		Type *resultType = (*inStatus >> *nodeStatus);
-		if (*resultType) { // if the Swap is valid, proceed normally
-			returnType(nodeStatus.type); // inherit the type of the destination Node
-		} else { // else if the Send is invalid, flag an error
-			Token curToken = dtc->child->t; // LRARROW
-			semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+		if (*nodeStatus) { // if we managed to derive a type for the swap destination
+			Type *resultType = (*inStatus >> *nodeStatus);
+			if (*resultType) { // if the Swap is valid, proceed normally
+				returnType(nodeStatus.type); // inherit the type of the destination Node
+			} else { // else if the Send is invalid, flag an error
+				Token curToken = dtc->child->t; // LRARROW
+				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+			}
 		}
 	} else if (*dtc == TOKEN_Return) {
 		Type *thisRetType = inStatus; // the type that we're returning, inferred from the incoming status
@@ -1553,17 +1564,15 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	 // LabeledPipes
 	for (Tree *lpCur = tree->child->next->next;
 			lpCur != NULL;
-			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ?
-				lpCur->child->next->next->next :
-				NULL) { // invariant: lpCur is a LabeledPipes
+			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ? lpCur->child->next->next->next : NULL) { // invariant: lpCur is a LabeledPipes
 		Tree *lpc = lpCur->child; // StaticTerm or COLON
 		// if there is a non-default label on this pipe, check its validity
 		if (*lpc == TOKEN_StaticTerm) {
 			// derive the label's type
 			TypeStatus label = getStatusStaticTerm(lpc, inStatus);
-			if (*inStatus != *label) { // if the type doesn't match, throw an error
+			if (!(*(*label >> *inStatus))) { // if the type doesn't match, throw an error
 				Token curToken = lpc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type doesn't match input type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type is inconvertible to input type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<label<<")");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
@@ -1607,10 +1616,10 @@ TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		returnStatus(getStatusTerm(tree->child->next, inStatus));
+		returnStatus(getStatusTerm(tree->child->next));
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
-		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
+		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_FOOTER;
@@ -1644,15 +1653,15 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
-		TypeStatus falseStatus = getStatusOpenTerm(falseBranch, inStatus);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
+		TypeStatus falseStatus = getStatusOpenTerm(falseBranch);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			returnStatus(trueStatus);
 		} else { // else if the two branches don't match in type
 			Token curToken1 = tree->child->t; // QUESTION
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // OpenTerm
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
 			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
 		}
@@ -1669,15 +1678,15 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
 		Tree *trueBranch = tree->child->next;
 		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch, inStatus);
-		TypeStatus falseStatus = getStatusClosedTerm(falseBranch, inStatus);
+		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
+		TypeStatus falseStatus = getStatusClosedTerm(falseBranch);
 		if (*trueStatus == *falseStatus) { // if the two branches match in type
 			returnStatus(trueStatus);
 		} else { // else if the two branches don't match in type
 			Token curToken1 = tree->child->t; // QUESTION
 			Token curToken2 = trueBranch->t; // ClosedTerm
 			Token curToken3 = falseBranch->t; // ClosedTerm
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional operator branches");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
 			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
 		}

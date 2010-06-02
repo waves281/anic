@@ -1597,13 +1597,13 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	TypeStatus firstToStatus = toStatus[0];
 	Tree *firstToTree = toTrees[0];
 	for (unsigned int i=1; i < toStatus.size(); i++) { // for each to-type
-		TypeStatus to = toStatus[i];
-		if (*to != *firstToStatus) { // if the types don't match, throw an error
+		TypeStatus thisToStatus = toStatus[i];
+		if (!(*thisToStatus == *firstToStatus && thisToStatus->baseEquals(*firstToStatus))) { // if the types don't match, throw an error
 			Tree *toTree = toTrees[i];
 			Token curToken1 = toTree->t;
 			Token curToken2 = firstToTree->t;
 			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"switch destination types are inconsistent");
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<to<<")");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<thisToStatus<<")");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<firstToStatus<<")");
 		}
 	}
@@ -1664,7 +1664,7 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 		Tree *falseBranch = trueBranch->next->next;
 		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
 		TypeStatus falseStatus = getStatusOpenTerm(falseBranch);
-		if (*trueStatus == *falseStatus) { // if the two branches match in type
+		if (*trueStatus == *falseStatus && trueStatus->baseEquals(*falseStatus)) { // if the two branches match in type
 			returnStatus(trueStatus);
 		} else { // else if the two branches don't match in type
 			Token curToken1 = tree->child->t; // QUESTION

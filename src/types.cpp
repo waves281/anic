@@ -320,12 +320,6 @@ Type *TypeList::operator,(Type &otherType) const {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
 		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
@@ -358,13 +352,18 @@ Type *TypeList::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return nullType;
+		if (list.size() == 1 && list[0]->baseSendable(otherType) && *(list[0]) == otherType) {
+			return nullType;
+		} else if (otherType.suffix == SUFFIX_LATCH) {
+			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+				if (*(*this >> **iter)) {
+					return nullType;
+				}
 			}
+		} else {
+			return errType;
 		}
-		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
@@ -499,12 +498,6 @@ Type *StdType::operator,(Type &otherType) const {
 			return (otherTypeCast->to);
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
 		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
@@ -528,7 +521,21 @@ Type *StdType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		return errType;
+		if (otherType.suffix == SUFFIX_LATCH) {
+			// try to do a basic send
+			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+				if (*(*this >> **iter)) {
+					return nullType;
+				}
+			}
+			// if basic sending failed, check for the StdType to stringerType promotion case
+			if (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && *otherTypeCast == *stringerType) {
+				return nullType;
+			}
+		} else {
+			return errType;
+		}
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
@@ -691,12 +698,6 @@ Type *FilterType::operator,(Type &otherType) const {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
 		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
@@ -716,12 +717,21 @@ Type *FilterType::operator>>(Type &otherType) const {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		if (baseSendable(otherType) && operator==(otherType)) {
-			return &otherType;
+			return nullType;
 		} else {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		return errType;
+		if (otherType.suffix == SUFFIX_LATCH) {
+			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+				if (*(*this >> **iter)) {
+					return nullType;
+				}
+			}
+		} else {
+			return errType;
+		}
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
@@ -842,12 +852,7 @@ Type *ObjectType::operator,(Type &otherType) const {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-			if (*(*this >> **iter)) {
-				return &otherType;
-			}
-		}
+		return errType;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
@@ -868,7 +873,14 @@ Type *ObjectType::operator>>(Type &otherType) const {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		if (baseSendable(otherType) && operator==(otherType)) {
-			return &otherType;
+			return nullType;
+		} else if (otherType.suffix == SUFFIX_LATCH) {
+			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+				if (*(*this >> **iter)) {
+					return nullType;
+				}
+			}
 		} else {
 			return errType;
 		}

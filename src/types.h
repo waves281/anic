@@ -130,9 +130,9 @@ class ErrorType : public Type {
 
 #define STD_MIN_COMPARABLE 2
 
-#define STD_INT 2
-#define STD_FLOAT 3
-#define STD_BOOL 4
+#define STD_BOOL 2
+#define STD_INT 3
+#define STD_FLOAT 4
 #define STD_CHAR 5
 #define STD_STRING 6
 

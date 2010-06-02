@@ -50,7 +50,11 @@ class StdType;
 extern StdType *stdBoolType;
 extern StdType *stdIntType;
 extern StdType *stdFloatType;
+extern StdType *stdCharType;
 extern StdType *stdStringType;
+class ObjectType;
+extern ObjectType *stringerType;
+extern ObjectType *outerType;
 
 // global function forward declarations
 

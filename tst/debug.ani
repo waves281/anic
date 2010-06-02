@@ -11,8 +11,8 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 {
 	someInt = [int] <- 10;
 	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);
-	true ? {"Hi" std.out};
-	false ? {"Bye" std.out};
+	true ? {"Hi" ->std.out};
+	false ? {"Bye" ->std.out};
 };
 
 // object sub-identifier testing

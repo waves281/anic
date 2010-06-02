@@ -6,12 +6,15 @@
 
 int semmerErrorCode;
 
-Type *nullType = new StdType(STD_NULL);
-Type *errType = new ErrorType();
-StdType *stdBoolType = new StdType(STD_BOOL);
-StdType *stdIntType = new StdType(STD_INT);
-StdType *stdFloatType = new StdType(STD_FLOAT);
-StdType *stdStringType = new StdType(STD_STRING);
+Type *nullType;
+Type *errType;
+StdType *stdBoolType;
+StdType *stdIntType;
+StdType *stdFloatType;
+StdType *stdCharType;
+StdType *stdStringType;
+ObjectType *stringerType;
+ObjectType *outerType;
 
 // SymbolTable functions
 
@@ -105,32 +108,15 @@ void catStdNodes(SymbolTable *&stRoot) {
 
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
-	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, new StdType(STD_STD));
+	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, new StdType(STD_STD, SUFFIX_LATCH));
 	// system nodes
 	// streams
 	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM, 1));
-	// create the stringer type that the outer type uses
-	vector<TypeList *> constructorTypes;
-	vector<string> memberNames;
-	memberNames.push_back("toString");
-	vector<Type *> memberTypes;
-	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH), SUFFIX_LATCH));
-	vector<Tree *> memberDefSites;
-	memberDefSites.push_back(NULL);
-	Type *stringer = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
-	// create the outer type that the output streams use
-	constructorTypes.push_back(new TypeList(new StdType(STD_INT)));
-	constructorTypes.push_back(new TypeList(new StdType(STD_FLOAT)));
-	constructorTypes.push_back(new TypeList(new StdType(STD_BOOL)));
-	constructorTypes.push_back(new TypeList(new StdType(STD_CHAR)));
-	constructorTypes.push_back(new TypeList(new StdType(STD_STRING)));
-	constructorTypes.push_back(new TypeList(stringer));
-	Type *outer = new ObjectType(constructorTypes, SUFFIX_LATCH);
-	*stdLib *= new SymbolTable(KIND_STD, "out", outer);
-	*stdLib *= new SymbolTable(KIND_STD, "err", outer);
+	*stdLib *= new SymbolTable(KIND_STD, "out", outerType);
+	*stdLib *= new SymbolTable(KIND_STD, "err", outerType);
 	// control nodes
 	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
@@ -139,6 +125,29 @@ void catStdLib(SymbolTable *&stRoot) {
 	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
 	// concatenate the library to the root
 	*stRoot *= stdLib;
+}
+
+void initStdTypes() {
+	// build the standard types
+	nullType = new StdType(STD_NULL);
+	errType = new ErrorType();
+	stdBoolType = new StdType(STD_BOOL);
+	stdIntType = new StdType(STD_INT);
+	stdFloatType = new StdType(STD_FLOAT);
+	stdCharType = new StdType(STD_CHAR);
+	stdStringType = new StdType(STD_STRING);
+	// build the stringerType
+	vector<TypeList *> constructorTypes;
+	vector<string> memberNames;
+	memberNames.push_back("toString");
+	vector<Type *> memberTypes;
+	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH), SUFFIX_LATCH));
+	vector<Tree *> memberDefSites;
+	memberDefSites.push_back(NULL);
+	stringerType = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
+	// build the outerType
+	constructorTypes.push_back(new TypeList(stringerType));
+	outerType = new ObjectType(constructorTypes, SUFFIX_LATCH);
 }
 
 SymbolTable *genDefaultDefs() {
@@ -1850,6 +1859,9 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 
 	VERBOSE( printNotice("Collecting tree nodes..."); )
 
+	// initialize the standard types used for comparison
+	initStdTypes();
+	
 	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
 

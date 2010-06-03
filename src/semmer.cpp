@@ -1168,16 +1168,11 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
 		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
 			TypeStatus idStatus = getStatusSuffixedIdentifier(typec, inStatus); // NonArraySuffixedIdentifier
-			if (*idStatus) {
-				if (idStatus->suffix == SUFFIX_CONSTANT || idStatus->suffix == SUFFIX_LATCH) { // if the suffix is valid for instantiating a node out of
-					idStatus->suffix = suffixVal;
-					idStatus->depth = depthVal;
-					returnStatus(idStatus);
-				} else { // else if the suffix isn't valid for instantiating a node out of
-					Token curToken = typec->child->t; // ID
-					semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation from a non-constant, non-latch node");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<idStatus<<")");
-				}
+			if (*idStatus) { // if we managed to derive a type for the instantiation identifier
+				idStatus.type = idStatus.type->copy(); // make a copy of the identifier's type, so that the below mutation doesn't propagate to it
+				idStatus->suffix = suffixVal;
+				idStatus->depth = depthVal;
+				returnStatus(idStatus);
 			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
 			TypeStatus from = inStatus;
@@ -1359,7 +1354,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
 			}
-		} else { // else if there is no initializer, simply set the status to be the type
+		} else { // else if there is no initializer, check if the type requires one KOL
 			returnStatus(instantiation);
 		}
 	}

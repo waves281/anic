@@ -1348,14 +1348,32 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				if (*result) {
 					returnStatus(instantiation);
 				} else { // if the types are incompatible, throw an error
-					Token curToken = st->t;
+					Token curToken = st->t; // StaticTerm
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
 			}
 		} else { // else if there is no initializer, check if the type requires one KOL
-			returnStatus(instantiation);
+			if (instantiation->category != CATEGORY_OBJECTTYPE) { // if it's not an object type, it definitely doesn't require an initializer
+				returnStatus(instantiation);
+			} else { // else if it's an object type
+				// check if the object type has a null constructor
+				ObjectType *instantiationTypeCast = (ObjectType *)(instantiation.type);
+				vector<TypeList *>::const_iterator iter;
+				for (iter = instantiationTypeCast->constructorTypes.begin(); iter != instantiationTypeCast->constructorTypes.end(); iter++) {
+					if (**iter == *nullType) { // if this is a null constructor, break
+						break;
+					}
+				}
+				if (iter != instantiationTypeCast->constructorTypes.end()) { // if we managed to find a null constructor, allow the instantiation
+					returnStatus(instantiation);
+				} else { // else if we didn't find a null constructor, flag an error
+					Token curToken = it->t; // InstantiableType
+					semmerError(curToken.fileName,curToken.row,curToken.col,"null instantiation of object without null constructor");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
+				}
+			}
 		}
 	}
 	GET_STATUS_FOOTER;

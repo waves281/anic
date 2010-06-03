@@ -248,6 +248,8 @@ bool TypeList::operator==(const Type &otherType) const {
 			iter2++;
 		}
 		return true;
+	} else if (list.size() == 1) {
+		return (*(list[0]) == otherType);
 	} else {
 		return false;
 	}

@@ -2,7 +2,7 @@
 
 // basic expression testing
 exp1 = [float\] <- 5;
-exp2 = (-7+(-5---(-1))*2++-100.0e+10);
+exp2 = (-7+(-5--++-(-1))*2++-100.0e+10);
 exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
@@ -10,9 +10,13 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 // basic construct testing
 {
 	someInt = [int] <- 10;
+	someFloat = [float\] <- 1;
+	someString = [string\] <- false;
 	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);
 	true ? {"Hi" ->std.out};
 	false ? {"Bye" ->std.out};
+	1 [int x] {x};
+	1.0e+100 [float\ f --> string] {\f; "someString" + 'c' + true + " someOtherString" + (7++ - 8--) -->};
 };
 
 // object sub-identifier testing

@@ -169,12 +169,12 @@ Exp : Primary
 	;
 Primary : PrimaryBase
 	| PrefixOrMultiOp Primary
-	| PrimaryBase PostfixOp
 	;
 PrimaryBase : SuffixedIdentifier
 	| SingleAccessor SuffixedIdentifier
 	| PrimLiteral
 	| BracketedExp
+	| PrimaryBase PostfixOp
 	;
 Node : SuffixedIdentifier
 	| NodeInstantiation

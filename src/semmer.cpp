@@ -13,6 +13,7 @@ StdType *stdIntType;
 StdType *stdFloatType;
 StdType *stdCharType;
 StdType *stdStringType;
+StdType *stdBoolLitType;
 ObjectType *stringerType;
 ObjectType *outerType;
 
@@ -101,9 +102,9 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "bool", new StdType(STD_BOOL));
 	*stRoot *= new SymbolTable(KIND_STD, "char", new StdType(STD_CHAR));
 	*stRoot *= new SymbolTable(KIND_STD, "string", new StdType(STD_STRING));
-	*stRoot *= new SymbolTable(KIND_STD, "null", new StdType(STD_NULL));
-	*stRoot *= new SymbolTable(KIND_STD, "true", new StdType(STD_BOOL));
-	*stRoot *= new SymbolTable(KIND_STD, "false", new StdType(STD_BOOL));
+	*stRoot *= new SymbolTable(KIND_STD, "null", nullType);
+	*stRoot *= new SymbolTable(KIND_STD, "true", stdBoolLitType);
+	*stRoot *= new SymbolTable(KIND_STD, "false", stdBoolLitType);
 }
 
 void catStdLib(SymbolTable *&stRoot) {
@@ -136,6 +137,7 @@ void initStdTypes() {
 	stdFloatType = new StdType(STD_FLOAT);
 	stdCharType = new StdType(STD_CHAR);
 	stdStringType = new StdType(STD_STRING);
+	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
 	// build the stringerType
 	vector<TypeList *> constructorTypes;
 	vector<string> memberNames;
@@ -688,6 +690,13 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 		returnStatus(getStatusPrimLiteral(pbc, inStatus));
 	} else if (*pbc == TOKEN_BracketedExp) {
 		returnStatus(getStatusExp(pbc->child->next, inStatus)); // move past the bracket to the actual Exp node
+	} else if (*pbc == TOKEN_PrimaryBase) {
+		TypeStatus baseStatus = getStatusPrimaryBase(pbc, inStatus); // derive the status of the base node
+		if (*baseStatus) { // if we managed to derive the status of the base node
+			if (*(*baseStatus >> *stdIntType)) { // if the base can be converted into an int, return int
+				returnType(new StdType(STD_INT, SUFFIX_LATCH));
+			}
+		}
 	}
 	GET_STATUS_FOOTER;
 }
@@ -696,17 +705,8 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *primaryc = tree->child; // PrimaryBase or PrefixOrMultiOp
-	if (*primaryc == TOKEN_PrimaryBase) { // if the Primary begins with a base
-		if (primaryc->next == NULL) { // if it's a non-opped basic Primary node
-			returnStatus(getStatusPrimaryBase(primaryc, inStatus));
-		} else { // else if it's a PostFixOp'ed basic Primary node
-			TypeStatus baseStatus = getStatusPrimaryBase(primaryc, inStatus); // derive the status of the base node
-			if (*baseStatus) { // if we managed to derive the status of the base node
-				if (*(*baseStatus >> *stdIntType)) { // if the base can be converted into an int, return int
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-			}
-		}
+	if (*primaryc == TOKEN_PrimaryBase) { // if it's a raw PrimaryBase
+		returnStatus(getStatusPrimaryBase(primaryc, inStatus));
 	} else if (*primaryc == TOKEN_PrefixOrMultiOp) { // else if it's a PrefixOrMultiOp'ed Primary node
 		TypeStatus subStatus = getStatusPrimary(primaryc->next, inStatus); // derive the status of the sub-node
 		if (*subStatus) { // if we managed to derive the status of the sub-node
@@ -977,7 +977,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type violations)
-			if (*( ((FilterType *)(blockStatus.type))->to ) == *( ((FilterType *)fakeType)->to )) { // if the header and Block return types match
+			if ((*(((FilterType *)(blockStatus.type))->to) == *nullType && *(((FilterType *)fakeType)->to) == *nullType) ||
+					(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types match
 				// log the header type as the return status
 				returnType(fakeType);
 			} else { // else if the header and Block don't match
@@ -1390,7 +1391,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
-		if (*(tstc->child) == TOKEN_SuffixedIdentifier) { // if the Node needs to be constantized
+		if (*(tstc->child) == TOKEN_SuffixedIdentifier && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
 			// first, copy the Type so that our mutations don't propagate to the StaticTerm
 			TypeStatus mutableNodeStatus = nodeStatus;
 			mutableNodeStatus.type = mutableNodeStatus.type->copy();

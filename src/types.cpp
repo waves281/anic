@@ -410,17 +410,13 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
 		return kind;
-	} else if (kind < otherType.kind) {
-		if (kind == STD_INT && otherType.kind == STD_FLOAT) {
-			return STD_FLOAT;
-		} else if (kind == STD_INT && otherType.kind == STD_CHAR) {
-			return STD_CHAR;
-		} else if (kind == STD_CHAR && otherType.kind == STD_STRING) {
-			return STD_STRING;
-		} else {
-			return STD_NULL;
-		}
-	} else { // kind > otherType.kind
+	} else if (kind == STD_INT && otherType.kind == STD_FLOAT) {
+		return STD_FLOAT;
+	} else if (kind == STD_INT && otherType.kind == STD_CHAR) {
+		return STD_CHAR;
+	} else if (otherType.kind == STD_STRING) {
+		return STD_STRING;
+	} else {
 		return STD_NULL;
 	}
 }
@@ -442,11 +438,12 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 					if (*(*prevTermStatus >> *stdFloatType) && *(*nextTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
 						return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
 					}
-					// if one of the terms is a string and the other is a StdType constant or latch, return string
-					if ((*(*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
-							(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
-						(*(*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
-							(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH))) {
+					// if this is the + operator and one of the terms is a string and the other is a StdType constant or latch, return string
+					if (kind == STD_PLUS &&
+							((*(*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
+								(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
+							(*(*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
+								(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH)))) {
 						return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
 					}
 				}
@@ -513,7 +510,7 @@ Type *StdType::operator>>(Type &otherType) const {
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (baseSendable(otherType) && kindCompare(*otherTypeCast) && kind <= otherTypeCast->kind) {
+		if (baseSendable(otherType) && kindCompare(*otherTypeCast)) {
 			return nullType;
 		} else {
 			return errType;

@@ -110,7 +110,8 @@ void catStdNodes(SymbolTable *&stRoot) {
 
 void catStdLib(SymbolTable *&stRoot) {
 	// standard root
-	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, new StdType(STD_STD, SUFFIX_LATCH));
+	StdType *stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->operable = false;
+	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
 	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
@@ -1177,8 +1178,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					idStatus->depth = depthVal;
 					returnStatus(idStatus);
 				} else { // else if the type is defined by a standard literal, flag an error
-					Token curToken = typec->child->t; // ID
-					semmerError(curToken.fileName,curToken.row,curToken.col,"standard literal '"<<curToken.s<<"' is not a type"); // ID
+					Token curToken = typec->child->t; // guaranteed to be ID, since only SuffixedIdentifier nodes generate inoperable types
+					semmerError(curToken.fileName,curToken.row,curToken.col,"standard literal '"<<typec<<"' is not a type");
 				}
 			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
@@ -1430,7 +1431,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = tstc->child->child->t; // guaranteed to be ID, since only SuffixedIdentifier nodes generate inoperable types
-				semmerError(curToken.fileName,curToken.row,curToken.col,"reference to non-referensible standard node");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"reference to non-referensible node '"<<tstc->child<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			}
 		}
@@ -1516,11 +1517,11 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = stc->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
-				semmerError(curToken.fileName,curToken.row,curToken.col,"access of non-referensible standard node");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<stc->child->next->child<<"'"); // SuffixedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 				Token curToken = stc->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
-				semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable standard literal '"<<stc->child->next->child->child->t.s<<"'"); // ID
+				semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<stc->child->next->child<<"'"); // SuffixedIdentifier
 			}
 		}
 	}

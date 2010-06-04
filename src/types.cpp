@@ -211,13 +211,15 @@ bool Type::operator!=(int kind) const {return (!(operator==(kind)));}
 
 // TypeList functions
 // constructor works on ParamList and TypeList
-TypeList::TypeList(const vector<Type *> &list) : list(list) {category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;}
+TypeList::TypeList(const vector<Type *> &list) : list(list) {
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false; operable = true;
+}
 TypeList::TypeList(Type *type) {
-	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false; operable = true;
 	list.push_back(type);
 }
 TypeList::TypeList() {
-	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false;
+	category = CATEGORY_TYPELIST; suffix = SUFFIX_CONSTANT; depth = 0; toStringHandled = false; operable = true;
 	list.push_back(nullType);
 }
 TypeList::~TypeList() {
@@ -383,7 +385,7 @@ string TypeList::toString(unsigned int tabDepth) {
 TypeList::operator string() {return toString();}
 
 // ErrorType functions
-ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false;}
+ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false; operable = true;}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
 Type *ErrorType::copy() {return new ErrorType(*this);}
@@ -404,9 +406,13 @@ string ErrorType::toString(unsigned int tabDepth) {
 ErrorType::operator string() {return toString();}
 
 // StdType functions
-StdType::StdType(int kind, int suffix, int depth) : kind(kind) {category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
+StdType::StdType(int kind, int suffix, int depth) : kind(kind) {
+	category = CATEGORY_STDTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false; operable = true;
+}
 StdType::~StdType() {}
-bool StdType::isComparable(const Type &otherType) const {return (otherType.category == CATEGORY_STDTYPE && ( kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this) ));}
+bool StdType::isComparable(const Type &otherType) const {
+	return (otherType.category == CATEGORY_STDTYPE && (kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this)));
+}
 int StdType::kindCompare(const StdType &otherType) const {
 	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
 		return STD_NULL;
@@ -645,7 +651,7 @@ StdType::operator string() {return toString();}
 
 // FilterType functions
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth) {
-	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
+	category = CATEGORY_FILTERTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false; operable = true;
 	if (from->category == CATEGORY_TYPELIST) {
 		this->from = (TypeList *)from;
 	} else {
@@ -748,12 +754,15 @@ string FilterType::toString(unsigned int tabDepth) {
 FilterType::operator string() {return toString();}
 
 // ObjectType functions
-ObjectType::ObjectType(int suffix, int depth) : propagationHandled(false) {category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes), propagationHandled(false)
-	{category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;}
+ObjectType::ObjectType(int suffix, int depth) : propagationHandled(false) {
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false; operable = true;
+}
+ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : constructorTypes(constructorTypes), propagationHandled(false) {
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false; operable = true;
+}
 ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix, int depth) : 
 	constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes), memberDefSites(memberDefSites), propagationHandled(false) {
-	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false;
+	category = CATEGORY_OBJECTTYPE; this->suffix = suffix; this->depth = depth; toStringHandled = false; operable = true;
 }
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {

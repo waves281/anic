@@ -97,11 +97,11 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 // Main semantic analysis functions
 
 void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "int", new StdType(STD_INT));
-	*stRoot *= new SymbolTable(KIND_STD, "float", new StdType(STD_FLOAT));
-	*stRoot *= new SymbolTable(KIND_STD, "bool", new StdType(STD_BOOL));
-	*stRoot *= new SymbolTable(KIND_STD, "char", new StdType(STD_CHAR));
-	*stRoot *= new SymbolTable(KIND_STD, "string", new StdType(STD_STRING));
+	*stRoot *= new SymbolTable(KIND_STD, "int", stdIntType);
+	*stRoot *= new SymbolTable(KIND_STD, "float", stdFloatType);
+	*stRoot *= new SymbolTable(KIND_STD, "bool", stdBoolType);
+	*stRoot *= new SymbolTable(KIND_STD, "char", stdCharType);
+	*stRoot *= new SymbolTable(KIND_STD, "string", stdStringType);
 	*stRoot *= new SymbolTable(KIND_STD, "null", nullType);
 	*stRoot *= new SymbolTable(KIND_STD, "true", stdBoolLitType);
 	*stRoot *= new SymbolTable(KIND_STD, "false", stdBoolLitType);
@@ -130,14 +130,14 @@ void catStdLib(SymbolTable *&stRoot) {
 
 void initStdTypes() {
 	// build the standard types
-	nullType = new StdType(STD_NULL);
+	nullType = new StdType(STD_NULL); nullType->operable = false;
 	errType = new ErrorType();
-	stdBoolType = new StdType(STD_BOOL);
-	stdIntType = new StdType(STD_INT);
-	stdFloatType = new StdType(STD_FLOAT);
-	stdCharType = new StdType(STD_CHAR);
-	stdStringType = new StdType(STD_STRING);
-	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
+	stdBoolType = new StdType(STD_BOOL); stdBoolType->operable = false;
+	stdIntType = new StdType(STD_INT); stdIntType->operable = false;
+	stdFloatType = new StdType(STD_FLOAT); stdFloatType->operable = false;
+	stdCharType = new StdType(STD_CHAR); stdCharType->operable = false;
+	stdStringType = new StdType(STD_STRING); stdStringType->operable = false;
+	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH); stdBoolLitType->operable = false;
 	// build the stringerType
 	vector<TypeList *> constructorTypes;
 	vector<string> memberNames;
@@ -149,7 +149,7 @@ void initStdTypes() {
 	stringerType = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
 	// build the outerType
 	constructorTypes.push_back(new TypeList(stringerType));
-	outerType = new ObjectType(constructorTypes, SUFFIX_LATCH);
+	outerType = new ObjectType(constructorTypes, SUFFIX_LATCH); outerType->operable = false;
 }
 
 SymbolTable *genDefaultDefs() {

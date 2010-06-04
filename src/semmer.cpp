@@ -1171,10 +1171,15 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
 			TypeStatus idStatus = getStatusSuffixedIdentifier(typec, inStatus); // NonArraySuffixedIdentifier
 			if (*idStatus) { // if we managed to derive a type for the instantiation identifier
-				idStatus.type = idStatus.type->copy(); // make a copy of the identifier's type, so that the below mutation doesn't propagate to it
-				idStatus->suffix = suffixVal;
-				idStatus->depth = depthVal;
-				returnStatus(idStatus);
+				if (idStatus.type != stdNullLitType && idStatus.type != stdBoolLitType) { // if the type isn't defined by a standard literal
+					idStatus.type = idStatus.type->copy(); // make a copy of the identifier's type, so that the below mutation doesn't propagate to it
+					idStatus->suffix = suffixVal;
+					idStatus->depth = depthVal;
+					returnStatus(idStatus);
+				} else { // else if the type is defined by a standard literal, flag an error
+					Token curToken = typec->child->t; // ID
+					semmerError(curToken.fileName,curToken.row,curToken.col,"standard literal '"<<curToken.s<<"' is not a type"); // ID
+				}
 			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
 			TypeStatus from = inStatus;

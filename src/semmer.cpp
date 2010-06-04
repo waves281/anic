@@ -1354,7 +1354,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
 				}
 			}
-		} else { // else if there is no initializer, check if the type requires one KOL
+		} else { // else if there is no initializer, check if the type requires one
 			if (instantiation->category != CATEGORY_OBJECTTYPE) { // if it's not an object type, it definitely doesn't require an initializer
 				returnStatus(instantiation);
 			} else { // else if it's an object type

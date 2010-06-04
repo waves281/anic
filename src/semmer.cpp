@@ -13,6 +13,7 @@ StdType *stdIntType;
 StdType *stdFloatType;
 StdType *stdCharType;
 StdType *stdStringType;
+StdType *stdNullLitType;
 StdType *stdBoolLitType;
 ObjectType *stringerType;
 ObjectType *outerType;
@@ -102,7 +103,7 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "bool", stdBoolType);
 	*stRoot *= new SymbolTable(KIND_STD, "char", stdCharType);
 	*stRoot *= new SymbolTable(KIND_STD, "string", stdStringType);
-	*stRoot *= new SymbolTable(KIND_STD, "null", nullType);
+	*stRoot *= new SymbolTable(KIND_STD, "null", stdNullLitType);
 	*stRoot *= new SymbolTable(KIND_STD, "true", stdBoolLitType);
 	*stRoot *= new SymbolTable(KIND_STD, "false", stdBoolLitType);
 }
@@ -137,7 +138,8 @@ void initStdTypes() {
 	stdFloatType = new StdType(STD_FLOAT); stdFloatType->operable = false;
 	stdCharType = new StdType(STD_CHAR); stdCharType->operable = false;
 	stdStringType = new StdType(STD_STRING); stdStringType->operable = false;
-	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH); stdBoolLitType->operable = false;
+	stdNullLitType = new StdType(STD_NULL);
+	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
 	// build the stringerType
 	vector<TypeList *> constructorTypes;
 	vector<string> memberNames;
@@ -1404,20 +1406,28 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	Tree *tstc = tree->child;
 	if (*tstc == TOKEN_Node) {
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
-		if (*(tstc->child) == TOKEN_SuffixedIdentifier && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
-			// first, copy the Type so that our mutations don't propagate to the StaticTerm
-			TypeStatus mutableNodeStatus = nodeStatus;
-			mutableNodeStatus.type = mutableNodeStatus.type->copy();
-			if (mutableNodeStatus->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the return status
-				returnStatus(mutableNodeStatus);
-			} else { // if the SuffixedIdentifier cannot be constantized, flag an error
-				Token curToken = tstc->child->child->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
-				mutableNodeStatus->erase();
+		if (*nodeStatus) { // if we managed to derive a type for the sub-node
+			if (nodeStatus->operable) { // if the node is referensible on its own
+				if (*(tstc->child) == TOKEN_SuffixedIdentifier && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
+					// first, copy the Type so that our mutations don't propagate to the StaticTerm
+					TypeStatus mutableNodeStatus = nodeStatus;
+					mutableNodeStatus.type = mutableNodeStatus.type->copy();
+					if (mutableNodeStatus->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the return status
+						returnStatus(mutableNodeStatus);
+					} else { // if the SuffixedIdentifier cannot be constantized, flag an error
+						Token curToken = tstc->child->child->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
+						mutableNodeStatus->erase();
+					}
+				} else { // else if the node doesn't need to be constantized, just return the nodeStatus
+					returnStatus(nodeStatus);
+				}
+			} else { // else if it's a standard node that we can't use an access operator on, flag an error
+				Token curToken = tstc->child->child->t; // guaranteed to be ID, since only SuffixedIdentifier nodes generate inoperable types
+				semmerError(curToken.fileName,curToken.row,curToken.col,"reference to non-referensible standard node");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			}
-		} else { // else if the node doesn't need to be constantized, just return the nodeStatus
-			returnStatus(nodeStatus);
 		}
 	} else if (*tstc == TOKEN_BracketedExp) { // it's an expression
 		returnStatus(getStatusExp(tstc->child->next, inStatus)); // move past the bracket to the actual Exp node
@@ -1438,65 +1448,74 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 		// first, derive the Type of the Node that we're acting upon
 		TypeStatus nodeStatus = getStatusNode(stc->child->next, inStatus); // Node
 		if (*nodeStatus) { // if we managed to derive a type for the subnode
-			// copy the Type so that our mutations don't propagate to the Node
-			TypeStatus mutableNodeStatus = nodeStatus;
-			mutableNodeStatus.type = mutableNodeStatus.type->copy();
-			// finally, do the mutation and see check it it worked
-			Tree *accessorc = stc->child->child; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
-			if (*accessorc == TOKEN_SLASH) {
-				if (mutableNodeStatus.type->delatch()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
+			if (nodeStatus->operable && (nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the node allows access operators
+				// copy the Type so that our mutations don't propagate to the Node
+				TypeStatus mutableNodeStatus = nodeStatus;
+				mutableNodeStatus.type = mutableNodeStatus.type->copy();
+				// finally, do the mutation and see check it it worked
+				Tree *accessorc = stc->child->child; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
+				if (*accessorc == TOKEN_SLASH) {
+					if (mutableNodeStatus.type->delatch()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_SSLASH) {
+					if (mutableNodeStatus.type->copyDelatch()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_ASLASH) {
+					if (mutableNodeStatus.type->constantDelatch()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_DSLASH) {
+					if (mutableNodeStatus.type->destream()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"destream of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_DSSLASH) {
+					if (mutableNodeStatus.type->copyDestream()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_DASLASH) {
+					if (mutableNodeStatus.type->constantDestream()) {
+						returnStatus(mutableNodeStatus);
+					} else {
+						Token curToken = accessorc->t;
+						semmerError(curToken.fileName,curToken.row,curToken.col,"constant destream of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
+						mutableNodeStatus.type->erase();
+					}
 				}
-			} else if (*accessorc == TOKEN_SSLASH) {
-				if (mutableNodeStatus.type->copyDelatch()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_ASLASH) {
-				if (mutableNodeStatus.type->constantDelatch()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_DSLASH) {
-				if (mutableNodeStatus.type->destream()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_DSSLASH) {
-				if (mutableNodeStatus.type->copyDestream()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_DASLASH) {
-				if (mutableNodeStatus.type->constantDestream()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"constant destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
+			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
+				Token curToken = stc->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
+				semmerError(curToken.fileName,curToken.row,curToken.col,"access of non-referensible standard node");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
+			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+				Token curToken = stc->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
+				semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable standard literal '"<<stc->child->next->child->child->t.s<<"'"); // ID
 			}
 		}
 	}

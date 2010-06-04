@@ -230,7 +230,7 @@ TypeList::~TypeList() {
 	}
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
-Type *TypeList::copy() {return new TypeList(*this);}
+Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
 void TypeList::erase() {list.clear(); delete this;}
 bool TypeList::operator==(const Type &otherType) const {
 	if (this == &otherType) { // if the lists are actually the same object instance, return true
@@ -388,7 +388,7 @@ TypeList::operator string() {return toString();}
 ErrorType::ErrorType() {category = CATEGORY_ERRORTYPE; toStringHandled = false; operable = true;}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
-Type *ErrorType::copy() {return new ErrorType(*this);}
+Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
 void ErrorType::erase() {delete this;}
 bool ErrorType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
@@ -476,7 +476,7 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 	}
 	return make_pair(errType, false); // return false, since we're not consuming the nextTerm (though this doesn't really matter -- it's an error anyway)
 }
-Type *StdType::copy() {return new StdType(*this);}
+Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->operable = true; return retVal;}
 void StdType::erase() {delete this;}
 bool StdType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_STDTYPE) {
@@ -672,7 +672,7 @@ FilterType::~FilterType() {
 	}
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
-Type *FilterType::copy() {return new FilterType(*this);}
+Type *FilterType::copy() {Type *retVal = new FilterType(*this); retVal->operable = true; return retVal;}
 void FilterType::erase() {from = NULL; to = NULL; delete this;}
 bool FilterType::operator==(const Type &otherType) const {
 	if (this == &otherType) { // if the filters are actually the same object instance, return true
@@ -777,7 +777,7 @@ ObjectType::~ObjectType() {
 	}
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
-Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); return retVal;}
+Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); retVal->operable = true; return retVal;}
 void ObjectType::erase() {constructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear(); delete this;}
 void ObjectType::propagateToCopies() {
 	if (propagationHandled) { // if we've already propagated to this node and got here through a recursive type loop, we're done

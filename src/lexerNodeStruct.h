@@ -2,7 +2,7 @@
 #define LEXER_STRUCT_NODE_H
 
 struct lexerNodeStruct {
-	int valid;
+	bool valid;
 	int tokenType;
 	int toState;
 };

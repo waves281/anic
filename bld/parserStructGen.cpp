@@ -1,4 +1,4 @@
-#include "../src/mainDefs.h"
+#include "../src/globalDefs.h"
 #include "../src/constantDefs.h"
 
 #include "../tmp/lexerStruct.h"

@@ -1,7 +1,7 @@
-#ifndef _SYSTEM_H_
-#define _SYSTEM_H_
+#ifndef _DRIVER_H_
+#define _DRIVER_H_
 
-#include "mainDefs.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
 
 void printHeader(void);

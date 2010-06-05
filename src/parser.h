@@ -1,9 +1,9 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
-#include "mainDefs.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
-#include "system.h"
+#include "driver.h"
 
 #include "lexer.h"
 #include "../tmp/parserStruct.h"

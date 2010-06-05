@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "../src/constantDefs.h"
-#include "../src/mainDefs.h"
+#include "../src/globalDefs.h"
 
 // prints the buildnumber to stdout
 int main(int argc, char **argv) {

@@ -1,9 +1,9 @@
 #ifndef _SEMMER_H_
 #define _SEMMER_H_
 
-#include "mainDefs.h"
-#include "system.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
+#include "driver.h"
 
 #include "lexer.h"
 #include "parser.h"

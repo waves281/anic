@@ -1,4 +1,4 @@
-#include "../src/mainDefs.h"
+#include "../src/globalDefs.h"
 #include "../src/constantDefs.h"
 
 #include "../src/lexerNodeStruct.h"
@@ -112,7 +112,7 @@ int main() {
 	// print the necessary prologue into the .h
 	fprintf(out, "#ifndef _LEXER_STRUCT_H_\n");
 	fprintf(out, "#define _LEXER_STRUCT_H_\n\n");
-	fprintf(out, "#include \"../src/mainDefs.h\"\n\n");
+	fprintf(out, "#include \"../src/globalDefs.h\"\n\n");
 	fprintf(out, "#include \"../src/lexerNodeStruct.h\"\n\n");
 	// print out token definitions to the .h
 	fprintf(out, "#define NUM_TOKENS %u\n\n", ((unsigned int)tokenMap.size() + 2)); // plus 2 due to TOKEN_END and TOKEN_STD

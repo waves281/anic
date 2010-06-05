@@ -1,9 +1,9 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#include "mainDefs.h"
-#include "system.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
+#include "driver.h"
 
 #include "../tmp/parserStruct.h"
 

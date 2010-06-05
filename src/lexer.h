@@ -1,9 +1,9 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
-#include "mainDefs.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
-#include "system.h"
+#include "driver.h"
 
 #include "../tmp/lexerStruct.h"
 

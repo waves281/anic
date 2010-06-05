@@ -1,7 +1,7 @@
 #ifndef _OUTPUT_OPERATORS_H_
 #define _OUTPUT_OPERATORS_H_
 
-#include "mainDefs.h"
+#include "globalDefs.h"
 #include "constantDefs.h"
 
 #include "lexer.h"

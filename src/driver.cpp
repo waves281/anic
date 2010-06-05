@@ -1,6 +1,8 @@
-#include "mainDefs.h"
+#include "driver.h"
+
+#include "globalDefs.h"
 #include "constantDefs.h"
-#include "system.h"
+
 #include "outputOperators.h"
 
 #include "lexer.h"
@@ -14,6 +16,44 @@ bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
 int tabModulus = DEFAULT_TAB_MODULUS;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
+
+// header print functions
+
+void printHeader(void) {
+	cerr << HEADER_LITERAL;
+}
+
+void printUsage(void) {
+	cerr << USAGE_LITERAL;
+}
+
+void printSeeAlso(void) {
+	cerr << SEE_ALSO_LITERAL;
+}
+
+void printLink(void) {
+	cerr << LINK_LITERAL;
+}
+
+void printHelp(void) {
+	printHeader();
+	printUsage();
+	printSeeAlso();
+	printLink();
+}
+
+// system termination functions
+
+void die(int errorCode) {
+	if (errorCode) {
+		printError("fatal error code " << errorCode << " -- stop");
+	}
+	exit(errorCode);
+}
+
+void die(void) {
+	die(0);
+}
 
 // core helper functions
 

@@ -262,40 +262,33 @@ Type *TypeList::operator,(Type &otherType) const {
 		return errType;
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (list.size() == 1 && (list[0])->category == CATEGORY_STDTYPE && ( (list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH )) {
+		if (list.size() == 1 && (list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) {
 			StdType *thisTypeCast = (StdType *)(list[0]);
-			if (otherTypeCast->kind == STD_NOT) {
-				if (thisTypeCast->kind == STD_BOOL) {
-					return (new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-			} else if (otherTypeCast->kind == STD_COMPLEMENT) {
-				if (thisTypeCast->kind == STD_INT) {
-					return (new StdType(STD_INT, SUFFIX_LATCH));
-				}
-			} else if (otherTypeCast->kind == STD_DPLUS || otherTypeCast->kind == STD_DMINUS) {
-				if (thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT) {
-					return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
-				}
-			} else if (otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
-				if (thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT) {
-					return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
-				}
+			if (otherTypeCast->kind == STD_NOT && thisTypeCast->kind == STD_BOOL) {
+				return (new StdType(STD_BOOL, SUFFIX_LATCH));
+			} else if (otherTypeCast->kind == STD_COMPLEMENT && thisTypeCast->kind == STD_INT) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
+			} else if ((otherTypeCast->kind == STD_DPLUS || otherTypeCast->kind == STD_DMINUS) &&
+					(thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT)) {
+				return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
+			} else if ((otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) &&
+					(thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT)) {
+				return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
 			}
 		} else if (list.size() == 2 &&
-				((list[0])->category == CATEGORY_STDTYPE && ( (list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH )) &&
-				((list[1])->category == CATEGORY_STDTYPE && ( (list[1])->suffix == SUFFIX_CONSTANT || (list[1])->suffix == SUFFIX_LATCH ))) {
+				((list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) &&
+				((list[1])->category == CATEGORY_STDTYPE && ((list[1])->suffix == SUFFIX_CONSTANT || (list[1])->suffix == SUFFIX_LATCH))) {
 			StdType *thisTypeCast1 = (StdType *)(list[0]);
 			StdType *thisTypeCast2 = (StdType *)(list[1]);
-			if (otherTypeCast->kind == STD_DOR || otherTypeCast->kind == STD_DAND) {
-				if (thisTypeCast1->kind == STD_BOOL && thisTypeCast2->kind == STD_BOOL) {
-					return (new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-			} else if (otherTypeCast->kind == STD_OR || otherTypeCast->kind == STD_XOR || otherTypeCast->kind == STD_AND) {
-				if (thisTypeCast1->kind == STD_INT && thisTypeCast2->kind == STD_INT) {
-					return (new StdType(STD_INT, SUFFIX_LATCH));
-				}
+			if ((otherTypeCast->kind == STD_DOR || otherTypeCast->kind == STD_DAND) &&
+					(thisTypeCast1->kind == STD_BOOL && thisTypeCast2->kind == STD_BOOL)) {
+				return (new StdType(STD_BOOL, SUFFIX_LATCH));
+			} else if ((otherTypeCast->kind == STD_OR || otherTypeCast->kind == STD_XOR || otherTypeCast->kind == STD_AND) &&
+					(thisTypeCast1->kind == STD_INT && thisTypeCast2->kind == STD_INT)) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
 			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
-					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT || otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
+					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
+					otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
 				if (thisTypeCast1->kindCompare(*thisTypeCast2)) {
 					if (thisTypeCast1->kind >= thisTypeCast2->kind) {
 						return (new StdType(thisTypeCast1->kind, SUFFIX_LATCH));
@@ -437,7 +430,10 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 		case STD_MINUS:
 		case STD_DPLUS:
 		case STD_DMINUS:
-			if (nextTerm != NULL) {
+			if (nextTerm != NULL &&
+					*(nextTerm->child->child) == TOKEN_SimpleTerm &&
+					*(nextTerm->child->child->child) == TOKEN_DynamicTerm &&
+					*(nextTerm->child->child->child->child) == TOKEN_StaticTerm) {
 				TypeStatus nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);
 				if (*nextTermStatus) {
 					if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int

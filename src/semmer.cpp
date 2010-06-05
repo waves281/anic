@@ -1785,7 +1785,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					if (stdFlowResult.second) { // if we used a third term for the derivation, advance curTerm past it
 						curTerm = curTerm->next->child;
 					}
-				} else { // else if this is not a STDTYPE filter exception case
+				} else { // else if this is not a three-term STDTYPE filter exception case
 					// derive a type for the flow of the current type into the next term in the sequence
 					Type *flowResult = (*curStatus , *nextTermStatus);
 					if (*flowResult) { // if the type flow is valid, log it as the current status
@@ -1804,7 +1804,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 			} else { // else if it's not a flow-through Term, log the next term's status as the current one
-				curStatus  = nextTermStatus;
+				curStatus = nextTermStatus;
 			}
 		} else { // otherwise, if we failed to derive a type for this term, flag an error
 			Token curToken = curTerm->t;

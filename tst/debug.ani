@@ -13,6 +13,13 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	someInt = [int] <- 10;
 	someFloat = [float\] <- 1;
 	someString = [string\] <- false;
+	someChar = [char\] <- 'c';
+	1, 2 + ->someInt;
+/*	someChar ?? {
+		'a': \someChar
+		'b':
+		'c': \someChar
+	}; */
 	someObj = {
 		=[int\ x] {\x ->xStream;}
 		xStream = [int\\];

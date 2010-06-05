@@ -114,6 +114,7 @@ Terms :
 	;
 Term : OpenTerm
 	| ClosedTerm
+	| DynamicTerm
 	;
 OpenTerm : SimpleCondTerm
 	| OpenCondTerm
@@ -129,18 +130,17 @@ OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
 	;
 ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
 	;
-SimpleTerm : DynamicTerm
+SimpleTerm : StaticTerm
 	| SwitchTerm
 	;
-DynamicTerm : StaticTerm
-	| Compound
+StaticTerm : TypedStaticTerm
+	| Access
+	;
+DynamicTerm : Compound // LOL
 	| Link
 	| Send
 	| Swap
 	| Return
-	;
-StaticTerm : TypedStaticTerm
-	| Access
 	;
 TypedStaticTerm : Node
 	| BracketedExp

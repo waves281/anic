@@ -1532,9 +1532,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *dtc = tree->child;
-	if (*dtc == TOKEN_StaticTerm) {
-		returnStatus(getStatusStaticTerm(dtc, inStatus));
-	} else if (*dtc == TOKEN_Compound) {
+	if (*dtc == TOKEN_Compound) {
 		TypeStatus compoundStatus = getStatusStaticTerm(dtc->child->next, inStatus);
 		if (*compoundStatus) { // if we managed to derive the compounding term's type
 			Type *curType = inStatus;
@@ -1652,8 +1650,8 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *stc = tree->child;
-	if (*stc == TOKEN_DynamicTerm) {
-		returnStatus(getStatusDynamicTerm(stc, inStatus));
+	if (*stc == TOKEN_StaticTerm) {
+		returnStatus(getStatusStaticTerm(stc, inStatus));
 	} else if (*stc == TOKEN_SwitchTerm) {
 		returnStatus(getStatusSwitchTerm(stc, inStatus));
 	}
@@ -1748,15 +1746,20 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *tcc = tree->child->child;
-	if (*tcc == TOKEN_SimpleCondTerm) {
-		returnStatus(getStatusSimpleCondTerm(tcc, inStatus));
-	} else if (*tcc == TOKEN_OpenCondTerm) {
-		returnStatus(getStatusOpenCondTerm(tcc, inStatus));
-	} else if (*tcc == TOKEN_SimpleTerm) {
-		returnStatus(getStatusSimpleTerm(tcc, inStatus));
-	} else if (*tcc == TOKEN_ClosedCondTerm) {
-		returnStatus(getStatusClosedCondTerm(tcc, inStatus));
+	Tree *tc = tree->child;
+	if (*tc != TOKEN_DynamicTerm) { // if it's not a DynamicTerm
+		Tree *tcc = tree->child->child;
+		if (*tcc == TOKEN_SimpleCondTerm) {
+			returnStatus(getStatusSimpleCondTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_OpenCondTerm) {
+			returnStatus(getStatusOpenCondTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_SimpleTerm) {
+			returnStatus(getStatusSimpleTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_ClosedCondTerm) {
+			returnStatus(getStatusClosedCondTerm(tcc, inStatus));
+		}
+	} else { // else if it's a DynamicTerm
+		returnStatus(getStatusDynamicTerm(tc, inStatus));
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1773,9 +1776,8 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus nextTermStatus = getStatusTerm(curTerm, curStatus);
 		if (*nextTermStatus) { // if we managed to derive a type for this term
 			if (*(curTerm->child->child) == TOKEN_SimpleTerm &&
-					*(curTerm->child->child->child) == TOKEN_DynamicTerm &&
-					*(curTerm->child->child->child->child->child) == TOKEN_TypedStaticTerm &&
-					*(curTerm->child->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
+					*(curTerm->child->child->child) == TOKEN_StaticTerm &&
+					*(curTerm->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
 				pair<Type *, bool> stdFlowResult(errType, false);
 				if (nextTermStatus->category == CATEGORY_STDTYPE) { // if this Term's type is a STDTYPE, try to derive a three-term exceptional type for it
 					stdFlowResult = ((StdType *)(nextTermStatus.type))->stdFlowDerivation(curStatus, curTerm->next->child);

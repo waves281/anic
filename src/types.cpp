@@ -437,8 +437,7 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 		case STD_DMINUS:
 			if (nextTerm != NULL &&
 					*(nextTerm->child->child) == TOKEN_SimpleTerm &&
-					*(nextTerm->child->child->child) == TOKEN_DynamicTerm &&
-					*(nextTerm->child->child->child->child) == TOKEN_StaticTerm) {
+					*(nextTerm->child->child->child) == TOKEN_StaticTerm) {
 				TypeStatus nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);
 				if (*nextTermStatus) {
 					if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int

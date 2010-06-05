@@ -264,16 +264,23 @@ Type *TypeList::operator,(Type &otherType) const {
 		StdType *otherTypeCast = (StdType *)(&otherType);
 		if (list.size() == 1 && (list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) {
 			StdType *thisTypeCast = (StdType *)(list[0]);
-			if (otherTypeCast->kind == STD_NOT && thisTypeCast->kind == STD_BOOL) {
+			if (otherTypeCast->kind == STD_NOT && *(*thisTypeCast >> *stdBoolType)) {
 				return (new StdType(STD_BOOL, SUFFIX_LATCH));
-			} else if (otherTypeCast->kind == STD_COMPLEMENT && thisTypeCast->kind == STD_INT) {
+			} else if (otherTypeCast->kind == STD_COMPLEMENT && *(*thisTypeCast >> *stdIntType)) {
 				return (new StdType(STD_INT, SUFFIX_LATCH));
 			} else if ((otherTypeCast->kind == STD_DPLUS || otherTypeCast->kind == STD_DMINUS) &&
-					(thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT)) {
-				return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
-			} else if ((otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) &&
-					(thisTypeCast->kind == STD_INT || thisTypeCast->kind == STD_FLOAT)) {
-				return (new StdType(thisTypeCast->kind, SUFFIX_LATCH));
+					*(*thisTypeCast >> *stdIntType)) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
+			} else if (otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
+				if (*thisTypeCast >> *stdIntType) {
+					return (new StdType(STD_INT, SUFFIX_LATCH));
+				} else if (*thisTypeCast >> *stdFloatType){
+					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
+				} else {
+					return errType;
+				}
+			} else {
+				return errType;
 			}
 		} else if (list.size() == 2 &&
 				((list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) &&
@@ -281,10 +288,10 @@ Type *TypeList::operator,(Type &otherType) const {
 			StdType *thisTypeCast1 = (StdType *)(list[0]);
 			StdType *thisTypeCast2 = (StdType *)(list[1]);
 			if ((otherTypeCast->kind == STD_DOR || otherTypeCast->kind == STD_DAND) &&
-					(thisTypeCast1->kind == STD_BOOL && thisTypeCast2->kind == STD_BOOL)) {
+					(*(*thisTypeCast1 >> *stdBoolType) && *(*thisTypeCast2 >> *stdBoolType))) {
 				return (new StdType(STD_BOOL, SUFFIX_LATCH));
 			} else if ((otherTypeCast->kind == STD_OR || otherTypeCast->kind == STD_XOR || otherTypeCast->kind == STD_AND) &&
-					(thisTypeCast1->kind == STD_INT && thisTypeCast2->kind == STD_INT)) {
+					(*(*thisTypeCast1 >> *stdIntType) && *(*thisTypeCast2 >> *stdIntType))) {
 				return (new StdType(STD_INT, SUFFIX_LATCH));
 			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
 					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
@@ -298,11 +305,9 @@ Type *TypeList::operator,(Type &otherType) const {
 				}
 			} else if (otherTypeCast->kind == STD_TIMES || otherTypeCast->kind == STD_DIVIDE || otherTypeCast->kind == STD_MOD ||
 					otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
-				if (thisTypeCast1->kind == STD_INT && thisTypeCast2->kind == STD_INT) {
+				if (*(*thisTypeCast1 >> *stdIntType) && *(*thisTypeCast2 >> *stdIntType)) {
 					return (new StdType(STD_INT, SUFFIX_LATCH));
-				} else if ((thisTypeCast1->kind == STD_INT || thisTypeCast1->kind == STD_FLOAT) && // if the first one is an int or a float
-						(thisTypeCast2->kind == STD_INT || thisTypeCast2->kind == STD_FLOAT) && // and the other one is an int or a float
-						(thisTypeCast1->kind == STD_FLOAT || thisTypeCast2->kind == STD_FLOAT)) { // and at least one of the two is a float
+				} else if (*(*thisTypeCast1 >> *stdFloatType) && *(*thisTypeCast2 >> *stdFloatType)) {
 					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
 				}
 			}

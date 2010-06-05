@@ -1562,27 +1562,47 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
-			Type *resultType = (*inStatus >> *nodeStatus);
-			if (*resultType) { // if the Send is valid, proceed normally
-				returnType(resultType);
-			} else { // else if the Send is invalid, flag an error
+			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
+					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
+				Type *resultType = (*inStatus >> *nodeStatus);
+				if (*resultType) { // if the Send is valid, proceed normally
+					returnType(resultType);
+				} else { // else if the Send is invalid, flag an error
+					Token curToken = dtc->child->t; // RARROW
+					semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+				}
+			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // RARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable node '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
+			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+				Token curToken = dtc->child->t; // RARROW
+				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable literal '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
 			}
 		}
 	} else if (*dtc == TOKEN_Swap) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
-			Type *resultType = (*inStatus >> *nodeStatus);
-			if (*resultType) { // if the Swap is valid, proceed normally
-				returnType(nodeStatus.type); // inherit the type of the destination Node
-			} else { // else if the Send is invalid, flag an error
+			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
+					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
+				Type *resultType = (*inStatus >> *nodeStatus);
+				if (*resultType) { // if the Send is valid, proceed normally
+					returnType(resultType);
+				} else { // else if the Send is invalid, flag an error
+					Token curToken = dtc->child->t; // RARROW
+					semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (outgoing type is "<<inStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (incoming type is "<<nodeStatus<<")");
+				}
+			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // LRARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable node '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
+			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+				Token curToken = dtc->child->t; // LRARROW
+				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable literal '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
 			}
 		}
 	} else if (*dtc == TOKEN_Return) {

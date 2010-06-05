@@ -3,7 +3,7 @@
 \fBanic\fR \- ANI programming language compiler
 .SH SYNOPSIS
 .B anic
-\fIsourceFile\fR... [-] [-o \fIoutputFile\fR] [-p \fIoptimizationLevel\fR] [-s] [-v] [-e] [-h]
+\fIsourceFile\fR... [-] [-o \fIoutputFile\fR] [-p \fIoptimizationLevel\fR] [-v] [-s] [-t \fItabWidth\fR] [-e] [-h]
 .SH DESCRIPTION
 .PP
 Compile, assemble, and link ANI source code to produce program executables.
@@ -45,7 +45,7 @@ silent mode; print nothing, not even compilation errors
 Cannot be used with \fB\-v\fR.
 .TP
 \fB\-t \fR\fIn\fR\fR
-use a tab modulus (width) of \fR\fIn\fR
+use a tab modulus (width) of \fR\fIn\fR characters
 .IP
 The valid range is \fB1\fR to \fB80\fR inclusive.
 .IP
@@ -79,8 +79,8 @@ Same as above, except read program source from standard input.
 \fBanic \fR\fIprogram.ani\fR\fB \-v\fR
 Compile \fIprogram.ani\fR to \fIa.out\fR and additionally dump verbose compilation details to standard output.
 .TP
-\fBanic \fR\fIprogram.ani\fR\fB \-p \fR\fI3\fr\fB \-e \-o \fR\fIprogram\fR
-Compile \fIprogram.ani\fR to \fIprogram\fR using level \fI3\fR optimizations and no limits on the amount of errors printed.
+\fBanic \fR\fIprogram.ani\fR\fB \-p \fR\fI3\fR\fB \-t \fR\fI8\fR\fB \-e \-o \fR\fIprogram\fR
+Compile \fIprogram.ani\fR to binary file \fIprogram\fR using level \fI3\fR optimizations, reporting column numbers assuming tabs are \fI8\fR characters wide, and with no limits on the amount of errors reported.
 .SH AUTHOR
 Written by Kajetan "Adrian" Biedrzycki.
 .SH "REPORTING BUGS"

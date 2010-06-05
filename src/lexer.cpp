@@ -142,7 +142,7 @@ lexerLoopTop: ;
 			}
 		} else { // else if it was a non-whitepace character, check if there is a valid transition for this state
 			LexerNode transition = state == -1 ? lexerNode[255][(unsigned char)c] : lexerNode[state][(unsigned char)c];
-			if (transition.valid) { // if the transition is valid
+			if (transition.tokenType != -1) { // if the transition is valid
 				// first, set rowStart amd colStart if we're coming from the core state
 				if (state == 0) {
 					rowStart = row;

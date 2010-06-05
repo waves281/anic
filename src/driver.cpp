@@ -14,7 +14,7 @@
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
-int tabModulus = DEFAULT_TAB_MODULUS;
+int tabModulus = TAB_MODULUS_DEFAULT;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
 // header print functions

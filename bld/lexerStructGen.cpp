@@ -48,7 +48,7 @@ int main() {
 	LexerNode lexerNode[256][256];
 	for (int i = 0; i<256; i++) {
 		for (int j = 0; j<256; j++) {
-			lexerNode[i][j] = (LexerNode){ false, 0, 0 };
+			lexerNode[i][j] = (LexerNode){ -1, 0 }; // -1 tokenType indicates an invalid node
 		}
 	}
 	// now, process the input file
@@ -71,7 +71,7 @@ int main() {
 			continue;
 		} else if (retVal2 == 4) { // else if it was a valid data line, process it normally
 			int tokenType = mapToken(tokenTypeString); // get the token mapping
-			lexerNode[fromState][c] = (LexerNode){ true, tokenType, toState };
+			lexerNode[fromState][c] = (LexerNode){ tokenType, toState };
 		}
 	}
 
@@ -133,7 +133,7 @@ int main() {
 	for (unsigned int i=0; i < 256; i++) {
 		fprintf(lnr, "\t{\n");
 		for (unsigned int j=0; j < 256; j++) {
-			fprintf(lnr, "\t\t{ %s, %d, %d },\n", (lexerNode[i][j].valid) ? "true" : "false", lexerNode[i][j].tokenType, lexerNode[i][j].toState);
+			fprintf(lnr, "\t\t{ %d, %d },\n", lexerNode[i][j].tokenType, lexerNode[i][j].toState);
 		}
 		fprintf(lnr, "\t},\n");
 	}

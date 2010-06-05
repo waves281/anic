@@ -47,10 +47,10 @@ int main(int argc, char **argv) {
 	// handled flags for each option
 	bool oHandled = false;
 	bool pHandled = false;
-	bool sHandled = false;
 	bool vHandled = false;
-	bool eHandled = false;
+	bool sHandled = false;
 	bool tHandled = false;
+	bool eHandled = false;
 	for (int i=1; i<argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] != '\0') { // option argument
 			if (argv[i][1] == 'o' && argv[i][2] == '\0' && !oHandled) { // output file name
@@ -80,10 +80,6 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				pHandled = true;
-			} else if (argv[i][1] == 's' && argv[i][2] == '\0' && !vHandled && !sHandled) { // silent compilation option
-				silentMode = true;
-				// flag this option as handled
-				sHandled = true;
 			} else if (argv[i][1] == 'v' && argv[i][2] == '\0' && !vHandled && !sHandled) { // verbose output option
 				verboseOutput = true;
 				VERBOSE (
@@ -92,10 +88,10 @@ int main(int argc, char **argv) {
 				)
 				// flag this option as handled
 				vHandled = true;
-			} else if (argv[i][1] == 'e' && argv[i][2] == '\0' && !eHandled && !sHandled) {
-				eventuallyGiveUp = false;
+			} else if (argv[i][1] == 's' && argv[i][2] == '\0' && !vHandled && !sHandled) { // silent compilation option
+				silentMode = true;
 				// flag this option as handled
-				eHandled = true;
+				sHandled = true;
 			} else if (argv[i][1] == 't' && argv[i][2] == '\0' && !tHandled) {
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-t expected tab modulus argument");
@@ -115,6 +111,10 @@ int main(int argc, char **argv) {
 				}
 				// flag this option as handled
 				tHandled = true;
+			} else if (argv[i][1] == 'e' && argv[i][2] == '\0' && !eHandled && !sHandled) {
+				eventuallyGiveUp = false;
+				// flag this option as handled
+				eHandled = true;
 			} else if (argv[i][1] == 'h' && argv[i][2] == '\0' && argc == 2) {
 				// test to see if a command interpreter is available
 				int systemRetVal = system(NULL);

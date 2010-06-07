@@ -39,7 +39,7 @@ void printDefs(SymbolTable *st, int depth) {
 		if (st->kind != KIND_OBJECT) {
 			Type *defType = st->defSite->status.type;
 			if (defType != NULL) {
-				cout << " : " << defType;
+				cout << " : " << (defType->toString());
 			}
 		}
 	} else {

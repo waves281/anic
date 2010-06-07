@@ -63,7 +63,7 @@ class Type {
 		virtual bool isComparable(const Type &otherType) const = 0;
 		virtual Type *copy() = 0;
 		virtual void erase() = 0;
-		virtual string toString(unsigned int tabDepth) = 0;
+		virtual string toString(unsigned int tabDepth = 1) = 0;
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
 		bool baseSendable(const Type &otherType) const;
@@ -97,7 +97,7 @@ class TypeList : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
-		string toString(unsigned int tabDepth = 1);
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -115,7 +115,7 @@ class ErrorType : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
-		string toString(unsigned int tabDepth = 1);
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -177,7 +177,7 @@ class StdType : public Type {
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
 		Type *copy();
 		void erase();
-		string toString(unsigned int tabDepth = 1);
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -198,7 +198,7 @@ class FilterType : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
-		string toString(unsigned int tabDepth = 1);
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
@@ -226,7 +226,7 @@ class ObjectType : public Type {
 		Type *copy();
 		void erase();
 		void propagateToCopies();
-		string toString(unsigned int tabDepth = 1);
+		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;

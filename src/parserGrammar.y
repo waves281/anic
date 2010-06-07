@@ -124,8 +124,6 @@ ClosedTerm : SimpleTerm
 	;
 SimpleCondTerm : QUESTION Term
 	;
-SwitchTerm : DQUESTION LCURLY LabeledPipes RCURLY
-	;
 OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
 	;
 ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
@@ -136,7 +134,9 @@ SimpleTerm : StaticTerm
 StaticTerm : TypedStaticTerm
 	| Access
 	;
-DynamicTerm : Compound // LOL
+SwitchTerm : DQUESTION LCURLY LabeledPipes RCURLY
+	;
+DynamicTerm : Compound
 	| Link
 	| Send
 	| Swap

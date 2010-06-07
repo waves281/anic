@@ -283,9 +283,9 @@ int main(int argc, char **argv) {
 	Tree *treeRoot = parseme[TOKEN_Program][0]; // Program (there can only be one root node)
 	// set treeCur to the initial Program node
 	Tree *treeCur = treeRoot; // Program
-	for (unsigned int i=1; i < parseme[TOKEN_Program].size(); i++) {
+	for (vector<Tree *>::const_iterator iter = (parseme[TOKEN_Program].begin() + 1); iter != parseme[TOKEN_Program].end(); iter++) {
 		// log the tree we're about to concatenate on this iteration
-		Tree *treeToAdd = parseme[TOKEN_Program][i]; // Program (there can only be one root node)
+		Tree *treeToAdd = *iter; // Program (there can only be one root node)
 		// link in this tree
 		// to the right
 		*treeCur += treeToAdd;

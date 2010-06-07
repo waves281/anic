@@ -1773,10 +1773,10 @@ TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 			returnStatus(getStatusSimpleCondTerm(tcc, inStatus));
 		} else if (*tcc == TOKEN_OpenCondTerm) {
 			returnStatus(getStatusOpenCondTerm(tcc, inStatus));
-		} else if (*tcc == TOKEN_SimpleTerm) {
-			returnStatus(getStatusSimpleTerm(tcc, inStatus));
 		} else if (*tcc == TOKEN_ClosedCondTerm) {
 			returnStatus(getStatusClosedCondTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_SimpleTerm) {
+			returnStatus(getStatusSimpleTerm(tcc, inStatus));
 		}
 	} else { // else if it's a DynamicTerm
 		returnStatus(getStatusDynamicTerm(tc, inStatus));
@@ -1893,21 +1893,10 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-void typePipes(vector<Tree *> *parseme) {
-	// iterate through all Pipe nodes
-	vector<Tree *> &pipeList = parseme[TOKEN_Pipe];
-	for (unsigned int i=0; i < pipeList.size(); i++) {
-		Tree *pipeCur = pipeList[i];
-		if (!(pipeCur->status)) { // if we haven't derived a type for this pipe yet
+void typePipes(Tree *treeRoot) {
+	for (Tree *programCur = treeRoot; programCur != NULL; programCur = programCur->next) {
+		for (Tree *pipeCur = programCur->child->child; pipeCur != NULL; pipeCur = (pipeCur->next != NULL) ? pipeCur->next->child : NULL) {
 			getStatusPipe(pipeCur);
-		}
-	}
-	// ... and all LastPipe nodes
-	vector<Tree *> &lastPipeList = parseme[TOKEN_LastPipe];
-	for (unsigned int i=0; i < lastPipeList.size(); i++) {
-		Tree *lastPipeCur = lastPipeList[i];
-		if (!(lastPipeCur->status)) { // if we haven't derived a type for this pipe yet
-			getStatusPipe(lastPipeCur);
 		}
 	}
 }
@@ -1936,7 +1925,7 @@ int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
 	// derive types of all identifiers in the SymbolTable
 	typeSt(stRoot);
 	// derive types for the remaining pipes
-	typePipes(parseme);
+	typePipes(treeRoot);
 	
 	VERBOSE( cout << stRoot; )
 

@@ -1628,23 +1628,21 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	vector<TypeStatus> toStatus; // vector for logging the destination statuses of each branch
 	vector<Tree *> toTrees; // vector for logging the tree nodes of each branch
 	 // LabeledPipes
-	for (Tree *lpCur = tree->child->next->next;
-			lpCur != NULL;
-			lpCur = (lpCur->child->next->next != NULL && lpCur->child->next->next->next != NULL) ? lpCur->child->next->next->next : NULL) { // invariant: lpCur is a LabeledPipes
-		Tree *lpc = lpCur->child; // StaticTerm or COLON
+	for (Tree *ltCur = tree->child->next->next->child; ltCur != NULL; ltCur = (ltCur->next != NULL) ? ltCur->next->child : NULL) { // invariant: ltc is a LabeledTerm or LastLabeledTerm
+		Tree *ltc = ltCur->child; // StaticTerm or COLON
 		// if there is a non-default label on this pipe, check its validity
-		if (*lpc == TOKEN_StaticTerm) {
+		if (*ltc == TOKEN_StaticTerm) {
 			// derive the label's type
-			TypeStatus label = getStatusStaticTerm(lpc, inStatus);
+			TypeStatus label = getStatusStaticTerm(ltc, inStatus);
 			if (!(*(*label >> *inStatus))) { // if the type doesn't match, throw an error
-				Token curToken = lpc->t;
+				Token curToken = ltc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type is inconvertible to input type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<label<<")");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
 		}
 		// derive the to-type of this label
-		Tree *toTree = (*lpc == TOKEN_StaticTerm) ? lpc->next->next : lpc->next; // SimpleTerm
+		Tree *toTree = (*ltc == TOKEN_StaticTerm) ? ltc->next->next : ltc->next; // SimpleTerm
 		TypeStatus to = getStatusSimpleTerm(toTree, inStatus);
 		// log the to-type and to-tree of this label
 		toStatus.push_back(to);

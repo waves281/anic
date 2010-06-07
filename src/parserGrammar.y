@@ -81,10 +81,6 @@ Pipes :
 NonEmptyPipes : LastPipe
 	| Pipe NonEmptyPipes
 	;
-LabeledPipes : StaticTerm COLON SimpleTerm
-	| StaticTerm COLON SimpleTerm LabeledPipes
-	| COLON SimpleTerm
-	;
 Pipe : Declaration
 	| NonEmptyTerms SEMICOLON
 	;
@@ -134,7 +130,17 @@ SimpleTerm : StaticTerm
 StaticTerm : TypedStaticTerm
 	| Access
 	;
-SwitchTerm : DQUESTION LCURLY LabeledPipes RCURLY
+SwitchTerm : DQUESTION LCURLY LabeledTerms RCURLY
+	;
+LabeledTerms :
+	| LastLabeledTerm
+	| LabeledTerm LabeledTerms
+	;
+LabeledTerm: StaticTerm COLON SimpleTerm
+	| StaticTerm COLON SimpleTerm SEMICOLON
+	;
+LastLabeledTerm : COLON SimpleTerm
+	| COLON SimpleTerm SEMICOLON
 	;
 DynamicTerm : Compound
 	| Link

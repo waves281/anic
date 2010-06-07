@@ -16,9 +16,10 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	someString = [string\] <- false;
 	someChar = [char\] <- 'c';
 /*	someChar ?? {
-		'a': 1
+		'a': 1;
 		'b': 2
-		'c': 3
+		'c': 3;
+		: 4
 	};
 */
 	1, 2 + , 5 * , 5 % - ++ ->someInt;

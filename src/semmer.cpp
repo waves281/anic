@@ -961,7 +961,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	// derive the declared type of the filter
 	Tree *filterCur = tree->child; // Block or FilterHeader
 	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
-		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)inStatus.type) : new TypeList(inStatus.type);
+		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)(inStatus.type)) : new TypeList(inStatus.type);
 	} else if (*filterCur == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
 		TypeStatus tempStatus = getStatusFilterHeader(filterCur, inStatus); // derive the (possibly recursive) type of the filter header
 		if (*tempStatus) { // if we successfully derived a type for the header

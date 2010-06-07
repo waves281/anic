@@ -11,15 +11,17 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 // basic construct testing
 {
 	someInt = [int] <- 10;
+	someIntLatch = [int\] <- (-5--); \someIntLatch [int x] {x {->std.out}};
 	someFloat = [float\] <- 1;
 	someString = [string\] <- false;
 	someChar = [char\] <- 'c';
-	1, 2 + ->someInt;
 /*	someChar ?? {
-		'a': \someChar
-		'b':
+		'a': 1
+		'b': 
 		'c': \someChar
-	}; */
+	};
+*/
+	1, 2 + , 5 * , 5 % - ++ ->someInt;
 	someObj = {
 		=[int\ x] {\x ->xStream;}
 		xStream = [int\\];

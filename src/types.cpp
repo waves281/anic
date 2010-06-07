@@ -526,7 +526,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (baseSendable(otherType)) {
+		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			// try to do a basic send
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
@@ -534,9 +534,11 @@ Type *StdType::operator>>(Type &otherType) const {
 					return nullType;
 				}
 			}
-			// if basic sending failed, check for the StdType to stringerType promotion case
+			// basic sending failed, so check for the StdType to stringerType promotion case
 			if (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && *otherTypeCast == *stringerType) {
 				return nullType;
+			} else {
+				return errType;
 			}
 		} else {
 			return errType;

@@ -1913,7 +1913,7 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	// initialize error code
 	semmerErrorCode = 0;
 
-	VERBOSE( printNotice("Building symbol table..."); )
+	VERBOSE( printNotice("building symbol table..."); )
 
 	// initialize the standard types used for comparison
 	initStdTypes();
@@ -1926,7 +1926,7 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
 	subImportDecls(importList); // resolve and substitute import declarations into the symbol table
 
-	VERBOSE( printNotice("Tracing type flow..."); )
+	VERBOSE( printNotice("tracing type flow..."); )
 
 	// derive types of all identifiers in the SymbolTable
 	typeSt(stRoot);

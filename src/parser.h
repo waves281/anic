@@ -47,7 +47,7 @@ class Tree {
 		operator string() const; // only for SuffixedIdentifier or NonArraySuffixedIdentifier kinds
 };
 
-int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName);
+int parse(vector<Token> *lexeme, Tree *&parseme, string &fileName);
 
 // post-includes
 #include "semmer.h"

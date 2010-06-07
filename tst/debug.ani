@@ -17,8 +17,8 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	someChar = [char\] <- 'c';
 /*	someChar ?? {
 		'a': 1
-		'b': 
-		'c': \someChar
+		'b': 2
+		'c': 3
 	};
 */
 	1, 2 + , 5 * , 5 % - ++ ->someInt;

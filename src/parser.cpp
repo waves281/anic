@@ -181,7 +181,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-int parse(vector<Token> *lexeme, vector<Tree *> *parseme, string &fileName) {
+int parse(vector<Token> *lexeme, Tree *&parseme, string &fileName) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -215,9 +215,6 @@ transitionParserState: ;
 			shiftToken(treeCur, t);
 			stateStack.push(transition.n);
 
-			// log the token in the parseme
-			parseme[t.tokenType].push_back(treeCur);
-
 			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << "\t[" << tokenType2String(t.tokenType) << "]\n"; )
 
 		} else if (transition.action == ACTION_REDUCE) {
@@ -245,9 +242,6 @@ transitionParserState: ;
 			int tempState = stateStack.top();
 			stateStack.push(parserNode[tempState][tokenType].n);
 
-			// log the nonterminal in the parseme
-			parseme[tokenType].push_back(treeCur);
-
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];
 				cout << "\tREDUCE\t" << curState << "\t->\t" << stateStack.top() << "\t<" << tokenString << ">\n";
@@ -271,11 +265,12 @@ transitionParserState: ;
 		}
 	}
 
-	// clean up if there was an error
-	if (parserErrorCode) {
+	if (parserErrorCode) { // if there was an error, clean up
 		// deallocate the unfinished tree, since there was an error anyway
 		delete treeCur;
+	} else { // else if there were no errors, log the root parseme into the return slot
+		parseme = treeCur;
 	}
-	// finally, return to the caller
+	// return to the caller
 	return parserErrorCode;
 }

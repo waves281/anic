@@ -1902,7 +1902,7 @@ void typePipes(Tree *treeRoot) {
 }
 
 // main semming function; makes no assumptions about stRoot's value; it's just a return parameter
-int sem(Tree *treeRoot, vector<Tree *> *parseme, SymbolTable *&stRoot) {
+int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;

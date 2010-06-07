@@ -244,7 +244,8 @@ int main(int argc, char **argv) {
 	// parse lexemes
 	int parserError = 0; // error flag
 	unsigned int fileIndex = 0; // file name index
-	vector<Tree *> parseme[NUM_LABELS]; // per-file vector of the parsemes that the parser is about to generate
+	Tree *treeRoot = NULL; // the root parseme of the parse tree
+	Tree *treeCur = NULL; // the tail of the linked list of parsemes
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
 		string fileName(inFileNames[fileIndex]);
 		if (fileName == "-") {
@@ -252,13 +253,25 @@ int main(int argc, char **argv) {
 		}
 		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
 		// do the actual parsing
-		int thisParseError = parse(*lexemeIter, parseme, fileName);
+		Tree *thisParseme;
+		int thisParseError = parse(*lexemeIter, thisParseme, fileName);
 		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
 				printNotice("failed to parse file \'" << fileName << "\'");
 				print(""); // new line
 			)
-		} else { // else if parsing was successful, log the parseme to the vector
+		} else { // else if parsing was successful, latch the parseme into the tree trunk
+			if (treeRoot != NULL) { // if this is not the first parseme
+				// link in this tree
+				*treeCur += thisParseme;
+				// to the right
+				// to the left
+				*thisParseme -= treeCur;
+				// advance treeCur to the new tail
+				treeCur = treeCur->next;
+			} else { // else if this is the first parseme
+				treeRoot = treeCur = thisParseme;
+			}
 			VERBOSE(
 				printNotice("successfully parsed file \'" << fileName << "\'");
 				print(""); // new line
@@ -276,30 +289,6 @@ int main(int argc, char **argv) {
 		die(1);
 	}
 
-	VERBOSE(printNotice("Merging parse trees...");)
-
-	// concatenate the generated trees into one
-	// log the tree root as the first program parseme (which is guaranteed to exist)
-	Tree *treeRoot = parseme[TOKEN_Program][0]; // Program (there can only be one root node)
-	// set treeCur to the initial Program node
-	Tree *treeCur = treeRoot; // Program
-	for (vector<Tree *>::const_iterator iter = (parseme[TOKEN_Program].begin() + 1); iter != parseme[TOKEN_Program].end(); iter++) {
-		// log the tree we're about to concatenate on this iteration
-		Tree *treeToAdd = *iter; // Program (there can only be one root node)
-		// link in this tree
-		// to the right
-		*treeCur += treeToAdd;
-		// to the left
-		*treeToAdd -= treeCur;
-		// now, advance treeCur to the new tail
-		treeCur = treeCur->next;
-	}
-
-	VERBOSE(
-		printNotice("Parse trees merged successfully");
-		print(""); // new line
-	)
-
 	// perform semantic analysis
 
 	VERBOSE(printNotice("Verifying semantics...");)
@@ -307,7 +296,7 @@ int main(int argc, char **argv) {
 	// allocate symbol table root (will be filled by user-level definitions during parsing)
 	SymbolTable *stRoot;
 
-	int semmerErrorCode = sem(treeRoot, parseme, stRoot);
+	int semmerErrorCode = sem(treeRoot, stRoot);
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(

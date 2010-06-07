@@ -1921,7 +1921,7 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	// initialize the symbol table root with the default definitions
 	stRoot = genDefaultDefs();
 
-	// populate the symbol table with definitions from the user parseme, and log the used imports/id instances
+	// populate the symbol table with definitions from the user parseme, and log the used imports
 	vector<SymbolTable *> importList; // import Declaration nodes
 	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
 	subImportDecls(importList); // resolve and substitute import declarations into the symbol table

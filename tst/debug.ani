@@ -15,13 +15,12 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	someFloat = [float\] <- 1;
 	someString = [string\] <- false;
 	someChar = [char\] <- 'c';
-/*	someChar ?? {
+	someChar ?? {
 		'a': 1;
 		'b': 2
 		'c': 3;
 		: 4
-	};
-*/
+	} ->someIntLatch;
 	1, 2 + , 5 * , 5 % - ++ ->someInt;
 	someObj = {
 		=[int\ x] {\x ->xStream;}
@@ -68,7 +67,7 @@ useObj = {
 	mem = [int] <- mem1;
 }
 
-//basic inheritance testing
+// basic inheritance testing
 inhObj = {
 	=[int\ initX] {\initX;};
 	inhMem = [int\];

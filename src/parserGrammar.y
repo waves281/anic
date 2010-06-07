@@ -132,8 +132,7 @@ StaticTerm : TypedStaticTerm
 	;
 SwitchTerm : DQUESTION LCURLY LabeledTerms RCURLY
 	;
-LabeledTerms :
-	| LastLabeledTerm
+LabeledTerms : LastLabeledTerm
 	| LabeledTerm LabeledTerms
 	;
 LabeledTerm: StaticTerm COLON SimpleTerm

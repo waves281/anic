@@ -1636,7 +1636,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 			TypeStatus label = getStatusStaticTerm(ltc, inStatus);
 			if (!(*(*label >> *inStatus))) { // if the type doesn't match, throw an error
 				Token curToken = ltc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"switch label type is inconvertible to input type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible switch label");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<label<<")");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 			}
@@ -1649,18 +1649,23 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 		toTrees.push_back(toTree);
 	} // per-labeled pipe loop
 	// verify that all of the to-types are the same
+	bool failed = false;
 	TypeStatus firstToStatus = toStatus[0];
 	Tree *firstToTree = toTrees[0];
 	for (unsigned int i=1; i < toStatus.size(); i++) { // for each to-type
 		TypeStatus thisToStatus = toStatus[i];
-		if (!(*thisToStatus == *firstToStatus && thisToStatus->baseEquals(*firstToStatus))) { // if the types don't match, throw an error
+		if (!(thisToStatus->baseEquals(*firstToStatus) && *thisToStatus == *firstToStatus)) { // if the types don't match, throw an error
 			Tree *toTree = toTrees[i];
 			Token curToken1 = toTree->t;
 			Token curToken2 = firstToTree->t;
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"switch destination types are inconsistent");
+			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"inconsistent switch destination type");
 			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"-- (this type is "<<thisToStatus<<")");
 			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (first type is "<<firstToStatus<<")");
+			failed = true;
 		}
+	}
+	if (!failed) {
+		returnStatus(firstToStatus);
 	}
 	GET_STATUS_FOOTER;
 }

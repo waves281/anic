@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "semmer.h"
+#include "genner.h"
 
 // global variables
 
@@ -236,7 +237,7 @@ int main(int argc, char **argv) {
 			lexerError = thisLexError;
 		}
 	}
-	// now, check if lexing failed and kill the system as appropriate
+	// now, check if lexing failed and if so, kill the system as appropriate
 	if (lexerError) {
 		die(1);
 	}
@@ -284,7 +285,7 @@ int main(int argc, char **argv) {
 		// advance file name index
 		fileIndex++;
 	}
-	// now, check if parsing failed and kill the system as appropriate
+	// now, check if parsing failed and if so, kill the system as appropriate
 	if (parserError) {
 		die(1);
 	}
@@ -293,7 +294,7 @@ int main(int argc, char **argv) {
 
 	VERBOSE(printNotice("Verifying semantics...");)
 
-	// allocate symbol table root (will be filled by user-level definitions during parsing)
+	// allocate symbol table root (will be filled with user-level definitions during parsing)
 	SymbolTable *stRoot;
 
 	int semmerErrorCode = sem(treeRoot, stRoot);
@@ -309,11 +310,36 @@ int main(int argc, char **argv) {
 			print(""); // new line
 		)
 	}
-	// now, check if semming failed and kill the system as appropriate
+	// now, check if semming failed and if so, kill the system as appropriate
 	if (semmerErrorCode) {
 		die(1);
 	}
 
+	// generate the intermediate code tree
+
+	VERBOSE(printNotice("Generating code tree...");)
+
+	// allocate symbol table root (will be filled with user-level code during genning)
+	CodeTree *codeRoot;
+
+	int gennerErrorCode = gen(treeRoot, stRoot, codeRoot);
+	// now, check if genning failed and kill the system as appropriate
+	if (gennerErrorCode) {
+		VERBOSE(
+			printNotice("Code tree generation failed");
+			print(""); // new line
+		)
+	} else {
+		VERBOSE(
+			printNotice("Code tree generated successfully");
+			print(""); // new line
+		)
+	}
+	// now, check if genning failed and if so, kill the system as appropriate
+	if (gennerErrorCode) {
+		die(1);
+	}
+	
 	// open output file for writing
 	ofstream *outFile = new ofstream(outFileName.c_str());
 	if (!outFile->good()) {

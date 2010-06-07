@@ -22,8 +22,8 @@ CORE_DEPENDENCIES = Makefile \
 	bin/version bld/getChecksumProgram.sh bld/hexTruncate.awk \
 	src/globalDefs.h src/constantDefs.h src/driver.h src/outputOperators.h \
 	tmp/lexerStruct.o tmp/parserStruct.h \
-	src/lexer.h src/parser.h src/types.h src/semmer.h \
-	src/driver.cpp src/outputOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp
+	src/lexer.h src/parser.h src/types.h src/semmer.h src/genner.h \
+	src/driver.cpp src/outputOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp src/genner.cpp
 
 TEST_FILES = tst/debug.ani
 
@@ -216,7 +216,7 @@ $(TARGET): var/versionStamp.txt
 	@echo Building main executable...
 	@rm -f var/testCertificate.dat
 	@mkdir -p bin
-	@$(CXX) src/driver.cpp src/outputOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp \
+	@$(CXX) src/driver.cpp src/outputOperators.cpp tmp/lexerStruct.o src/lexer.cpp src/parser.cpp src/types.cpp src/semmer.cpp src/genner.cpp \
 		-D VERSION_STAMP="\"`cat var/versionStamp.txt`\"" \
 		$(CFLAGS) \
 		-o $(TARGET)

@@ -42,7 +42,7 @@ class TypeStatus;
 class Type {
 	public:
 		// data members
-		int category; // the category that this type belongs to
+		int category; // the category that this Type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
 		bool operable; // whether a node of this type can be operated upon

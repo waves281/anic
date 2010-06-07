@@ -42,6 +42,7 @@ extern bool eventuallyGiveUp;
 extern int lexerErrorCode;
 extern int parserErrorCode;
 extern int semmerErrorCode;
+extern int gennerErrorCode;
 
 class Type;
 extern Type *nullType;

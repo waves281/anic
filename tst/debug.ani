@@ -7,7 +7,6 @@ exp2 = (-7+(-5--++-(-1))*2++-100.0e+10);
 exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
-
 // basic construct testing
 {
 	someInt = [int] <- 10;
@@ -21,12 +20,12 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 		'c': 3;
 		: 4
 	} ->someIntLatch;
-	1, 2 + , 5 * , 5 % - ++ ->someInt;
+	1, 2 + , 5 * , 5 % - ++ >> 2 << 1 ->someInt;
 	someObj = {
 		=[int\ x] {\x ->xStream;}
 		xStream = [int\\];
 		\\xStream ->std.out;
-		toString = [--> string] {"someObj's string representation" -->;};
+		toString = [--> string] {someInt == someFloat ? {"someObj's string representation" -->} : {"garbage string" -->}};
 	};
 	\someObj ->std.out;
 	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);

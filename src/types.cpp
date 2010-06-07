@@ -297,11 +297,9 @@ Type *TypeList::operator,(Type &otherType) const {
 					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
 					otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
 				if (thisTypeCast1->kindCompare(*thisTypeCast2)) {
-					if (thisTypeCast1->kind >= thisTypeCast2->kind) {
-						return (new StdType(thisTypeCast1->kind, SUFFIX_LATCH));
-					} else {
-						return (new StdType(thisTypeCast2->kind, SUFFIX_LATCH));
-					}
+					return (new StdType(STD_BOOL, SUFFIX_LATCH));
+				} else {
+					return errType;
 				}
 			} else if (otherTypeCast->kind == STD_TIMES || otherTypeCast->kind == STD_DIVIDE || otherTypeCast->kind == STD_MOD ||
 					otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
@@ -309,6 +307,8 @@ Type *TypeList::operator,(Type &otherType) const {
 					return (new StdType(STD_INT, SUFFIX_LATCH));
 				} else if (*(*thisTypeCast1 >> *stdFloatType) && *(*thisTypeCast2 >> *stdFloatType)) {
 					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
+				} else {
+					return errType;
 				}
 			}
 		} else {
@@ -421,7 +421,7 @@ bool StdType::isComparable(const Type &otherType) const {
 	return (otherType.category == CATEGORY_STDTYPE && (kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this)));
 }
 int StdType::kindCompare(const StdType &otherType) const {
-	if (!(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && otherType.kind >= STD_MIN_COMPARABLE && otherType.kind <= STD_MAX_COMPARABLE)) {
+	if (kind < STD_MIN_COMPARABLE || kind > STD_MAX_COMPARABLE || otherType.kind < STD_MIN_COMPARABLE || otherType.kind > STD_MAX_COMPARABLE) {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
 		return kind;
@@ -436,33 +436,72 @@ int StdType::kindCompare(const StdType &otherType) const {
 	}
 }
 pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, Tree *nextTerm) const {
+	// derive the nextTermStatus if we'll subsequently need it
+	TypeStatus nextTermStatus = errType;
 	switch(kind) {
+		case STD_DEQUALS:
+		case STD_NEQUALS:
+		case STD_LT:
+		case STD_GT:
+		case STD_LE:
+		case STD_GE:
+		case STD_LS:
+		case STD_RS:
 		case STD_TIMES:
 		case STD_DIVIDE:
 		case STD_MOD:
 		case STD_PLUS:
 		case STD_MINUS:
-		case STD_DPLUS:
-		case STD_DMINUS:
 			if (nextTerm != NULL &&
 					*(nextTerm->child->child) == TOKEN_SimpleTerm &&
 					*(nextTerm->child->child->child) == TOKEN_StaticTerm) {
-				TypeStatus nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);
-				if (*nextTermStatus) {
-					if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
-						return make_pair(new StdType(STD_INT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
-					}
-					if (*(*prevTermStatus >> *stdFloatType) && *(*nextTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
-						return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
-					}
-					// if this is the + operator and one of the terms is a string and the other is a StdType constant or latch, return string
-					if (kind == STD_PLUS &&
-							((*(*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
-								(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
-							(*(*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
-								(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH)))) {
-						return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
-					}
+				nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);	
+			}
+			break;
+		default:
+			break;
+	}
+	// do the actual exceptional derivation tests
+	switch(kind) {
+		case STD_DEQUALS:
+		case STD_NEQUALS:
+		case STD_LT:
+		case STD_GT:
+		case STD_LE:
+		case STD_GE:
+			if (*nextTermStatus) {
+				if (prevTermStatus.type->category == CATEGORY_STDTYPE && (prevTermStatus.type->suffix == SUFFIX_CONSTANT || prevTermStatus.type->suffix == SUFFIX_LATCH) &&
+						nextTermStatus.type->category == CATEGORY_STDTYPE && (nextTermStatus.type->suffix == SUFFIX_CONSTANT || nextTermStatus.type->suffix == SUFFIX_LATCH) &&
+						((StdType *)(prevTermStatus.type))->kindCompare(*((StdType *)(nextTermStatus.type)))) { // if the terms are comparable, return bool
+					return make_pair(new StdType(STD_BOOL, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+				}
+			}
+			break;
+		case STD_LS:
+		case STD_RS:
+			if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
+				return make_pair(new StdType(STD_INT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+			}
+			break;
+		case STD_TIMES:
+		case STD_DIVIDE:
+		case STD_MOD:
+		case STD_PLUS:
+		case STD_MINUS:
+			if (*nextTermStatus) {
+				if (*(*prevTermStatus >> *stdIntType) && *(*nextTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
+					return make_pair(new StdType(STD_INT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+				}
+				if (*(*prevTermStatus >> *stdFloatType) && *(*nextTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
+					return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
+				}
+				// if this is the + operator and one of the terms is a string and the other is a StdType constant or latch, return string
+				if (kind == STD_PLUS &&
+						((*(*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
+							(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
+						(*(*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
+							(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH)))) {
+					return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
 				}
 			}
 			// if we got here, we failed to derive a three-term type, so now we try using STD_PLUS and STD_MINUS in their unary form
@@ -474,10 +513,11 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 					return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
 				}
 			}
-			if (kind == STD_DPLUS || kind == STD_DMINUS) { // if it's an operator with a unary form that accepts only ints
-				if (*(*prevTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
-					return make_pair(new StdType(STD_INT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
-				}
+			break;
+		case STD_DPLUS:
+		case STD_DMINUS:
+			if (*(*prevTermStatus >> *stdIntType)) { // if both terms can be converted to int, return int
+				return make_pair(new StdType(STD_INT, SUFFIX_LATCH), false); // return false, since we're not consuming the nextTerm
 			}
 			break;
 		default:

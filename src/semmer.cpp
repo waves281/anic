@@ -1910,7 +1910,7 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	// initialize error code
 	semmerErrorCode = 0;
 
-	VERBOSE( printNotice("Collecting tree nodes..."); )
+	VERBOSE( printNotice("Building symbol table..."); )
 
 	// initialize the standard types used for comparison
 	initStdTypes();

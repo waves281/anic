@@ -64,6 +64,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus = TypeStatu
 TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
+TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
 TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));

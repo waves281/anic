@@ -6,8 +6,9 @@ CXX = g++
 CFLAGS = -D VERSION_STRING=$(VERSION_STRING) -D VERSION_YEAR=$(VERSION_YEAR) -O$(OPTIMIZATION_LEVEL) -g -fomit-frame-pointer -ffast-math -pipe -Wall
 OPTIMIZATION_LEVEL = 3
 
-VERSION_STRING = "0.69"
+VERSION = "0.70"
 VERSION_YEAR = "2010"
+VERSION_STRING = "\"$(VERSION)\""
 
 MAN_PAGE = tmp/$(TARGET).1
 INSTALL_SCRIPT = tmp/$(TARGET)-install
@@ -36,7 +37,7 @@ main: start $(TARGET)
 all: start clean test install
 
 version: start var/versionStamp.txt
-	@$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
+	@$(PRINT_VERSION) $(VERSION)."`cat var/versionStamp.txt`"
 
 test: start $(TARGET) bld/runTests.sh
 	@chmod +x bld/runTests.sh
@@ -53,7 +54,7 @@ man: start $(MAN_PAGE).gz
 
 dist: start $(TARGET) $(MAN_PAGE).gz $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT) bld/genDist.sh
 	@chmod +x bld/genDist.sh
-	@./bld/genDist.sh $(TARGET) $(VERSION_STRING) $(MAN_PAGE) $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
+	@./bld/genDist.sh $(TARGET) $(VERSION) $(MAN_PAGE) $(INSTALL_SCRIPT) $(UNINSTALL_SCRIPT)
 
 clean: start bld/hyaccMake.sh
 	@echo Cleaning build output...
@@ -130,8 +131,8 @@ var/versionStamp.txt: $(CORE_DEPENDENCIES)
 	@echo Stamping version...
 	@mkdir -p var
 	@chmod +x bld/getChecksumProgram.sh
-	@./bin/version $(VERSION_STRING) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
-	$(PRINT_VERSION) $(VERSION_STRING)."`cat var/versionStamp.txt`"
+	@./bin/version $(VERSION) var/versionStamp.txt "`date | \` ./bld/getChecksumProgram.sh \` | awk -f bld/hexTruncate.awk`"
+	$(PRINT_VERSION) $(VERSION)."`cat var/versionStamp.txt`"
 
 # INSTALLER
 

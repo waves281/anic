@@ -146,13 +146,13 @@ void initStdTypes() {
 	vector<string> memberNames;
 	memberNames.push_back("toString");
 	vector<Type *> memberTypes;
-	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING, SUFFIX_LATCH), SUFFIX_LATCH));
+	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING), SUFFIX_LATCH));
 	vector<Tree *> memberDefSites;
 	memberDefSites.push_back(NULL);
 	stringerType = new ObjectType(constructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
 	// build the outerType
 	constructorTypes.push_back(new TypeList(stringerType));
-	outerType = new ObjectType(constructorTypes, SUFFIX_LATCH); outerType->operable = false;
+	outerType = new ObjectType(constructorTypes, SUFFIX_STREAM, 1); outerType->operable = false;
 }
 
 SymbolTable *genDefaultDefs() {

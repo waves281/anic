@@ -4,8 +4,8 @@
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
 	return (
-		(suffix == SUFFIX_CONSTANT && otherType.suffix == SUFFIX_CONSTANT) ||
-		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM)) ||
+		(suffix == SUFFIX_CONSTANT && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LIST)) ||
+		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_LIST || otherType.suffix == SUFFIX_STREAM)) ||
 		(suffix == SUFFIX_ARRAY && otherType.suffix == SUFFIX_ARRAY && depth == otherType.depth) ||
 		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
 	);
@@ -526,7 +526,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (otherType.suffix == SUFFIX_LATCH) {
+		if (baseSendable(otherType)) {
 			// try to do a basic send
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
@@ -880,10 +880,49 @@ Type *ObjectType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		return errType;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (baseSendable(otherType) && operator==(otherType)) {
-			return nullType;
-		} else if (otherType.suffix == SUFFIX_LATCH) {
-			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+		// try to find a downcastability from the left object to the right one
+		if (baseSendable(otherType)) {
+			// verify constructor downcastability
+			vector<TypeList *>::const_iterator consIter;
+			for (consIter = otherTypeCast->constructorTypes.begin(); consIter != otherTypeCast->constructorTypes.end(); consIter++) {
+				vector<TypeList *>::const_iterator consIter2;
+				for (consIter2 = constructorTypes.begin(); consIter2 != constructorTypes.end(); consIter2++) {
+					if ((*consIter2)->baseEquals(**consIter) && (**consIter2 == **consIter)) {
+						break;
+					}
+				}
+				if (consIter2 == constructorTypes.end()) { // if we failed to find a match for this constructor, break early
+					break;
+				}
+			}
+			if (consIter == otherTypeCast->constructorTypes.end()) { // if we matched all constructor types (we didn't break early), continue
+				// verify member downcastability
+				vector<string>::const_iterator memberNameIter;
+				vector<Type *>::const_iterator memberTypeIter;
+				for (memberNameIter = otherTypeCast->memberNames.begin(), memberTypeIter = otherTypeCast->memberTypes.begin();
+						memberNameIter != otherTypeCast->memberNames.end();
+						memberNameIter++, memberTypeIter++) {
+					vector<string>::const_iterator memberNameIter2;
+					vector<Type *>::const_iterator memberTypeIter2;
+					for (memberNameIter2 = memberNames.begin(), memberTypeIter2 = memberTypes.begin();
+							memberNameIter2 != memberNames.end();
+							memberNameIter2++, memberTypeIter2++) {
+						if ((*memberNameIter2 == *memberNameIter) && (*memberTypeIter2)->baseEquals(**memberTypeIter) && (**memberTypeIter2 == **memberTypeIter)) {
+							break;
+						}
+					}
+					if (memberNameIter2 == memberNames.end()) { // if we failed to find a match for this member, break early
+						break;
+					}
+				}
+				if (memberNameIter == otherTypeCast->memberNames.end()) { // if we matched all mambers (we didn't break early), return success
+					return nullType;
+				}
+			}
+		}
+		// otherwise, try to connect the left object into a constructor on the right object
+		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 				if (*(*this >> **iter)) {
 					return nullType;

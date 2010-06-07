@@ -57,7 +57,7 @@ class Type {
 		bool copyDestream();
 		bool constantDestream();
 		// allocators/deallocators
-		virtual ~Type();
+		virtual ~Type() = 0;
 		// core methods
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;

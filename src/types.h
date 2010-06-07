@@ -284,12 +284,12 @@ extern Type *errType;
 	return acc
 
 #define TYPE_TO_STRING_INDENT \
-	acc += "\n\t  ";\
+	acc += "\n\t| ";\
 	for (unsigned int i=0; i < tabDepth; i++)\
 		acc += "  "
 
 #define TYPE_TO_STRING_INDENT_CLOSE \
-	acc += "\n\t  ";\
+	acc += "\n\t| ";\
 	for (unsigned int i=0; i < tabDepth-1; i++)\
 		acc += "  "
 

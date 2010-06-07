@@ -42,6 +42,7 @@ obj = {
 	mem = 1;
 	rec = obj;
 }
+\obj ->obj;
 constMemRef = obj.mem;
 latchMemRef = [int\] <- \obj.mem;
 recObjRef = obj.rec;

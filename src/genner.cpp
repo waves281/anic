@@ -30,7 +30,7 @@ string LabelTree::toString(unsigned int tabDepth) const {
 }
 
 // MemCodeTree functions
-MemTree::MemTree(uint32_t base, uint32_t length) : base(base), length(length) {category = CATEGORY_MEM;}
+MemTree::MemTree(uint32_t base, uint32_t length, ConstTree *constNode) : base(base), length(length), leftBound(base), constNode(constNode) {category = CATEGORY_MEM;}
 MemTree::~MemTree() {}
 MemTree *MemTree::operator+(uint32_t offset) const {
 	if (offset < length) {
@@ -48,9 +48,9 @@ string MemTree::toString(unsigned int tabDepth) const {
 	acc += ',';
 	acc += length;
 	acc += ')';
-	if (data.size() > 0) {
+	if (constNode->data.size() > 0) {
 		acc += '[';
-		for (vector<unsigned char>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
+		for (vector<unsigned char>::const_iterator iter = constNode->data.begin(); iter != constNode->data.end(); iter++) {
 			char tempS[3];
 			sprintf(tempS, "%02x", (*iter));
 			acc += tempS;

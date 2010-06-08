@@ -67,15 +67,16 @@ class LabelTree : public IRTree {
 
 // MemTree classes
 
-// usage: represents memory from bytes (base) to (base + length - 1) that has been statically filled with the given raw data vector
+// usage: represents memory from bytes (base) to (base + length - 1) that has been statically initialized with the given constNode
 class MemTree : public IRTree {
 	public:
 		// data members
-		uint32_t base; // the base address of the data
-		uint32_t length; // the length of the data block
-		vector<unsigned char> data; // the raw data initialization vector, if any, for this node
+		uint32_t base; // the current base address of the data
+		uint32_t length; // the length remaining to the right of the base address
+		uint32_t leftBound; // the left bound of this memory block
+		ConstTree *constNode; // the static data initializer, if any, for this node
 		// allocators/deallocators
-		MemTree(unsigned int base, unsigned int length);
+		MemTree(uint32_t base, uint32_t length, ConstTree *constNode = NULL);
 		~MemTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;

@@ -31,45 +31,45 @@ class CodeTree {
 		// data members
 		int category; // the category that this CodeTree belongs to
 		// allocators/deallocators
-		virtual ~CodeTree() = 0;
+		virtual ~CodeTree();
 		// operators
-		virtual operator string() = 0;
+		virtual operator string() const = 0;
 };
+
+// CodeTree subclasses
 
 class LabelCodeTree : public CodeTree {
 	public:
 		// data members
 		string id; // string representation of this label
 		// allocators/deallocators
-		LabelCodeTree(string id);
+		LabelCodeTree(const string &id);
 		~LabelCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class DataCodeTree : public CodeTree {
 	public:
 		// data members
 		unsigned int offset; // the offset into the data array of this node
+		// allocators/deallocators
+		virtual ~DataCodeTree();
 		// operators
+		// non-virtual
 		DataCodeTree *operator+(unsigned int offset); // adjust the offset upwards
 		DataCodeTree *operator-(unsigned int offset); // adjust the offset downwards
-		// allocators/deallocators
-		virtual ~DataCodeTree() = 0;
-		// operators
-		virtual operator string() = 0;
 };
 
 class ConstCodeTree : public DataCodeTree {
 	public:
 		// data members
-		unsigned int data[]; // array of the raw data contained in this constant
-		unsigned int size; // the declared size (in bytes) of the data array
+		vector<unsigned int> data; // vector of the raw data contained in this constant
 		// allocators/deallocators
-		ConstCodeTree(unsigned int data[], unsigned int size);
+		ConstCodeTree(const vector<unsigned int> &data);
 		~ConstCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class TempCodeTree : public DataCodeTree {
@@ -80,7 +80,7 @@ class TempCodeTree : public DataCodeTree {
 		TempCodeTree(unsigned int size);
 		~TempCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class UnOpCodeTree : public CodeTree {
@@ -92,7 +92,7 @@ class UnOpCodeTree : public CodeTree {
 		UnOpCodeTree(int kind, DataCodeTree *subNode);
 		~UnOpCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class BinOpCodeTree : public CodeTree {
@@ -105,7 +105,7 @@ class BinOpCodeTree : public CodeTree {
 		BinOpCodeTree(int kind, DataCodeTree *subNodeLeft, DataCodeTree *subNodeRight);
 		~BinOpCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class LockCodeTree : public CodeTree {
@@ -116,7 +116,7 @@ class LockCodeTree : public CodeTree {
 		LockCodeTree(DataCodeTree *subNode);
 		~LockCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class UnlockCodeTree : public CodeTree {
@@ -127,7 +127,7 @@ class UnlockCodeTree : public CodeTree {
 		UnlockCodeTree(DataCodeTree *subNode);
 		~UnlockCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class CopyCodeTree : public CodeTree {
@@ -138,7 +138,7 @@ class CopyCodeTree : public CodeTree {
 		CopyCodeTree(DataCodeTree *source);
 		~CopyCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 class SeqCodeTree : public CodeTree {
@@ -149,7 +149,7 @@ class SeqCodeTree : public CodeTree {
 		SeqCodeTree();
 		~SeqCodeTree();
 		// operators
-		operator string();
+		operator string() const;
 };
 
 // main code generation function

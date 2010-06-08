@@ -29,6 +29,37 @@ string LabelTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 
+// MemCodeTree functions
+MemTree::MemTree(uint32_t base, uint32_t length) : base(base), length(length) {category = CATEGORY_MEM;}
+MemTree::~MemTree() {}
+MemTree *MemTree::operator+(uint32_t offset) const {
+	if (offset < length) {
+		MemTree *retVal = new MemTree(*this);
+		retVal->base += offset;
+		retVal->length -= offset;
+		return retVal;
+	} else {
+		return NULL;
+	}
+}
+string MemTree::toString(unsigned int tabDepth) const {
+	string acc("@(");
+	acc += base;
+	acc += ',';
+	acc += length;
+	acc += ')';
+	if (data.size() > 0) {
+		acc += '[';
+		for (vector<unsigned char>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
+			char tempS[3];
+			sprintf(tempS, "%02x", (*iter));
+			acc += tempS;
+		}
+		acc += ']';
+	}
+	return acc;
+}
+
 // DataTree functions
 DataTree::~DataTree() {}
 
@@ -70,37 +101,6 @@ string ReadTree::toString(unsigned int tabDepth) const {
 	string acc("?(");
 	acc += memNode->toString(tabDepth+1);
 	acc += ')';
-	return acc;
-}
-
-// MemCodeTree functions
-MemTree::MemTree(uint32_t base, uint32_t length) : base(base), length(length) {category = CATEGORY_MEM;}
-MemTree::~MemTree() {}
-MemTree *MemTree::operator+(uint32_t offset) const {
-	if (offset < length) {
-		MemTree *retVal = new MemTree(*this);
-		retVal->base += offset;
-		retVal->length -= offset;
-		return retVal;
-	} else {
-		return NULL;
-	}
-}
-string MemTree::toString(unsigned int tabDepth) const {
-	string acc("@(");
-	acc += base;
-	acc += ',';
-	acc += length;
-	acc += ')';
-	if (data.size() > 0) {
-		acc += '[';
-		for (vector<unsigned char>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
-			char tempS[3];
-			sprintf(tempS, "%02x", (*iter));
-			acc += tempS;
-		}
-		acc += ']';
-	}
 	return acc;
 }
 
@@ -162,6 +162,21 @@ string WriteTree::toString(unsigned int tabDepth) const {
 	acc += src->toString(tabDepth+1);
 	acc += ',';
 	acc += dst->toString(tabDepth+1);
+	acc += ')';
+	return acc;
+}
+
+// ScheduleTree functions
+ScheduleTree::ScheduleTree(const vector<LabelTree *> &labelList) : labelList(labelList) {category = CATEGORY_SCHEDULE;}
+ScheduleTree::~ScheduleTree() {}
+string ScheduleTree::toString(unsigned int tabDepth) const {
+	string acc("#(");
+	for (vector<LabelTree *>::const_iterator iter = labelList.begin(); iter != labelList.end(); iter++) {
+		acc += (*iter)->toString(tabDepth+1);
+		if (iter + 1 != labelList.end()) {
+			acc += ',';
+		}
+	}
 	acc += ')';
 	return acc;
 }

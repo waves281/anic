@@ -21,27 +21,24 @@
 #define CATEGORY_LOCK 7
 #define CATEGORY_UNLOCK 8
 #define CATEGORY_WRITE 9
+#define CATEGORY_SCHEDULE 10
 
 // forward declarations
 class IRTree;
-
 	class LabelTree;
-
+	class MemTree;
 	class DataTree;
 		class ConstTree;
 		class TempTree;
 		class ReadTree;
-
-	class MemTree;
-
 	class OpTree;
 		class UnOpTree;
 		class BinOpTree;
-
 	class CodeTree;
 		class LockTree;
 		class UnlockTree;
 		class WriteTree;
+		class ScheduleTree;
 
 // IRTree classes
 
@@ -66,6 +63,24 @@ class LabelTree : public IRTree {
 		~LabelTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+};
+
+// MemTree classes
+
+// usage: represents memory from bytes (base) to (base + length - 1) that has been statically filled with the given raw data vector
+class MemTree : public IRTree {
+	public:
+		// data members
+		uint32_t base; // the base address of the data
+		uint32_t length; // the length of the data block
+		vector<unsigned char> data; // the raw data initialization vector, if any, for this node
+		// allocators/deallocators
+		MemTree(unsigned int base, unsigned int length);
+		~MemTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		// operators
+		MemTree *operator+(unsigned int offset) const;
 };
 
 // DataTree classes
@@ -114,24 +129,6 @@ class ReadTree : public DataTree {
 		~ReadTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
-};
-
-// MemTree classes
-
-// usage: represents memory from bytes (base) to (base + length - 1) that has been statically filled with the given raw data vector
-class MemTree : public IRTree {
-	public:
-		// data members
-		uint32_t base; // the base address of the data
-		uint32_t length; // the length of the data block
-		vector<unsigned char> data; // the raw data initialization vector, if any, for this node
-		// allocators/deallocators
-		MemTree(unsigned int base, unsigned int length);
-		~MemTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-		// operators
-		MemTree *operator+(unsigned int offset) const;
 };
 
 // OpTree classes
@@ -216,6 +213,18 @@ class WriteTree : public CodeTree {
 		// allocators/deallocators
 		WriteTree(DataTree *src, MemTree *dst);
 		~WriteTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: schedule all of the label nodes in the labelList for execution
+class ScheduleTree : public CodeTree {
+	public:
+		// data members
+		vector<LabelTree *> labelList; // vector of the label nodes to schedule
+		// allocators/deallocators
+		ScheduleTree(const vector<LabelTree *> &labelList);
+		~ScheduleTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };

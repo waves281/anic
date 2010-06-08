@@ -19,13 +19,13 @@
 #define CATEGORY_LOCK 5
 #define CATEGORY_UNLOCK 6
 #define CATEGORY_COPY 7
-#define CATEGORY_SEQ 8
 
 // forward declarations
 class CodeTree;
 
 // core CodeTree class
 
+// usage: abstract class; never used directly
 class CodeTree {
 	public:
 		// data members
@@ -33,22 +33,25 @@ class CodeTree {
 		// allocators/deallocators
 		virtual ~CodeTree();
 		// core methods
-		virtual string toString(unsigned int tabDepth = 1) = 0;
+		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
 // CodeTree subclasses
 
+// usage: print out assembler label id followed by the sequential code in seqList
 class LabelCodeTree : public CodeTree {
 	public:
 		// data members
 		string id; // string representation of this label
+		vector<CodeTree *> seqList; // vector representing the sequencing of CodeTrees that must be executed in order
 		// allocators/deallocators
-		LabelCodeTree(const string &id);
+		LabelCodeTree(const string &id, const vector<CodeTree *> &seqList);
 		~LabelCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
+// usage: abstract class; never used directly
 class DataCodeTree : public CodeTree {
 	public:
 		// data members
@@ -60,6 +63,7 @@ class DataCodeTree : public CodeTree {
 		virtual DataCodeTree *operator-(unsigned int offset) const = 0; // adjust the offset downwards
 };
 
+// usage: place word-vector data into memory
 class ConstCodeTree : public DataCodeTree {
 	public:
 		// data members
@@ -68,12 +72,13 @@ class ConstCodeTree : public DataCodeTree {
 		ConstCodeTree(const vector<uint32_t> &data);
 		~ConstCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 		// operators
 		DataCodeTree *operator+(unsigned int offset) const;
 		DataCodeTree *operator-(unsigned int offset) const;
 };
 
+// usage: allocate space of the given size in memory
 class TempCodeTree : public DataCodeTree {
 	public:
 		// data members
@@ -82,12 +87,13 @@ class TempCodeTree : public DataCodeTree {
 		TempCodeTree(unsigned int size);
 		~TempCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 		// operators
 		DataCodeTree *operator+(unsigned int offset) const;
 		DataCodeTree *operator-(unsigned int offset) const;
 };
 
+// usage: perform the given unary operation on the subnode
 class UnOpCodeTree : public CodeTree {
 	public:
 		// data members
@@ -97,9 +103,10 @@ class UnOpCodeTree : public CodeTree {
 		UnOpCodeTree(int kind, DataCodeTree *subNode);
 		~UnOpCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
+// usage: perform the given binary operation on subNodeLeft and subNodeRight
 class BinOpCodeTree : public CodeTree {
 	public:
 		// data members
@@ -110,9 +117,10 @@ class BinOpCodeTree : public CodeTree {
 		BinOpCodeTree(int kind, DataCodeTree *subNodeLeft, DataCodeTree *subNodeRight);
 		~BinOpCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
+// usage: grab a lock on data node subNode
 class LockCodeTree : public CodeTree {
 	public:
 		// data members
@@ -121,9 +129,10 @@ class LockCodeTree : public CodeTree {
 		LockCodeTree(DataCodeTree *subNode);
 		~LockCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
+// usage: release the lock on data node subNode
 class UnlockCodeTree : public CodeTree {
 	public:
 		// data members
@@ -132,9 +141,10 @@ class UnlockCodeTree : public CodeTree {
 		UnlockCodeTree(DataCodeTree *subNode);
 		~UnlockCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
+// usage: allocate room for, and copy the memory of the data node subNode
 class CopyCodeTree : public CodeTree {
 	public:
 		// data members
@@ -143,18 +153,7 @@ class CopyCodeTree : public CodeTree {
 		CopyCodeTree(DataCodeTree *source);
 		~CopyCodeTree();
 		// core methods
-		string toString(unsigned int tabDepth);
-};
-
-class SeqCodeTree : public CodeTree {
-	public:
-		// data members
-		vector<CodeTree *> seqList; // vector representing the sequencing of CodeTrees that must be executed in order
-		// allocators/deallocators
-		SeqCodeTree();
-		~SeqCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth);
+		string toString(unsigned int tabDepth) const;
 };
 
 // main code generation function

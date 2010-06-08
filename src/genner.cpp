@@ -10,11 +10,21 @@ int gennerErrorCode;
 CodeTree::~CodeTree() {}
 
 // LabelCodeTree functions
-LabelCodeTree::LabelCodeTree(const string &id) : id(id) {category = CATEGORY_LABEL;}
-LabelCodeTree::~LabelCodeTree() {}
-string LabelCodeTree::toString(unsigned int tabDepth) {
-	string acc("Label(");
-	acc += id;
+LabelCodeTree::LabelCodeTree(const string &id, const vector<CodeTree *> &seqList) : id(id), seqList(seqList) {category = CATEGORY_LABEL;}
+LabelCodeTree::~LabelCodeTree() {
+	for (vector<CodeTree *>::const_iterator iter = seqList.begin(); iter != seqList.end(); iter++) {
+		delete (*iter);
+	}
+}
+string LabelCodeTree::toString(unsigned int tabDepth) const {
+	string acc(id);
+	acc += '(';
+	for (vector<CodeTree *>::const_iterator iter = seqList.begin(); iter != seqList.end(); iter++) {
+		acc += (*iter)->toString(tabDepth+1);
+		if (iter + 1 != seqList.end()) {
+			acc += ',';
+		}
+	}
 	acc += ')';
 	return acc;
 }
@@ -35,15 +45,15 @@ DataCodeTree *ConstCodeTree::operator-(unsigned int offset) const {
 	retVal->offset -= offset;
 	return retVal;
 }
-string ConstCodeTree::toString(unsigned int tabDepth) {
-	string acc("Const(");
+string ConstCodeTree::toString(unsigned int tabDepth) const {
+	string acc("[");
 	for (vector<uint32_t>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
 		acc += *iter;
 		if (iter + 1 != data.end()) {
 			acc += '|';
 		}
 	}
-	acc += ')';
+	acc += ']';
 	return acc;
 }
 
@@ -60,8 +70,8 @@ DataCodeTree *TempCodeTree::operator-(unsigned int offset) const {
 	retVal->offset -= offset;
 	return retVal;
 }
-string TempCodeTree::toString(unsigned int tabDepth) {
-	string acc("Temp(");
+string TempCodeTree::toString(unsigned int tabDepth) const {
+	string acc("(");
 	acc += size;
 	acc += ')';
 	return acc;
@@ -70,9 +80,9 @@ string TempCodeTree::toString(unsigned int tabDepth) {
 // UnOpCodeTree functions
 UnOpCodeTree::UnOpCodeTree(int kind, DataCodeTree *subNode) : kind(kind), subNode(subNode) {category = CATEGORY_UNOP;}
 UnOpCodeTree::~UnOpCodeTree() {delete subNode;}
-string UnOpCodeTree::toString(unsigned int tabDepth) {
-	string acc("UnOp(");
-	acc += kindToString(kind);
+string UnOpCodeTree::toString(unsigned int tabDepth) const {
+	string acc(kindToString(kind));
+	acc += '(';
 	acc += subNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
@@ -81,9 +91,9 @@ string UnOpCodeTree::toString(unsigned int tabDepth) {
 // BinOpCodeTree functions
 BinOpCodeTree::BinOpCodeTree(int kind, DataCodeTree *subNodeLeft, DataCodeTree *subNodeRight) : kind(kind), subNodeLeft(subNodeLeft), subNodeRight(subNodeRight) {category = CATEGORY_BINOP;}
 BinOpCodeTree::~BinOpCodeTree() {delete subNodeLeft; delete subNodeRight;}
-string BinOpCodeTree::toString(unsigned int tabDepth) {
-	string acc("BinOp(");
-	acc += kindToString(kind);
+string BinOpCodeTree::toString(unsigned int tabDepth) const {
+	string acc(kindToString(kind));
+	acc += '(';
 	acc += subNodeLeft->toString(tabDepth+1);
 	acc += ',';
 	acc += subNodeRight->toString(tabDepth+1);
@@ -94,8 +104,8 @@ string BinOpCodeTree::toString(unsigned int tabDepth) {
 // LockCodeTree functions
 LockCodeTree::LockCodeTree(DataCodeTree *subNode) : subNode(subNode) {category = CATEGORY_LOCK;}
 LockCodeTree::~LockCodeTree() {}
-string LockCodeTree::toString(unsigned int tabDepth) {
-	string acc("Lock(");
+string LockCodeTree::toString(unsigned int tabDepth) const {
+	string acc("!(");
 	acc += subNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
@@ -104,8 +114,8 @@ string LockCodeTree::toString(unsigned int tabDepth) {
 // UnlockCodeTree functions
 UnlockCodeTree::UnlockCodeTree(DataCodeTree *subNode) : subNode(subNode) {category = CATEGORY_UNLOCK;}
 UnlockCodeTree::~UnlockCodeTree() {}
-string UnlockCodeTree::toString(unsigned int tabDepth) {
-	string acc("Unlock(");
+string UnlockCodeTree::toString(unsigned int tabDepth) const {
+	string acc("?(");
 	acc += subNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
@@ -114,24 +124,9 @@ string UnlockCodeTree::toString(unsigned int tabDepth) {
 // CopyCodeTree functions
 CopyCodeTree::CopyCodeTree(DataCodeTree *source) : source(source) {}
 CopyCodeTree::~CopyCodeTree() {}
-string CopyCodeTree::toString(unsigned int tabDepth) {
-	string acc("Copy(");
+string CopyCodeTree::toString(unsigned int tabDepth) const {
+	string acc("*(");
 	acc += source->toString(tabDepth+1);
-	acc += ')';
-	return acc;
-}
-
-// SeqCodeTree functions
-SeqCodeTree::SeqCodeTree() {}
-SeqCodeTree::~SeqCodeTree() {}
-string SeqCodeTree::toString(unsigned int tabDepth) {
-	string acc("Seq(");
-	for (vector<CodeTree *>::const_iterator iter = seqList.begin(); iter != seqList.end(); iter++) {
-		acc += (*iter)->toString(tabDepth+1);
-		if (iter + 1 != seqList.end()) {
-			acc += ',';
-		}
-	}
 	acc += ')';
 	return acc;
 }

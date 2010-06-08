@@ -14,154 +14,208 @@
 #define CATEGORY_LABEL 0
 #define CATEGORY_CONST 1
 #define CATEGORY_TEMP 2
-#define CATEGORY_UNOP 3
-#define CATEGORY_BINOP 4
-#define CATEGORY_LOCK 5
-#define CATEGORY_UNLOCK 6
-#define CATEGORY_COPY 7
+#define CATEGORY_READ 3
+#define CATEGORY_MEM 4
+#define CATEGORY_UNOP 5
+#define CATEGORY_BINOP 6
+#define CATEGORY_LOCK 7
+#define CATEGORY_UNLOCK 8
+#define CATEGORY_WRITE 9
 
 // forward declarations
-class CodeTree;
-class LabelCodeTree;
-class DataCodeTree;
-class ConstTree;
-class TempTree;
-class UnOpCodeTree;
-class BinOpCodeTree;
-class LockCodeTree;
-class UnlockCodeTree;
-class CopyCodeTree;
+class IRTree;
 
+	class LabelTree;
 
-// core CodeTree class
+	class DataTree;
+		class ConstTree;
+		class TempTree;
+		class ReadTree;
 
-// usage: abstract class; never used directly
-class CodeTree {
+	class MemTree;
+
+	class OpTree;
+		class UnOpTree;
+		class BinOpTree;
+
+	class CodeTree;
+		class LockTree;
+		class UnlockTree;
+		class WriteTree;
+
+// IRTree classes
+
+class IRTree {
 	public:
 		// data members
-		int category; // the category that this CodeTree belongs to
+		int category; // the category that this IRTree belongs to
+		// allocators/deallocators
+		virtual ~IRTree();
+};
+
+// LabelTree classes
+
+// usage: print out assembler label id followed by the sequential code in seqList
+class LabelTree : public IRTree {
+	public:
+		// data members
+		string id; // string representation of this label
+		vector<CodeTree *> seqList; // vector representing the sequencing of CodeTrees that must be executed in order
+		// allocators/deallocators
+		LabelTree(const string &id, const vector<CodeTree *> &seqList);
+		~LabelTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// DataTree classes
+
+// usage: abstract class; never used directly
+class DataTree : public IRTree {
+	public:
+		// allocators/deallocators
+		virtual ~DataTree();
+		// core methods
+		virtual string toString(unsigned int tabDepth = 1) const = 0;
+};
+
+// usage: an in-place inclusion of a data vector
+class ConstTree : public DataTree {
+	public:
+		// data members
+		vector<unsigned char> data; // vector of the raw data contained in this node
+		// allocators/deallocators
+		ConstTree(const vector<unsigned char> &data);
+		ConstTree(uint32_t data);
+		~ConstTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: allocate temporary storage for the result of an operation
+class TempTree : public DataTree {
+	public:
+		// data members
+		OpTree *opNode; // pointer to the operation that this temporary is holding the result of
+		// allocators/deallocators
+		TempTree(OpTree *opNode);
+		~TempTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: read memory from the specified node
+class ReadTree : public DataTree {
+	public:
+		// data members
+		MemTree *memNode; // pointer to the node of memory that we want to read
+		// allocators/deallocators
+		ReadTree(MemTree *memNode);
+		~ReadTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// MemTree classes
+
+// usage: represents memory from bytes (base) to (base + length - 1) that has been statically filled with the given raw data vector
+class MemTree : public IRTree {
+	public:
+		// data members
+		uint32_t base; // the base address of the data
+		uint32_t length; // the length of the data block
+		vector<unsigned char> data; // the raw data initialization vector, if any, for this node
+		// allocators/deallocators
+		MemTree(unsigned int base, unsigned int length);
+		~MemTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		// operators
+		MemTree *operator+(unsigned int offset) const;
+};
+
+// OpTree classes
+
+// usage: abstract class; never used directly
+class OpTree : public IRTree {
+	public:
+		// allocators/deallocators
+		virtual ~OpTree();
+		// core methods
+		virtual string toString(unsigned int tabDepth = 1) const = 0;
+};
+
+// usage: perform the given unary operation on the subnode
+class UnOpTree : public OpTree {
+	public:
+		// data members
+		int kind; // the kind of operator to apply to the subnode
+		DataTree *subNode; // pointer to the data subnode that we're applying the operator to
+		// allocators/deallocators
+		UnOpTree(int kind, DataTree *subNode);
+		~UnOpTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: perform the given binary operation on subNodeLeft and subNodeRight
+class BinOpTree : public OpTree {
+	public:
+		// data members
+		int kind; // the kind of operator to apply to the subnodes
+		DataTree *subNodeLeft; // pointer to the data subnode representing the left operand
+		DataTree *subNodeRight; // pointer to the data subnode representing the right operand
+		// allocators/deallocators
+		BinOpTree(int kind, DataTree *subNodeLeft, DataTree *subNodeRight);
+		~BinOpTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// CodeTree classes
+
+// usage: abstract class; never used directly
+class CodeTree : public IRTree {
+	public:
 		// allocators/deallocators
 		virtual ~CodeTree();
 		// core methods
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// CodeTree subclasses
-
-// usage: print out assembler label id followed by the sequential code in seqList
-class LabelCodeTree : public CodeTree {
-	public:
-		// data members
-		string id; // string representation of this label
-		vector<CodeTree *> seqList; // vector representing the sequencing of CodeTrees that must be executed in order
-		// allocators/deallocators
-		LabelCodeTree(const string &id, const vector<CodeTree *> &seqList);
-		~LabelCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-};
-
-// usage: abstract class; never used directly
-class DataCodeTree : public CodeTree {
-	public:
-		// data members
-		unsigned int offset; // the offset into the data array of this node
-		// allocators/deallocators
-		virtual ~DataCodeTree();
-		// operators
-		virtual DataCodeTree *operator+(unsigned int offset) const = 0; // adjust the offset upwards
-		virtual DataCodeTree *operator-(unsigned int offset) const = 0; // adjust the offset downwards
-};
-
-// usage: place word-vector data into memory
-class ConstCodeTree : public DataCodeTree {
-	public:
-		// data members
-		vector<uint32_t> data; // vector of the raw data contained in this constant
-		// allocators/deallocators
-		ConstCodeTree(const vector<uint32_t> &data);
-		~ConstCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-		// operators
-		DataCodeTree *operator+(unsigned int offset) const;
-		DataCodeTree *operator-(unsigned int offset) const;
-};
-
-// usage: allocate space of the given size in memory
-class TempCodeTree : public DataCodeTree {
-	public:
-		// data members
-		unsigned int size; // how much space (in bytes) this temporary node holds
-		// allocators/deallocators
-		TempCodeTree(unsigned int size);
-		~TempCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-		// operators
-		DataCodeTree *operator+(unsigned int offset) const;
-		DataCodeTree *operator-(unsigned int offset) const;
-};
-
-// usage: perform the given unary operation on the subnode
-class UnOpCodeTree : public CodeTree {
-	public:
-		// data members
-		int kind; // the kind of operator to apply to the subnode
-		DataCodeTree *subNode; // pointer to the data subnode that we're applying the operator to
-		// allocators/deallocators
-		UnOpCodeTree(int kind, DataCodeTree *subNode);
-		~UnOpCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-};
-
-// usage: perform the given binary operation on subNodeLeft and subNodeRight
-class BinOpCodeTree : public CodeTree {
-	public:
-		// data members
-		int kind; // the kind of operator to apply to the subnodes
-		DataCodeTree *subNodeLeft; // pointer to the data subnode representing the left operand
-		DataCodeTree *subNodeRight; // pointer to the data subnode representing the right operand
-		// allocators/deallocators
-		BinOpCodeTree(int kind, DataCodeTree *subNodeLeft, DataCodeTree *subNodeRight);
-		~BinOpCodeTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-};
-
 // usage: grab a lock on data node subNode
-class LockCodeTree : public CodeTree {
+class LockTree : public CodeTree {
 	public:
 		// data members
-		DataCodeTree *subNode; // pointer to the data subnode that we want to lock
+		DataTree *subNode; // pointer to the data subnode that we want to lock
 		// allocators/deallocators
-		LockCodeTree(DataCodeTree *subNode);
-		~LockCodeTree();
+		LockTree(DataTree *subNode);
+		~LockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
 
 // usage: release the lock on data node subNode
-class UnlockCodeTree : public CodeTree {
+class UnlockTree : public CodeTree {
 	public:
 		// data members
-		DataCodeTree *subNode; // pointer to the data subnode that we want to unlock
+		DataTree *subNode; // pointer to the data subnode that we want to unlock
 		// allocators/deallocators
-		UnlockCodeTree(DataCodeTree *subNode);
-		~UnlockCodeTree();
+		UnlockTree(DataTree *subNode);
+		~UnlockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
 
 // usage: allocate room for, and copy the memory of the data node subNode
-class CopyCodeTree : public CodeTree {
+class WriteTree : public CodeTree {
 	public:
 		// data members
-		DataCodeTree *source; // pointer to the source data subnode
+		DataTree *src; // pointer to the source data subnode
+		MemTree *dst; // pointer to the destination memory subnode
 		// allocators/deallocators
-		CopyCodeTree(DataCodeTree *source);
-		~CopyCodeTree();
+		WriteTree(DataTree *src, MemTree *dst);
+		~WriteTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };

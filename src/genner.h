@@ -180,25 +180,25 @@ class CodeTree : public IRTree {
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// usage: grab a lock on data node subNode
+// usage: grab a lock on memory node subNode
 class LockTree : public CodeTree {
 	public:
 		// data members
-		DataTree *subNode; // pointer to the data subnode that we want to lock
+		MemTree *memNode; // pointer to the data subnode that we want to lock
 		// allocators/deallocators
-		LockTree(DataTree *subNode);
+		LockTree(MemTree *memNode);
 		~LockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: release the lock on data node subNode
+// usage: release the lock on memory node subNode
 class UnlockTree : public CodeTree {
 	public:
 		// data members
-		DataTree *subNode; // pointer to the data subnode that we want to unlock
+		MemTree *memNode; // pointer to the memory subnode that we want to unlock
 		// allocators/deallocators
-		UnlockTree(DataTree *subNode);
+		UnlockTree(MemTree *memNode);
 		~UnlockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;

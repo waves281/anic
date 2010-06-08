@@ -135,21 +135,21 @@ string BinOpTree::toString(unsigned int tabDepth) const {
 CodeTree::~CodeTree() {}
 
 // LockTree functions
-LockTree::LockTree(DataTree *subNode) : subNode(subNode) {category = CATEGORY_LOCK;}
-LockTree::~LockTree() {delete subNode;}
+LockTree::LockTree(MemTree *memNode) : memNode(memNode) {category = CATEGORY_LOCK;}
+LockTree::~LockTree() {delete memNode;}
 string LockTree::toString(unsigned int tabDepth) const {
 	string acc("!(");
-	acc += subNode->toString(tabDepth+1);
+	acc += memNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }
 
 // UnlockTree functions
-UnlockTree::UnlockTree(DataTree *subNode) : subNode(subNode) {category = CATEGORY_UNLOCK;}
-UnlockTree::~UnlockTree() {delete subNode;}
+UnlockTree::UnlockTree(MemTree *memNode) : memNode(memNode) {category = CATEGORY_UNLOCK;}
+UnlockTree::~UnlockTree() {delete memNode;}
 string UnlockTree::toString(unsigned int tabDepth) const {
 	string acc("?(");
-	acc += subNode->toString(tabDepth+1);
+	acc += memNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }

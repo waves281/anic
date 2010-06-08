@@ -29,37 +29,6 @@ string LabelTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 
-// MemCodeTree functions
-MemTree::MemTree(uint32_t base, uint32_t length, ConstTree *constNode) : base(base), length(length), leftBound(base), constNode(constNode) {category = CATEGORY_MEM;}
-MemTree::~MemTree() {}
-MemTree *MemTree::operator+(uint32_t offset) const {
-	if (offset < length) {
-		MemTree *retVal = new MemTree(*this);
-		retVal->base += offset;
-		retVal->length -= offset;
-		return retVal;
-	} else {
-		return NULL;
-	}
-}
-string MemTree::toString(unsigned int tabDepth) const {
-	string acc("@(");
-	acc += base;
-	acc += ',';
-	acc += length;
-	acc += ')';
-	if (constNode->data.size() > 0) {
-		acc += '[';
-		for (vector<unsigned char>::const_iterator iter = constNode->data.begin(); iter != constNode->data.end(); iter++) {
-			char tempS[3];
-			sprintf(tempS, "%02x", (*iter));
-			acc += tempS;
-		}
-		acc += ']';
-	}
-	return acc;
-}
-
 // DataTree functions
 DataTree::~DataTree() {}
 
@@ -95,11 +64,11 @@ string TempTree::toString(unsigned int tabDepth) const {
 }
 
 // ReadTree functions
-ReadTree::ReadTree(MemTree *memNode) : memNode(memNode) {category = CATEGORY_READ;}
-ReadTree::~ReadTree() {delete memNode;}
+ReadTree::ReadTree(DataTree *address) : address(address) {category = CATEGORY_READ;}
+ReadTree::~ReadTree() {delete address;}
 string ReadTree::toString(unsigned int tabDepth) const {
-	string acc("?(");
-	acc += memNode->toString(tabDepth+1);
+	string acc("R(");
+	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }
@@ -135,33 +104,57 @@ string BinOpTree::toString(unsigned int tabDepth) const {
 CodeTree::~CodeTree() {}
 
 // LockTree functions
-LockTree::LockTree(MemTree *memNode) : memNode(memNode) {category = CATEGORY_LOCK;}
-LockTree::~LockTree() {delete memNode;}
+LockTree::LockTree(DataTree *address) : address(address) {category = CATEGORY_LOCK;}
+LockTree::~LockTree() {delete address;}
 string LockTree::toString(unsigned int tabDepth) const {
-	string acc("!(");
-	acc += memNode->toString(tabDepth+1);
+	string acc("L(");
+	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }
 
 // UnlockTree functions
-UnlockTree::UnlockTree(MemTree *memNode) : memNode(memNode) {category = CATEGORY_UNLOCK;}
-UnlockTree::~UnlockTree() {delete memNode;}
+UnlockTree::UnlockTree(DataTree *address) : address(address) {category = CATEGORY_UNLOCK;}
+UnlockTree::~UnlockTree() {delete address;}
 string UnlockTree::toString(unsigned int tabDepth) const {
+	string acc("U(");
+	acc += address->toString(tabDepth+1);
+	acc += ')';
+	return acc;
+}
+
+// CondTree functions
+CondTree::CondTree(DataTree *test, CodeTree *trueBranch, CodeTree *falseBranch) : test(test), trueBranch(trueBranch), falseBranch(falseBranch) {category = CATEGORY_COND;}
+CondTree::~CondTree() {delete test; delete trueBranch; delete falseBranch;}
+string CondTree::toString(unsigned int tabDepth) const {
 	string acc("?(");
-	acc += memNode->toString(tabDepth+1);
+	acc += test->toString(tabDepth+1);
+	acc += ',';
+	acc += trueBranch->toString(tabDepth+1);
+	acc += ',';
+	acc += falseBranch->toString(tabDepth+1);
+	acc += ')';
+	return acc;
+}
+
+// JumpTree functions
+JumpTree::JumpTree(DataTree *address) : address(address) {category = CATEGORY_JUMP;}
+JumpTree::~JumpTree() {delete address;}
+string JumpTree::toString(unsigned int tabDepth) const {
+	string acc("J(");
+	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }
 
 // WriteTree functions
-WriteTree::WriteTree(DataTree *src, MemTree *dst) : src(src), dst(dst) {category = CATEGORY_WRITE;}
-WriteTree::~WriteTree() {delete src; delete dst;}
+WriteTree::WriteTree(DataTree *source, DataTree *address) : source(source), address(address) {category = CATEGORY_WRITE;}
+WriteTree::~WriteTree() {delete source; delete address;}
 string WriteTree::toString(unsigned int tabDepth) const {
-	string acc("!(");
-	acc += src->toString(tabDepth+1);
+	string acc("W(");
+	acc += source->toString(tabDepth+1);
 	acc += ',';
-	acc += dst->toString(tabDepth+1);
+	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
 }

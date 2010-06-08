@@ -15,18 +15,18 @@
 #define CATEGORY_CONST 1
 #define CATEGORY_TEMP 2
 #define CATEGORY_READ 3
-#define CATEGORY_MEM 4
-#define CATEGORY_UNOP 5
-#define CATEGORY_BINOP 6
-#define CATEGORY_LOCK 7
-#define CATEGORY_UNLOCK 8
-#define CATEGORY_WRITE 9
-#define CATEGORY_SCHEDULE 10
+#define CATEGORY_UNOP 4
+#define CATEGORY_BINOP 5
+#define CATEGORY_LOCK 6
+#define CATEGORY_UNLOCK 7
+#define CATEGORY_COND 8
+#define CATEGORY_JUMP 9
+#define CATEGORY_WRITE 10
+#define CATEGORY_SCHEDULE 11
 
 // forward declarations
 class IRTree;
 	class LabelTree;
-	class MemTree;
 	class DataTree;
 		class ConstTree;
 		class TempTree;
@@ -37,6 +37,8 @@ class IRTree;
 	class CodeTree;
 		class LockTree;
 		class UnlockTree;
+		class CondTree;
+		class JumpTree;
 		class WriteTree;
 		class ScheduleTree;
 
@@ -63,25 +65,6 @@ class LabelTree : public IRTree {
 		~LabelTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
-};
-
-// MemTree classes
-
-// usage: represents memory from bytes (base) to (base + length - 1) that has been statically initialized with the given constNode
-class MemTree : public IRTree {
-	public:
-		// data members
-		uint32_t base; // the current base address of the data
-		uint32_t length; // the length remaining to the right of the base address
-		uint32_t leftBound; // the left bound of this memory block
-		ConstTree *constNode; // the static data initializer, if any, for this node
-		// allocators/deallocators
-		MemTree(uint32_t base, uint32_t length, ConstTree *constNode = NULL);
-		~MemTree();
-		// core methods
-		string toString(unsigned int tabDepth) const;
-		// operators
-		MemTree *operator+(unsigned int offset) const;
 };
 
 // DataTree classes
@@ -120,13 +103,13 @@ class TempTree : public DataTree {
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: read memory from the specified node
+// usage: read memory from the specified memory address
 class ReadTree : public DataTree {
 	public:
 		// data members
-		MemTree *memNode; // pointer to the node of memory that we want to read
+		DataTree *address; // pointer to the data subnode specifying the memory address to read from
 		// allocators/deallocators
-		ReadTree(MemTree *memNode);
+		ReadTree(DataTree *address);
 		~ReadTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
@@ -181,38 +164,64 @@ class CodeTree : public IRTree {
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// usage: grab a lock on memory node subNode
+// usage: grab a lock on the specified memory address
 class LockTree : public CodeTree {
 	public:
 		// data members
-		MemTree *memNode; // pointer to the data subnode that we want to lock
+		DataTree *address; // pointer to the data subnode specifying the memory address to lock
 		// allocators/deallocators
-		LockTree(MemTree *memNode);
+		LockTree(DataTree *address);
 		~LockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: release the lock on memory node subNode
+// usage: release a lock on the specified memory address
 class UnlockTree : public CodeTree {
 	public:
 		// data members
-		MemTree *memNode; // pointer to the memory subnode that we want to unlock
+		DataTree *address; // pointer to the data subnode specifying the memory address to unlock
 		// allocators/deallocators
-		UnlockTree(MemTree *memNode);
+		UnlockTree(DataTree *address);
 		~UnlockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: allocate room for, and copy the memory of the data node subNode
+// usage: if the boolean data word test is true, run trueBranch; otherwise, run falseBranch
+class CondTree : public CodeTree {
+	public:
+		// data members
+		DataTree *test; // pointer to the data subnode specifying the boolean value of the test condition
+		CodeTree *trueBranch; // pointer to the code tree to jump to on a true test value
+		CodeTree *falseBranch; // pointer to the code tree to jump to on a true test value
+		// allocators/deallocators
+		CondTree(DataTree *test, CodeTree *trueBranch, CodeTree *falseBranch);
+		~CondTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: unconditionally jump to the specified memory address
+class JumpTree : public CodeTree {
+	public:
+		// data members
+		DataTree *address; // pointer to the data subnode specifying the address of the location to jump to
+		// allocators/deallocators
+		JumpTree(DataTree *address);
+		~JumpTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: write the source data to the specified destination memory address
 class WriteTree : public CodeTree {
 	public:
 		// data members
-		DataTree *src; // pointer to the source data subnode
-		MemTree *dst; // pointer to the destination memory subnode
+		DataTree *source; // pointer to the source data subnode
+		DataTree *address; // pointer to the subnode specifying the destination memory address
 		// allocators/deallocators
-		WriteTree(DataTree *src, MemTree *dst);
+		WriteTree(DataTree *sorce, DataTree *address);
 		~WriteTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;

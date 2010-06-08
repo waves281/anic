@@ -22,6 +22,16 @@
 
 // forward declarations
 class CodeTree;
+class LabelCodeTree;
+class DataCodeTree;
+class ConstTree;
+class TempTree;
+class UnOpCodeTree;
+class BinOpCodeTree;
+class LockCodeTree;
+class UnlockCodeTree;
+class CopyCodeTree;
+
 
 // core CodeTree class
 

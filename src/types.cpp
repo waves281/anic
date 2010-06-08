@@ -598,103 +598,7 @@ Type *StdType::operator>>(Type &otherType) const {
 }
 string StdType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
-	switch(kind) {
-		// null type
-		case STD_NULL:
-			acc += "null";
-			break;
-		// standard types
-		case STD_STD:
-			acc += "std";
-			break;
-		case STD_INT:
-			acc += "int";
-			break;
-		case STD_FLOAT:
-			acc += "float";
-			break;
-		case STD_BOOL:
-			acc += "bool";
-			break;
-		case STD_CHAR:
-			acc += "char";
-			break;
-		case STD_STRING:
-			acc += "string";
-			break;
-		// prefix operators
-		case STD_NOT:
-			acc += '!';
-			break;
-		case STD_COMPLEMENT:
-			acc += '~';
-			break;
-		case STD_DPLUS:
-			acc += "++";
-			break;
-		case STD_DMINUS:
-			acc += "--";
-			break;
-		// infix operators
-		case STD_DOR:
-			acc += "||";
-			break;
-		case STD_DAND:
-			acc += "&&";
-			break;
-		case STD_OR:
-			acc += '|';
-			break;
-		case STD_XOR:
-			acc += '^';
-			break;
-		case STD_AND:
-			acc += '&';
-			break;
-		case STD_DEQUALS:
-			acc += "==";
-			break;
-		case STD_NEQUALS:
-			acc += "!=";
-			break;
-		case STD_LT:
-			acc += '<';
-			break;
-		case STD_GT:
-			acc += '>';
-			break;
-		case STD_LE:
-			acc += "<=";
-			break;
-		case STD_GE:
-			acc += ">=";
-			break;
-		case STD_LS:
-			acc += "<<";
-			break;
-		case STD_RS:
-			acc += ">>";
-			break;
-		case STD_TIMES:
-			acc += '*';
-			break;
-		case STD_DIVIDE:
-			acc += '/';
-			break;
-		case STD_MOD:
-			acc += '%';
-			break;
-		// multi operators
-		case STD_PLUS:
-			acc += '+';
-			break;
-		case STD_MINUS:
-			acc += '-';
-			break;
-		// can't happen
-		default:
-			break;
-	}
+	acc += kindToString(kind);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
@@ -1079,3 +983,76 @@ Type &TypeStatus::operator*() const {
 Type *TypeStatus::operator->() const {return type;}
 bool TypeStatus::operator==(const Type &otherType) const {return (*type == otherType);}
 bool TypeStatus::operator!=(const Type &otherType) const {return (*type != otherType);}
+
+// auxiliary functions
+string kindToString (int kind) {
+	switch(kind) {
+		// null type
+		case STD_NULL:
+			return "null";
+		// standard types
+		case STD_STD:
+			return "std";
+		case STD_INT:
+			return "int";
+		case STD_FLOAT:
+			return "float";
+			break;
+		case STD_BOOL:
+			return "bool";
+		case STD_CHAR:
+			return "char";
+		case STD_STRING:
+			return "string";
+		// prefix operators
+		case STD_NOT:
+			return "!";
+		case STD_COMPLEMENT:
+			return "~";
+		case STD_DPLUS:
+			return "++";
+		case STD_DMINUS:
+			return "--";
+		// infix operators
+		case STD_DOR:
+			return "||";
+		case STD_DAND:
+			return "&&";
+		case STD_OR:
+			return "|";
+		case STD_XOR:
+			return "^";
+		case STD_AND:
+			return "&";
+		case STD_DEQUALS:
+			return "==";
+		case STD_NEQUALS:
+			return "!=";
+		case STD_LT:
+			return "<";
+		case STD_GT:
+			return ">";
+		case STD_LE:
+			return "<=";
+		case STD_GE:
+			return ">=";
+		case STD_LS:
+			return "<<";
+		case STD_RS:
+			return ">>";
+		case STD_TIMES:
+			return "*";
+		case STD_DIVIDE:
+			return "/";
+		case STD_MOD:
+			return "%";
+		// multi operators
+		case STD_PLUS:
+			return "+";
+		case STD_MINUS:
+			return "-";
+		// can't happen
+		default:
+			return "";
+	}
+}

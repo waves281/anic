@@ -258,6 +258,9 @@ class TypeStatus {
 		bool operator!=(const Type &otherType) const;
 };
 
+// auxiliary functions
+string kindToString(int kind);
+
 // external linkage specifiers
 extern Type *nullType;
 extern Type *errType;

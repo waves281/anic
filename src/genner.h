@@ -12,21 +12,23 @@
 
 // CodeTree category specifiers
 #define CATEGORY_LABEL 0
-#define CATEGORY_CONST 1
-#define CATEGORY_TEMP 2
-#define CATEGORY_READ 3
-#define CATEGORY_UNOP 4
-#define CATEGORY_BINOP 5
-#define CATEGORY_LOCK 6
-#define CATEGORY_UNLOCK 7
-#define CATEGORY_COND 8
-#define CATEGORY_JUMP 9
-#define CATEGORY_WRITE 10
-#define CATEGORY_SCHEDULE 11
+#define CATEGORY_SEQ 1
+#define CATEGORY_CONST 2
+#define CATEGORY_TEMP 3
+#define CATEGORY_READ 4
+#define CATEGORY_UNOP 5
+#define CATEGORY_BINOP 6
+#define CATEGORY_LOCK 7
+#define CATEGORY_UNLOCK 8
+#define CATEGORY_COND 9
+#define CATEGORY_JUMP 10
+#define CATEGORY_WRITE 11
+#define CATEGORY_SCHEDULE 12
 
 // forward declarations
 class IRTree;
 	class LabelTree;
+	class SeqTree;
 	class DataTree;
 		class ConstTree;
 		class TempTree;
@@ -54,15 +56,30 @@ class IRTree {
 
 // LabelTree classes
 
-// usage: print out assembler label id followed by the sequential code in seqList
+// usage: identifier-labeled sequential code block; an atomic unit of execution
 class LabelTree : public IRTree {
 	public:
 		// data members
 		string id; // string representation of this label
-		vector<CodeTree *> seqList; // vector representing the sequencing of CodeTrees that must be executed in order
+		SeqTree *code; // pointer to the tree node containing the sequence of code trees to run
 		// allocators/deallocators
-		LabelTree(const string &id, const vector<CodeTree *> &seqList);
+		LabelTree(const string &id, SeqTree *code);
 		~LabelTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// SeqTree classes
+
+// usage: a sequence of code to execute
+class SeqTree : public IRTree {
+	public:
+		// data members
+		string id; // string representation of this label
+		vector<CodeTree *> codeList; // vector representing the sequence of code trees to execute in order
+		// allocators/deallocators
+		SeqTree(const vector<CodeTree *> &seqList);
+		~SeqTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
@@ -207,9 +224,9 @@ class JumpTree : public CodeTree {
 	public:
 		// data members
 		DataTree *test; // pointer to the data subnode specifying the value of the test condition
-		vector<CodeTree *> jumpTable; // vector of pointer to the code trees to run for each index value
+		vector<SeqTree *> jumpTable; // vector of pointers to the sequential code trees to run for each index value
 		// allocators/deallocators
-		JumpTree(DataTree *test, const vector<CodeTree *> &jumpTable);
+		JumpTree(DataTree *test, const vector<SeqTree *> &jumpTable);
 		~JumpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;

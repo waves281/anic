@@ -10,22 +10,33 @@ int gennerErrorCode;
 IRTree::~IRTree() {}
 
 // LabelTree functions
-LabelTree::LabelTree(const string &id, const vector<CodeTree *> &seqList) : id(id), seqList(seqList) {category = CATEGORY_LABEL;}
+LabelTree::LabelTree(const string &id, SeqTree *code) : id(id), code(code) {category = CATEGORY_LABEL;}
 LabelTree::~LabelTree() {
-	for (vector<CodeTree *>::const_iterator iter = seqList.begin(); iter != seqList.end(); iter++) {
-		delete (*iter);
-	}
+	delete code;
 }
 string LabelTree::toString(unsigned int tabDepth) const {
 	string acc(id);
 	acc += '(';
-	for (vector<CodeTree *>::const_iterator iter = seqList.begin(); iter != seqList.end(); iter++) {
+	acc += code->toString(tabDepth+1);
+	acc += ')';
+	return acc;
+}
+
+// SeqTree functions
+SeqTree::SeqTree(const vector<CodeTree *> &codeList) : codeList(codeList) {category = CATEGORY_SEQ;}
+SeqTree::~SeqTree() {
+	for (vector<CodeTree *>::const_iterator iter = codeList.begin(); iter != codeList.end(); iter++) {
+		delete (*iter);
+	}
+}
+string SeqTree::toString(unsigned int tabDepth) const {
+	string acc;
+	for (vector<CodeTree *>::const_iterator iter = codeList.begin(); iter != codeList.end(); iter++) {
 		acc += (*iter)->toString(tabDepth+1);
-		if (iter + 1 != seqList.end()) {
+		if (iter + 1 != codeList.end()) {
 			acc += ',';
 		}
 	}
-	acc += ')';
 	return acc;
 }
 
@@ -138,9 +149,9 @@ string CondTree::toString(unsigned int tabDepth) const {
 }
 
 // JumpTree functions
-JumpTree::JumpTree(DataTree *test, const vector<CodeTree *> &jumpTable) : test(test), jumpTable(jumpTable) {category = CATEGORY_JUMP;}
+JumpTree::JumpTree(DataTree *test, const vector<SeqTree *> &jumpTable) : test(test), jumpTable(jumpTable) {category = CATEGORY_JUMP;}
 JumpTree::~JumpTree() {
-	for (vector<CodeTree *>::const_iterator iter = jumpTable.begin(); iter != jumpTable.end(); iter++) {
+	for (vector<SeqTree *>::const_iterator iter = jumpTable.begin(); iter != jumpTable.end(); iter++) {
 		delete (*iter);
 	}
 }

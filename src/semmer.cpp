@@ -1164,12 +1164,26 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		}
 	}
 	if (!failed) { // if we successfully derived the lists
-		// log the derived list into the fake type that we previously created
-		((ObjectType *)fakeType)->constructorTypes = constructorTypes;
-		// propagate the change to all copies
-		((ObjectType *)fakeType)->propagateToCopies();
-		// finally, log the completed type as the return status
-		returnType(fakeType);
+		// validate all of the regular pipes in this Object definition
+		for (Tree *pipe = tree->child->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a Pipe or LastPipe
+			Tree *pipec = pipe->child;
+			if (*pipec != TOKEN_Declaration && *pipec != TOKEN_LastDeclaration) { // if it's not a declaration-style Pipe, derive and validate its status
+				TypeStatus pipeStatus = getStatusPipe(pipe);
+				if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
+					failed = true;
+				}
+			}
+		}
+		if (!failed) { // if we successfully validated all of the remaining pipes
+			// log the derived list into the fake type that we previously created
+			((ObjectType *)fakeType)->constructorTypes = constructorTypes;
+			// propagate the change to all copies
+			((ObjectType *)fakeType)->propagateToCopies();
+			// finally, log the completed type as the return status
+			returnType(fakeType);
+		} else { // else if we failed to validate the remaining pipes, move the fakeType to the LCURLY below
+			tree->child->status = fakeType; // LCURLY
+		}
 	} else { // else if we failed to derive the lists, move the fakeType to the LCURLY below
 		tree->child->status = fakeType; // LCURLY
 	}

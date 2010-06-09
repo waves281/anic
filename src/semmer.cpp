@@ -1674,14 +1674,21 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else if (*dtc == TOKEN_Return) {
 		Type *thisRetType = inStatus; // the type that we're returning, inferred from the incoming status
-		Type *curRetType = inStatus.retType; // the current return type (i.e. the one we're expecting, or otherwise NULL)
-		if (curRetType != NULL) { // if there's already a return type logged, make sure it matches this one
-			if (*curRetType == *thisRetType) { // if the logged return type matches this one, proceed normally
-				returnTypeRet(nullType, curRetType);
-			} else { // else if this return's type conflicts with a previous one
+		Type *knownRetType = inStatus.retType; // the current return type (i.e. the one we're expecting, or otherwise NULL)
+		if (knownRetType != NULL) { // if there's already a return type logged, make sure it's compatible with this one
+			// try a back-cast from the current return type to the known one
+			Type *backCastType = (*thisRetType >> *knownRetType);
+			if (*backCastType) { // if the cast succeeded, use the known return type
+				returnTypeRet(nullType, knownRetType);
+			}
+			// try a forward-cast from the known return type to the current one
+			Type *forwardCastType = (*thisRetType >> *knownRetType);
+			if (*forwardCastType) { // if the cast succeeded, use the new return type
+				returnTypeRet(nullType, thisRetType);
+			} else { // else if this return type conflicts with the known one, flag an error
 				Token curToken = dtc->child->t; // DRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<thisRetType);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<curRetType<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<knownRetType<<")");
 			}
 		} else { // else if there is no return type logged, log this one and proceed normally
 			returnTypeRet(nullType, thisRetType);
@@ -1968,9 +1975,10 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 }
 
 void typePipes(Tree *treeRoot) {
+	TypeStatus rootStatus(nullType, stdIntType);
 	for (Tree *programCur = treeRoot; programCur != NULL; programCur = programCur->next) {
 		for (Tree *pipeCur = programCur->child->child; pipeCur != NULL; pipeCur = (pipeCur->next != NULL) ? pipeCur->next->child : NULL) {
-			getStatusPipe(pipeCur);
+			getStatusPipe(pipeCur, rootStatus);
 		}
 	}
 }

@@ -89,3 +89,6 @@ subObj = {
 	@@[inhObj];
 	subMem = [float\];
 }
+
+// program termination testing
+0 -->; // terminate the program and return status 0

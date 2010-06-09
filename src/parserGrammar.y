@@ -108,21 +108,21 @@ NonEmptyTerms : Term Terms
 Terms :
 	| Term Terms
 	;
-Term : OpenTerm
-	| ClosedTerm
+Term : ClosedTerm
+	| OpenTerm
 	| DynamicTerm
-	;
-OpenTerm : SimpleCondTerm
-	| OpenCondTerm
 	;
 ClosedTerm : SimpleTerm
 	| ClosedCondTerm
 	;
+OpenTerm : SimpleCondTerm
+	| OpenCondTerm
+	;
 SimpleCondTerm : QUESTION Term
 	;
-OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
-	;
 ClosedCondTerm : QUESTION ClosedTerm COLON ClosedTerm
+	;
+OpenCondTerm : QUESTION ClosedTerm COLON OpenTerm
 	;
 SimpleTerm : StaticTerm
 	| SwitchTerm

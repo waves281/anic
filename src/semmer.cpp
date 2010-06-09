@@ -1768,70 +1768,33 @@ TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusClosedTerm(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	Tree *ctc = tree->child;
-	if (*ctc == TOKEN_SimpleTerm) {
-		returnStatus(getStatusSimpleTerm(ctc, inStatus));
-	} else if (*ctc == TOKEN_ClosedCondTerm) {
-		returnStatus(getStatusClosedCondTerm(ctc, inStatus));
-	}
-	GET_STATUS_FOOTER;
-}
-
-TypeStatus getStatusOpenTerm(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	Tree *otc = tree->child;
-	if (*otc == TOKEN_SimpleCondTerm) {
-		returnStatus(getStatusSimpleCondTerm(otc, inStatus));
-	} else if (*otc == TOKEN_OpenCondTerm) {
-		returnStatus(getStatusOpenCondTerm(otc, inStatus));
-	}
-	GET_STATUS_FOOTER;
-}
-
 // reports errors
-TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusOpenOrClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		Tree *trueBranch = tree->child->next;
-		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
-		TypeStatus falseStatus = getStatusOpenTerm(falseBranch);
-		if (*trueStatus && *falseStatus) { // if we managed to derive types for both branches
-			if (*trueStatus == *falseStatus) { // if the two branches match in type
-				returnStatus(trueStatus);
-			} else { // else if the two branches don't match in type
-				Token curToken1 = tree->child->t; // QUESTION
-				Token curToken2 = trueBranch->t; // ClosedTerm
-				Token curToken3 = falseBranch->t; // OpenTerm
-				semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
-				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
-				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
-			}
+		Tree *trueBranchc = tree->child->next->child; // SimpleTerm or ClosedCondTerm
+		Tree *falseBranchc = tree->child->next->next->next->child; // SimpleTerm, ClosedCondTerm, SimpleCondTerm, or ClosedCondTerm
+		TypeStatus trueStatus;
+		if (*trueBranchc == TOKEN_SimpleTerm) {
+			trueStatus = getStatusSimpleTerm(trueBranchc);
+		} else /* if (*trueBranchc == TOKEN_ClosedCondTerm) */ {
+			trueStatus = getStatusOpenOrClosedCondTerm(trueBranchc);
 		}
-	} else { // else if what's coming in isn't a boolean
-		Token curToken = tree->child->t; // QUESTION
-		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
-	}
-	GET_STATUS_FOOTER;
-}
-
-TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		Tree *trueBranch = tree->child->next;
-		Tree *falseBranch = trueBranch->next->next;
-		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
-		TypeStatus falseStatus = getStatusClosedTerm(falseBranch);
+		TypeStatus falseStatus;
+		if (*falseBranchc == TOKEN_SimpleTerm) {
+			falseStatus = getStatusSimpleTerm(falseBranchc);
+		} else if (*falseBranchc == TOKEN_SimpleCondTerm) {
+			falseStatus = getStatusSimpleCondTerm(falseBranchc);
+		} else /* if (*falseBranchc == TOKEN_ClosedCondTerm || *falseBranchc == TOKEN_OpenCondTerm) */ {
+			falseStatus = getStatusOpenOrClosedCondTerm(falseBranchc);
+		}
 		if (*trueStatus && *falseStatus) { // if we managed to derive types for both branches
 			if (*trueStatus == *falseStatus) { // if the two branches match in type
 				returnStatus(trueStatus);
 			} else { // else if the two branches don't match in type
 				Token curToken1 = tree->child->t; // QUESTION
-				Token curToken2 = trueBranch->t; // ClosedTerm
-				Token curToken3 = falseBranch->t; // OpenTerm
+				Token curToken2 = trueBranchc->t; // SimpleTerm or ClosedCondTerm
+				Token curToken3 = falseBranchc->t; // SimpleTerm, ClosedCondTerm, SimpleCondTerm, or ClosedCondTerm
 				semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
 				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
 				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
@@ -1850,14 +1813,12 @@ TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 	Tree *tc = tree->child;
 	if (*tc != TOKEN_DynamicTerm) { // if it's not a DynamicTerm
 		Tree *tcc = tree->child->child;
-		if (*tcc == TOKEN_SimpleCondTerm) {
-			returnStatus(getStatusSimpleCondTerm(tcc, inStatus));
-		} else if (*tcc == TOKEN_OpenCondTerm) {
-			returnStatus(getStatusOpenCondTerm(tcc, inStatus));
-		} else if (*tcc == TOKEN_ClosedCondTerm) {
-			returnStatus(getStatusClosedCondTerm(tcc, inStatus));
-		} else if (*tcc == TOKEN_SimpleTerm) {
+		if (*tcc == TOKEN_SimpleTerm) {
 			returnStatus(getStatusSimpleTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_SimpleCondTerm) {
+			returnStatus(getStatusSimpleCondTerm(tcc, inStatus));
+		} else if (*tcc == TOKEN_ClosedCondTerm || *tcc == TOKEN_OpenCondTerm) {
+			returnStatus(getStatusOpenOrClosedCondTerm(tcc, inStatus));
 		}
 	} else { // else if it's a DynamicTerm
 		returnStatus(getStatusDynamicTerm(tc, inStatus));

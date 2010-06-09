@@ -22,7 +22,7 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 		: 4
 	} ->someIntLatch;
 	someFilter = [int x, string y --> bool\] {
-		x + y != "Hi" ? (false) : \boolSub -->; // should fail!
+		x + y != "Hi" ? (false) : (\boolSub) -->;
 		boolSub = ((1 ^ 1) == 1);
 	};
 	5, (8 == 9 || (false || true)) someFilter ->std.out;

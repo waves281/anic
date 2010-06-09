@@ -293,33 +293,38 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		buildSt(tree->child, consDef, importList); // child of Constructor
 		buildSt(tree->next, st, importList); // right
 	} else if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if it's a Declaration-style node
-		Tree *dcn = tree->child->next;
-		if (*dcn == TOKEN_EQUALS) { // standard static declaration
-			// allocate the new declaration node
-			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
-			// ... and link it in
-			*st *= newDef;
-			// recurse
-			buildSt(tree->child, newDef, importList); // child of Declaration
-			buildSt(tree->next, st, importList); // right
-		} else if (*dcn == TOKEN_ERARROW) { // flow-through declaration
-			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
-			// ... and link it in
-			*st *= newDef;
-			// recurse
-			buildSt(tree->child, newDef, importList); // child of Declaration
-			buildSt(tree->next, st, importList); // right
-		} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
-			// allocate the new definition node
-			SymbolTable *newDef = new SymbolTable((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
-			// ... and link it in
-			*st *= newDef;
-			// also, since it's an import declaration, log it to the import list
-			importList.push_back(newDef);
-			// recurse
-			buildSt(tree->child, newDef, importList); // child of Declaration
-			buildSt(tree->next, st, importList); // right
+		Token defToken = tree->child->t; // ID, AT, or DAT
+		if (defToken.tokenType != TOKEN_ID || (defToken.s != "null" && defToken.s != "true" && defToken.s != "false")) { // if this isn't a standard literal override, proceed normally
+			Tree *dcn = tree->child->next;
+			if (*dcn == TOKEN_EQUALS) { // standard static declaration
+				// allocate the new declaration node
+				SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
+				// ... and link it in
+				*st *= newDef;
+				// recurse
+				buildSt(tree->child, newDef, importList); // child of Declaration
+				buildSt(tree->next, st, importList); // right
+			} else if (*dcn == TOKEN_ERARROW) { // flow-through declaration
+				// allocate the new definition node
+				SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
+				// ... and link it in
+				*st *= newDef;
+				// recurse
+				buildSt(tree->child, newDef, importList); // child of Declaration
+				buildSt(tree->next, st, importList); // right
+			} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
+				// allocate the new definition node
+				SymbolTable *newDef = new SymbolTable((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
+				// ... and link it in
+				*st *= newDef;
+				// also, since it's an import declaration, log it to the import list
+				importList.push_back(newDef);
+				// recurse
+				buildSt(tree->child, newDef, importList); // child of Declaration
+				buildSt(tree->next, st, importList); // right
+			}
+		} else { // else if this is a standard literal override, flag an error
+			semmerError(defToken.fileName,defToken.row,defToken.col,"redefinition of standard literal '"<<defToken.s<<"'");
 		}
 	} else { // else if it's not a declaration node
 		// recurse normally
@@ -1915,7 +1920,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
-	} else { // else if there is no recursion alert for this Declaration, continue
+	} else { // else if there is no recursion alert for this Declaration and it's not a standard literal override, continue
 		// if the sub-node is not recursion-safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node &&

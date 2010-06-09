@@ -90,7 +90,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 
 #define returnType(x) \
 	/* memoize the return value */\
-	tree->status = TypeStatus((x), tree->status.retType);\
+	tree->status = TypeStatus((x), inStatus.retType);\
 	/* do the actual return */\
 	return (tree->status)
 

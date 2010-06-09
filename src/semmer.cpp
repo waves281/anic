@@ -970,11 +970,19 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	TypeStatus curStatus = inStatus;
 	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		// try to get a type for this pipe
-		TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
-		if (*thisPipeStatus) { // if we successfully derived a type for this Pipe, log its return type into the current status
-			curStatus.retType = thisPipeStatus.retType;
-		} else { // else if we failed to derive a type for this Pipe, flag this fact
-			pipeTypesValid = false;
+		Tree *pipec = pipe->child;
+		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a declaration-style Pipe, ignore the returned retType (it's used for recursion detection instead)
+			TypeStatus thisDeclarationPipeStatus = getStatusPipe(pipe, inStatus);
+			if (!(*thisDeclarationPipeStatus)) { // if we failed to derive a type for this declaration-style Pipe, flag this fact
+				pipeTypesValid = false;
+			}
+		} else { // else if it's not a declaration-style Pipe, we must pay attention to the retType
+			TypeStatus thisPipeStatus = getStatusPipe(pipe, curStatus);
+			if (*thisPipeStatus) { // if we successfully derived a type for this Pipe, log its return type into the current status
+				curStatus.retType = thisPipeStatus.retType;
+			} else { // else if we failed to derive a type for this Pipe, flag this fact
+				pipeTypesValid = false;
+			}
 		}
 	}
 	if (pipeTypesValid) { // if we managed to derive a type for all of the enclosed pipes, set the return status to be the appropriate filter type
@@ -1034,9 +1042,9 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
-		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type violations)
+		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type inconsistencies)
 			if ((*(((FilterType *)(blockStatus.type))->to) == *nullType && *(((FilterType *)fakeType)->to) == *nullType) ||
-					(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types match
+					*(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types are compatible
 				// log the header type as the return status
 				returnType(fakeType);
 			} else { // else if the header and Block don't match
@@ -1469,7 +1477,8 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the sub-node
 			if (nodeStatus->operable) { // if the node is referensible on its own
-				if (*(tstc->child) == TOKEN_SuffixedIdentifier && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
+				if (*(tstc->child) == TOKEN_SuffixedIdentifier &&
+						!(nodeStatus->category == CATEGORY_FILTERTYPE && nodeStatus->suffix == SUFFIX_LATCH) && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
 					// first, copy the Type so that our mutations don't propagate to the StaticTerm
 					TypeStatus mutableNodeStatus = nodeStatus;
 					mutableNodeStatus.type = mutableNodeStatus.type->copy();
@@ -1782,15 +1791,17 @@ TypeStatus getStatusOpenCondTerm(Tree *tree, const TypeStatus &inStatus) {
 		Tree *falseBranch = trueBranch->next->next;
 		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
 		TypeStatus falseStatus = getStatusOpenTerm(falseBranch);
-		if (*trueStatus == *falseStatus && trueStatus->baseEquals(*falseStatus)) { // if the two branches match in type
-			returnStatus(trueStatus);
-		} else { // else if the two branches don't match in type
-			Token curToken1 = tree->child->t; // QUESTION
-			Token curToken2 = trueBranch->t; // ClosedTerm
-			Token curToken3 = falseBranch->t; // OpenTerm
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
+		if (*trueStatus && *falseStatus) { // if we managed to derive types for both branches
+			if (*trueStatus == *falseStatus) { // if the two branches match in type
+				returnStatus(trueStatus);
+			} else { // else if the two branches don't match in type
+				Token curToken1 = tree->child->t; // QUESTION
+				Token curToken2 = trueBranch->t; // ClosedTerm
+				Token curToken3 = falseBranch->t; // OpenTerm
+				semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
+				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
+				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
+			}
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
@@ -1807,15 +1818,17 @@ TypeStatus getStatusClosedCondTerm(Tree *tree, const TypeStatus &inStatus) {
 		Tree *falseBranch = trueBranch->next->next;
 		TypeStatus trueStatus = getStatusClosedTerm(trueBranch);
 		TypeStatus falseStatus = getStatusClosedTerm(falseBranch);
-		if (*trueStatus == *falseStatus) { // if the two branches match in type
-			returnStatus(trueStatus);
-		} else { // else if the two branches don't match in type
-			Token curToken1 = tree->child->t; // QUESTION
-			Token curToken2 = trueBranch->t; // ClosedTerm
-			Token curToken3 = falseBranch->t; // ClosedTerm
-			semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
-			semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
-			semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
+		if (*trueStatus && *falseStatus) { // if we managed to derive types for both branches
+			if (*trueStatus == *falseStatus) { // if the two branches match in type
+				returnStatus(trueStatus);
+			} else { // else if the two branches don't match in type
+				Token curToken1 = tree->child->t; // QUESTION
+				Token curToken2 = trueBranch->t; // ClosedTerm
+				Token curToken3 = falseBranch->t; // OpenTerm
+				semmerError(curToken1.fileName,curToken1.row,curToken1.col,"type mismatch in conditional branches");
+				semmerError(curToken2.fileName,curToken2.row,curToken2.col,"-- (true branch type is "<<trueStatus<<")");
+				semmerError(curToken3.fileName,curToken3.row,curToken3.col,"-- (false branch type is "<<falseStatus<<")");
+			}
 		}
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION

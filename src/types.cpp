@@ -1,7 +1,5 @@
 #include "types.h"
 
-#include "outputOperators.h"
-
 // Type functions
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
@@ -318,7 +316,7 @@ Type *TypeList::operator,(Type &otherType) const {
 		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (*(*this >> *(otherTypeCast->from))) {
+		if (otherTypeCast->suffix == SUFFIX_LATCH && *(*this >> *(otherTypeCast->from))) {
 			return (otherTypeCast->to);
 		} else {
 			return errType;
@@ -354,11 +352,15 @@ Type *TypeList::operator>>(Type &otherType) const {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		return errType;
+		if (list.size() == 1) {
+			return (*(list[0]) >> otherType);
+		} else {
+			return errType;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (list.size() == 1 && list[0]->baseSendable(otherType) && *(list[0]) == otherType) {
-			return nullType;
-		} else if (otherType.suffix == SUFFIX_LATCH) {
+		if (list.size() == 1) {
+			return (*(list[0]) >> otherType);
+		} else if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 				if (*(*this >> **iter)) {
@@ -608,7 +610,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		// check for a StdType -> FilterType promotion case
-		if (filterTypePromotion(*otherTypeCast)) {
+		if (otherTypeCast->suffix == SUFFIX_LATCH && filterTypePromotion(*otherTypeCast)) {
 			return nullType;
 		} else {
 			return errType;
@@ -691,7 +693,7 @@ Type *FilterType::operator,(Type &otherType) const {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (*(*this >> *(otherTypeCast->from))) {
+		if (otherTypeCast->suffix == SUFFIX_LATCH && *(*this >> *(otherTypeCast->from))) {
 			return (otherTypeCast->to);
 		} else {
 			return errType;
@@ -857,7 +859,7 @@ Type *ObjectType::operator,(Type &otherType) const {
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (*(*this >> *(otherTypeCast->from))) {
+		if (otherTypeCast->suffix == SUFFIX_LATCH && *(*this >> *(otherTypeCast->from))) {
 			return (otherTypeCast->to);
 		} else {
 			return errType;

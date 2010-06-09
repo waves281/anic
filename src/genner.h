@@ -202,13 +202,14 @@ class CondTree : public CodeTree {
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: unconditionally jump to the specified memory address
+// usage: use the value of a test word to index into the given jumpTable and jump to the code contained there; the test word is guaranteed to be a valid index into the jumpTable
 class JumpTree : public CodeTree {
 	public:
 		// data members
-		DataTree *address; // pointer to the data subnode specifying the address of the location to jump to
+		DataTree *test; // pointer to the data subnode specifying the value of the test condition
+		vector<CodeTree *> jumpTable; // vector of pointer to the code trees to run for each index value
 		// allocators/deallocators
-		JumpTree(DataTree *address);
+		JumpTree(DataTree *test, const vector<CodeTree *> &jumpTable);
 		~JumpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;

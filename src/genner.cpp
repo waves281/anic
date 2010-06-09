@@ -138,11 +138,22 @@ string CondTree::toString(unsigned int tabDepth) const {
 }
 
 // JumpTree functions
-JumpTree::JumpTree(DataTree *address) : address(address) {category = CATEGORY_JUMP;}
-JumpTree::~JumpTree() {delete address;}
+JumpTree::JumpTree(DataTree *test, const vector<CodeTree *> &jumpTable) : test(test), jumpTable(jumpTable) {category = CATEGORY_JUMP;}
+JumpTree::~JumpTree() {
+	for (vector<CodeTree *>::const_iterator iter = jumpTable.begin(); iter != jumpTable.end(); iter++) {
+		delete (*iter);
+	}
+}
 string JumpTree::toString(unsigned int tabDepth) const {
 	string acc("J(");
-	acc += address->toString(tabDepth+1);
+	for (unsigned int i = 0; i < jumpTable.size(); i++) {
+		acc += i;
+		acc += ':';
+		acc += (jumpTable[i])->toString(tabDepth+1);
+		if (i != jumpTable.size() - 1) {
+			acc += ',';
+		}
+	}
 	acc += ')';
 	return acc;
 }

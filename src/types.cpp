@@ -610,7 +610,7 @@ Type *StdType::operator>>(Type &otherType) const {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		// check for a StdType -> FilterType promotion case
-		if (otherTypeCast->suffix == SUFFIX_LATCH && filterTypePromotion(*otherTypeCast)) {
+		if (baseSendable(otherType) && filterTypePromotion(*otherTypeCast)) {
 			return nullType;
 		} else {
 			return errType;

@@ -17,6 +17,16 @@ StdType *stdNullLitType;
 StdType *stdBoolLitType;
 ObjectType *stringerType;
 ObjectType *outerType;
+FilterType *boolUnOpType;
+FilterType *intUnOpType;
+FilterType *boolBinOpType;
+FilterType *intBinOpType;
+FilterType *floatBinOpType;
+FilterType *boolCompOpType;
+FilterType *intCompOpType;
+FilterType *floatCompOpType;
+FilterType *charCompOpType;
+FilterType *stringCompOpType;
 
 // SymbolTable functions
 
@@ -153,6 +163,51 @@ void initStdTypes() {
 	// build the outerType
 	constructorTypes.push_back(new TypeList(stringerType));
 	outerType = new ObjectType(constructorTypes, SUFFIX_STREAM, 1); outerType->operable = false;
+	// build some auxiliary types
+	// latches
+	Type *boolLatchType = new StdType(STD_BOOL, SUFFIX_LATCH);
+	Type *intLatchType = new StdType(STD_INT, SUFFIX_LATCH);
+	Type *floatLatchType = new StdType(STD_FLOAT, SUFFIX_LATCH);
+	// pairs
+	vector<Type *> boolPair;
+	boolPair.push_back(stdBoolType); boolPair.push_back(stdBoolType);
+	Type *boolPairType = new TypeList(boolPair);
+	
+	vector<Type *> intPair;
+	intPair.push_back(stdIntType); intPair.push_back(stdIntType);
+	Type *intPairType = new TypeList(intPair);
+	
+	vector<Type *> floatPair;
+	floatPair.push_back(stdFloatType); floatPair.push_back(stdFloatType);
+	Type *floatPairType = new TypeList(floatPair);
+	
+	vector<Type *> charPair;
+	charPair.push_back(stdCharType); charPair.push_back(stdCharType);
+	Type *charPairType = new TypeList(charPair);
+	
+	vector<Type *> stringPair;
+	stringPair.push_back(stdStringType); stringPair.push_back(stdStringType);
+	Type *stringPairType = new TypeList(stringPair);
+	// build the boolUnOpType
+	boolUnOpType = new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH); boolUnOpType->operable = false;
+	// build the intUnOpType
+	intUnOpType = new FilterType(stdIntType, intLatchType, SUFFIX_LATCH); intUnOpType->operable = false;
+	// build the boolBinOpType
+	boolBinOpType = new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH); boolBinOpType->operable = false;
+	// build the intBinOpType
+	intBinOpType = new FilterType(intPairType, intLatchType, SUFFIX_LATCH); intBinOpType->operable = false;
+	// build the floatBinOpType
+	floatBinOpType = new FilterType(floatPairType, floatLatchType, SUFFIX_LATCH); floatBinOpType->operable = false;
+	// build the boolCompOpType
+	boolCompOpType = new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH); boolCompOpType->operable = false;
+	// build the intCompOpType
+	intCompOpType = new FilterType(intPairType, boolLatchType, SUFFIX_LATCH); intCompOpType->operable = false;
+	// build the floatCompOpType
+	floatCompOpType = new FilterType(floatPairType, boolLatchType, SUFFIX_LATCH); floatCompOpType->operable = false;
+	// build the charCompOpType
+	charCompOpType = new FilterType(charPairType, boolLatchType, SUFFIX_LATCH); charCompOpType->operable = false;
+	// build the stringCompOpType
+	stringCompOpType = new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH); stringCompOpType->operable = false;
 }
 
 SymbolTable *genDefaultDefs() {
@@ -1573,7 +1628,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else { // else if the Send is invalid, flag an error
 					Token curToken = dtc->child->t; // RARROW
 					semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (sent type is "<<inStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (source type is "<<inStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 				}
 			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
@@ -1596,8 +1651,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				} else { // else if the Send is invalid, flag an error
 					Token curToken = dtc->child->t; // RARROW
 					semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (outgoing type is "<<inStatus<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (incoming type is "<<nodeStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (source type is "<<inStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 				}
 			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // LRARROW

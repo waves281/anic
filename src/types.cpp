@@ -1,5 +1,7 @@
 #include "types.h"
 
+#include "outputOperators.h"
+
 // Type functions
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
@@ -224,7 +226,7 @@ TypeList::TypeList() {
 }
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
 			delete (*iter);
 		}
 	}
@@ -525,6 +527,37 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 	}
 	return make_pair(errType, false); // return false, since we're not consuming the nextTerm (though this doesn't really matter -- it's an error anyway)
 }
+bool StdType::filterTypePromotion(const FilterType &otherType) const {
+	if (otherType == *boolUnOpType &&
+			kind == STD_NOT) {
+		return true;
+	} else if (otherType == *intUnOpType &&
+			(kind == STD_COMPLEMENT || kind == STD_DPLUS || kind == STD_DMINUS || kind == STD_PLUS || kind == STD_MINUS)) {
+		return true;
+	} else if (otherType == *boolBinOpType &&
+			(kind == STD_DOR || kind == STD_DAND)) {
+		return true;
+	} else if (otherType == *intBinOpType &&
+			(kind == STD_OR || kind == STD_AND || kind == STD_XOR || kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD || kind == STD_LS || kind == STD_RS)) {
+		return true;
+	} else if (otherType == *floatBinOpType &&
+			(kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD)) {
+		return true;
+	} else if ((otherType == *boolCompOpType || otherType == *intCompOpType || otherType == *floatCompOpType || otherType == *charCompOpType || otherType == *stringCompOpType) &&
+			(kind == STD_DEQUALS || kind == STD_NEQUALS || kind == STD_LT || kind == STD_GT || kind == STD_LE || kind == STD_GE)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+bool StdType::objectTypePromotion(const ObjectType &otherType) const {
+	if (otherType == *stringerType &&
+			(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE)) {
+		return true;
+	} else {
+		return false;
+	}
+}
 Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->operable = true; return retVal;}
 void StdType::erase() {delete this;}
 bool StdType::operator==(const Type &otherType) const {
@@ -573,18 +606,24 @@ Type *StdType::operator>>(Type &otherType) const {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		return errType;
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+		// check for a StdType -> FilterType promotion case
+		if (filterTypePromotion(*otherTypeCast)) {
+			return nullType;
+		} else {
+			return errType;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
-			// try to do a basic send
+			// try to do a basic constructor send
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
 				if (*(*this >> **iter)) {
 					return nullType;
 				}
 			}
-			// basic sending failed, so check for the StdType to stringerType promotion case
-			if (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE && *otherTypeCast == *stringerType) {
+			// basic constructor sending failed, so check for a StdType -> ObjectType promotion case
+			if (objectTypePromotion(*otherTypeCast)) {
 				return nullType;
 			} else {
 				return errType;
@@ -634,7 +673,7 @@ bool FilterType::operator==(const Type &otherType) const {
 		return true;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		return (*from == *(otherTypeCast->from) && *to == *(otherTypeCast->to) && baseEquals(otherType));
+		return (baseEquals(otherType) && *from == *(otherTypeCast->from) && *to == *(otherTypeCast->to));
 	} else {
 		return false;
 	}
@@ -730,12 +769,12 @@ ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<
 }
 ObjectType::~ObjectType() {
 	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
 			delete (*iter);
 		}
 	}
 	for (vector<Type *>::iterator iter = memberTypes.begin(); iter != memberTypes.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
 			delete (*iter);
 		}
 	}

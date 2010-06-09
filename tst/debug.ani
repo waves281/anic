@@ -7,6 +7,7 @@ exp2 = (-7+(-5--++-(-1))*2++-100.0e+10);
 exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
+
 // basic construct testing
 {
 	someInt = [int] <- 10;
@@ -34,6 +35,12 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	1 [int x] {x};
 	1.0e+100 [float\ f --> string] {\f; "someString" + 'c' + true + " someOtherString" + (7++ - 8--) -->};
 };
+
+// standard upcast testing
+intBinOp = [int x, int y --> int\] {\std.randInt -->};
++ <->intBinOp;
+stringCompOp = [string x, string y --> bool\] {false -->};
+== <->stringCompOp;
 
 // object sub-identifier testing
 obj = {

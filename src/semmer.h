@@ -45,36 +45,36 @@ class SymbolTable {
 
 // forward declarations of mutually recursive typing functions
 
-TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusOpenOrClosedCondTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
-TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType));
+TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusOpenOrClosedCondTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 
 // semantic analysis helper blocks
 

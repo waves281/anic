@@ -1019,19 +1019,21 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	// fake a type for this node in order to allow for recursion
 	Type *&fakeType = tree->status.type;
 	fakeType = new FilterType(nullType, nullType, SUFFIX_LATCH);
-	TypeStatus startStatus = inStatus; // the status that we're going to feed into the Block subnode derivation
+	TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
 	startStatus.retType = NULL; // make no initial presuppositions about what type the Block should return
 	// derive the declared type of the filter
 	Tree *filterCur = tree->child; // Block or FilterHeader
 	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
 		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)(inStatus.type)) : new TypeList(inStatus.type);
+		// set the type to feed into the block derivation to be the one coming in to this filter
+		startStatus = inStatus.type;
 	} else if (*filterCur == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
 		TypeStatus tempStatus = getStatusFilterHeader(filterCur, inStatus); // derive the (possibly recursive) type of the filter header
 		if (*tempStatus) { // if we successfully derived a type for the header
 			// log the derived type into the fake type that we previously created
 			((FilterType *)fakeType)->from = ((FilterType *)(tempStatus.type))->from;
 			((FilterType *)fakeType)->to = ((FilterType *)(tempStatus.type))->to;
-			// nullify the incoming type, since we have an explicit parameter list
+			// nullify the type to feed into the block derivation, since we have an explicit parameter list
 			startStatus = nullType;
 			// advance to the Block definition node
 			filterCur = filterCur->next;
@@ -1688,7 +1690,11 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			} else { // else if this return type conflicts with the known one, flag an error
 				Token curToken = dtc->child->t; // DRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"return of unexpected type "<<thisRetType);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<knownRetType<<")");
+				if (*knownRetType == *errType) {
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (not expecting a return here)");
+				} else {
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<knownRetType<<")");
+				}
 			}
 		} else { // else if there is no return type logged, log this one and proceed normally
 			returnTypeRet(nullType, thisRetType);
@@ -1759,7 +1765,7 @@ TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	if (*inStatus == STD_BOOL) { // if what's coming in is a boolean
-		returnStatus(getStatusTerm(tree->child->next));
+		returnStatus(getStatusTerm(tree->child->next, TypeStatus(nullType, NULL)));
 	} else { // else if what's coming in isn't a boolean
 		Token curToken = tree->child->t; // QUESTION
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional");
@@ -1776,17 +1782,17 @@ TypeStatus getStatusOpenOrClosedCondTerm(Tree *tree, const TypeStatus &inStatus)
 		Tree *falseBranchc = tree->child->next->next->next->child; // SimpleTerm, ClosedCondTerm, SimpleCondTerm, or ClosedCondTerm
 		TypeStatus trueStatus;
 		if (*trueBranchc == TOKEN_SimpleTerm) {
-			trueStatus = getStatusSimpleTerm(trueBranchc);
+			trueStatus = getStatusSimpleTerm(trueBranchc, TypeStatus(nullType, NULL));
 		} else /* if (*trueBranchc == TOKEN_ClosedCondTerm) */ {
-			trueStatus = getStatusOpenOrClosedCondTerm(trueBranchc);
+			trueStatus = getStatusOpenOrClosedCondTerm(trueBranchc, TypeStatus(nullType, NULL));
 		}
 		TypeStatus falseStatus;
 		if (*falseBranchc == TOKEN_SimpleTerm) {
-			falseStatus = getStatusSimpleTerm(falseBranchc);
+			falseStatus = getStatusSimpleTerm(falseBranchc, TypeStatus(nullType, NULL));
 		} else if (*falseBranchc == TOKEN_SimpleCondTerm) {
-			falseStatus = getStatusSimpleCondTerm(falseBranchc);
+			falseStatus = getStatusSimpleCondTerm(falseBranchc, TypeStatus(nullType, NULL));
 		} else /* if (*falseBranchc == TOKEN_ClosedCondTerm || *falseBranchc == TOKEN_OpenCondTerm) */ {
-			falseStatus = getStatusOpenOrClosedCondTerm(falseBranchc);
+			falseStatus = getStatusOpenOrClosedCondTerm(falseBranchc, TypeStatus(nullType, NULL));
 		}
 		if (*trueStatus && *falseStatus) { // if we managed to derive types for both branches
 			if (*trueStatus == *falseStatus) { // if the two branches match in type

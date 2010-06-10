@@ -53,7 +53,8 @@ intArray = [int[256]];
 intArray.[0] ->std.out;
 intArray.[intArray.[0]] ->intArray.[42];
 floatPool = [float\[128 * 2]];
-1.0 -> floatPool.[intArray.[42]];
+1.0 ->floatPool.[intArray.[42]];
+\floatPool.[intArray.[42]] ->std.out;
 
 // object sub-identifier testing
 obj = {

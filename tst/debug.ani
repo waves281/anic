@@ -47,6 +47,14 @@ intBinOp = [int x, int y --> int\] {\std.randInt -->};
 stringCompOp = [string x, string y --> bool\] {false -->};
 == <->stringCompOp;
 
+// array and pool testing
+intArray = [int[256]];
+7 ->intArray.[0];
+intArray.[0] ->std.out;
+intArray.[intArray.[0]] ->intArray.[42];
+floatPool = [float\[128 * 2]];
+1.0 -> floatPool.[intArray.[42]];
+
 // object sub-identifier testing
 obj = {
 	=;

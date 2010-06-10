@@ -421,7 +421,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				if (childFind != stCur->children.end()) { // if there's a match to this sub-identifier, proceed
 					if (*(stCur->defSite->status.type) == STD_STD) { // if it's the root std node, just log the child as stCur and continue in the derivation
 						stCur = (*childFind).second;
-						continue; // continue to the next part of the binding
+						success = true;
 					} else { // else if it's not the root std node, use the subidentifier's type for derivation, as usual
 						stCurType = (*childFind).second->defSite->status.type;
 					}
@@ -437,20 +437,65 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				stCurType = stCur->defSite->status.type;
 			}
 			if (*stCurType) { // if we managed to derive a type for this SymbolTable node
-				if (stCurType->category == CATEGORY_OBJECTTYPE) { // if it's an Object Declaration (the only category that can have sub-identifiers)
-					// handle some special cases based on the suffix of the type we just derived
-					if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
+				// handle some special cases based on the suffix of the type we just derived
+				if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
+					Token curToken = stCur->defSite->t;
+					semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
+					stCurType = errType;
+				} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
+					if (id[i] == "[]" || id[i] == "[:]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
+						// if it's an array type, flag the fact that it must be constantized
+						if (stCurType->suffix == SUFFIX_ARRAY) {
+							needsConstantization = true;
+						}
+						// we're about to fake a SymbolTable node for this subscript access
+						// but first, check if a SymbolTable node has already been faked for this member
+						map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
+						if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+							stCur = (*fakeFind).second;
+						} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
+							// note that the member type that we're using here *will* be defined by this point;
+							// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
+							Type *mutableStCurType = stCurType->copy();
+							// decide which type of mutation to perform based on whether it's an array access (only those are mutated), and what the suffix is
+							if (id[i] == "[]") { // if it's an array access
+								if (mutableStCurType->suffix == SUFFIX_ARRAY) {
+									mutableStCurType->constantDestream();
+								} else if (mutableStCurType->suffix == SUFFIX_POOL) {
+									mutableStCurType->destream();
+								}
+							}
+							SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
+							// attach the new fake node to the main SymbolTable
+							*stCur *= fakeStNode;
+							// accept the new fake node and proceed deeper into the binding
+							stCur = fakeStNode;
+						}
+						success = true; // all of the above branches lead to success
+					} else {
 						Token curToken = stCur->defSite->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"member access on unmembered identifier '"<<rebuildId(id, i)<<"'");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on identifier '"<<rebuildId(id, i)<<"'");
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
 						stCurType = errType;
-					} else if (stCurType->suffix == SUFFIX_ARRAY || stCurType->suffix == SUFFIX_POOL) { // else if it's an array or pool, ensure that we're accessing it using a subscript
-						if (id[i] == "[]" || id[i] == "[:]") { // if we're accessing it via a subscript, accept it and proceed deeper into the binding
-							// if it's an array type, flag the fact that it must be constantized
-							if (stCurType->suffix == SUFFIX_ARRAY) {
-								needsConstantization = true;
-							}
-							// we're about to fake a SymbolTable node for this subscript access
+					}
+				} else if (stCurType->category == CATEGORY_OBJECTTYPE) { // else if it's an Object constant or latch (the only other category that can have sub-identifiers)
+					// if it's a constant type, flag the fact that it must be constantized
+					if (stCurType->suffix == SUFFIX_CONSTANT) {
+						needsConstantization = true;
+					}
+					// proceed with binding the sub-identifier as normal by trying to find a match in the Object's members
+					ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
+					unsigned int j;
+					for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
+						if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
+							break;
+						}
+					}
+					if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
+						if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
+							stCur = ((stCurTypeCast->memberDefSites)[j])->env;
+						} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
 							// but first, check if a SymbolTable node has already been faked for this member
 							map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
 							if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
@@ -458,64 +503,14 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 							} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
 								// note that the member type that we're using here *will* be defined by this point;
 								// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-								Type *mutableStCurType = stCurType->copy();
-								// decide which type of mutation to perform based on whether it's an array access (only those are mutated), and what the suffix is
-								if (id[i] == "[]") { // if it's an array access
-									if (mutableStCurType->suffix == SUFFIX_ARRAY) {
-										mutableStCurType->constantDestream();
-									} else if (mutableStCurType->suffix == SUFFIX_POOL) {
-										mutableStCurType->destream();
-									}
-								}
-								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
+								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
 								// attach the new fake node to the main SymbolTable
 								*stCur *= fakeStNode;
 								// accept the new fake node and proceed deeper into the binding
 								stCur = fakeStNode;
 							}
-							success = true; // all of the above branches lead to success
-							stCurType = errType; // this is only so that the below standard handling case doesn't execute
-						} else {
-							Token curToken = stCur->defSite->t;
-							semmerError(curToken.fileName,curToken.row,curToken.col,"non-subscript access on identifier '"<<rebuildId(id, i)<<"'");
-							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<stCurType<<")");
-							stCurType = errType;
 						}
-					} // else if it's a constant or a latch, handle it normally 
-					if (*stCurType) { // if the above special-cases haven't caused an error 
-						// if it's a constant type, flag the fact that it must be constantized
-						if (stCurType->suffix == SUFFIX_CONSTANT) {
-							needsConstantization = true;
-						}
-						// proceed with binding the sub-identifier as normal by trying to find a match in the Object's members
-						ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
-						unsigned int j;
-						for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
-							if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
-								break;
-							}
-						}
-						if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
-							if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
-								stCur = ((stCurTypeCast->memberDefSites)[j])->env;
-								success = true;
-							} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
-								// but first, check if a SymbolTable node has already been faked for this member
-								map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
-								if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
-									stCur = (*fakeFind).second;
-								} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
-									// note that the member type that we're using here *will* be defined by this point;
-									// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-									SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
-									// attach the new fake node to the main SymbolTable
-									*stCur *= fakeStNode;
-									// accept the new fake node and proceed deeper into the binding
-									stCur = fakeStNode;
-								}
-								success = true; // all of the above branches lead to success
-							}
-						}
+						success = true; // all of the above branches lead to success
 					}
 				}
 			}

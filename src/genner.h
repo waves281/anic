@@ -23,7 +23,8 @@
 #define CATEGORY_COND 9
 #define CATEGORY_JUMP 10
 #define CATEGORY_WRITE 11
-#define CATEGORY_SCHEDULE 12
+#define CATEGORY_COPY 12
+#define CATEGORY_SCHEDULE 13
 
 // forward declarations
 class IRTree;
@@ -42,6 +43,7 @@ class IRTree;
 		class CondTree;
 		class JumpTree;
 		class WriteTree;
+		class CopyTree;
 		class ScheduleTree;
 
 // IRTree classes
@@ -239,8 +241,22 @@ class WriteTree : public CodeTree {
 		DataTree *source; // pointer to the source data subnode
 		DataTree *address; // pointer to the subnode specifying the destination memory address
 		// allocators/deallocators
-		WriteTree(DataTree *sorce, DataTree *address);
+		WriteTree(DataTree *source, DataTree *address);
 		~WriteTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: copy a length of memory bytes from the specified sourceAddress to the specified destinationAddress
+class CopyTree : public CodeTree {
+	public:
+		// data members
+		DataTree *sourceAddress; // pointer to the data subnode specifying the base address to start copying from
+		DataTree *destinationAddress; // pointer to the data subnode specifying the destination address to copy into
+		uint32_t length;
+		// allocators/deallocators
+		CopyTree(DataTree *sourceAddress, DataTree *destinationAddress, uint32_t length);
+		~CopyTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };

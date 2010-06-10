@@ -181,6 +181,20 @@ string WriteTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 
+// CopyTree functions
+CopyTree::CopyTree(DataTree *sourceAddress, DataTree *destinationAddress, uint32_t length) : sourceAddress(sourceAddress), destinationAddress(destinationAddress), length(length) {category = CATEGORY_COPY;}
+CopyTree::~CopyTree() {delete sourceAddress; delete destinationAddress;}
+string CopyTree::toString(unsigned int tabDepth) const {
+	string acc("C(");
+	acc += sourceAddress->toString(tabDepth+1);
+	acc += ',';
+	acc += destinationAddress->toString(tabDepth+1);
+	acc += ',';
+	acc += length;
+	acc += ')';
+	return acc;
+}
+
 // ScheduleTree functions
 ScheduleTree::ScheduleTree(const vector<LabelTree *> &labelList) : labelList(labelList) {category = CATEGORY_SCHEDULE;}
 ScheduleTree::~ScheduleTree() {}

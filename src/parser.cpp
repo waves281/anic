@@ -97,9 +97,9 @@ void Tree::operator&=(Tree *parent) {
 
 // converters
 Tree::operator string() const {
-	if (*this == TOKEN_NonArraySuffixedIdentifier || *this == TOKEN_ArraySuffixedIdentifier) { // if this is an identifier-style Tree node, parse it
+	if (*this == TOKEN_NonArrayedIdentifier || *this == TOKEN_ArrayedIdentifier) { // if this is an identifier-style Tree node, parse it
 		string retVal(this->child->t.s); // ID or DPERIOD
-		for(const Tree *cur = this->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of NonArrayIdentifierSuffix, ArrayIdentifierSuffix, or IdentifierSuffix
+		for(const Tree *cur = this->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of NonArrayedIdentifierSuffix, ArrayedIdentifierSuffix, or IdentifierSuffix
 			// log the period
 			retVal += '.';
 			// log the extension

@@ -46,7 +46,7 @@ class SymbolTable {
 // forward declarations of mutually recursive typing functions
 
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
-TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));

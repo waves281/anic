@@ -92,14 +92,22 @@ LastPipe : Declaration
 Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
 	| ID ERARROW NonEmptyTerms SEMICOLON
-	| AT SuffixedIdentifier
-	| AT SuffixedIdentifier SEMICOLON
-	| AT LSQUARE SuffixedIdentifier RSQUARE
-	| AT LSQUARE SuffixedIdentifier RSQUARE SEMICOLON
-	| DAT SuffixedIdentifier
-	| DAT SuffixedIdentifier SEMICOLON
-	| DAT LSQUARE SuffixedIdentifier RSQUARE
-	| DAT LSQUARE SuffixedIdentifier RSQUARE SEMICOLON
+	| AT NonArraySuffixedIdentifier
+	| AT ArraySuffixedIdentifier
+	| AT NonArraySuffixedIdentifier SEMICOLON
+	| AT ArraySuffixedIdentifier SEMICOLON
+	| AT LSQUARE NonArraySuffixedIdentifier RSQUARE
+	| AT LSQUARE ArraySuffixedIdentifier RSQUARE
+	| AT LSQUARE NonArraySuffixedIdentifier RSQUARE SEMICOLON
+	| AT LSQUARE ArraySuffixedIdentifier RSQUARE SEMICOLON
+	| DAT NonArraySuffixedIdentifier
+	| DAT ArraySuffixedIdentifier
+	| DAT NonArraySuffixedIdentifier SEMICOLON
+	| DAT ArraySuffixedIdentifier SEMICOLON
+	| DAT LSQUARE NonArraySuffixedIdentifier RSQUARE
+	| DAT LSQUARE ArraySuffixedIdentifier RSQUARE
+	| DAT LSQUARE NonArraySuffixedIdentifier RSQUARE SEMICOLON
+	| DAT LSQUARE ArraySuffixedIdentifier RSQUARE SEMICOLON
 	;
 LastDeclaration : ID ERARROW NonEmptyTerms
 	;
@@ -175,25 +183,24 @@ Exp : Primary
 Primary : PrimaryBase
 	| PrefixOrMultiOp Primary
 	;
-PrimaryBase : SuffixedIdentifier
-	| SingleAccessor SuffixedIdentifier
+PrimaryBase : NonArraySuffixedIdentifier
+	| ArraySuffixedIdentifier
+	| SingleAccessor NonArraySuffixedIdentifier
+	| SingleAccessor ArraySuffixedIdentifier
 	| PrimLiteral
 	| BracketedExp
 	| PrimaryBase PostfixOp
 	;
-Node : SuffixedIdentifier
+Node : NonArraySuffixedIdentifier
+	| ArraySuffixedIdentifier
 	| NodeInstantiation
 	| Filter
 	| Object
 	| PrimOpNode
 	| PrimLiteral
 	;
-SuffixedIdentifier : ID IdentifierSuffix
-	| DPERIOD IdentifierSuffix
-	;
-IdentifierSuffix :
-	| PERIOD ID IdentifierSuffix
-	| PERIOD ArrayAccess IdentifierSuffix
+ArraySuffixedIdentifier : ID ArrayIdentifierSuffix
+	| DPERIOD ArrayIdentifierSuffix
 	;
 NonArraySuffixedIdentifier : ID NonArrayIdentifierSuffix
 	| DPERIOD NonArrayIdentifierSuffix
@@ -201,10 +208,18 @@ NonArraySuffixedIdentifier : ID NonArrayIdentifierSuffix
 NonArrayIdentifierSuffix :
 	| PERIOD ID NonArrayIdentifierSuffix
 	;
+ArrayIdentifierSuffix : PERIOD ID ArrayIdentifierSuffix
+	| PERIOD ArrayAccess IdentifierSuffix
+	;
+IdentifierSuffix :
+	| PERIOD ID IdentifierSuffix
+	| PERIOD ArrayAccess IdentifierSuffix
+	;
 NodeInstantiation : LSQUARE InstantiableType RSQUARE
 	| LSQUARE InstantiableType RSQUARE LARROW StaticTerm
 	;
 InstantiableType : NonArraySuffixedIdentifier TypeSuffix
+	| ArraySuffixedIdentifier TypeSuffix
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE

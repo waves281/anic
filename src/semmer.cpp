@@ -537,10 +537,11 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		vector<SymbolTable *> newImportList;
 		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
-			Tree *importSid = (*((*importIter)->defSite->child->next) == TOKEN_SuffixedIdentifier) ?
+			Tree *importdcn = (*importIter)->defSite->child->next;
+			Tree *importSid = (*importdcn == TOKEN_NonArraySuffixedIdentifier || *importdcn == TOKEN_ArraySuffixedIdentifier) ?
 				(*importIter)->defSite->child->next :
-				(*importIter)->defSite->child->next->next; // SuffixedIdentifier
-			string importPath = *importSid; // SuffixedIdentifier
+				(*importIter)->defSite->child->next->next; // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
+			string importPath = *importSid; // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 			SymbolTable *importParent = (*importIter)->parent;
 			// standard import special-casing
 			if (importPath == "std") { // if it's the standard import
@@ -561,7 +562,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
 						**importIter = *binding;
 					} else { // else if there was a conflict, flag an error
-						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+						Token curDefToken = importSid->child->t; // child of NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 						Token prevDefToken;
 						if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
 							prevDefToken = (*conflictFind).second->defSite->t;
@@ -600,7 +601,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 										*((*importIter)->parent) *= baseChildCopy;
 									}
 								} else { // else if there is a member naming conflict
-									Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+									Token curDefToken = importSid->child->t; // child of NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 									Token prevDefToken;
 									if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
 										prevDefToken = (*conflictFind).second->defSite->t;
@@ -614,7 +615,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 								}
 						}
 					} else { // else if we didn't find a binding in the open-import's children, flag an error
-						Token curDefToken = importSid->child->t; // child of SuffixedIdentifier
+						Token curDefToken = importSid->child->t; // child of NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 						Token prevDefToken;
 						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
 							prevDefToken = binding->defSite->t;
@@ -634,10 +635,11 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		if (newImportList.size() == importList.size()) { // if the import table has stabilized
 			for (vector<SymbolTable *>::const_iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
-				Tree *importSid = (*((*importIter)->defSite->child->next) == TOKEN_SuffixedIdentifier) ?
+				Tree *importdcn = (*importIter)->defSite->child->next;
+				Tree *importSid = (*importdcn == TOKEN_NonArraySuffixedIdentifier || *importdcn == TOKEN_ArraySuffixedIdentifier) ?
 					(*importIter)->defSite->child->next :
-					(*importIter)->defSite->child->next->next; // SuffixedIdentifier
-				string importPath = *importSid; // SuffixedIdentifier
+					(*importIter)->defSite->child->next->next; // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
+				string importPath = *importSid; // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
@@ -701,16 +703,16 @@ TypeStatus getStatusSuffixedIdentifier(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *pbc = tree->child; // SuffixedIdentifier, SingleAccessor, PrimLiteral, or BracketedExp
-	if (*pbc == TOKEN_SuffixedIdentifier) {
+	Tree *pbc = tree->child; // NonArraySuffixedIdentifier, ArraySuffixedIdentifier, SingleAccessor, PrimLiteral, or BracketedExp
+	if (*pbc == TOKEN_NonArraySuffixedIdentifier || *pbc == TOKEN_ArraySuffixedIdentifier) {
 		returnStatus(getStatusSuffixedIdentifier(pbc, inStatus));
 	} else if (*pbc == TOKEN_SingleAccessor) { // if it's an accessed term
 		// first, derive the subtype
-		Tree *subSI = pbc->next; // SuffixedIdentifier
-		TypeStatus subStatus = getStatusSuffixedIdentifier(subSI, inStatus); // SuffixedIdentifier
+		Tree *subSI = pbc->next; // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
+		TypeStatus subStatus = getStatusSuffixedIdentifier(subSI, inStatus); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 		if (*subStatus) { // if we successfully derived a subtype
 			if ((*subStatus).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
-				// copy the Type so that our mutations don't propagate to the SuffixedIdentifier
+				// copy the Type so that our mutations don't propagate to the NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 				TypeStatus mutableSubStatus = subStatus;
 				mutableSubStatus.type = mutableSubStatus.type->copy();
 				// next, make sure the subtype is compatible with the accessor
@@ -1253,7 +1255,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (!failed) { // if all of the suffixes were valid
 		Tree *typec = tree->child; // NonArraySuffixedIdentifier, FilterType, or ObjectType
-		if (*typec == TOKEN_NonArraySuffixedIdentifier) { // if it's an identifier-defined type
+		if (*typec == TOKEN_NonArraySuffixedIdentifier || *typec == TOKEN_ArraySuffixedIdentifier) { // if it's an identifier-defined type
 			TypeStatus idStatus = getStatusSuffixedIdentifier(typec, inStatus); // NonArraySuffixedIdentifier
 			if (*idStatus) { // if we managed to derive a type for the instantiation identifier
 				if (idStatus.type != stdNullLitType && idStatus.type != stdBoolLitType) { // if the type isn't defined by a standard literal
@@ -1262,7 +1264,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					idStatus->depth = depthVal;
 					returnStatus(idStatus);
 				} else { // else if the type is defined by a standard literal, flag an error
-					Token curToken = typec->child->t; // guaranteed to be ID, since only SuffixedIdentifier nodes generate inoperable types
+					Token curToken = typec->child->t; // guaranteed to be ID, since only NonArraySuffixedIdentifier or ArraySuffixedIdentifier nodes generate inoperable types
 					semmerError(curToken.fileName,curToken.row,curToken.col,"standard literal '"<<typec<<"' is not a type");
 				}
 			}
@@ -1474,7 +1476,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *nodec = tree->child;
-	if (*nodec == TOKEN_SuffixedIdentifier) {
+	if (*nodec == TOKEN_NonArraySuffixedIdentifier || *nodec == TOKEN_ArraySuffixedIdentifier) {
 		returnStatus(getStatusSuffixedIdentifier(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
 	} else if (*nodec == TOKEN_NodeInstantiation) {
 		returnStatus(getStatusNodeInstantiation(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
@@ -1498,14 +1500,15 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the sub-node
 			if (nodeStatus->operable) { // if the node is referensible on its own
-				if (*(tstc->child) == TOKEN_SuffixedIdentifier &&
+				Tree *tstcc = tstc->child;
+				if ((*tstcc == TOKEN_NonArraySuffixedIdentifier || *tstcc == TOKEN_ArraySuffixedIdentifier) &&
 						!(nodeStatus->category == CATEGORY_FILTERTYPE && nodeStatus->suffix == SUFFIX_LATCH) && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
 					// first, copy the Type so that our mutations don't propagate to the StaticTerm
 					TypeStatus mutableNodeStatus = nodeStatus;
 					mutableNodeStatus.type = mutableNodeStatus.type->copy();
-					if (mutableNodeStatus->constantizeReference()) { // if the SuffixedIdentifier can be constantized, log it as the return status
+					if (mutableNodeStatus->constantizeReference()) { // if the NonArraySuffixedIdentifier or ArraySuffixedIdentifier can be constantized, log it as the return status
 						returnStatus(mutableNodeStatus);
-					} else { // if the SuffixedIdentifier cannot be constantized, flag an error
+					} else { // if the NonArraySuffixedIdentifier or ArraySuffixedIdentifier cannot be constantized, flag an error
 						Token curToken = tstc->child->child->t;
 						semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
@@ -1515,7 +1518,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 					returnStatus(nodeStatus);
 				}
 			} else { // else if it's a standard node that we can't use an access operator on, flag an error
-				Token curToken = tstc->child->child->t; // guaranteed to be ID, since only SuffixedIdentifier nodes generate inoperable types
+				Token curToken = tstc->child->child->t; // guaranteed to be ID, since only NonArraySuffixedIdentifier or ArraySuffixedIdentifier nodes generate inoperable types
 				semmerError(curToken.fileName,curToken.row,curToken.col,"reference to non-referensible node '"<<tstc->child<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			}
@@ -1595,11 +1598,11 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 			}
 		} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
-			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<tree->child->next->child<<"'"); // SuffixedIdentifier
+			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<tree->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 		} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
-			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<tree->child->next->child<<"'"); // SuffixedIdentifier
+			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<tree->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 		}
 	}
 	GET_STATUS_FOOTER;
@@ -1663,11 +1666,11 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // RARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable node '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable node '"<<dtc->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 				Token curToken = dtc->child->t; // RARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable literal '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable literal '"<<dtc->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 			}
 		}
 	} else if (*dtc == TOKEN_Swap) {
@@ -1686,11 +1689,11 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // LRARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable node '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable node '"<<dtc->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 				Token curToken = dtc->child->t; // LRARROW
-				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable literal '"<<dtc->child->next->child<<"'"); // SuffixedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable literal '"<<dtc->child->next->child<<"'"); // NonArraySuffixedIdentifier or ArraySuffixedIdentifier
 			}
 		}
 	} else if (*dtc == TOKEN_Return) {

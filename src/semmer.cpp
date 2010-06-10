@@ -457,14 +457,10 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
 							// note that the member type that we're using here *will* be defined by this point;
 							// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-							Type *mutableStCurType = stCurType->copy();
-							// decide which type of mutation to perform based on whether it's an array access (only those are mutated), and what the suffix is
-							if (id[i] == "[]") { // if it's an array access
-								if (mutableStCurType->suffix == SUFFIX_ARRAY) {
-									mutableStCurType->constantDestream();
-								} else if (mutableStCurType->suffix == SUFFIX_POOL) {
-									mutableStCurType->destream();
-								}
+							Type *mutableStCurType = stCurType;
+							if (id[i] == "[]") { // if it's an expression access (as opposed to a range access), decrease the type's depth
+								mutableStCurType = mutableStCurType->copy(); // make a mutable copy of the type
+								mutableStCurType->decreaseDepth();
 							}
 							SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
 							// attach the new fake node to the main SymbolTable
@@ -706,43 +702,22 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 		Tree *subSI = pbc->next; // NonArrayedIdentifier or ArrayedIdentifier
 		TypeStatus subStatus = getStatusIdentifier(subSI, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		if (*subStatus) { // if we successfully derived a subtype
-			if ((*subStatus).suffix != SUFFIX_CONSTANT) { // if the derived type is a latch or a stream
+			if ((*subStatus).suffix == SUFFIX_LATCH || (*subStatus).suffix == SUFFIX_STREAM) { // if the derived type is a latch or a stream
 				// copy the Type so that our mutations don't propagate to the NonArrayedIdentifier or ArrayedIdentifier
 				TypeStatus mutableSubStatus = subStatus;
 				mutableSubStatus.type = mutableSubStatus.type->copy();
 				// next, make sure the subtype is compatible with the accessor
-				Tree *accessorc = pbc->child; // SLASH, SSLASH, or ASLASH
-				if (*accessorc == TOKEN_SLASH) {
-					if (mutableSubStatus.type->delatch()) {
-						returnStatus(mutableSubStatus);
-					} else {
-						Token curToken = accessorc->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
-						mutableSubStatus.type->erase();
-					}
-				} else if (*accessorc == TOKEN_SSLASH) {
-					if (mutableSubStatus.type->copyDelatch()) {
-						returnStatus(mutableSubStatus);
-					} else {
-						Token curToken = accessorc->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
-						mutableSubStatus.type->erase();
-					}
-				} else if (*accessorc == TOKEN_ASLASH) {
-					if (mutableSubStatus.type->constantDelatch()) {
-						returnStatus(mutableSubStatus);
-					} else {
-						Token curToken = accessorc->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
-						mutableSubStatus.type->erase();
-					}
+				if (mutableSubStatus.type->delatch()) {
+					returnStatus(mutableSubStatus);
+				} else {
+					Token curToken = pbc->child->t; // SLASH
+					semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
+					mutableSubStatus.type->erase();
 				}
 			} else { // else if the derived type isn't a latch or stream (and thus can't be delatched), error
 				Token curToken = pbc->t;
-				semmerError(curToken.fileName,curToken.row,curToken.col,"delatching non-latch, non-stream '"<<subSI<<"'");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of non-latch, non-stream '"<<subSI<<"'");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
 			}
 		}
@@ -1416,10 +1391,55 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
+TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *itc = tree->child; // NonArrayedIdentifier, ArrayedIdentifier, or Access
+	if (*itc != TOKEN_SingleAccessor && *itc != TOKEN_MultiAccessor) { // if it's a regular identifier + suffix-style instantiation
+		returnStatus(getStatusType(tree, inStatus)); // InstantiationSource (compatible in this form as a Type)
+	} else /* if (*itc == TOKEN_SingleAccessor || *itc == TOKEN_MultiAccessor) */ { // else if it's a copy-style instantiation
+		TypeStatus idStatus = getStatusIdentifier(itc->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
+		if (*idStatus) { // if we managed to derive a type for the identifier we're copying from
+			TypeStatus mutableIdStatus = idStatus;
+			mutableIdStatus.type = mutableIdStatus.type->copy();
+			Tree *accessorc = itc->child; // SLASH, DSLASH, or LSQUARE
+			if (*accessorc == TOKEN_SLASH) {
+				if (mutableIdStatus.type->copyDelatch()) {
+					returnStatus(mutableIdStatus);
+				} else {
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+					mutableIdStatus.type->erase();
+				}
+			} else if (*accessorc == TOKEN_DSLASH) {
+				if (mutableIdStatus.type->copyDestream()) {
+					returnStatus(mutableIdStatus);
+				} else {
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+					semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+					mutableIdStatus.type->erase();
+				}
+			} else /* if (*accessorc == TOKEN_LSQUARE) */ {
+				if (mutableIdStatus.type->copyDelist()) {
+					returnStatus(mutableIdStatus);
+				} else {
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delist of incompatible type");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+					mutableIdStatus.type->erase();
+				}
+			}
+		}
+	}
+	GET_STATUS_FOOTER;
+}
+
+// reports errors
 TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *it = tree->child->next; // InstantiableType
-	TypeStatus instantiation = getStatusType(it, inStatus); // InstantiableType (compatible as a Type)
+	Tree *it = tree->child->next; // InstantiationSource
+	TypeStatus instantiation = getStatusInstantiationSource(it, inStatus); // InstantiationSource
 	if (*instantiation) { // if we successfully derived a type for the instantiation
 		if (it->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
 			Tree *st = it->next->next->next; // StaticTerm
@@ -1451,7 +1471,7 @@ TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				if (iter != instantiationTypeCast->constructorTypes.end()) { // if we managed to find a null constructor, allow the instantiation
 					returnStatus(instantiation);
 				} else { // else if we didn't find a null constructor, flag an error
-					Token curToken = it->t; // InstantiableType
+					Token curToken = it->t; // InstantiationSource
 					semmerError(curToken.fileName,curToken.row,curToken.col,"null instantiation of object without null constructor");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
 				}
@@ -1523,36 +1543,18 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 	// first, derive the Type of the Node that we're acting upon
 	TypeStatus nodeStatus = getStatusNode(tree->child->next, inStatus); // Node
 	if (*nodeStatus) { // if we managed to derive a type for the subnode
-		if (nodeStatus->operable && (nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the node allows access operators
+		if (nodeStatus->operable && (nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the identifier allows access operators
 			// copy the Type so that our mutations don't propagate to the Node
 			TypeStatus mutableNodeStatus = nodeStatus;
 			mutableNodeStatus.type = mutableNodeStatus.type->copy();
 			// finally, do the mutation and see check it it worked
-			Tree *accessorc = tree->child->child; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
+			Tree *accessorc = tree->child->child; // SLASH, DSLASH, or LSQUARE
 			if (*accessorc == TOKEN_SLASH) {
 				if (mutableNodeStatus.type->delatch()) {
 					returnStatus(mutableNodeStatus);
 				} else {
-					Token curToken = accessorc->t;
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
 					semmerError(curToken.fileName,curToken.row,curToken.col,"delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_SSLASH) {
-				if (mutableNodeStatus.type->copyDelatch()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_ASLASH) {
-				if (mutableNodeStatus.type->constantDelatch()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"constant delatch of incompatible type");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 					mutableNodeStatus.type->erase();
 				}
@@ -1560,26 +1562,17 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 				if (mutableNodeStatus.type->destream()) {
 					returnStatus(mutableNodeStatus);
 				} else {
-					Token curToken = accessorc->t;
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
 					semmerError(curToken.fileName,curToken.row,curToken.col,"destream of incompatible type");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 					mutableNodeStatus.type->erase();
 				}
-			} else if (*accessorc == TOKEN_DSSLASH) {
-				if (mutableNodeStatus.type->copyDestream()) {
+			} else /* if (*accessorc == TOKEN_LSQUARE) */ {
+				if (mutableNodeStatus.type->delist()) {
 					returnStatus(mutableNodeStatus);
 				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
-					mutableNodeStatus.type->erase();
-				}
-			} else if (*accessorc == TOKEN_DASLASH) {
-				if (mutableNodeStatus.type->constantDestream()) {
-					returnStatus(mutableNodeStatus);
-				} else {
-					Token curToken = accessorc->t;
-					semmerError(curToken.fileName,curToken.row,curToken.col,"constant destream of incompatible type");
+					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+					semmerError(curToken.fileName,curToken.row,curToken.col,"delist of incompatible type");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<nodeStatus<<")");
 					mutableNodeStatus.type->erase();
 				}
@@ -1601,7 +1594,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	Tree *stc = tree->child;
 	if (*stc == TOKEN_TypedStaticTerm) {
 		returnStatus(getStatusTypedStaticTerm(stc, inStatus));
-	} else if (*stc == TOKEN_Access) {
+	} else /* if (*stc == TOKEN_Access) */ {
 		returnStatus(getStatusAccess(stc, inStatus));
 	}
 	GET_STATUS_FOOTER;

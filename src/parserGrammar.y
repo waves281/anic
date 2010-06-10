@@ -23,11 +23,7 @@
 %token LARROW
 %token LRARROW
 %token SLASH
-%token SSLASH
-%token ASLASH
 %token DSLASH
-%token DSSLASH
-%token DASLASH
 %token CQUOTE
 %token SQUOTE
 %token AT
@@ -215,11 +211,15 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-NodeInstantiation : LSQUARE InstantiableType RSQUARE
-	| LSQUARE InstantiableType RSQUARE LARROW StaticTerm
+NodeInstantiation : LSQUARE InstantiationSource RSQUARE
+	| LSQUARE InstantiationSource RSQUARE LARROW StaticTerm
 	;
-InstantiableType : NonArrayedIdentifier TypeSuffix
+InstantiationSource : NonArrayedIdentifier TypeSuffix
 	| ArrayedIdentifier TypeSuffix
+	| SingleAccessor NonArrayedIdentifier
+	| SingleAccessor ArrayedIdentifier
+	| MultiAccessor NonArrayedIdentifier
+	| MultiAccessor ArrayedIdentifier
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE
@@ -347,12 +347,9 @@ Access : SingleAccessor Node
 	| MultiAccessor Node
 	;
 SingleAccessor : SLASH
-	| SSLASH
-	| ASLASH
 	;
 MultiAccessor : DSLASH
-	| DSSLASH
-	| DASLASH
+	| LSQUARE RSQUARE
 	;
 Compound : COMMA StaticTerm
 	;

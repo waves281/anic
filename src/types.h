@@ -50,10 +50,12 @@ class Type {
 		// mutators
 		void constantizeType(); // for when sub-identifier's type is constrained by upstream identifiers
 		bool constantizeReference(); // for when an identifier is present without an accessor
+		void decreaseDepth();
 		bool delatch();
-		bool copyDelatch();
-		bool constantDelatch();
+		bool delist();
 		bool destream();
+		bool copyDelatch();
+		bool copyDelist();
 		bool copyDestream();
 		bool constantDestream();
 		// allocators/deallocators

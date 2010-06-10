@@ -53,12 +53,23 @@ bool Type::constantizeReference() {
 		return false;
 	} else if (suffix == SUFFIX_ARRAY) {
 		return true;
-	} else if (suffix == SUFFIX_POOL) {
+	} else /* if (suffix == SUFFIX_POOL) */ {
 		suffix = SUFFIX_ARRAY;
 		return true;
 	}
-	// can't happen
-	return false;
+}
+void Type::decreaseDepth() {
+	if (suffix == SUFFIX_ARRAY) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_LATCH;
+		}
+	}
 }
 bool Type::delatch() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -72,34 +83,11 @@ bool Type::delatch() {
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
-	} else if (suffix == SUFFIX_POOL) {
+	} else /* if (suffix == SUFFIX_POOL) */ {
 		return true;
 	}
-	// can't happen
-	return false;
 }
-bool Type::copyDelatch() {
-	if (suffix == SUFFIX_CONSTANT) {
-		suffix = SUFFIX_LATCH;
-		return true;
-	} else if (suffix == SUFFIX_LATCH) {
-		return true;
-	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_LATCH;
-		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LATCH;
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		suffix = SUFFIX_POOL;
-		return true;
-	} else if (suffix == SUFFIX_POOL) {
-		return true;
-	}
-	// can't happen
-	return false;
-}
-bool Type::constantDelatch() {
+bool Type::delist() {
 	if (suffix == SUFFIX_CONSTANT) {
 		return false;
 	} else if (suffix == SUFFIX_LATCH) {
@@ -111,12 +99,18 @@ bool Type::constantDelatch() {
 		suffix = SUFFIX_CONSTANT;
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
-		return false;
-	} else if (suffix == SUFFIX_POOL) {
-		return false;
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
+		return true;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
+		return true;
 	}
-	// can't happen
-	return false;
 }
 bool Type::destream() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -130,17 +124,46 @@ bool Type::destream() {
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
-	} else if (suffix == SUFFIX_POOL) {
-		if (depth == 1) {
-			depth = 0;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		depth--;
+		if (depth == 0) {
 			suffix = SUFFIX_LATCH;
-			return true;
-		} else {
-			return false;
 		}
+		return true;
 	}
-	// can't happen
-	return false;
+}
+bool Type::copyDelatch() {
+	if (suffix == SUFFIX_CONSTANT) {
+		suffix = SUFFIX_LATCH;
+		return true;
+	} else if (suffix == SUFFIX_LATCH) {
+		return true;
+	} else if (suffix == SUFFIX_LIST) {
+		return false;
+	} else if (suffix == SUFFIX_STREAM) {
+		return false;
+	} else if (suffix == SUFFIX_ARRAY) {
+		return false;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		return false;
+	}
+}
+bool Type::copyDelist() {
+	if (suffix == SUFFIX_CONSTANT) {
+		return false;
+	} else if (suffix == SUFFIX_LATCH) {
+		return false;
+	} else if (suffix == SUFFIX_LIST) {
+		return true;
+	} else if (suffix == SUFFIX_STREAM) {
+		suffix = SUFFIX_LIST;
+		return true;
+	} else if (suffix == SUFFIX_ARRAY) {
+		return true;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		suffix = SUFFIX_ARRAY;
+		return true;
+	}
 }
 bool Type::copyDestream() {
 	if (suffix == SUFFIX_CONSTANT) {
@@ -148,61 +171,16 @@ bool Type::copyDestream() {
 	} else if (suffix == SUFFIX_LATCH) {
 		return false;
 	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_LATCH;
+		suffix = SUFFIX_STREAM;
 		return true;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LATCH;
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
-		if (depth == 1) {
-			depth = 0;
-			suffix = SUFFIX_LATCH;
-			return true;
-		} else {
-			return false;
-		}
-	} else if (suffix == SUFFIX_POOL) {
-		if (depth == 1) {
-			depth = 0;
-			suffix = SUFFIX_LATCH;
-			return true;
-		} else {
-			return false;
-		}
-	}
-	// can't happen
-	return false;
-}
-bool Type::constantDestream() {
-	if (suffix == SUFFIX_CONSTANT) {
+		suffix = SUFFIX_POOL;
 		return false;
-	} else if (suffix == SUFFIX_LATCH) {
-		return false;
-	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_CONSTANT;
+	} else /* if (suffix == SUFFIX_POOL) */ {
 		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_CONSTANT;
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		if (depth == 1) {
-			depth = 0;
-			suffix = SUFFIX_CONSTANT;
-			return true;
-		} else {
-			return false;
-		}
-	} else if (suffix == SUFFIX_POOL) {
-		if (depth == 1) {
-			depth = 0;
-			suffix = SUFFIX_CONSTANT;
-			return true;
-		} else {
-			return false;
-		}
 	}
-	// can't happen
-	return false;
 }
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}

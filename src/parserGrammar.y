@@ -269,8 +269,7 @@ PrimLiteral : INUM
 Filter : Block
 	| FilterHeader Block
 	;
-FilterHeader : LSQUARE RSQUARE
-	| LSQUARE ParamList RSQUARE
+FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
 	;
@@ -301,8 +300,7 @@ ArrayTypeSuffix : LSQUARE Exp RSQUARE
 PoolTypeSuffix : SLASH LSQUARE Exp RSQUARE
 	| SLASH LSQUARE Exp RSQUARE ArrayTypeSuffix
 	;
-FilterType : LSQUARE RSQUARE
-	| LSQUARE TypeList RSQUARE
+FilterType : LSQUARE TypeList RSQUARE
 	| LSQUARE TypeList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
 	;

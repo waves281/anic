@@ -1000,7 +1000,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	TypeStatus from = TypeStatus(nullType, inStatus);
 	TypeStatus to = TypeStatus(nullType, inStatus);
-	Tree *treeCur = tree->child->next; // ParamList, RetList, or RSQUARE
+	Tree *treeCur = tree->child->next; // ParamList or RetList
 	if (*treeCur == TOKEN_ParamList) {
 		from = getStatusParamList(treeCur, inStatus);
 		// advance to handle the possible RetList
@@ -1264,23 +1264,16 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				}
 			}
 		} else if (*typec == TOKEN_FilterType) { // else if it's an in-place-defined filter type
-			TypeStatus from = inStatus;
-			TypeStatus to = inStatus;
-			Tree *sub = typec->child->next; // TypeList, RetList, or RSQUARE
-			if (*sub == TOKEN_TypeList) { // if there was a from-list
+			TypeStatus from = nullType;
+			TypeStatus to = nullType;
+			Tree *sub = typec->child->next; // TypeList or RetList
+			if (*sub == TOKEN_TypeList) { // if there is a from-list
 				from = getStatusTypeList(sub, inStatus); // TypeList
 				// advance (in order to properly handle the possible trailing RetList)
-				sub = sub->next; // RetList or RSQUARE
-			} else if (*sub == TOKEN_RetList) { // else if there was no from-list, but there's a RetList
-				from = new TypeList();
-			} else { // else if there was no from-list or RetList (it's a null filter)
-				from = new TypeList();
-				sub = NULL;
+				sub = sub->next; // RetList
 			}
-			if (sub != NULL && *sub == TOKEN_RetList) { // if there was a RetList
+			if (*sub == TOKEN_RetList) { // if there is a to-list
 				to = getStatusTypeList(sub->child->next, inStatus); // TypeList
-			} else { // else if there was no RetList
-				to = new TypeList();
 			}
 			returnType(new FilterType(from, to, suffixVal, depthVal));
 		} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type

@@ -1393,8 +1393,8 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *itc = tree->child; // NonArrayedIdentifier, ArrayedIdentifier, or Access
-	if (*itc != TOKEN_SingleAccessor && *itc != TOKEN_MultiAccessor) { // if it's a regular identifier + suffix-style instantiation
+	Tree *itc = tree->child; // NonArrayedIdentifier, SingleAccessor, or MultiAccessor
+	if (*itc == TOKEN_NonArrayedIdentifier) { // if it's a regular identifier + suffix-style instantiation
 		returnStatus(getStatusType(tree, inStatus)); // InstantiationSource (compatible in this form as a Type)
 	} else /* if (*itc == TOKEN_SingleAccessor || *itc == TOKEN_MultiAccessor) */ { // else if it's a copy-style instantiation
 		TypeStatus idStatus = getStatusIdentifier(itc->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier

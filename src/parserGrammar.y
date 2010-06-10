@@ -215,7 +215,6 @@ NodeInstantiation : LSQUARE InstantiationSource RSQUARE
 	| LSQUARE InstantiationSource RSQUARE LARROW StaticTerm
 	;
 InstantiationSource : NonArrayedIdentifier TypeSuffix
-	| ArrayedIdentifier TypeSuffix
 	| SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
 	| MultiAccessor NonArrayedIdentifier

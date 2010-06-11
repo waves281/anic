@@ -183,13 +183,16 @@ PrimaryBase : NonArrayedIdentifier
 	| ArrayedIdentifier
 	| SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
+	| Instantiation
+	| Filter
+	| Object
 	| PrimLiteral
 	| BracketedExp
 	| PrimaryBase PostfixOp
 	;
 Node : NonArrayedIdentifier
 	| ArrayedIdentifier
-	| NodeInstantiation
+	| Instantiation
 	| Filter
 	| Object
 	| PrimOpNode
@@ -211,7 +214,7 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-NodeInstantiation : LSQUARE InstantiationSource RSQUARE
+Instantiation : LSQUARE InstantiationSource RSQUARE
 	| LSQUARE InstantiationSource RSQUARE LARROW StaticTerm
 	;
 InstantiationSource : NonArrayedIdentifier TypeSuffix

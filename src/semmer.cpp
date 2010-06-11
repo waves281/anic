@@ -721,6 +721,12 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
 			}
 		}
+	} else if (*pbc == TOKEN_Instantiation) {
+		returnStatus(getStatusInstantiation(pbc, inStatus));
+	} else if (*pbc == TOKEN_Filter) {
+		returnStatus(getStatusFilter(pbc, inStatus));
+	} else if (*pbc == TOKEN_Object) {
+		returnStatus(getStatusObject(pbc, inStatus));
 	} else if (*pbc == TOKEN_PrimLiteral) {
 		returnStatus(getStatusPrimLiteral(pbc, inStatus));
 	} else if (*pbc == TOKEN_BracketedExp) {
@@ -1436,7 +1442,7 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 }
 
 // reports errors
-TypeStatus getStatusNodeInstantiation(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *it = tree->child->next; // InstantiationSource
 	TypeStatus instantiation = getStatusInstantiationSource(it, inStatus); // InstantiationSource
@@ -1486,8 +1492,8 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	Tree *nodec = tree->child;
 	if (*nodec == TOKEN_NonArrayedIdentifier || *nodec == TOKEN_ArrayedIdentifier) {
 		returnStatus(getStatusIdentifier(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
-	} else if (*nodec == TOKEN_NodeInstantiation) {
-		returnStatus(getStatusNodeInstantiation(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
+	} else if (*nodec == TOKEN_Instantiation) {
+		returnStatus(getStatusInstantiation(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
 	} else if (*nodec == TOKEN_Filter) {
 		returnStatus(getStatusFilter(nodec, inStatus)); // allows for recursive definitions
 	} else if (*nodec == TOKEN_Object) {

@@ -39,6 +39,9 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	false ? {"Bye" ->std.out};
 	1 [int x] {x};
 	1.0e+100 [float\ f --> string] {\f; "someString" + 'c' + true + " someOtherString" + (7++ - 8--) -->};
+	[float\] <- (-5.0) ([int x]{});
+	someObj ({=;toString=[-->string]{"lol"-->}}) ->out;
+	@std.out;
 };
 
 // standard upcast testing

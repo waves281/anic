@@ -1510,7 +1510,7 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *tstc = tree->child;
-	if (*tstc == TOKEN_Node) {
+	if (*tstc == TOKEN_Node) { // if it's a regular node
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the sub-node
 			if (nodeStatus->operable) { // if the node is referensible on its own
@@ -1537,8 +1537,17 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			}
 		}
-	} else if (*tstc == TOKEN_BracketedExp) { // it's an expression
-		returnStatus(getStatusExp(tstc->child->next, inStatus)); // move past the bracket to the actual Exp node
+	} else if (*tstc == TOKEN_BracketedExp) { // else if it's an expression
+		TypeStatus expStatus = getStatusExp(tstc->child->next, inStatus); // move past the bracket to the actual Exp node
+		if (*expStatus) { // if we managed to derive a type for the expression node
+			if (expStatus.type->suffix != SUFFIX_LIST && expStatus.type->suffix != SUFFIX_STREAM) { // if the type isn't inherently dynamic, return the status normally
+				returnStatus(expStatus);
+			} else { // else if the type is inherently dynamic, flag an error
+				Token curToken = tstc->child->t; // LBRACKET
+				semmerError(curToken.fileName,curToken.row,curToken.col,"expression returns dynamic type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expression type is "<<expStatus<<")");
+			}
+		}
 	}
 	GET_STATUS_FOOTER;
 }

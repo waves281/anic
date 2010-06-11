@@ -1445,7 +1445,7 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *it = tree->child->next; // InstantiationSource
-	TypeStatus instantiation = getStatusInstantiationSource(it, inStatus); // InstantiationSource
+	TypeStatus instantiation = getStatusInstantiationSource(it, inStatus); // NonCopyInstantiationSource or CopyInstantiationSource
 	if (*instantiation) { // if we successfully derived a type for the instantiation
 		if (it->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
 			Tree *st = it->next->next->next; // StaticTerm

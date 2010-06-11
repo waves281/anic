@@ -214,11 +214,13 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-Instantiation : LSQUARE InstantiationSource RSQUARE
-	| LSQUARE InstantiationSource RSQUARE LARROW StaticTerm
+Instantiation : LSQUARE NonCopyInstantiationSource RSQUARE
+	| LSQUARE CopyInstantiationSource RSQUARE
+	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW StaticTerm
 	;
-InstantiationSource : NonArrayedIdentifier TypeSuffix
-	| SingleAccessor NonArrayedIdentifier
+NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix
+	;
+CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
 	| MultiAccessor NonArrayedIdentifier
 	| MultiAccessor ArrayedIdentifier

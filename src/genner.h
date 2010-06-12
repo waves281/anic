@@ -145,7 +145,8 @@ class OpTree : public IRTree {
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// usage: perform the given unary operation on the subnode
+// usage: perform the given kind of unary operation on the subnode
+// the valid kind values are defined as STD_... under "standard operators" in src/types.h
 class UnOpTree : public OpTree {
 	public:
 		// data members
@@ -158,7 +159,8 @@ class UnOpTree : public OpTree {
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: perform the given binary operation on subNodeLeft and subNodeRight
+// usage: perform the given kind of binary operation on subNodeLeft and subNodeRight
+// the valid kind values are defined as STD_... under "standard operators" in src/types.h
 class BinOpTree : public OpTree {
 	public:
 		// data members

@@ -128,8 +128,12 @@ class ErrorType : public Type {
 
 // Type kind specifiers
 
+// auxiliary types
+
 #define STD_NULL 0
 #define STD_STD 1
+
+// standard types
 
 #define STD_MIN_COMPARABLE 2
 
@@ -140,6 +144,8 @@ class ErrorType : public Type {
 #define STD_STRING 6
 
 #define STD_MAX_COMPARABLE 6
+
+// standard operators
 
 #define STD_NOT 7
 #define STD_COMPLEMENT 8

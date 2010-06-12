@@ -90,24 +90,44 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 #define returnType(x) \
 	/* memoize the return value */\
 	tree->status = TypeStatus((x), inStatus.retType);\
-	/* do the actual return */\
-	return (tree->status)
+	/* jump to the intermediate code generation point */\
+	goto genIRTree
 
 #define returnTypeRet(x,y) \
 	/* memoize the return value */\
 	tree->status = TypeStatus((x),(y));\
-	/* do the actual return */\
-	return (tree->status)
+	/* jump to the intermediate code generation point */\
+	goto genIRTree
 
 #define returnStatus(x) \
 	/* memoize the return value */\
 	tree->status = (x);\
-	/* do the actual return */\
-	return (tree->status)
+	/* jump to the intermediate code generation point */\
+	goto genIRTree
+
+#define GET_STATUS_CODE \
+	/* jump over to the function return point */\
+	goto doReturn;\
+	/* label the entry point for IRTree code generation */\
+	genIRTree:\
+	/* test for a valid return status, and proceed only if one was found */\
+	if (*(tree->status)) {
+
+#define returnCode(x) \
+	/* memoize the intermediate code tree */\
+	tree->code = (x);\
+	/* jump to the function return point */\
+	goto doReturn
 
 #define GET_STATUS_FOOTER \
+	/* close the if-statement */\
+	}\
+	/* label the function return point */\
+	doReturn:\
 	/* if we couldn't resolve a valid type, memoize and return the error type */\
-	tree->status = TypeStatus(errType, NULL);\
+	if (tree->status.type == NULL) {\
+		tree->status = TypeStatus(errType, NULL);\
+	}\
 	return (tree->status)
 
 // main semantic analysis function

@@ -663,6 +663,7 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	} else if (st->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		returnTypeRet(tree->status.type, inStatus);
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -688,6 +689,7 @@ TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus) {
 		Token curToken = tree->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve '"<<id<<"'");
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -739,6 +741,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -770,6 +773,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -854,6 +858,7 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 		} // if
 	} // if
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -929,6 +934,7 @@ TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus) {
 			returnType(new StdType(STD_MINUS, SUFFIX_LATCH));
 			break;
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -944,6 +950,7 @@ TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*plc == TOKEN_SQUOTE) {
 		returnType(new StdType(STD_STRING, SUFFIX_LATCH));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -974,6 +981,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 		}
 		returnType(new FilterType(inStatus, curStatus.retType, SUFFIX_LATCH));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -993,6 +1001,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	if (*from && *to) { // if we succeeded in deriving both the from- and to- statuses
 		returnType(new FilterType(from, to, SUFFIX_LATCH));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1043,6 +1052,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header's type");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1073,6 +1083,7 @@ TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus) {
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve constructor's header type");
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1170,6 +1181,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	} else { // else if we failed to derive the lists, move the fakeType to the LCURLY below
 		tree->child->status = fakeType; // LCURLY
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1336,6 +1348,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1357,6 +1370,7 @@ TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	if (!failed) {
 		returnType(new TypeList(list));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1374,6 +1388,7 @@ TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus) {
 		// derive the type normally
 		returnStatus(getStatusType(tree->child, inStatus)); // Type
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1393,6 +1408,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	if (!failed) {
 		returnType(new TypeList(list));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1438,6 +1454,7 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1484,6 +1501,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 } 
 
@@ -1503,6 +1521,7 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*nodec == TOKEN_PrimLiteral) {
 		returnStatus(getStatusPrimLiteral(nodec, inStatus)); // can't possibly be recursive
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1549,6 +1568,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1601,6 +1621,7 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1612,6 +1633,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else /* if (*stc == TOKEN_Access) */ {
 		returnStatus(getStatusAccess(stc, inStatus));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1718,6 +1740,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			returnTypeRet(nullType, thisRetType);
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1765,6 +1788,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (!failed) {
 		returnStatus(firstToStatus);
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1776,6 +1800,7 @@ TypeStatus getStatusSimpleTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*stc == TOKEN_SwitchTerm) {
 		returnStatus(getStatusSwitchTerm(stc, inStatus));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1789,6 +1814,7 @@ TypeStatus getStatusSimpleCondTerm(Tree *tree, const TypeStatus &inStatus) {
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1829,6 +1855,7 @@ TypeStatus getStatusOpenOrClosedCondTerm(Tree *tree, const TypeStatus &inStatus)
 		semmerError(curToken.fileName,curToken.row,curToken.col,"non-boolean input to conditional operator");
 		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1847,6 +1874,7 @@ TypeStatus getStatusTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else { // else if it's a DynamicTerm
 		returnStatus(getStatusDynamicTerm(tc, inStatus));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1907,6 +1935,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 	if (*curStatus) {
 		returnStatus(curStatus);
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1947,6 +1976,7 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			returnTypeRet(nullType, NULL);
 		}
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1958,6 +1988,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		returnStatus(getStatusNonEmptyTerms(pipec, inStatus));
 	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 

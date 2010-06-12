@@ -87,6 +87,8 @@ LastPipe : Declaration
 	;
 Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
+	| ID EQUALS BlankInstantiation
+	| ID EQUALS BlankInstantiation SEMICOLON
 	| ID ERARROW NonEmptyTerms SEMICOLON
 	| AT NonArrayedIdentifier
 	| AT ArrayedIdentifier
@@ -214,8 +216,9 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-Instantiation : LSQUARE NonCopyInstantiationSource RSQUARE
-	| LSQUARE CopyInstantiationSource RSQUARE
+BlankInstantiation : LSQUARE NonCopyInstantiationSource RSQUARE
+	;
+Instantiation : LSQUARE CopyInstantiationSource RSQUARE
 	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW StaticTerm
 	;
 NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix

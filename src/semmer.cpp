@@ -428,7 +428,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				}
 			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
 				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-				if (*discriminant == TOKEN_TypedStaticTerm) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
+				if (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
 					stCurType = getStatusDeclaration(stCur->defSite);
 				}
 			} else if (stCur->kind == KIND_PARAMETER) { // else if it's a Param binding, naively get its type
@@ -1931,6 +1931,8 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);
+			} else if (*declarationSub == TOKEN_BlankInstantiation) { // else if it's a blank instantiation declaration
+				returnTypeRet(getStatusInstantiation(declarationSub), NULL);
 			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
 				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
 				tree->status.type = new FilterType(inStatus, nullType, SUFFIX_LATCH);

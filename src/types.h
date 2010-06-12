@@ -75,8 +75,8 @@ class Type {
 		// virtual
 		virtual bool operator==(const Type &otherType) const = 0;
 		virtual bool operator==(int kind) const = 0;
-		virtual Type *operator,(Type &otherType) const = 0;
-		virtual Type *operator>>(Type &otherType) const = 0;
+		virtual Type *operator,(const Type &otherType) const = 0;
+		virtual Type *operator>>(const Type &otherType) const = 0;
 		virtual operator string() = 0;
 		// non-virtual
 		operator bool() const;
@@ -104,8 +104,8 @@ class TypeList : public Type {
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
-		Type *operator,(Type &otherType) const;
-		Type *operator>>(Type &otherType) const;
+		Type *operator,(const Type &otherType) const;
+		Type *operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -122,8 +122,8 @@ class ErrorType : public Type {
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
-		Type *operator,(Type &otherType) const;
-		Type *operator>>(Type &otherType) const;
+		Type *operator,(const Type &otherType) const;
+		Type *operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -192,8 +192,8 @@ class StdType : public Type {
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
-		Type *operator,(Type &otherType) const;
-		Type *operator>>(Type &otherType) const;
+		Type *operator,(const Type &otherType) const;
+		Type *operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -213,8 +213,8 @@ class FilterType : public Type {
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
-		Type *operator,(Type &otherType) const;
-		Type *operator>>(Type &otherType) const;
+		Type *operator,(const Type &otherType) const;
+		Type *operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -241,8 +241,8 @@ class ObjectType : public Type {
 		// operators
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
-		Type *operator,(Type &otherType) const;
-		Type *operator>>(Type &otherType) const;
+		Type *operator,(const Type &otherType) const;
+		Type *operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -264,7 +264,7 @@ class TypeStatus {
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
-		Type &operator*() const;
+		const Type &operator*() const;
 		Type *operator->() const;
 		bool operator==(const Type &otherType) const;
 		bool operator!=(const Type &otherType) const;

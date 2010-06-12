@@ -238,7 +238,7 @@ bool TypeList::operator==(const Type &otherType) const {
 	}
 }
 bool TypeList::operator==(int kind) const {return (list.size() == 1 && list[0]->category == CATEGORY_STDTYPE && ((StdType *)(list[0]))->kind == kind);}
-Type *TypeList::operator,(Type &otherType) const {
+Type *TypeList::operator,(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		return errType;
 	} else if (otherType.category == CATEGORY_STDTYPE) {
@@ -308,7 +308,7 @@ Type *TypeList::operator,(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *TypeList::operator>>(Type &otherType) const {
+Type *TypeList::operator>>(const Type &otherType) const {
 	if (this == &otherType) { // if the lists are actually the same object instance
 		return nullType;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
@@ -390,8 +390,8 @@ bool ErrorType::operator==(const Type &otherType) const {
 	}
 }
 bool ErrorType::operator==(int kind) const {return false;}
-Type *ErrorType::operator,(Type &otherType) const {return errType;}
-Type *ErrorType::operator>>(Type &otherType) const {return errType;}
+Type *ErrorType::operator,(const Type &otherType) const {return errType;}
+Type *ErrorType::operator>>(const Type &otherType) const {return errType;}
 string ErrorType::toString(unsigned int tabDepth) {
 	return "<ERROR>";
 }
@@ -552,7 +552,7 @@ bool StdType::operator==(const Type &otherType) const {
 	}
 }
 bool StdType::operator==(int kind) const {return (this->kind == kind);}
-Type *StdType::operator,(Type &otherType) const {
+Type *StdType::operator,(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -573,7 +573,7 @@ Type *StdType::operator,(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *StdType::operator>>(Type &otherType) const {
+Type *StdType::operator>>(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && *(*this >> *(otherTypeCast->list[0]))) {
@@ -662,7 +662,7 @@ bool FilterType::operator==(const Type &otherType) const {
 	}
 }
 bool FilterType::operator==(int kind) const {return false;}
-Type *FilterType::operator,(Type &otherType) const {
+Type *FilterType::operator,(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -685,7 +685,7 @@ Type *FilterType::operator,(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *FilterType::operator>>(Type &otherType) const {
+Type *FilterType::operator>>(const Type &otherType) const {
 	if (this == &otherType) { // if the filters are actually the same object instance
 		return nullType;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
@@ -828,7 +828,7 @@ bool ObjectType::operator==(const Type &otherType) const {
 	}
 }
 bool ObjectType::operator==(int kind) const {return false;}
-Type *ObjectType::operator,(Type &otherType) const {
+Type *ObjectType::operator,(const Type &otherType) const {
 	if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
@@ -851,7 +851,7 @@ Type *ObjectType::operator,(Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
-Type *ObjectType::operator>>(Type &otherType) const {
+Type *ObjectType::operator>>(const Type &otherType) const {
 	if (this == &otherType) { // if the objects are actually the same object instance
 		return nullType;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
@@ -995,7 +995,7 @@ TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
-Type &TypeStatus::operator*() const {
+const Type &TypeStatus::operator*() const {
 	if (type != NULL) {
 		return (*type);
 	} else {

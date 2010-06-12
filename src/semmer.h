@@ -88,46 +88,38 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	/* otherwise, compute the type normally */
 
 #define returnType(x) \
-	/* memoize the return value */\
+	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x), inStatus.retType);\
-	/* jump to the intermediate code generation point */\
 	goto genIRTree
 
 #define returnTypeRet(x,y) \
-	/* memoize the return value */\
+	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x),(y));\
-	/* jump to the intermediate code generation point */\
 	goto genIRTree
 
 #define returnStatus(x) \
-	/* memoize the return value */\
+	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = (x);\
-	/* jump to the intermediate code generation point */\
 	goto genIRTree
 
 #define GET_STATUS_CODE \
-	/* jump over to the function return point */\
-	goto doReturn;\
-	/* label the entry point for IRTree code generation */\
+	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
+	tree->status = TypeStatus(errType, NULL);\
+	return (tree->status);\
+	/* label the entry point for intermediate code tree generation */\
 	genIRTree:\
-	/* test for a valid return status, and proceed only if one was found */\
-	if (*(tree->status)) {
+	/* if we derived a valid return status, proceed to build the intermediate code tree */\
+	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
 
 #define returnCode(x) \
-	/* memoize the intermediate code tree */\
+	/* memoize the intermediate code tree and return from this function */\
 	tree->status.code = (x);\
-	/* jump to the function return point */\
-	goto doReturn
+	return (tree->status)
 
 #define GET_STATUS_FOOTER \
 	/* close the if-statement */\
 	}\
-	/* label the function return point */\
-	doReturn:\
-	/* if we couldn't resolve a valid type, memoize and return the error type */\
-	if (tree->status.type == NULL) {\
-		tree->status = TypeStatus(errType, NULL);\
-	}\
+	/* if we failed to do a returnCode, simply return from this function */\
 	return (tree->status)
 
 // main semantic analysis function

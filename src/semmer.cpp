@@ -745,7 +745,6 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *primaryc = tree->child; // PrimaryBase or PrefixOrMultiOp

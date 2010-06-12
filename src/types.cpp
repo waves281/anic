@@ -77,7 +77,8 @@ bool Type::delatch() {
 	} else if (suffix == SUFFIX_LATCH) {
 		return true;
 	} else if (suffix == SUFFIX_LIST) {
-		return false;
+		suffix = SUFFIX_CONSTANT;
+		return true;
 	} else if (suffix == SUFFIX_STREAM) {
 		suffix = SUFFIX_LATCH;
 		return true;
@@ -108,6 +109,8 @@ bool Type::delist() {
 		depth--;
 		if (depth == 0) {
 			suffix = SUFFIX_CONSTANT;
+		} else {
+			suffix = SUFFIX_ARRAY;
 		}
 		return true;
 	}

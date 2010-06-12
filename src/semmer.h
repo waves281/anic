@@ -115,7 +115,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 
 #define returnCode(x) \
 	/* memoize the intermediate code tree */\
-	tree->code = (x);\
+	tree->status.code = (x);\
 	/* jump to the function return point */\
 	goto doReturn
 

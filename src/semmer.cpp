@@ -780,7 +780,6 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	// derive the correct type of this expression
 	Tree *expc = tree->child;
 	if (*expc == TOKEN_Primary) {
 		returnStatus(getStatusPrimary(expc, inStatus));
@@ -833,32 +832,104 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				case TOKEN_DIVIDE:
 				case TOKEN_MOD:
 				case TOKEN_PLUS:
-				case TOKEN_MINUS: {
-						if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
-							returnType(new StdType(STD_INT, SUFFIX_LATCH));
-						}
-						if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
-							returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
-						}
-						// if one of the terms is a string and the other is a StdType constant or latch, return string
-						if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
-								(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
-							(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
-								(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
-							returnType(new StdType(STD_STRING, SUFFIX_LATCH));
-						}
+				case TOKEN_MINUS:
+					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+						returnType(new StdType(STD_INT, SUFFIX_LATCH));
+					}
+					if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
+						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+					}
+					// if one of the terms is a string and the other is a StdType constant or latch, return string
+					if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
+							(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
+						(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
+							(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
+						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
 					}
 					break;
 				default: // can't happen; the above should cover all cases
 					break;
-			} // switch
+			}
 			// if we couldn't resolve a type for this expression (or else we would have returned it above)
 			Token curToken = tree->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
-		} // if
-	} // if
+		}
+	}
 	GET_STATUS_CODE;
+	if (*expc == TOKEN_Primary) {
+		returnCode(expc->code());
+	} else {
+		Tree *expLeft = expc;
+		Tree *op = expLeft->next;
+		/*
+		Tree *expRight = op->next;
+		IRTree *leftCode = expLeft->code();
+		IRTree *rightCode = expRight->code();
+		*/
+		switch (op->t.tokenType) {
+			case TOKEN_DOR:
+			case TOKEN_DAND:
+				/*
+				if (*(*left >> *stdBoolType) && *(*right >> *stdBoolType)) {
+					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+				}
+				*/
+				break;
+			case TOKEN_OR:
+			case TOKEN_XOR:
+			case TOKEN_AND:
+				/*
+				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+				*/
+				break;
+			case TOKEN_DEQUALS:
+			case TOKEN_NEQUALS:
+			case TOKEN_LT:
+			case TOKEN_GT:
+			case TOKEN_LE:
+			case TOKEN_GE:
+				/*
+				if (left->isComparable(*right)) {
+					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+				}
+				*/
+				break;
+			case TOKEN_LS:
+			case TOKEN_RS:
+				/*
+				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+				*/
+				break;
+			case TOKEN_TIMES:
+			case TOKEN_DIVIDE:
+			case TOKEN_MOD:
+			case TOKEN_PLUS:
+			case TOKEN_MINUS:
+				/*
+				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					returnType(new StdType(STD_INT, SUFFIX_LATCH));
+				}
+				if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
+					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+				}
+				// if one of the terms is a string and the other is a StdType constant or latch, return string
+				if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
+						(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
+					(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
+						(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
+					returnType(new StdType(STD_STRING, SUFFIX_LATCH));
+				}
+				*/
+				break;
+			default: // can't happen; the above should cover all cases
+				break;
+		}
+	}
 	GET_STATUS_FOOTER;
 }
 

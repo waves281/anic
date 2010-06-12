@@ -19,6 +19,11 @@ Tree::~Tree() {
 	delete child;
 }
 
+// core methods
+IRTree *Tree::code() const {
+	return (status.code);
+}
+
 // comparison oparators
 bool Tree::operator==(int tokenType) const {
 	return (t.tokenType == tokenType);

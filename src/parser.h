@@ -13,6 +13,7 @@
 class SymbolTable;
 class Type;
 class TypeStatus;
+class IRTree;
 
 class Tree {
 	public:
@@ -29,6 +30,8 @@ class Tree {
 		Tree(const Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		Tree(const TypeStatus &status);
 		~Tree();
+		// core methods
+		IRTree *code() const;
 		// comparison operators
 		bool operator==(int tokenType) const;
 		bool operator!=(int tokenType) const;
@@ -51,5 +54,6 @@ int parse(vector<Token> *lexeme, Tree *&parseme, string &fileName);
 
 // post-includes
 #include "semmer.h"
+#include "genner.h"
 
 #endif

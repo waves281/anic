@@ -2091,7 +2091,7 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
 	subImportDecls(importList); // resolve and substitute import declarations into the symbol table
 
-	VERBOSE( printNotice("tracing type flow..."); )
+	VERBOSE( printNotice("tracing data flow..."); )
 
 	// derive types of all identifiers in the SymbolTable
 	typeSt(stRoot);

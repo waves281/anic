@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
 
 	// perform semantic analysis
 
-	VERBOSE(printNotice("verifying semantics...");)
+	VERBOSE(printNotice("mapping semantics...");)
 
 	// allocate symbol table root (will be filled with user-level definitions during parsing)
 	SymbolTable *stRoot;
@@ -301,12 +301,12 @@ int main(int argc, char **argv) {
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(
-			printNotice("semantic verification discovered inconsistencies");
+			printNotice("failed to map semantics");
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice("semantics successfully verified");
+			printNotice("successfully mapped semantics");
 			print(""); // new line
 		)
 	}
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
 
 	// generate the intermediate code tree
 
-	VERBOSE(printNotice("generating code tree...");)
+	VERBOSE(printNotice("generating code dump...");)
 
 	// allocate symbol table root (will be filled with user-level code during genning)
 	CodeTree *codeRoot;
@@ -326,12 +326,12 @@ int main(int argc, char **argv) {
 	// now, check if genning failed and kill the system as appropriate
 	if (gennerErrorCode) {
 		VERBOSE(
-			printNotice("code tree generation failed");
+			printNotice("failed to generate code dump");
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice("code tree generated successfully");
+			printNotice("successfully generated code dump");
 			print(""); // new line
 		)
 	}

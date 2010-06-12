@@ -8,6 +8,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "types.h"
+#include "genner.h"
 
 // SymbolTable node kinds
 

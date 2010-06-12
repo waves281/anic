@@ -10,6 +10,7 @@
 // forward declarations
 class Tree;
 class SymbolTable;
+class IRTree;
 
 // Type category specifiers
 #define CATEGORY_TYPELIST 0
@@ -250,8 +251,9 @@ class ObjectType : public Type {
 class TypeStatus {
 	public:
 		// data members
-		Type *type; // the encapsulated type
-		Type *retType; // the return type for the current node
+		Type *type; // the type derived for this parse tree node
+		Type *retType; // the carry-over return type derived for this parse tree node
+		IRTree *code; // the intermediate representation code tree for this parse tree node
 		// allocators/deallocators
 		TypeStatus(Type *type = NULL, Type *retType = NULL);
 		TypeStatus(Type *type, const TypeStatus &otherStatus);
@@ -277,6 +279,7 @@ extern Type *errType;
 
 // post-includes
 #include "parser.h"
+#include "genner.h"
 
 // Type to string helper blocks
 

@@ -988,8 +988,8 @@ ObjectType::operator string() {
 }
 
 // typing status block functions
-TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType) {}
-TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType) {}
+TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType), code(NULL) {}
+TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType), code(NULL) {}
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}

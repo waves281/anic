@@ -60,6 +60,7 @@ class Type {
 		bool copyDestream();
 		bool constantDestream();
 		// allocators/deallocators
+		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		virtual ~Type() = 0;
 		// core methods
 		// virtual

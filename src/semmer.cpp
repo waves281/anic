@@ -862,69 +862,63 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	} else {
 		Tree *expLeft = expc;
 		Tree *op = expLeft->next;
-		/*
 		Tree *expRight = op->next;
-		IRTree *leftCode = expLeft->code();
-		IRTree *rightCode = expRight->code();
-		*/
+		DataTree *leftCode = (DataTree *)(expLeft->code());
+		DataTree *rightCode = (DataTree *)(expRight->code());
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
+				returnCode(new BinOpTree(STD_DOR, leftCode, rightCode));
+				break;
 			case TOKEN_DAND:
-				/*
-				if (*(*left >> *stdBoolType) && *(*right >> *stdBoolType)) {
-					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-				*/
+				returnCode(new BinOpTree(STD_DAND, leftCode, rightCode));
 				break;
 			case TOKEN_OR:
+				returnCode(new BinOpTree(STD_OR, leftCode, rightCode));
+				break;
 			case TOKEN_XOR:
+				returnCode(new BinOpTree(STD_XOR, leftCode, rightCode));
+				break;
 			case TOKEN_AND:
-				/*
-				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				*/
+				returnCode(new BinOpTree(STD_AND, leftCode, rightCode));
 				break;
 			case TOKEN_DEQUALS:
+				returnCode(new BinOpTree(STD_DEQUALS, leftCode, rightCode));
+				break;
 			case TOKEN_NEQUALS:
+				returnCode(new BinOpTree(STD_NEQUALS, leftCode, rightCode));
+				break;
 			case TOKEN_LT:
+				returnCode(new BinOpTree(STD_LT, leftCode, rightCode));
+				break;
 			case TOKEN_GT:
+				returnCode(new BinOpTree(STD_GT, leftCode, rightCode));
+				break;
 			case TOKEN_LE:
+				returnCode(new BinOpTree(STD_LE, leftCode, rightCode));
+				break;
 			case TOKEN_GE:
-				/*
-				if (left->isComparable(*right)) {
-					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-				}
-				*/
+				returnCode(new BinOpTree(STD_GE, leftCode, rightCode));
 				break;
 			case TOKEN_LS:
+				returnCode(new BinOpTree(STD_LS, leftCode, rightCode));
+				break;
 			case TOKEN_RS:
-				/*
-				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				*/
+				returnCode(new BinOpTree(STD_RS, leftCode, rightCode));
 				break;
 			case TOKEN_TIMES:
+				returnCode(new BinOpTree(STD_TIMES, leftCode, rightCode));
+				break;
 			case TOKEN_DIVIDE:
+				returnCode(new BinOpTree(STD_DIVIDE, leftCode, rightCode));
+				break;
 			case TOKEN_MOD:
+				returnCode(new BinOpTree(STD_MOD, leftCode, rightCode));
+				break;
 			case TOKEN_PLUS:
+				returnCode(new BinOpTree(STD_PLUS, leftCode, rightCode));
+				break;
 			case TOKEN_MINUS:
-				/*
-				if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
-					returnType(new StdType(STD_INT, SUFFIX_LATCH));
-				}
-				if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
-					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
-				}
-				// if one of the terms is a string and the other is a StdType constant or latch, return string
-				if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
-						(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
-					(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
-						(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
-					returnType(new StdType(STD_STRING, SUFFIX_LATCH));
-				}
-				*/
+				returnCode(new BinOpTree(STD_MINUS, leftCode, rightCode));
 				break;
 			default: // can't happen; the above should cover all cases
 				break;

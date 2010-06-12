@@ -136,6 +136,45 @@ class ReadTree : public DataTree {
 
 // OpTree classes
 
+// definitions of operator kinds
+#define UNOP_NOT_BOOL 0
+
+#define UNOP_COMPLEMENT_INT 1
+
+#define UNOP_DPLUS_INT 2
+#define UNOP_DMINUS_INT 3
+
+#define BINOP_DOR_BOOL 4
+#define BINOP_DAND_BOOL 5
+
+#define BINOP_OR_INT 6
+#define BINOP_XOR_INT 7
+#define BINOP_AND_INT 8
+
+#define BINOP_DEQUALS 9
+#define BINOP_NEQUALS 10
+#define BINOP_LT 11
+#define BINOP_GT 12
+#define BINOP_LE 13
+#define BINOP_GE 14
+#define BINOP_LS 15
+#define BINOP_RS 16
+
+#define BINOP_TIMES_INT 17
+#define BINOP_DIVIDE_INT 18
+#define BINOP_MOD_INT 19
+#define BINOP_TIMES_FLOAT 20
+#define BINOP_DIVIDE_FLOAT 21
+#define BINOP_MOD_FLOAT 22
+
+#define UNOP_PLUS_INT 23
+#define UNOP_MINUS_INT 24
+
+#define BINOP_PLUS_INT 25
+#define BINOP_MINUS_INT 26
+#define BINOP_PLUS_FLOAT 27
+#define BINOP_MINUS_FLOAT 28
+
 // usage: abstract class; never used directly
 class OpTree : public IRTree {
 	public:
@@ -145,8 +184,7 @@ class OpTree : public IRTree {
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// usage: perform the given kind of unary operation on the subnode
-// the valid kind values are defined as STD_... under "standard operators" in src/types.h
+// usage: perform the given kind of unary operation on the subnode; the valid kind values are defined above
 class UnOpTree : public OpTree {
 	public:
 		// data members
@@ -159,8 +197,7 @@ class UnOpTree : public OpTree {
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: perform the given kind of binary operation on subNodeLeft and subNodeRight
-// the valid kind values are defined as STD_... under "standard operators" in src/types.h
+// usage: perform the given kind of binary operation on subNodeLeft and subNodeRight; the valid kind values are defined above
 class BinOpTree : public OpTree {
 	public:
 		// data members

@@ -867,58 +867,58 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		DataTree *rightCode = (DataTree *)(expRight->code());
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
-				returnCode(new BinOpTree(STD_DOR, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DOR_BOOL, leftCode, rightCode));
 				break;
 			case TOKEN_DAND:
-				returnCode(new BinOpTree(STD_DAND, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DAND_BOOL, leftCode, rightCode));
 				break;
 			case TOKEN_OR:
-				returnCode(new BinOpTree(STD_OR, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_OR_INT, leftCode, rightCode));
 				break;
 			case TOKEN_XOR:
-				returnCode(new BinOpTree(STD_XOR, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_XOR_INT, leftCode, rightCode));
 				break;
 			case TOKEN_AND:
-				returnCode(new BinOpTree(STD_AND, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_AND_INT, leftCode, rightCode));
 				break;
 			case TOKEN_DEQUALS:
-				returnCode(new BinOpTree(STD_DEQUALS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DEQUALS, leftCode, rightCode));
 				break;
 			case TOKEN_NEQUALS:
-				returnCode(new BinOpTree(STD_NEQUALS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_NEQUALS, leftCode, rightCode));
 				break;
 			case TOKEN_LT:
-				returnCode(new BinOpTree(STD_LT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LT, leftCode, rightCode));
 				break;
 			case TOKEN_GT:
-				returnCode(new BinOpTree(STD_GT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_GT, leftCode, rightCode));
 				break;
 			case TOKEN_LE:
-				returnCode(new BinOpTree(STD_LE, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LE, leftCode, rightCode));
 				break;
 			case TOKEN_GE:
-				returnCode(new BinOpTree(STD_GE, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_GE, leftCode, rightCode));
 				break;
 			case TOKEN_LS:
-				returnCode(new BinOpTree(STD_LS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LS, leftCode, rightCode));
 				break;
 			case TOKEN_RS:
-				returnCode(new BinOpTree(STD_RS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_RS, leftCode, rightCode));
 				break;
 			case TOKEN_TIMES:
-				returnCode(new BinOpTree(STD_TIMES, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_TIMES_INT, leftCode, rightCode));
 				break;
 			case TOKEN_DIVIDE:
-				returnCode(new BinOpTree(STD_DIVIDE, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DIVIDE_INT, leftCode, rightCode));
 				break;
 			case TOKEN_MOD:
-				returnCode(new BinOpTree(STD_MOD, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_MOD_INT, leftCode, rightCode));
 				break;
 			case TOKEN_PLUS:
-				returnCode(new BinOpTree(STD_PLUS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_PLUS_INT, leftCode, rightCode));
 				break;
 			case TOKEN_MINUS:
-				returnCode(new BinOpTree(STD_MINUS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_MINUS_INT, leftCode, rightCode));
 				break;
 			default: // can't happen; the above should cover all cases
 				break;

@@ -774,6 +774,21 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		}
 	}
 	GET_STATUS_CODE;
+	if (*primaryc == TOKEN_PrimaryBase) {
+		returnCode(primaryc->code());
+	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
+		DataTree *subCode = (DataTree *)(primaryc->next->code());
+		Tree *pomocc = primaryc->child->child;
+		if (*pomocc == TOKEN_NOT) {
+			returnCode(new TempTree(new UnOpTree(UNOP_NOT_BOOL, subCode)));
+		} else if (*pomocc == TOKEN_COMPLEMENT) {
+			returnCode(new TempTree(new UnOpTree(UNOP_COMPLEMENT_INT, subCode)));
+		} else if (*pomocc == TOKEN_PLUS) {
+			returnCode(new TempTree(new UnOpTree(UNOP_PLUS_INT, subCode))); // KOL
+		} else if (*pomocc == TOKEN_MINUS) {
+			returnCode(new TempTree(new UnOpTree(UNOP_MINUS_INT, subCode))); // KOL
+		}
+	}
 	GET_STATUS_FOOTER;
 }
 
@@ -906,19 +921,19 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				returnCode(new BinOpTree(BINOP_RS, leftCode, rightCode));
 				break;
 			case TOKEN_TIMES:
-				returnCode(new BinOpTree(BINOP_TIMES_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_TIMES_INT, leftCode, rightCode)); // KOL
 				break;
 			case TOKEN_DIVIDE:
-				returnCode(new BinOpTree(BINOP_DIVIDE_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DIVIDE_INT, leftCode, rightCode)); // KOL
 				break;
 			case TOKEN_MOD:
-				returnCode(new BinOpTree(BINOP_MOD_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_MOD_INT, leftCode, rightCode)); // KOL
 				break;
 			case TOKEN_PLUS:
-				returnCode(new BinOpTree(BINOP_PLUS_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_PLUS_INT, leftCode, rightCode)); // KOL
 				break;
 			case TOKEN_MINUS:
-				returnCode(new BinOpTree(BINOP_MINUS_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_MINUS_INT, leftCode, rightCode)); // KOL
 				break;
 			default: // can't happen; the above should cover all cases
 				break;

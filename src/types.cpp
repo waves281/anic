@@ -1045,25 +1045,12 @@ ObjectType::operator string() {
 	TYPE_TO_STRING_FOOTER;
 }
 
-// TypeStatusBase functions
-TypeStatusBase::TypeStatusBase(Type *type) : type(type), code(NULL) {}
-TypeStatusBase::operator Type *() const {return type;}
-TypeStatusBase::operator unsigned int() const {return (unsigned int)type;}
-const Type &TypeStatusBase::operator*() const {
-	if (type != NULL) {
-		return (*type);
-	} else {
-		return (*errType);
-	}
-}
-Type *TypeStatusBase::operator->() const {return type;}
-bool TypeStatusBase::operator==(const Type &otherType) const {return (*type == otherType);}
-bool TypeStatusBase::operator!=(const Type &otherType) const {return (*type != otherType);}
-
 // TypeStatus functions
-TypeStatus::TypeStatus(Type *type, Type *retType) : TypeStatusBase(type), retType(retType) {}
-TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : TypeStatusBase(type), retType(otherStatus.retType) {}
+TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType), code(NULL) {}
+TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType), code(NULL) {}
 TypeStatus::~TypeStatus() {}
+TypeStatus::operator Type *() const {return type;}
+TypeStatus::operator unsigned int() const {return (unsigned int)type;}
 DataTree *TypeStatus::upcast(const Type &destType) const {
 	return NULL; // KOL
 }
@@ -1072,3 +1059,13 @@ DataTree *TypeStatus::upcastCommon(const Type &otherType) const {
 }
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
+const Type &TypeStatus::operator*() const {
+	if (type != NULL) {
+		return (*type);
+	} else {
+		return (*errType);
+	}
+}
+Type *TypeStatus::operator->() const {return type;}
+bool TypeStatus::operator==(const Type &otherType) const {return (*type == otherType);}
+bool TypeStatus::operator!=(const Type &otherType) const {return (*type != otherType);}

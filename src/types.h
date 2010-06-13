@@ -245,39 +245,31 @@ class ObjectType : public Type {
 		operator string();
 };
 
-// typing status classes
+// typing status class
 
-class TypeStatusBase {
+class TypeStatus {
 	public:
 		// data members
 		Type *type; // the type derived for this parse tree node
-		IRTree *code; // the intermediate representation code tree for this parse tree node
-		// allocators/deallocators
-		TypeStatusBase(Type *type = NULL);
-		// converters
-		operator Type *() const;
-		operator unsigned int() const;
-		// operators
-		const Type &operator*() const;
-		Type *operator->() const;
-		bool operator==(const Type &otherType) const;
-		bool operator!=(const Type &otherType) const;
-};
-
-class TypeStatus : public TypeStatusBase {
-	public:
-		// data members
 		Type *retType; // the carry-over return type derived for this parse tree node
+		IRTree *code; // the intermediate representation code tree for this parse tree node
 		// allocators/deallocators
 		TypeStatus(Type *type = NULL, Type *retType = NULL);
 		TypeStatus(Type *type, const TypeStatus &otherStatus);
 		~TypeStatus();
+		// converters
+		operator Type *() const;
+		operator unsigned int() const;
 		// core methods
 		DataTree *upcast(const Type &destType) const;
 		DataTree *upcastCommon(const Type &otherType) const;
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
+		const Type &operator*() const;
+		Type *operator->() const;
+		bool operator==(const Type &otherType) const;
+		bool operator!=(const Type &otherType) const;
 };
 
 // external linkage specifiers

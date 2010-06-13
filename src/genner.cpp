@@ -200,7 +200,7 @@ string BinOpTree::toString(unsigned int tabDepth) const {
 }
 
 // ConvOpTree functions
-ConvOpTree::ConvOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_CONV, kind), subNode(subNode) {}
+ConvOpTree::ConvOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_CONVOP, kind), subNode(subNode) {}
 ConvOpTree::~ConvOpTree() {delete subNode;}
 string ConvOpTree::toString(unsigned int tabDepth) const {
 	string acc(kindToString());

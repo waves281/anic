@@ -92,83 +92,67 @@ string OpTree::kindToString() const {
 	switch(kind) { // KOL
 		case UNOP_NOT_BOOL:
 			return "!";
-			break;
 		case UNOP_COMPLEMENT_INT:
 			return "~";
-			break;
 		case UNOP_DPLUS_INT:
 			return "++";
-			break;
 		case UNOP_DMINUS_INT:
 			return "--";
-			break;
 		case BINOP_DOR_BOOL:
 			return "||";
-			break;
 		case BINOP_DAND_BOOL:
 			return "&&";
-			break;
 		case BINOP_OR_INT:
 			return "|";
-			break;
 		case BINOP_XOR_INT:
 			return "^";
-			break;
 		case BINOP_AND_INT:
 			return "&";
-			break;
 		case BINOP_DEQUALS:
 			return "==";
-			break;
 		case BINOP_NEQUALS:
 			return "!=";
-			break;
 		case BINOP_LT:
 			return "<";
-			break;
 		case BINOP_GT:
 			return ">";
-			break;
 		case BINOP_LE:
 			return "<=";
-			break;
 		case BINOP_GE:
 			return ">=";
-			break;
 		case BINOP_LS_INT:
 			return "<<";
-			break;
 		case BINOP_RS_INT:
 			return ">>";
-			break;
 		case BINOP_TIMES_INT:
 		case BINOP_TIMES_FLOAT:
 			return "*";
-			break;
 		case BINOP_DIVIDE_INT:
 		case BINOP_DIVIDE_FLOAT:
 			return "/";
-			break;
 		case BINOP_MOD_INT:
 		case BINOP_MOD_FLOAT:
 			return "%";
-			break;
 		case BINOP_PLUS_INT:
 		case BINOP_PLUS_FLOAT:
 			return "+";
-			break;
 		case UNOP_MINUS_INT:
 		case UNOP_MINUS_FLOAT:
 		case BINOP_MINUS_INT:
 		case BINOP_MINUS_FLOAT:
 			return "-";
-			break;
 		case CONVOP_INT2FLOAT:
 			return "int2Float";
-			break;
 		case CONVOP_FLOAT2INT:
 			return "float2Int";
-			break;
+		case CONVOP_BOOL2STRING:
+			return "bool2String";
+		case CONVOP_INT2STRING:
+			return "int2String";
+		case CONVOP_FLOAT2STRING:
+			return "float2String";
+		case CONVOP_CHAR2STRING:
+			return "char2String";
 		// can't happen; the above should cover all cases
 		default:
 			return "";

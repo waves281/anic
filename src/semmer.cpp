@@ -820,68 +820,73 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		Tree *expRight = op->next;
 		TypeStatus left = getStatusExp(expLeft, inStatus);
 		TypeStatus right = getStatusExp(expRight, inStatus);
-		if (!(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH)) {
-			Token curToken = expLeft->t; // Exp
-			semmerError(curToken.fileName,curToken.row,curToken.col,"left operand of expression is not a constant or latch");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<left<<")");
-		} else if (!(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) {
-			Token curToken = expRight->t; // Exp
-			semmerError(curToken.fileName,curToken.row,curToken.col,"right operand of expression is not a constant or latch");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<right<<")");
-		} else {
-			switch (op->t.tokenType) {
-				case TOKEN_DOR:
-				case TOKEN_DAND:
-					if ((*left >> *stdBoolType) && (*right >> *stdBoolType)) {
-						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-					}
-					break;
-				case TOKEN_OR:
-				case TOKEN_XOR:
-				case TOKEN_AND:
-					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
-					}
-					break;
-				case TOKEN_DEQUALS:
-				case TOKEN_NEQUALS:
-				case TOKEN_LT:
-				case TOKEN_GT:
-				case TOKEN_LE:
-				case TOKEN_GE:
-					if (left->isComparable(*right)) {
-						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
-					}
-					break;
-				case TOKEN_LS:
-				case TOKEN_RS:
-					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
-					}
-					break;
-				case TOKEN_TIMES:
-				case TOKEN_DIVIDE:
-				case TOKEN_MOD:
-				case TOKEN_PLUS:
-				case TOKEN_MINUS:
-					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
-						returnType(new StdType(STD_INT, SUFFIX_LATCH));
-					}
-					if ((*left >> *stdFloatType) && (*right >> *stdFloatType)) {
-						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
-					}
-					// if both terms are convertible to string, return string
-					if ((*left >> *stdStringType) && (*right >> *stdStringType)) {
-						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
-					}
-					break;
-				default: // can't happen; the above should cover all cases
-					break;
+		if (*left && *right) { // if we derived the types of both operands successfully
+			if (!(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH)) {
+				Token curToken = expLeft->t; // Exp
+				semmerError(curToken.fileName,curToken.row,curToken.col,"left operand of expression is not a constant or latch");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<left<<")");
+			} else if (!(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) {
+				Token curToken = expRight->t; // Exp
+				semmerError(curToken.fileName,curToken.row,curToken.col,"right operand of expression is not a constant or latch");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (operand type is "<<right<<")");
+			} else {
+				switch (op->t.tokenType) {
+					case TOKEN_DOR:
+					case TOKEN_DAND:
+						if ((*left >> *stdBoolType) && (*right >> *stdBoolType)) {
+							returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+						}
+						break;
+					case TOKEN_OR:
+					case TOKEN_XOR:
+					case TOKEN_AND:
+						if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						}
+						break;
+					case TOKEN_DEQUALS:
+					case TOKEN_NEQUALS:
+					case TOKEN_LT:
+					case TOKEN_GT:
+					case TOKEN_LE:
+					case TOKEN_GE:
+						if (left->isComparable(*right)) {
+							returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
+						}
+						break;
+					case TOKEN_LS:
+					case TOKEN_RS:
+						if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						}
+						break;
+					case TOKEN_TIMES:
+					case TOKEN_DIVIDE:
+					case TOKEN_MOD:
+					case TOKEN_PLUS:
+					case TOKEN_MINUS:
+						if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
+							returnType(new StdType(STD_INT, SUFFIX_LATCH));
+						}
+						if ((*left >> *stdFloatType) && (*right >> *stdFloatType)) {
+							returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
+						}
+						// if both terms are convertible to string, return string
+						if ((*left >> *stdStringType) && (*right >> *stdStringType)) {
+							returnType(new StdType(STD_STRING, SUFFIX_LATCH));
+						}
+						break;
+					default: // can't happen; the above should cover all cases
+						break;
+				}
+				// if we couldn't resolve a type for this expression (or else we would have returned it above)
+				Token curToken = op->t; // the actual operator token
+				Token curTokenLeft = expLeft->t; // the left operand
+				Token curTokenRight = expRight->t; // the right operand
+				semmerError(curToken.fileName,curToken.row,curToken.col,"infix operation '"<<curToken.s<<"' on invalid operands");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (left operand type is "<<left<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (right operand type is "<<right<<")");
 			}
-			// if we couldn't resolve a type for this expression (or else we would have returned it above)
-			Token curToken = tree->t;
-			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve expression's type");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 		}
 	}
 	GET_STATUS_CODE;

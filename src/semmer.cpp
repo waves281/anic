@@ -887,10 +887,10 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		Tree *expRight = op->next;
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
-				returnCode(new BinOpTree(BINOP_DOR_BOOL, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
+				returnCode(new BinOpTree(BINOP_DOR_BOOL, expLeft->upcast(*stdBoolType), expRight->upcast(*stdBoolType)));
 				break;
 			case TOKEN_DAND:
-				returnCode(new BinOpTree(BINOP_DAND_BOOL, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
+				returnCode(new BinOpTree(BINOP_DAND_BOOL, expLeft->upcast(*stdBoolType), expRight->upcast(*stdBoolType)));
 				break;
 			case TOKEN_OR:
 				returnCode(new BinOpTree(BINOP_OR_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));

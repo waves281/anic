@@ -78,7 +78,7 @@ class Type {
 		virtual bool operator==(const Type &otherType) const = 0;
 		virtual bool operator==(int kind) const = 0;
 		virtual Type *operator,(const Type &otherType) const = 0;
-		virtual TypeStatusBase operator>>(const Type &otherType) const = 0;
+		virtual bool operator>>(const Type &otherType) const = 0;
 		virtual operator string() = 0;
 		// non-virtual
 		operator bool() const;
@@ -107,7 +107,7 @@ class TypeList : public Type {
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
 		Type *operator,(const Type &otherType) const;
-		TypeStatusBase operator>>(const Type &otherType) const;
+		bool operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -125,7 +125,7 @@ class ErrorType : public Type {
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
 		Type *operator,(const Type &otherType) const;
-		TypeStatusBase operator>>(const Type &otherType) const;
+		bool operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -190,7 +190,7 @@ class StdType : public Type {
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
 		Type *operator,(const Type &otherType) const;
-		TypeStatusBase operator>>(const Type &otherType) const;
+		bool operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -211,7 +211,7 @@ class FilterType : public Type {
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
 		Type *operator,(const Type &otherType) const;
-		TypeStatusBase operator>>(const Type &otherType) const;
+		bool operator>>(const Type &otherType) const;
 		operator string();
 };
 
@@ -239,7 +239,7 @@ class ObjectType : public Type {
 		bool operator==(const Type &otherType) const;
 		bool operator==(int kind) const;
 		Type *operator,(const Type &otherType) const;
-		TypeStatusBase operator>>(const Type &otherType) const;
+		bool operator>>(const Type &otherType) const;
 		operator string();
 };
 

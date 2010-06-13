@@ -736,7 +736,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*pbc == TOKEN_PrimaryBase) {
 		TypeStatus baseStatus = getStatusPrimaryBase(pbc, inStatus); // derive the status of the base node
 		if (*baseStatus) { // if we managed to derive the status of the base node
-			if (*(*baseStatus >> *stdIntType)) { // if the base can be converted into an int, return int
+			if (*baseStatus >> *stdIntType) { // if the base can be converted into an int, return int
 				returnType(new StdType(STD_INT, SUFFIX_LATCH));
 			}
 		}
@@ -755,18 +755,18 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		if (*subStatus) { // if we managed to derive the status of the sub-node
 			Tree *pomocc = primaryc->child->child;
 			if (*pomocc == TOKEN_NOT) {
-				if (*(*subStatus >> *stdBoolType)) {
+				if (*subStatus >> *stdBoolType) {
 					returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 				}
 			} else if (*pomocc == TOKEN_COMPLEMENT) {
-				if (*(*subStatus >> *stdIntType)) {
+				if (*subStatus >> *stdIntType) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
 			} else if (*pomocc == TOKEN_PLUS || *pomocc == TOKEN_MINUS) {
-				if (*(*subStatus >> *stdIntType)) {
+				if (*subStatus >> *stdIntType) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
-				if (*(*subStatus >> *stdFloatType)) {
+				if (*subStatus >> *stdFloatType) {
 					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 				}
 			}
@@ -815,14 +815,14 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 			switch (op->t.tokenType) {
 				case TOKEN_DOR:
 				case TOKEN_DAND:
-					if (*(*left >> *stdBoolType) && *(*right >> *stdBoolType)) {
+					if ((*left >> *stdBoolType) && (*right >> *stdBoolType)) {
 						returnType(new StdType(STD_BOOL, SUFFIX_LATCH));
 					}
 					break;
 				case TOKEN_OR:
 				case TOKEN_XOR:
 				case TOKEN_AND:
-					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
 						returnType(new StdType(STD_INT, SUFFIX_LATCH));
 					}
 					break;
@@ -838,7 +838,7 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 					break;
 				case TOKEN_LS:
 				case TOKEN_RS:
-					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
 						returnType(new StdType(STD_INT, SUFFIX_LATCH));
 					}
 					break;
@@ -847,16 +847,16 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 				case TOKEN_MOD:
 				case TOKEN_PLUS:
 				case TOKEN_MINUS:
-					if (*(*left >> *stdIntType) && *(*right >> *stdIntType)) {
+					if ((*left >> *stdIntType) && (*right >> *stdIntType)) {
 						returnType(new StdType(STD_INT, SUFFIX_LATCH));
 					}
-					if (*(*left >> *stdFloatType) && *(*right >> *stdFloatType)) {
+					if ((*left >> *stdFloatType) && (*right >> *stdFloatType)) {
 						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 					}
 					// if one of the terms is a string and the other is a StdType constant or latch, return string
-					if ((*(*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
+					if (((*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
 							(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
-						(*(*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
+						((*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
 							(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
 						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
 					}
@@ -1117,7 +1117,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type inconsistencies)
 			if ((*(((FilterType *)(blockStatus.type))->to) == *nullType && *(((FilterType *)fakeType)->to) == *nullType) ||
-					*(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types are compatible
+					(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types are compatible
 				// log the header type as the return status
 				returnType(fakeType);
 			} else { // else if the header and Block don't match
@@ -1286,7 +1286,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(ats->child->next, inStatus); // Exp
-			if (!(*(*expStatus >> *stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+			if (!(*expStatus >> *stdIntType)) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = ats->child->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
@@ -1306,7 +1306,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(pts->child->next->next, inStatus); // Exp
-			if (!(*(*expStatus >> *stdIntType))) { // if the expression is incompatible with an integer, flag a bad expression error
+			if (!(*expStatus >> *stdIntType)) { // if the expression is incompatible with an integer, flag a bad expression error
 				Token curToken = pts->child->next->t; // LSQUARE
 				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
@@ -1548,8 +1548,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
 				// pipe the types into the status
-				Type *result = (*initializer >> *instantiation);
-				if (*result) {
+				if (*initializer >> *instantiation) {
 					returnStatus(instantiation);
 				} else { // if the types are incompatible, throw an error
 					Token curToken = st->t; // StaticTerm
@@ -1737,8 +1736,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Link) {
 		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next);
 		if (*linkStatus) { // if we managed to derive a type for the Link subnode
-			Type *result = (*linkStatus >> *inStatus);
-			if (*result) { // if the result is a successful link, log the success
+			if (*linkStatus >> *inStatus) { // if the we can back-cast into a successful link, log return the incoming type
 				returnStatus(inStatus);
 			} else {
 				Token curToken = dtc->child->t; // DCOLON
@@ -1752,9 +1750,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
 			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
 					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
-				Type *resultType = (*inStatus >> *nodeStatus);
-				if (*resultType) { // if the Send is valid, proceed normally
-					returnType(resultType);
+				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
+					returnType(nullType);
 				} else { // else if the Send is invalid, flag an error
 					Token curToken = dtc->child->t; // RARROW
 					semmerError(curToken.fileName,curToken.row,curToken.col,"send to incompatible type");
@@ -1775,9 +1772,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
 			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
 					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
-				Type *resultType = (*inStatus >> *nodeStatus);
-				if (*resultType) { // if the Send is valid, proceed normally
-					returnType(resultType);
+				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
+					returnType(nullType);
 				} else { // else if the Send is invalid, flag an error
 					Token curToken = dtc->child->t; // RARROW
 					semmerError(curToken.fileName,curToken.row,curToken.col,"swap with incompatible type");
@@ -1798,13 +1794,11 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		Type *knownRetType = inStatus.retType; // the current return type (i.e. the one we're expecting, or otherwise NULL)
 		if (knownRetType != NULL) { // if there's already a return type logged, make sure it's compatible with this one
 			// try a back-cast from the current return type to the known one
-			Type *backCastType = (*thisRetType >> *knownRetType);
-			if (*backCastType) { // if the cast succeeded, use the known return type
+			if (*thisRetType >> *knownRetType) { // if the cast succeeded, use the known return type
 				returnTypeRet(nullType, knownRetType);
 			}
 			// try a forward-cast from the known return type to the current one
-			Type *forwardCastType = (*thisRetType >> *knownRetType);
-			if (*forwardCastType) { // if the cast succeeded, use the new return type
+			if (*thisRetType >> *knownRetType) { // if the cast succeeded, use the new return type
 				returnTypeRet(nullType, thisRetType);
 			} else { // else if this return type conflicts with the known one, flag an error
 				Token curToken = dtc->child->t; // DRARROW
@@ -1834,7 +1828,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*ltc == TOKEN_StaticTerm) {
 			// derive the label's type
 			TypeStatus label = getStatusStaticTerm(ltc, inStatus);
-			if (!(*(*label >> *inStatus))) { // if the type doesn't match, throw an error
+			if (!(*label >> *inStatus)) { // if the type doesn't match, throw an error
 				Token curToken = ltc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible switch label");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (label type is "<<label<<")");

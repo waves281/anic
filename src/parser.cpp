@@ -116,7 +116,7 @@ Tree::operator string() const {
 				StdType stdIntType(STD_INT); // temporary integer type for comparison
 				if (curn->child->next->next->next == NULL) { // if there's only one subscript
 					TypeStatus expStatus = getStatusExp(curn->child->next);
-					if (!(*(*expStatus >> stdIntType))) { // if the types are incompatible, flag an error
+					if (!(*expStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
 						semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
@@ -124,13 +124,13 @@ Tree::operator string() const {
 					retVal += "[]";
 				} else { // else if this is an extent subscript
 					TypeStatus leftExpStatus = getStatusExp(curn->child->next);
-					if (!(*(*leftExpStatus >> stdIntType))) { // if the types are incompatible, flag an error
+					if (!(*leftExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
 						semmerError(curToken.fileName,curToken.row,curToken.col,"left extent subscript is invalid");
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<leftExpStatus<<")");
 					}
 					TypeStatus rightExpStatus = getStatusExp(curn->child->next);
-					if (!(*(*rightExpStatus >> stdIntType))) { // if the types are incompatible, flag an error
+					if (!(*rightExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->next->next->t; // Exp
 						semmerError(curToken.fileName,curToken.row,curToken.col,"right extent subscript is invalid");
 						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<rightExpStatus<<")");

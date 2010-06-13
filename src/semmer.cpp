@@ -733,11 +733,15 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 		returnStatus(getStatusPrimLiteral(pbc, inStatus));
 	} else if (*pbc == TOKEN_BracketedExp) {
 		returnStatus(getStatusExp(pbc->child->next, inStatus)); // move past the bracket to the actual Exp node
-	} else if (*pbc == TOKEN_PrimaryBase) {
+	} else if (*pbc == TOKEN_PrimaryBase) { // postfix operator application
 		TypeStatus baseStatus = getStatusPrimaryBase(pbc, inStatus); // derive the status of the base node
 		if (*baseStatus) { // if we managed to derive the status of the base node
 			if (*baseStatus >> *stdIntType) { // if the base can be converted into an int, return int
 				returnType(new StdType(STD_INT, SUFFIX_LATCH));
+			} else { // else if we couldn't apply the operator to the type of the subnode, flag an error
+				Token curToken = pbc->next->child->t; // the actual operator token
+				semmerError(curToken.fileName,curToken.row,curToken.col,"postfix operation '"<<curToken.s<<"' on invalid type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<baseStatus<<")");
 			}
 		}
 	}
@@ -745,6 +749,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// reports errors
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *primaryc = tree->child; // PrimaryBase or PrefixOrMultiOp
@@ -762,7 +767,7 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 				if (*subStatus >> *stdIntType) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
-			} else if (*pomocc == TOKEN_PLUS || *pomocc == TOKEN_MINUS) {
+			} else /* if (*pomocc == TOKEN_PLUS || *pomocc == TOKEN_MINUS) */ {
 				if (*subStatus >> *stdIntType) {
 					returnType(new StdType(STD_INT, SUFFIX_LATCH));
 				}
@@ -770,6 +775,10 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 					returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 				}
 			}
+			// we couldn't derive a valid type for this prefix operation, so flag an error
+			Token curToken = primaryc->child->child->t; // the actual operator token
+			semmerError(curToken.fileName,curToken.row,curToken.col,"prefix operation '"<<curToken.s<<"' on invalid type");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<subStatus<<")");
 		}
 	}
 	GET_STATUS_CODE;
@@ -779,20 +788,20 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 		Tree *primarycn = primaryc->next;
 		Tree *pomocc = primaryc->child->child;
 		if (*pomocc == TOKEN_NOT) {
-			returnCode(new TempTree(new UnOpTree(UNOP_NOT_BOOL, primarycn->upcast(*stdBoolType))));
+			returnCode(new TempTree(new UnOpTree(UNOP_NOT_BOOL, primarycn->cast(*stdBoolType))));
 		} else if (*pomocc == TOKEN_COMPLEMENT) {
-			returnCode(new TempTree(new UnOpTree(UNOP_COMPLEMENT_INT, primarycn->upcast(*stdIntType))));
+			returnCode(new TempTree(new UnOpTree(UNOP_COMPLEMENT_INT, primarycn->cast(*stdIntType))));
 		} else if (*pomocc == TOKEN_PLUS) {
 			if (*(primarycn->status) >> *stdIntType) {
-				returnCode(primarycn->upcast(*stdIntType));
+				returnCode(primarycn->cast(*stdIntType));
 			} else /* if (*(primarycn->status) >> *stdFloatType) */ {
-				returnCode(primarycn->upcast(*stdFloatType));
+				returnCode(primarycn->cast(*stdFloatType));
 			}
 		} else if (*pomocc == TOKEN_MINUS) {
 			if (*(primarycn->status) >> *stdIntType) {
-				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_INT, primarycn->upcast(*stdIntType))));
+				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_INT, primarycn->cast(*stdIntType))));
 			} else /* if (*(primarycn->status) >> *stdFloatType) */ {
-				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_FLOAT, primarycn->upcast(*stdFloatType))));
+				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_FLOAT, primarycn->cast(*stdFloatType))));
 			}
 		}
 	}
@@ -887,59 +896,41 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		Tree *expRight = op->next;
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
-				returnCode(new BinOpTree(BINOP_DOR_BOOL, expLeft->upcast(*stdBoolType), expRight->upcast(*stdBoolType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_DOR_BOOL, expLeft->cast(*stdBoolType), expRight->cast(*stdBoolType))));
 			case TOKEN_DAND:
-				returnCode(new BinOpTree(BINOP_DAND_BOOL, expLeft->upcast(*stdBoolType), expRight->upcast(*stdBoolType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_DAND_BOOL, expLeft->cast(*stdBoolType), expRight->cast(*stdBoolType))));
 			case TOKEN_OR:
-				returnCode(new BinOpTree(BINOP_OR_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_OR_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_XOR:
-				returnCode(new BinOpTree(BINOP_XOR_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_XOR_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_AND:
-				returnCode(new BinOpTree(BINOP_AND_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_AND_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_DEQUALS:
-				returnCode(new BinOpTree(BINOP_DEQUALS, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_DEQUALS, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_NEQUALS:
-				returnCode(new BinOpTree(BINOP_NEQUALS, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_NEQUALS, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_LT:
-				returnCode(new BinOpTree(BINOP_LT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_LT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_GT:
-				returnCode(new BinOpTree(BINOP_GT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_GT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_LE:
-				returnCode(new BinOpTree(BINOP_LE, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_LE, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_GE:
-				returnCode(new BinOpTree(BINOP_GE, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_GE, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef()))));
 			case TOKEN_LS:
-				returnCode(new BinOpTree(BINOP_LS_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_LS_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_RS:
-				returnCode(new BinOpTree(BINOP_RS_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_RS_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_TIMES:
-				returnCode(new BinOpTree(BINOP_TIMES_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_TIMES_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
 			case TOKEN_DIVIDE:
-				returnCode(new BinOpTree(BINOP_DIVIDE_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_DIVIDE_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
 			case TOKEN_MOD:
-				returnCode(new BinOpTree(BINOP_MOD_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_MOD_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
 			case TOKEN_PLUS:
-				returnCode(new BinOpTree(BINOP_PLUS_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_PLUS_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
 			case TOKEN_MINUS:
-				returnCode(new BinOpTree(BINOP_MINUS_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
-				break;
+				returnCode(new TempTree(new BinOpTree(BINOP_MINUS_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
 			default: // can't happen; the above should cover all cases
 				break;
 		}
@@ -954,70 +945,48 @@ TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus) {
 	switch (ponc->t.tokenType) {
 		case TOKEN_NOT:
 			returnType(new StdType(STD_NOT, SUFFIX_LATCH));
-			break;
 		case TOKEN_COMPLEMENT:
 			returnType(new StdType(STD_COMPLEMENT, SUFFIX_LATCH));
-			break;
 		case TOKEN_DPLUS:
 			returnType(new StdType(STD_DPLUS, SUFFIX_LATCH));
-			break;
 		case TOKEN_DMINUS:
 			returnType(new StdType(STD_DMINUS, SUFFIX_LATCH));
-			break;
 		case TOKEN_DOR:
 			returnType(new StdType(STD_DOR, SUFFIX_LATCH));
-			break;
 		case TOKEN_DAND:
 			returnType(new StdType(STD_DAND, SUFFIX_LATCH));
-			break;
 		case TOKEN_OR:
 			returnType(new StdType(STD_OR, SUFFIX_LATCH));
-			break;
 		case TOKEN_XOR:
 			returnType(new StdType(STD_XOR, SUFFIX_LATCH));
-			break;
 		case TOKEN_AND:
 			returnType(new StdType(STD_AND, SUFFIX_LATCH));
-			break;
 		case TOKEN_DEQUALS:
 			returnType(new StdType(STD_DEQUALS, SUFFIX_LATCH));
-			break;
 		case TOKEN_NEQUALS:
 			returnType(new StdType(STD_NEQUALS, SUFFIX_LATCH));
-			break;
 		case TOKEN_LT:
 			returnType(new StdType(STD_LT, SUFFIX_LATCH));
-			break;
 		case TOKEN_GT:
 			returnType(new StdType(STD_GT, SUFFIX_LATCH));
-			break;
 		case TOKEN_LE:
 			returnType(new StdType(STD_LE, SUFFIX_LATCH));
-			break;
 		case TOKEN_GE:
 			returnType(new StdType(STD_GE, SUFFIX_LATCH));
-			break;
 		case TOKEN_LS:
 			returnType(new StdType(STD_LS, SUFFIX_LATCH));
-			break;
 		case TOKEN_RS:
 			returnType(new StdType(STD_RS, SUFFIX_LATCH));
-			break;
 		case TOKEN_TIMES:
 			returnType(new StdType(STD_TIMES, SUFFIX_LATCH));
-			break;
 		case TOKEN_DIVIDE:
 			returnType(new StdType(STD_DIVIDE, SUFFIX_LATCH));
-			break;
 		case TOKEN_MOD:
 			returnType(new StdType(STD_MOD, SUFFIX_LATCH));
-			break;
 		case TOKEN_PLUS:
 			returnType(new StdType(STD_PLUS, SUFFIX_LATCH));
-			break;
 		case TOKEN_MINUS:
 			returnType(new StdType(STD_MINUS, SUFFIX_LATCH));
-			break;
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;

@@ -261,8 +261,8 @@ class TypeStatus {
 		operator Type *() const;
 		operator unsigned int() const;
 		// core methods
-		DataTree *upcast(const Type &destType) const;
-		DataTree *upcastCommon(const Type &otherType) const;
+		DataTree *cast(const Type &destType) const;
+		DataTree *castCommon(const Type &otherType) const;
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);

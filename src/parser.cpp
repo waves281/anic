@@ -26,11 +26,11 @@ IRTree *Tree::code() const {
 Type &Tree::typeRef() const {
 	return (*(status.type));
 }
-DataTree *Tree::upcast(const Type &destType) const {
-	return (status.upcast(destType));
+DataTree *Tree::cast(const Type &destType) const {
+	return (status.cast(destType));
 }
-DataTree *Tree::upcastCommon(const Type &otherType) const {
-	return (status.upcastCommon(otherType));
+DataTree *Tree::castCommon(const Type &otherType) const {
+	return (status.castCommon(otherType));
 }
 
 // comparison oparators

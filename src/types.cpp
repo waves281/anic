@@ -406,8 +406,6 @@ int StdType::kindCompare(const StdType &otherType) const {
 		return kind;
 	} else if (kind == STD_INT && otherType.kind == STD_FLOAT) {
 		return STD_FLOAT;
-	} else if (kind == STD_INT && otherType.kind == STD_CHAR) {
-		return STD_CHAR;
 	} else if (otherType.kind == STD_STRING) {
 		return STD_STRING;
 	} else {
@@ -1051,10 +1049,33 @@ TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), 
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}
-DataTree *TypeStatus::upcast(const Type &destType) const {
-	return NULL; // KOL
+DataTree *TypeStatus::cast(const Type &destType) const {
+	StdType *thisType = (StdType *)type;
+	StdType *otherType = (StdType *)(&destType);
+	if (thisType->kind == otherType->kind) {
+		return (DataTree *)code;
+	} else if (thisType->kind == STD_INT && otherType->kind == STD_FLOAT) {
+		return (new TempTree(new ConvOpTree(CONVOP_INT2FLOAT, (DataTree *)code)));
+	} else if (thisType->kind == STD_FLOAT && otherType->kind == STD_INT) {
+		return (new TempTree(new ConvOpTree(CONVOP_FLOAT2INT, (DataTree *)code)));
+	} else if (otherType->kind == STD_STRING) {
+		switch(thisType->kind) {
+			case STD_BOOL:
+				return (new TempTree(new ConvOpTree(CONVOP_BOOL2STRING, (DataTree *)code)));
+			case STD_INT:
+				return (new TempTree(new ConvOpTree(CONVOP_INT2STRING, (DataTree *)code)));
+			case STD_FLOAT:
+				return (new TempTree(new ConvOpTree(CONVOP_FLOAT2STRING, (DataTree *)code)));
+			case STD_CHAR:
+				return (new TempTree(new ConvOpTree(CONVOP_CHAR2STRING, (DataTree *)code)));
+			default: // can't happen; the above should cover all cases
+				return NULL;
+				break;
+		}
+	}
+	return (DataTree *)code;
 }
-DataTree *TypeStatus::upcastCommon(const Type &otherType) const {
+DataTree *TypeStatus::castCommon(const Type &otherType) const {
 	return NULL; // KOL
 }
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}

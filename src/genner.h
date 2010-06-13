@@ -222,6 +222,11 @@ class BinOpTree : public OpTree {
 #define CONVOP_INT2FLOAT 29
 #define CONVOP_FLOAT2INT 30
 
+#define CONVOP_BOOL2STRING 29
+#define CONVOP_INT2STRING 30
+#define CONVOP_FLOAT2STRING 31
+#define CONVOP_CHAR2STRING 32
+
 // usage: perform the given kind of data representation conversion operation on the specified subNode
 class ConvOpTree : public OpTree {
 	public:

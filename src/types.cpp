@@ -613,9 +613,80 @@ TypeStatusBase StdType::operator>>(const Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
+string StdType::kindToString() const {
+	switch(kind) {
+		// null type
+		case STD_NULL:
+			return "null";
+		// standard types
+		case STD_STD:
+			return "std";
+		case STD_INT:
+			return "int";
+		case STD_FLOAT:
+			return "float";
+			break;
+		case STD_BOOL:
+			return "bool";
+		case STD_CHAR:
+			return "char";
+		case STD_STRING:
+			return "string";
+		// prefix operators
+		case STD_NOT:
+			return "!";
+		case STD_COMPLEMENT:
+			return "~";
+		case STD_DPLUS:
+			return "++";
+		case STD_DMINUS:
+			return "--";
+		// infix operators
+		case STD_DOR:
+			return "||";
+		case STD_DAND:
+			return "&&";
+		case STD_OR:
+			return "|";
+		case STD_XOR:
+			return "^";
+		case STD_AND:
+			return "&";
+		case STD_DEQUALS:
+			return "==";
+		case STD_NEQUALS:
+			return "!=";
+		case STD_LT:
+			return "<";
+		case STD_GT:
+			return ">";
+		case STD_LE:
+			return "<=";
+		case STD_GE:
+			return ">=";
+		case STD_LS:
+			return "<<";
+		case STD_RS:
+			return ">>";
+		case STD_TIMES:
+			return "*";
+		case STD_DIVIDE:
+			return "/";
+		case STD_MOD:
+			return "%";
+		// multi operators
+		case STD_PLUS:
+			return "+";
+		case STD_MINUS:
+			return "-";
+		// can't happen; the above should cover all cases
+		default:
+			return "";
+	}
+}
 string StdType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
-	acc += kindToString(kind);
+	acc += kindToString();
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
@@ -996,76 +1067,3 @@ TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : TypeStatusBa
 TypeStatus::~TypeStatus() {}
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}
-
-// auxiliary functions
-string kindToString (int kind) {
-	switch(kind) {
-		// null type
-		case STD_NULL:
-			return "null";
-		// standard types
-		case STD_STD:
-			return "std";
-		case STD_INT:
-			return "int";
-		case STD_FLOAT:
-			return "float";
-			break;
-		case STD_BOOL:
-			return "bool";
-		case STD_CHAR:
-			return "char";
-		case STD_STRING:
-			return "string";
-		// prefix operators
-		case STD_NOT:
-			return "!";
-		case STD_COMPLEMENT:
-			return "~";
-		case STD_DPLUS:
-			return "++";
-		case STD_DMINUS:
-			return "--";
-		// infix operators
-		case STD_DOR:
-			return "||";
-		case STD_DAND:
-			return "&&";
-		case STD_OR:
-			return "|";
-		case STD_XOR:
-			return "^";
-		case STD_AND:
-			return "&";
-		case STD_DEQUALS:
-			return "==";
-		case STD_NEQUALS:
-			return "!=";
-		case STD_LT:
-			return "<";
-		case STD_GT:
-			return ">";
-		case STD_LE:
-			return "<=";
-		case STD_GE:
-			return ">=";
-		case STD_LS:
-			return "<<";
-		case STD_RS:
-			return ">>";
-		case STD_TIMES:
-			return "*";
-		case STD_DIVIDE:
-			return "/";
-		case STD_MOD:
-			return "%";
-		// multi operators
-		case STD_PLUS:
-			return "+";
-		case STD_MINUS:
-			return "-";
-		// can't happen
-		default:
-			return "";
-	}
-}

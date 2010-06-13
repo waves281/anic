@@ -184,6 +184,7 @@ class StdType : public Type {
 		bool objectTypePromotion(const ObjectType &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
 		Type *copy();
 		void erase();
+		string kindToString() const;
 		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -273,9 +274,6 @@ class TypeStatus : public TypeStatusBase {
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
 };
-
-// auxiliary functions
-string kindToString(int kind);
 
 // external linkage specifiers
 extern Type *nullType;

@@ -18,13 +18,14 @@
 #define CATEGORY_READ 4
 #define CATEGORY_UNOP 5
 #define CATEGORY_BINOP 6
-#define CATEGORY_LOCK 7
-#define CATEGORY_UNLOCK 8
-#define CATEGORY_COND 9
-#define CATEGORY_JUMP 10
-#define CATEGORY_WRITE 11
-#define CATEGORY_COPY 12
-#define CATEGORY_SCHEDULE 13
+#define CATEGORY_CONV 7
+#define CATEGORY_LOCK 8
+#define CATEGORY_UNLOCK 9
+#define CATEGORY_COND 10
+#define CATEGORY_JUMP 11
+#define CATEGORY_WRITE 12
+#define CATEGORY_COPY 13
+#define CATEGORY_SCHED 14
 
 // forward declarations
 class IRTree;
@@ -37,6 +38,7 @@ class IRTree;
 	class OpTree;
 		class UnOpTree;
 		class BinOpTree;
+		class ConvTree;
 	class CodeTree;
 		class LockTree;
 		class UnlockTree;
@@ -53,6 +55,7 @@ class IRTree {
 		// data members
 		int category; // the category that this IRTree belongs to
 		// allocators/deallocators
+		IRTree(int category);
 		virtual ~IRTree();
 };
 
@@ -92,6 +95,7 @@ class SeqTree : public IRTree {
 class DataTree : public IRTree {
 	public:
 		// allocators/deallocators
+		DataTree(int category);
 		virtual ~DataTree();
 		// core methods
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
@@ -136,7 +140,20 @@ class ReadTree : public DataTree {
 
 // OpTree classes
 
-// definitions of operator kinds
+// usage: abstract class; never used directly
+class OpTree : public IRTree {
+	public:
+		// data members
+		int kind; // the kind of operator to apply to the subnode(s); the valid values are defined above the subclass that they apply to
+		// allocators/deallocators
+		OpTree(int category, int kind);
+		virtual ~OpTree();
+		// core methods
+		string kindToString() const;
+		virtual string toString(unsigned int tabDepth = 1) const = 0;
+};
+
+// definitions of arithmetic operator kinds
 #define UNOP_NOT_BOOL 0
 
 #define UNOP_COMPLEMENT_INT 1
@@ -175,20 +192,10 @@ class ReadTree : public DataTree {
 #define BINOP_PLUS_FLOAT 27
 #define BINOP_MINUS_FLOAT 28
 
-// usage: abstract class; never used directly
-class OpTree : public IRTree {
-	public:
-		// allocators/deallocators
-		virtual ~OpTree();
-		// core methods
-		virtual string toString(unsigned int tabDepth = 1) const = 0;
-};
-
-// usage: perform the given kind of unary operation on the subnode; the valid kind values are defined above
+// usage: perform the given kind of unary operation on the subnode
 class UnOpTree : public OpTree {
 	public:
 		// data members
-		int kind; // the kind of operator to apply to the subnode
 		DataTree *subNode; // pointer to the data subnode that we're applying the operator to
 		// allocators/deallocators
 		UnOpTree(int kind, DataTree *subNode);
@@ -197,16 +204,31 @@ class UnOpTree : public OpTree {
 		string toString(unsigned int tabDepth) const;
 };
 
-// usage: perform the given kind of binary operation on subNodeLeft and subNodeRight; the valid kind values are defined above
+// usage: perform the given kind of binary operation on subNodeLeft and subNodeRight
 class BinOpTree : public OpTree {
 	public:
 		// data members
-		int kind; // the kind of operator to apply to the subnodes
 		DataTree *subNodeLeft; // pointer to the data subnode representing the left operand
 		DataTree *subNodeRight; // pointer to the data subnode representing the right operand
 		// allocators/deallocators
 		BinOpTree(int kind, DataTree *subNodeLeft, DataTree *subNodeRight);
 		~BinOpTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// definitions of conversion operator kinds
+#define CONVOP_INT2FLOAT 29
+#define CONVOP_FLOAT2INT 30
+
+// usage: perform the given kind of data representation conversion operation on the specified subNode
+class ConvOpTree : public OpTree {
+	public:
+		// data members
+		DataTree *subNode; // pointer to the data subnode representing the source of the conversion
+		// allocators/deallocators
+		ConvOpTree(int kind, DataTree *subNode);
+		~ConvOpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };
@@ -217,6 +239,7 @@ class BinOpTree : public OpTree {
 class CodeTree : public IRTree {
 	public:
 		// allocators/deallocators
+		CodeTree(int category);
 		virtual ~CodeTree();
 		// core methods
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
@@ -301,13 +324,13 @@ class CopyTree : public CodeTree {
 };
 
 // usage: schedule all of the label nodes in the labelList for execution
-class ScheduleTree : public CodeTree {
+class SchedTree : public CodeTree {
 	public:
 		// data members
 		vector<LabelTree *> labelList; // vector of the label nodes to schedule
 		// allocators/deallocators
-		ScheduleTree(const vector<LabelTree *> &labelList);
-		~ScheduleTree();
+		SchedTree(const vector<LabelTree *> &labelList);
+		~SchedTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };

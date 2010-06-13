@@ -7,10 +7,11 @@
 int gennerErrorCode;
 
 // IRTree functions
+IRTree::IRTree(int category) : category(category) {}
 IRTree::~IRTree() {}
 
 // LabelTree functions
-LabelTree::LabelTree(const string &id, SeqTree *code) : id(id), code(code) {category = CATEGORY_LABEL;}
+LabelTree::LabelTree(const string &id, SeqTree *code) : IRTree(CATEGORY_LABEL), id(id), code(code) {}
 LabelTree::~LabelTree() {
 	delete code;
 }
@@ -23,7 +24,7 @@ string LabelTree::toString(unsigned int tabDepth) const {
 }
 
 // SeqTree functions
-SeqTree::SeqTree(const vector<CodeTree *> &codeList) : codeList(codeList) {category = CATEGORY_SEQ;}
+SeqTree::SeqTree(const vector<CodeTree *> &codeList) : IRTree(CATEGORY_SEQ), codeList(codeList) {}
 SeqTree::~SeqTree() {
 	for (vector<CodeTree *>::const_iterator iter = codeList.begin(); iter != codeList.end(); iter++) {
 		delete (*iter);
@@ -41,12 +42,12 @@ string SeqTree::toString(unsigned int tabDepth) const {
 }
 
 // DataTree functions
+DataTree::DataTree(int category) : IRTree(category) {}
 DataTree::~DataTree() {}
 
 // ConstTree functions
-ConstTree::ConstTree(const vector<unsigned char> &data) : data(data) {category = CATEGORY_CONST;}
-ConstTree::ConstTree(uint32_t dataInit) {
-	category = CATEGORY_CONST;
+ConstTree::ConstTree(const vector<unsigned char> &data) : DataTree(CATEGORY_CONST), data(data) {}
+ConstTree::ConstTree(uint32_t dataInit) : DataTree(CATEGORY_CONST) {
 	data.push_back((unsigned char)((dataInit >> 3*8) & 0xFF));
 	data.push_back((unsigned char)((dataInit >> 2*8) & 0xFF));
 	data.push_back((unsigned char)((dataInit >> 1*8) & 0xFF));
@@ -65,7 +66,7 @@ string ConstTree::toString(unsigned int tabDepth) const {
 }
 
 // TempTree functions
-TempTree::TempTree(OpTree *opNode) : opNode(opNode) {category = CATEGORY_TEMP;}
+TempTree::TempTree(OpTree *opNode) : DataTree(CATEGORY_TEMP), opNode(opNode) {}
 TempTree::~TempTree() {delete opNode;}
 string TempTree::toString(unsigned int tabDepth) const {
 	string acc("(");
@@ -75,7 +76,7 @@ string TempTree::toString(unsigned int tabDepth) const {
 }
 
 // ReadTree functions
-ReadTree::ReadTree(DataTree *address) : address(address) {category = CATEGORY_READ;}
+ReadTree::ReadTree(DataTree *address) : DataTree(CATEGORY_READ), address(address) {}
 ReadTree::~ReadTree() {delete address;}
 string ReadTree::toString(unsigned int tabDepth) const {
 	string acc("R(");
@@ -85,13 +86,100 @@ string ReadTree::toString(unsigned int tabDepth) const {
 }
 
 // OpTree functions
+OpTree::OpTree(int category, int kind) : IRTree(category), kind(kind) {}
 OpTree::~OpTree() {}
+string OpTree::kindToString() const {
+	switch(kind) { // KOL
+		case UNOP_NOT_BOOL:
+			return "!";
+			break;
+		case UNOP_COMPLEMENT_INT:
+			return "~";
+			break;
+		case UNOP_DPLUS_INT:
+			return "++";
+			break;
+		case UNOP_DMINUS_INT:
+			return "--";
+			break;
+		case BINOP_DOR_BOOL:
+			return "||";
+			break;
+		case BINOP_DAND_BOOL:
+			return "&&";
+			break;
+		case BINOP_OR_INT:
+			return "|";
+			break;
+		case BINOP_XOR_INT:
+			return "^";
+			break;
+		case BINOP_AND_INT:
+			return "&";
+			break;
+		case BINOP_DEQUALS:
+			return "==";
+			break;
+		case BINOP_NEQUALS:
+			return "!=";
+			break;
+		case BINOP_LT:
+			return "<";
+			break;
+		case BINOP_GT:
+			return ">";
+			break;
+		case BINOP_LE:
+			return "<=";
+			break;
+		case BINOP_GE:
+			return ">=";
+			break;
+		case BINOP_LS:
+			return "<<";
+			break;
+		case BINOP_RS:
+			return ">>";
+			break;
+		case BINOP_TIMES_INT:
+		case BINOP_TIMES_FLOAT:
+			return "*";
+			break;
+		case BINOP_DIVIDE_INT:
+		case BINOP_DIVIDE_FLOAT:
+			return "/";
+			break;
+		case BINOP_MOD_INT:
+		case BINOP_MOD_FLOAT:
+			return "%";
+			break;
+		case UNOP_PLUS_INT:
+		case BINOP_PLUS_INT:
+		case BINOP_PLUS_FLOAT:
+			return "+";
+			break;
+		case UNOP_MINUS_INT:
+		case BINOP_MINUS_INT:
+		case BINOP_MINUS_FLOAT:
+			return "-";
+			break;
+		case CONVOP_INT2FLOAT:
+			return "int2Float";
+			break;
+		case CONVOP_FLOAT2INT:
+			return "float2Int";
+			break;
+		// can't happen; the above should cover all cases
+		default:
+			return "";
+	}
+}
 
 // UnOpTree functions
-UnOpTree::UnOpTree(int kind, DataTree *subNode) : kind(kind), subNode(subNode) {category = CATEGORY_UNOP;}
+UnOpTree::UnOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_UNOP, kind), subNode(subNode) {}
 UnOpTree::~UnOpTree() {delete subNode;}
 string UnOpTree::toString(unsigned int tabDepth) const {
-	string acc(kindToString(kind));
+	string acc(kindToString());
 	acc += '(';
 	acc += subNode->toString(tabDepth+1);
 	acc += ')';
@@ -99,10 +187,10 @@ string UnOpTree::toString(unsigned int tabDepth) const {
 }
 
 // BinOpTree functions
-BinOpTree::BinOpTree(int kind, DataTree *subNodeLeft, DataTree *subNodeRight) : kind(kind), subNodeLeft(subNodeLeft), subNodeRight(subNodeRight) {category = CATEGORY_BINOP;}
+BinOpTree::BinOpTree(int kind, DataTree *subNodeLeft, DataTree *subNodeRight) : OpTree(CATEGORY_BINOP, kind), subNodeLeft(subNodeLeft), subNodeRight(subNodeRight) {}
 BinOpTree::~BinOpTree() {delete subNodeLeft; delete subNodeRight;}
 string BinOpTree::toString(unsigned int tabDepth) const {
-	string acc(kindToString(kind));
+	string acc(kindToString());
 	acc += '(';
 	acc += subNodeLeft->toString(tabDepth+1);
 	acc += ',';
@@ -111,11 +199,23 @@ string BinOpTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 
+// ConvOpTree functions
+ConvOpTree::ConvOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_CONV, kind), subNode(subNode) {}
+ConvOpTree::~ConvOpTree() {delete subNode;}
+string ConvOpTree::toString(unsigned int tabDepth) const {
+	string acc(kindToString());
+	acc += '(';
+	acc += subNode->toString(tabDepth+1);
+	acc += ')';
+	return acc;
+}
+
 // CodeTree functions
+CodeTree::CodeTree(int category) : IRTree(category) {}
 CodeTree::~CodeTree() {}
 
 // LockTree functions
-LockTree::LockTree(DataTree *address) : address(address) {category = CATEGORY_LOCK;}
+LockTree::LockTree(DataTree *address) : CodeTree(CATEGORY_LOCK), address(address) {}
 LockTree::~LockTree() {delete address;}
 string LockTree::toString(unsigned int tabDepth) const {
 	string acc("L(");
@@ -125,7 +225,7 @@ string LockTree::toString(unsigned int tabDepth) const {
 }
 
 // UnlockTree functions
-UnlockTree::UnlockTree(DataTree *address) : address(address) {category = CATEGORY_UNLOCK;}
+UnlockTree::UnlockTree(DataTree *address) : CodeTree(CATEGORY_UNLOCK), address(address) {}
 UnlockTree::~UnlockTree() {delete address;}
 string UnlockTree::toString(unsigned int tabDepth) const {
 	string acc("U(");
@@ -135,7 +235,7 @@ string UnlockTree::toString(unsigned int tabDepth) const {
 }
 
 // CondTree functions
-CondTree::CondTree(DataTree *test, CodeTree *trueBranch, CodeTree *falseBranch) : test(test), trueBranch(trueBranch), falseBranch(falseBranch) {category = CATEGORY_COND;}
+CondTree::CondTree(DataTree *test, CodeTree *trueBranch, CodeTree *falseBranch) : CodeTree(CATEGORY_COND), test(test), trueBranch(trueBranch), falseBranch(falseBranch) {}
 CondTree::~CondTree() {delete test; delete trueBranch; delete falseBranch;}
 string CondTree::toString(unsigned int tabDepth) const {
 	string acc("?(");
@@ -149,7 +249,7 @@ string CondTree::toString(unsigned int tabDepth) const {
 }
 
 // JumpTree functions
-JumpTree::JumpTree(DataTree *test, const vector<SeqTree *> &jumpTable) : test(test), jumpTable(jumpTable) {category = CATEGORY_JUMP;}
+JumpTree::JumpTree(DataTree *test, const vector<SeqTree *> &jumpTable) : CodeTree(CATEGORY_JUMP), test(test), jumpTable(jumpTable) {}
 JumpTree::~JumpTree() {
 	for (vector<SeqTree *>::const_iterator iter = jumpTable.begin(); iter != jumpTable.end(); iter++) {
 		delete (*iter);
@@ -170,7 +270,7 @@ string JumpTree::toString(unsigned int tabDepth) const {
 }
 
 // WriteTree functions
-WriteTree::WriteTree(DataTree *source, DataTree *address) : source(source), address(address) {category = CATEGORY_WRITE;}
+WriteTree::WriteTree(DataTree *source, DataTree *address) : CodeTree(CATEGORY_WRITE), source(source), address(address) {}
 WriteTree::~WriteTree() {delete source; delete address;}
 string WriteTree::toString(unsigned int tabDepth) const {
 	string acc("W(");
@@ -182,7 +282,7 @@ string WriteTree::toString(unsigned int tabDepth) const {
 }
 
 // CopyTree functions
-CopyTree::CopyTree(DataTree *sourceAddress, DataTree *destinationAddress, uint32_t length) : sourceAddress(sourceAddress), destinationAddress(destinationAddress), length(length) {category = CATEGORY_COPY;}
+CopyTree::CopyTree(DataTree *sourceAddress, DataTree *destinationAddress, uint32_t length) : CodeTree(CATEGORY_COPY), sourceAddress(sourceAddress), destinationAddress(destinationAddress), length(length) {}
 CopyTree::~CopyTree() {delete sourceAddress; delete destinationAddress;}
 string CopyTree::toString(unsigned int tabDepth) const {
 	string acc("C(");
@@ -195,10 +295,10 @@ string CopyTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 
-// ScheduleTree functions
-ScheduleTree::ScheduleTree(const vector<LabelTree *> &labelList) : labelList(labelList) {category = CATEGORY_SCHEDULE;}
-ScheduleTree::~ScheduleTree() {}
-string ScheduleTree::toString(unsigned int tabDepth) const {
+// SchedTree functions
+SchedTree::SchedTree(const vector<LabelTree *> &labelList) : CodeTree(CATEGORY_SCHED), labelList(labelList) {}
+SchedTree::~SchedTree() {}
+string SchedTree::toString(unsigned int tabDepth) const {
 	string acc("#(");
 	for (vector<LabelTree *>::const_iterator iter = labelList.begin(); iter != labelList.end(); iter++) {
 		acc += (*iter)->toString(tabDepth+1);

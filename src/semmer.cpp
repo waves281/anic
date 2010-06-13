@@ -776,16 +776,24 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 	if (*primaryc == TOKEN_PrimaryBase) {
 		returnCode(primaryc->code());
 	} else if (*primaryc == TOKEN_PrefixOrMultiOp) {
-		DataTree *subCode = (DataTree *)(primaryc->next->code());
+		Tree *primarycn = primaryc->next;
 		Tree *pomocc = primaryc->child->child;
 		if (*pomocc == TOKEN_NOT) {
-			returnCode(new TempTree(new UnOpTree(UNOP_NOT_BOOL, subCode)));
+			returnCode(new TempTree(new UnOpTree(UNOP_NOT_BOOL, primarycn->upcast(*stdBoolType))));
 		} else if (*pomocc == TOKEN_COMPLEMENT) {
-			returnCode(new TempTree(new UnOpTree(UNOP_COMPLEMENT_INT, subCode)));
+			returnCode(new TempTree(new UnOpTree(UNOP_COMPLEMENT_INT, primarycn->upcast(*stdIntType))));
 		} else if (*pomocc == TOKEN_PLUS) {
-			returnCode(new TempTree(new UnOpTree(UNOP_PLUS_INT, subCode))); // KOL
+			if (*(primarycn->status) >> *stdIntType) {
+				returnCode(primarycn->upcast(*stdIntType));
+			} else /* if (*(primarycn->status) >> *stdFloatType) */ {
+				returnCode(primarycn->upcast(*stdFloatType));
+			}
 		} else if (*pomocc == TOKEN_MINUS) {
-			returnCode(new TempTree(new UnOpTree(UNOP_MINUS_INT, subCode))); // KOL
+			if (*(primarycn->status) >> *stdIntType) {
+				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_INT, primarycn->upcast(*stdIntType))));
+			} else /* if (*(primarycn->status) >> *stdFloatType) */ {
+				returnCode(new TempTree(new UnOpTree(UNOP_MINUS_FLOAT, primarycn->upcast(*stdFloatType))));
+			}
 		}
 	}
 	GET_STATUS_FOOTER;
@@ -877,62 +885,60 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 		Tree *expLeft = expc;
 		Tree *op = expLeft->next;
 		Tree *expRight = op->next;
-		DataTree *leftCode = (DataTree *)(expLeft->code());
-		DataTree *rightCode = (DataTree *)(expRight->code());
 		switch (op->t.tokenType) {
 			case TOKEN_DOR:
-				returnCode(new BinOpTree(BINOP_DOR_BOOL, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DOR_BOOL, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_DAND:
-				returnCode(new BinOpTree(BINOP_DAND_BOOL, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DAND_BOOL, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_OR:
-				returnCode(new BinOpTree(BINOP_OR_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_OR_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
 				break;
 			case TOKEN_XOR:
-				returnCode(new BinOpTree(BINOP_XOR_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_XOR_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
 				break;
 			case TOKEN_AND:
-				returnCode(new BinOpTree(BINOP_AND_INT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_AND_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
 				break;
 			case TOKEN_DEQUALS:
-				returnCode(new BinOpTree(BINOP_DEQUALS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_DEQUALS, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_NEQUALS:
-				returnCode(new BinOpTree(BINOP_NEQUALS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_NEQUALS, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_LT:
-				returnCode(new BinOpTree(BINOP_LT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_GT:
-				returnCode(new BinOpTree(BINOP_GT, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_GT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_LE:
-				returnCode(new BinOpTree(BINOP_LE, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LE, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_GE:
-				returnCode(new BinOpTree(BINOP_GE, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_GE, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef())));
 				break;
 			case TOKEN_LS:
-				returnCode(new BinOpTree(BINOP_LS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_LS_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
 				break;
 			case TOKEN_RS:
-				returnCode(new BinOpTree(BINOP_RS, leftCode, rightCode));
+				returnCode(new BinOpTree(BINOP_RS_INT, expLeft->upcast(*stdIntType), expRight->upcast(*stdIntType)));
 				break;
 			case TOKEN_TIMES:
-				returnCode(new BinOpTree(BINOP_TIMES_INT, leftCode, rightCode)); // KOL
+				returnCode(new BinOpTree(BINOP_TIMES_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
 				break;
 			case TOKEN_DIVIDE:
-				returnCode(new BinOpTree(BINOP_DIVIDE_INT, leftCode, rightCode)); // KOL
+				returnCode(new BinOpTree(BINOP_DIVIDE_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
 				break;
 			case TOKEN_MOD:
-				returnCode(new BinOpTree(BINOP_MOD_INT, leftCode, rightCode)); // KOL
+				returnCode(new BinOpTree(BINOP_MOD_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
 				break;
 			case TOKEN_PLUS:
-				returnCode(new BinOpTree(BINOP_PLUS_INT, leftCode, rightCode)); // KOL
+				returnCode(new BinOpTree(BINOP_PLUS_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
 				break;
 			case TOKEN_MINUS:
-				returnCode(new BinOpTree(BINOP_MINUS_INT, leftCode, rightCode)); // KOL
+				returnCode(new BinOpTree(BINOP_MINUS_INT, expLeft->upcastCommon(expRight->typeRef()), expRight->upcastCommon(expLeft->typeRef()))); // KOL
 				break;
 			default: // can't happen; the above should cover all cases
 				break;

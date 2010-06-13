@@ -1064,5 +1064,11 @@ bool TypeStatusBase::operator!=(const Type &otherType) const {return (*type != o
 TypeStatus::TypeStatus(Type *type, Type *retType) : TypeStatusBase(type), retType(retType) {}
 TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : TypeStatusBase(type), retType(otherStatus.retType) {}
 TypeStatus::~TypeStatus() {}
+DataTree *TypeStatus::upcast(const Type &destType) const {
+	return NULL; // KOL
+}
+DataTree *TypeStatus::upcastCommon(const Type &otherType) const {
+	return NULL; // KOL
+}
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}

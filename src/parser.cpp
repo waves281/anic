@@ -23,6 +23,15 @@ Tree::~Tree() {
 IRTree *Tree::code() const {
 	return (status.code);
 }
+Type &Tree::typeRef() const {
+	return (*(status.type));
+}
+DataTree *Tree::upcast(const Type &destType) const {
+	return (status.upcast(destType));
+}
+DataTree *Tree::upcastCommon(const Type &otherType) const {
+	return (status.upcastCommon(otherType));
+}
 
 // comparison oparators
 bool Tree::operator==(int tokenType) const {

@@ -174,8 +174,9 @@ class OpTree : public IRTree {
 #define BINOP_GT 12
 #define BINOP_LE 13
 #define BINOP_GE 14
-#define BINOP_LS 15
-#define BINOP_RS 16
+
+#define BINOP_LS_INT 15
+#define BINOP_RS_INT 16
 
 #define BINOP_TIMES_INT 17
 #define BINOP_DIVIDE_INT 18
@@ -184,8 +185,8 @@ class OpTree : public IRTree {
 #define BINOP_DIVIDE_FLOAT 21
 #define BINOP_MOD_FLOAT 22
 
-#define UNOP_PLUS_INT 23
-#define UNOP_MINUS_INT 24
+#define UNOP_MINUS_INT 23
+#define UNOP_MINUS_FLOAT 24
 
 #define BINOP_PLUS_INT 25
 #define BINOP_MINUS_INT 26

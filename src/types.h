@@ -38,6 +38,8 @@ class ObjectType;
 class ErrorType;
 class TypeStatusBase;
 class TypeStatus;
+class IRTree;
+class DataTree;
 
 // core Type class
 
@@ -270,6 +272,9 @@ class TypeStatus : public TypeStatusBase {
 		TypeStatus(Type *type = NULL, Type *retType = NULL);
 		TypeStatus(Type *type, const TypeStatus &otherStatus);
 		~TypeStatus();
+		// core methods
+		DataTree *upcast(const Type &destType) const;
+		DataTree *upcastCommon(const Type &otherType) const;
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);

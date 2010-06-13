@@ -135,10 +135,10 @@ string OpTree::kindToString() const {
 		case BINOP_GE:
 			return ">=";
 			break;
-		case BINOP_LS:
+		case BINOP_LS_INT:
 			return "<<";
 			break;
-		case BINOP_RS:
+		case BINOP_RS_INT:
 			return ">>";
 			break;
 		case BINOP_TIMES_INT:
@@ -153,12 +153,12 @@ string OpTree::kindToString() const {
 		case BINOP_MOD_FLOAT:
 			return "%";
 			break;
-		case UNOP_PLUS_INT:
 		case BINOP_PLUS_INT:
 		case BINOP_PLUS_FLOAT:
 			return "+";
 			break;
 		case UNOP_MINUS_INT:
+		case UNOP_MINUS_FLOAT:
 		case BINOP_MINUS_INT:
 		case BINOP_MINUS_FLOAT:
 			return "-";

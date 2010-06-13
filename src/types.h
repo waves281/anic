@@ -180,7 +180,7 @@ class StdType : public Type {
 		~StdType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		int kindCompare(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
+		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
 		bool filterTypePromotion(const FilterType &otherType) const; // returns whether we can specially promote this StdType to the given FilterType
 		bool objectTypePromotion(const ObjectType &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType

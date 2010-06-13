@@ -273,7 +273,7 @@ Type *TypeList::operator,(const Type &otherType) const {
 			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
 					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
 					otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
-				if (thisTypeCast1->kindCompare(*thisTypeCast2)) {
+				if (thisTypeCast1->kindCast(*thisTypeCast2)) {
 					return (new StdType(STD_BOOL, SUFFIX_LATCH));
 				} else {
 					return errType;
@@ -397,9 +397,9 @@ ErrorType::operator string() {return toString(1);}
 StdType::StdType(int kind, int suffix, int depth) : Type(CATEGORY_STDTYPE, suffix, depth), kind(kind) {}
 StdType::~StdType() {}
 bool StdType::isComparable(const Type &otherType) const {
-	return (otherType.category == CATEGORY_STDTYPE && (kindCompare(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCompare(*this)));
+	return (otherType.category == CATEGORY_STDTYPE && (kindCast(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCast(*this)));
 }
-int StdType::kindCompare(const StdType &otherType) const {
+int StdType::kindCast(const StdType &otherType) const {
 	if (kind < STD_MIN_COMPARABLE || kind > STD_MAX_COMPARABLE || otherType.kind < STD_MIN_COMPARABLE || otherType.kind > STD_MAX_COMPARABLE) {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
@@ -449,7 +449,7 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 			if (*nextTermStatus) {
 				if (prevTermStatus.type->category == CATEGORY_STDTYPE && (prevTermStatus.type->suffix == SUFFIX_CONSTANT || prevTermStatus.type->suffix == SUFFIX_LATCH) &&
 						nextTermStatus.type->category == CATEGORY_STDTYPE && (nextTermStatus.type->suffix == SUFFIX_CONSTANT || nextTermStatus.type->suffix == SUFFIX_LATCH) &&
-						((StdType *)(prevTermStatus.type))->kindCompare(*((StdType *)(nextTermStatus.type)))) { // if the terms are comparable, return bool
+						((StdType *)(prevTermStatus.type))->kindCast(*((StdType *)(nextTermStatus.type)))) { // if the terms are comparable, return bool
 					return make_pair(new StdType(STD_BOOL, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
 				}
 			}
@@ -572,7 +572,7 @@ bool StdType::operator>>(const Type &otherType) const {
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (baseSendable(otherType) && kindCompare(*otherTypeCast)) {
+		if (baseSendable(otherType) && kindCast(*otherTypeCast)) {
 			return true;
 		} else {
 			return false;
@@ -1073,7 +1073,11 @@ DataTree *TypeStatus::cast(const Type &destType) const {
 	return (DataTree *)code;
 }
 DataTree *TypeStatus::castCommon(const Type &otherType) const {
-	return NULL; // KOL
+	if (*type >> otherType) {
+		return cast(otherType);
+	} else /* if (otherType >> *type) */ {
+		return (DataTree *)code;
+	}
 }
 TypeStatus &TypeStatus::operator=(const TypeStatus &otherStatus) {type = otherStatus.type; retType = otherStatus.retType; return *this;}
 TypeStatus &TypeStatus::operator=(Type *otherType) {type = otherType; return *this;}

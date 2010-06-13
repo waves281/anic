@@ -870,11 +870,8 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 					if ((*left >> *stdFloatType) && (*right >> *stdFloatType)) {
 						returnType(new StdType(STD_FLOAT, SUFFIX_LATCH));
 					}
-					// if one of the terms is a string and the other is a StdType constant or latch, return string
-					if (((*left >> *stdStringType) && right->category == CATEGORY_STDTYPE &&
-							(right->suffix == SUFFIX_CONSTANT || right->suffix == SUFFIX_LATCH)) ||
-						((*right >> *stdStringType) && left->category == CATEGORY_STDTYPE &&
-							(left->suffix == SUFFIX_CONSTANT || left->suffix == SUFFIX_LATCH))) {
+					// if both terms are convertible to string, return string
+					if ((*left >> *stdStringType) && (*right >> *stdStringType)) {
 						returnType(new StdType(STD_STRING, SUFFIX_LATCH));
 					}
 					break;
@@ -922,15 +919,37 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 			case TOKEN_RS:
 				returnCode(new TempTree(new BinOpTree(BINOP_RS_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
 			case TOKEN_TIMES:
-				returnCode(new TempTree(new BinOpTree(BINOP_TIMES_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
+				if ((*(expLeft->status) >> *stdIntType) && (*(expRight->status) >> *stdIntType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_TIMES_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
+				} else /* if ((*(expLeft->status) >> *stdFloatType) && (*(expRight->status) >> *stdFloatType)) */ {
+					returnCode(new TempTree(new BinOpTree(BINOP_TIMES_FLOAT, expLeft->cast(*stdFloatType), expRight->cast(*stdFloatType))));
+				}
 			case TOKEN_DIVIDE:
-				returnCode(new TempTree(new BinOpTree(BINOP_DIVIDE_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
+				if ((*(expLeft->status) >> *stdIntType) && (*(expRight->status) >> *stdIntType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_DIVIDE_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
+				} else /* if ((*(expLeft->status) >> *stdFloatType) && (*(expRight->status) >> *stdFloatType)) */ {
+					returnCode(new TempTree(new BinOpTree(BINOP_DIVIDE_FLOAT, expLeft->cast(*stdFloatType), expRight->cast(*stdFloatType))));
+				}
 			case TOKEN_MOD:
-				returnCode(new TempTree(new BinOpTree(BINOP_MOD_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
+				if ((*(expLeft->status) >> *stdIntType) && (*(expRight->status) >> *stdIntType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_MOD_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
+				} else /* if ((*(expLeft->status) >> *stdFloatType) && (*(expRight->status) >> *stdFloatType)) */ {
+					returnCode(new TempTree(new BinOpTree(BINOP_MOD_FLOAT, expLeft->cast(*stdFloatType), expRight->cast(*stdFloatType))));
+				}
 			case TOKEN_PLUS:
-				returnCode(new TempTree(new BinOpTree(BINOP_PLUS_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
+				if ((*(expLeft->status) >> *stdIntType) && (*(expRight->status) >> *stdIntType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_PLUS_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
+				} else if ((*(expLeft->status) >> *stdFloatType) && (*(expRight->status) >> *stdFloatType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_PLUS_FLOAT, expLeft->cast(*stdFloatType), expRight->cast(*stdFloatType))));
+				} else /* if ((*(expLeft->status) >> *stdStringType) && (*(expRight->status) >> *stdStringType)) */ {
+					returnCode(new TempTree(new BinOpTree(BINOP_PLUS_STRING, expLeft->cast(*stdStringType), expRight->cast(*stdStringType))));
+				}
 			case TOKEN_MINUS:
-				returnCode(new TempTree(new BinOpTree(BINOP_MINUS_INT, expLeft->castCommon(expRight->typeRef()), expRight->castCommon(expLeft->typeRef())))); // KOL
+				if ((*(expLeft->status) >> *stdIntType) && (*(expRight->status) >> *stdIntType)) {
+					returnCode(new TempTree(new BinOpTree(BINOP_MINUS_INT, expLeft->cast(*stdIntType), expRight->cast(*stdIntType))));
+				} else /* if ((*(expLeft->status) >> *stdFloatType) && (*(expRight->status) >> *stdFloatType)) */ {
+					returnCode(new TempTree(new BinOpTree(BINOP_MINUS_FLOAT, expLeft->cast(*stdFloatType), expRight->cast(*stdFloatType))));
+				}
 			default: // can't happen; the above should cover all cases
 				break;
 		}

@@ -472,12 +472,9 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 				if ((*prevTermStatus >> *stdFloatType) && (*nextTermStatus >> *stdFloatType)) { // if both terms can be converted to float, return float
 					return make_pair(new StdType(STD_FLOAT, SUFFIX_LATCH), true); // return true, since we're consuming the nextTerm
 				}
-				// if this is the + operator and one of the terms is a string and the other is a StdType constant or latch, return string
+				// if this is the + operator and both terms are convertible to string, return string
 				if (kind == STD_PLUS &&
-						(((*prevTermStatus >> *stdStringType) && nextTermStatus->category == CATEGORY_STDTYPE &&
-							(nextTermStatus->suffix == SUFFIX_CONSTANT || nextTermStatus->suffix == SUFFIX_LATCH)) ||
-						((*nextTermStatus >> *stdStringType) && prevTermStatus->category == CATEGORY_STDTYPE &&
-							(prevTermStatus->suffix == SUFFIX_CONSTANT || prevTermStatus->suffix == SUFFIX_LATCH)))) {
+						((*prevTermStatus >> *stdStringType) && (*nextTermStatus >> *stdStringType))) {
 					return make_pair(new StdType(STD_STRING, SUFFIX_LATCH), true); // return true, since were consuming the nextTerm
 				}
 			}

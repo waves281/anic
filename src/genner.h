@@ -192,6 +192,7 @@ class OpTree : public IRTree {
 #define BINOP_MINUS_INT 26
 #define BINOP_PLUS_FLOAT 27
 #define BINOP_MINUS_FLOAT 28
+#define BINOP_PLUS_STRING 29
 
 // usage: perform the given kind of unary operation on the subnode
 class UnOpTree : public OpTree {
@@ -219,13 +220,13 @@ class BinOpTree : public OpTree {
 };
 
 // definitions of conversion operator kinds
-#define CONVOP_INT2FLOAT 29
-#define CONVOP_FLOAT2INT 30
+#define CONVOP_INT2FLOAT 30
+#define CONVOP_FLOAT2INT 31
 
-#define CONVOP_BOOL2STRING 29
-#define CONVOP_INT2STRING 30
-#define CONVOP_FLOAT2STRING 31
-#define CONVOP_CHAR2STRING 32
+#define CONVOP_BOOL2STRING 32
+#define CONVOP_INT2STRING 33
+#define CONVOP_FLOAT2STRING 34
+#define CONVOP_CHAR2STRING 35
 
 // usage: perform the given kind of data representation conversion operation on the specified subNode
 class ConvOpTree : public OpTree {

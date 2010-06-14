@@ -13,26 +13,28 @@
 // CodeTree category specifiers
 #define CATEGORY_LABEL 0
 #define CATEGORY_SEQ 1
-#define CATEGORY_CONST 2
-#define CATEGORY_TEMP 3
-#define CATEGORY_READ 4
-#define CATEGORY_UNOP 5
-#define CATEGORY_BINOP 6
-#define CATEGORY_CONVOP 7
-#define CATEGORY_LOCK 8
-#define CATEGORY_UNLOCK 9
-#define CATEGORY_COND 10
-#define CATEGORY_JUMP 11
-#define CATEGORY_WRITE 12
-#define CATEGORY_COPY 13
-#define CATEGORY_SCHED 14
+#define CATEGORY_WORD 2
+#define CATEGORY_ARRAY 3
+#define CATEGORY_TEMP 4
+#define CATEGORY_READ 5
+#define CATEGORY_UNOP 6
+#define CATEGORY_BINOP 7
+#define CATEGORY_CONVOP 8
+#define CATEGORY_LOCK 9
+#define CATEGORY_UNLOCK 10
+#define CATEGORY_COND 11
+#define CATEGORY_JUMP 12
+#define CATEGORY_WRITE 13
+#define CATEGORY_COPY 14
+#define CATEGORY_SCHED 15
 
 // forward declarations
 class IRTree;
 	class LabelTree;
 	class SeqTree;
 	class DataTree;
-		class ConstTree;
+		class WordTree;
+		class ArrayTree;
 		class TempTree;
 		class ReadTree;
 	class OpTree;
@@ -101,15 +103,26 @@ class DataTree : public IRTree {
 		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
-// usage: an in-place inclusion of a data vector
-class ConstTree : public DataTree {
+// usage: an in-place inclusion of a data word
+class WordTree : public DataTree {
 	public:
 		// data members
-		vector<unsigned char> data; // vector of the raw data contained in this node
+		uint32_t data; // the raw data word contained in this node
 		// allocators/deallocators
-		ConstTree(const vector<unsigned char> &data);
-		ConstTree(uint32_t data);
-		~ConstTree();
+		WordTree(uint32_t data);
+		~WordTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+};
+
+// usage: an in-place inclusion of a byte-array of data
+class ArrayTree : public DataTree {
+	public:
+		// data members
+		vector<unsigned char> data; // vector of the raw byte-array of data contained in this node
+		// allocators/deallocators
+		ArrayTree(const vector<unsigned char> &data);
+		~ArrayTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 };

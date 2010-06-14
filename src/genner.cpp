@@ -45,20 +45,26 @@ string SeqTree::toString(unsigned int tabDepth) const {
 DataTree::DataTree(int category) : IRTree(category) {}
 DataTree::~DataTree() {}
 
-// ConstTree functions
-ConstTree::ConstTree(const vector<unsigned char> &data) : DataTree(CATEGORY_CONST), data(data) {}
-ConstTree::ConstTree(uint32_t dataInit) : DataTree(CATEGORY_CONST) {
-	data.push_back((unsigned char)((dataInit >> 3*8) & 0xFF));
-	data.push_back((unsigned char)((dataInit >> 2*8) & 0xFF));
-	data.push_back((unsigned char)((dataInit >> 1*8) & 0xFF));
-	data.push_back((unsigned char)((dataInit >> 0*8) & 0xFF));
+// WordTree functions
+WordTree::WordTree(uint32_t data) : DataTree(CATEGORY_WORD), data(data) {}
+WordTree::~WordTree() {}
+string WordTree::toString(unsigned int tabDepth) const {
+	string acc("W[");
+	char tempS[3];
+	sprintf(tempS, "%08X", data);
+	acc += tempS;
+	acc += ']';
+	return acc;
 }
-ConstTree::~ConstTree() {}
-string ConstTree::toString(unsigned int tabDepth) const {
-	string acc("[");
+
+// ArrayTree functions
+ArrayTree::ArrayTree(const vector<unsigned char> &data) : DataTree(CATEGORY_ARRAY), data(data) {}
+ArrayTree::~ArrayTree() {}
+string ArrayTree::toString(unsigned int tabDepth) const {
+	string acc("A[");
 	for (vector<unsigned char>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
 		char tempS[3];
-		sprintf(tempS, "%02x", (*iter));
+		sprintf(tempS, "%02X", (*iter));
 		acc += tempS;
 	}
 	acc += ']';
@@ -89,7 +95,7 @@ string ReadTree::toString(unsigned int tabDepth) const {
 OpTree::OpTree(int category, int kind) : IRTree(category), kind(kind) {}
 OpTree::~OpTree() {}
 string OpTree::kindToString() const {
-	switch(kind) { // KOL
+	switch(kind) {
 		case UNOP_NOT_BOOL:
 			return "!";
 		case UNOP_COMPLEMENT_INT:

@@ -763,9 +763,9 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*pbc == TOKEN_PrimaryBase) { // postfix operator application
 		Tree *op = pbc->next->child; // the actual operator token
 		if (*op == TOKEN_DPLUS) {
-			returnCode(new TempTree(new BinOpTree(BINOP_PLUS_INT, pbc->castCode(*stdIntType), new ConstTree(1))));
+			returnCode(new TempTree(new BinOpTree(BINOP_PLUS_INT, pbc->castCode(*stdIntType), new WordTree(1))));
 		} else /* if (*op == TOKEN_DMINUS) */ {
-			returnCode(new TempTree(new BinOpTree(BINOP_MINUS_INT, pbc->castCode(*stdIntType), new ConstTree(1))));
+			returnCode(new TempTree(new BinOpTree(BINOP_MINUS_INT, pbc->castCode(*stdIntType), new WordTree(1))));
 		}
 	}
 	GET_STATUS_FOOTER;

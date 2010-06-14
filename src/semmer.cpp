@@ -16,7 +16,6 @@ StdType *stdStringType;
 StdType *stdNullLitType;
 StdType *stdBoolLitType;
 ObjectType *stringerType;
-ObjectType *outerType;
 FilterType *boolUnOpType;
 FilterType *intUnOpType;
 FilterType *boolBinOpType;
@@ -128,8 +127,8 @@ void catStdLib(SymbolTable *&stRoot) {
 	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "out", outerType);
-	*stdLib *= new SymbolTable(KIND_STD, "err", outerType);
+	*stdLib *= new SymbolTable(KIND_STD, "out", stringerType);
+	*stdLib *= new SymbolTable(KIND_STD, "err", stringerType);
 	// control nodes
 	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
 	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
@@ -154,16 +153,8 @@ void initStdTypes() {
 	// build the stringerType
 	vector<TypeList *> instructorTypes;
 	vector<TypeList *> outstructorTypes;
-	vector<string> memberNames;
-	memberNames.push_back("toString");
-	vector<Type *> memberTypes;
-	memberTypes.push_back(new FilterType(nullType, new StdType(STD_STRING), SUFFIX_LATCH));
-	vector<Tree *> memberDefSites;
-	memberDefSites.push_back(NULL);
-	stringerType = new ObjectType(instructorTypes, outstructorTypes, memberNames, memberTypes, memberDefSites, SUFFIX_LATCH);
-	// build the outerType
-	instructorTypes.push_back(new TypeList(stringerType));
-	outerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); outerType->operable = false;
+	outstructorTypes.push_back(new TypeList(stdStringType));
+	stringerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); stringerType->operable = false;
 	// build some auxiliary types
 	// latches
 	Type *boolLatchType = new StdType(STD_BOOL, SUFFIX_LATCH);
@@ -1869,7 +1860,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
-			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
+			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
 					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);
@@ -1891,7 +1882,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Swap) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
-			if ((nodeStatus->operable || nodeStatus.type == outerType) &&
+			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
 					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);

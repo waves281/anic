@@ -58,7 +58,6 @@ extern StdType *stdNullLitType;
 extern StdType *stdBoolLitType;
 class ObjectType;
 extern ObjectType *stringerType;
-extern ObjectType *outerType;
 class FilterType;
 extern FilterType *boolUnOpType;
 extern FilterType *intUnOpType;

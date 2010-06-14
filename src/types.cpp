@@ -339,7 +339,7 @@ bool TypeList::operator>>(const Type &otherType) const {
 			return (*(list[0]) >> otherType);
 		} else if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->instructorTypes.begin(); iter != otherTypeCast->instructorTypes.end(); iter++) {
 				if (*this >> **iter) {
 					return true;
 				}
@@ -589,7 +589,7 @@ bool StdType::operator>>(const Type &otherType) const {
 		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			// try to do a basic constructor send
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->instructorTypes.begin(); iter != otherTypeCast->instructorTypes.end(); iter++) {
 				if (*this >> **iter) {
 					return true;
 				}
@@ -765,7 +765,7 @@ bool FilterType::operator>>(const Type &otherType) const {
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		if (otherType.suffix == SUFFIX_LATCH) {
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
+			for (vector<TypeList *>::const_iterator iter = otherTypeCast->instructorTypes.begin(); iter != otherTypeCast->instructorTypes.end(); iter++) {
 				if (*this >> **iter) {
 					return true;
 				}
@@ -800,11 +800,17 @@ FilterType::operator string() {
 
 // ObjectType functions
 ObjectType::ObjectType(int suffix, int depth) : Type(CATEGORY_OBJECTTYPE, suffix, depth), propagationHandled(false) {}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, int suffix, int depth) : Type(CATEGORY_OBJECTTYPE, suffix, depth), constructorTypes(constructorTypes), propagationHandled(false) {}
-ObjectType::ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix, int depth) : 
-	Type(CATEGORY_OBJECTTYPE, suffix, depth), constructorTypes(constructorTypes), memberNames(memberNames), memberTypes(memberTypes), memberDefSites(memberDefSites), propagationHandled(false) {}
+ObjectType::ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, int suffix, int depth) :
+	Type(CATEGORY_OBJECTTYPE, suffix, depth), instructorTypes(instructorTypes), outstructorTypes(outstructorTypes), propagationHandled(false) {}
+ObjectType::ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix, int depth) : 
+	Type(CATEGORY_OBJECTTYPE, suffix, depth), instructorTypes(instructorTypes), outstructorTypes(outstructorTypes), memberNames(memberNames), memberTypes(memberTypes), memberDefSites(memberDefSites), propagationHandled(false) {}
 ObjectType::~ObjectType() {
-	for (vector<TypeList *>::iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+	for (vector<TypeList *>::iterator iter = instructorTypes.begin(); iter != instructorTypes.end(); iter++) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+			delete (*iter);
+		}
+	}
+	for (vector<TypeList *>::iterator iter = outstructorTypes.begin(); iter != outstructorTypes.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
 			delete (*iter);
 		}
@@ -817,14 +823,15 @@ ObjectType::~ObjectType() {
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
 Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); retVal->operable = true; return retVal;}
-void ObjectType::erase() {constructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear(); delete this;}
+void ObjectType::erase() {instructorTypes.clear(); outstructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear(); delete this;}
 void ObjectType::propagateToCopies() {
 	if (propagationHandled) { // if we've already propagated to this node and got here through a recursive type loop, we're done
 		return;
 	}
 	propagationHandled = true; // flag this filter as already iterated
 	for (vector<ObjectType *>::const_iterator iter = copyList.begin(); iter != copyList.end(); iter++) {
-		(*iter)->constructorTypes = constructorTypes;
+		(*iter)->instructorTypes = instructorTypes;
+		(*iter)->outstructorTypes = outstructorTypes;
 		(*iter)->memberNames = memberNames;
 		(*iter)->memberTypes = memberTypes;
 		(*iter)->memberDefSites = memberDefSites;
@@ -838,17 +845,28 @@ bool ObjectType::operator==(const Type &otherType) const {
 		return true;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		if (constructorTypes.size() == otherTypeCast->constructorTypes.size() && memberNames.size() == otherTypeCast->memberNames.size()) {
-			// verify that the constructors match
-			vector<TypeList *>::const_iterator consIter1 = constructorTypes.begin();
-			vector<TypeList *>::const_iterator consIter2 = otherTypeCast->constructorTypes.begin();
-			while (consIter1 != constructorTypes.end() && consIter2 != otherTypeCast->constructorTypes.end()) {
-				if (**consIter1 != **consIter2) {
+		if ((instructorTypes.size() == otherTypeCast->instructorTypes.size()) && (outstructorTypes.size() == otherTypeCast->outstructorTypes.size()) && (memberNames.size() == otherTypeCast->memberNames.size())) {
+			// verify that the instructors match
+			vector<TypeList *>::const_iterator insIter1 = instructorTypes.begin();
+			vector<TypeList *>::const_iterator insIter2 = otherTypeCast->instructorTypes.begin();
+			while (insIter1 != instructorTypes.end() && insIter2 != otherTypeCast->instructorTypes.end()) {
+				if (**insIter1 != **insIter2) {
 					return false;
 				}
 				// advance
-				consIter1++;
-				consIter2++;
+				insIter1++;
+				insIter2++;
+			}
+			// verify that the outstructors match
+			vector<TypeList *>::const_iterator outsIter1 = outstructorTypes.begin();
+			vector<TypeList *>::const_iterator outsIter2 = otherTypeCast->outstructorTypes.begin();
+			while (outsIter1 != outstructorTypes.end() && outsIter2 != otherTypeCast->outstructorTypes.end()) {
+				if (**outsIter1 != **outsIter2) {
+					return false;
+				}
+				// advance
+				outsIter1++;
+				outsIter2++;
 			}
 			// verify that the member types match
 			vector<string>::const_iterator memberNameIter1 = memberNames.begin();
@@ -905,71 +923,123 @@ Type *ObjectType::operator,(const Type &otherType) const {
 	return errType;
 }
 bool ObjectType::operator>>(const Type &otherType) const {
-	if (this == &otherType) { // if the objects are actually the same object instance
+	if (this == &otherType) { // if the objects are actually the same object instance, allow the downcastability
 		return true;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		// try a direct downcastability
 		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
 			return true;
-		} else {
+		}
+		// otherwise, try an outstructed downcastability
+		vector<TypeList *>::const_iterator outsIter;
+		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (!((*outsIter)->baseEquals(*otherTypeCast) && (**outsIter == *otherTypeCast))) { // if there is a type mismatch, break early
+				break;
+			}
+		}
+		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
+			return true;
+		} else { // else if there was a type mismatch somewhere, disallow the downcastability
 			return false;
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
+		// try an outstructed downcastability
+		vector<TypeList *>::const_iterator outsIter;
+		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (!((*outsIter)->baseEquals(otherType) && (**outsIter == otherType))) { // if there is a type mismatch, break early
+				break;
+			}
+		}
+		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
+			return true;
+		} else { // else if there was a type mismatch somewhere, disallow the downcastability
+			return false;
+		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		return false;
+		// try an outstructed downcastability
+		vector<TypeList *>::const_iterator outsIter;
+		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (!((*outsIter)->baseEquals(otherType) && (**outsIter == otherType))) { // if there is a type mismatch, break early
+				break;
+			}
+		}
+		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
+			return true;
+		} else { // else if there was a type mismatch somewhere, disallow the downcastability
+			return false;
+		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		// try to find a downcastability from the left object to the right one
+		// try to find a direct downcastability from the left object to the right one
 		if (baseSendable(otherType)) {
-			// verify constructor downcastability
-			vector<TypeList *>::const_iterator consIter;
-			for (consIter = otherTypeCast->constructorTypes.begin(); consIter != otherTypeCast->constructorTypes.end(); consIter++) {
-				vector<TypeList *>::const_iterator consIter2;
-				for (consIter2 = constructorTypes.begin(); consIter2 != constructorTypes.end(); consIter2++) {
-					if ((*consIter2)->baseEquals(**consIter) && (**consIter2 == **consIter)) {
+			// verify instructor downcastability
+			vector<TypeList *>::const_iterator insIter;
+			for (insIter = otherTypeCast->instructorTypes.begin(); insIter != otherTypeCast->instructorTypes.end(); insIter++) {
+				vector<TypeList *>::const_iterator insIter2;
+				for (insIter2 = instructorTypes.begin(); insIter2 != instructorTypes.end(); insIter2++) {
+					if ((*insIter2)->baseEquals(**insIter) && (**insIter2 == **insIter)) {
 						break;
 					}
 				}
-				if (consIter2 == constructorTypes.end()) { // if we failed to find a match for this constructor, break early
+				if (insIter2 == instructorTypes.end()) { // if we failed to find a match for this constructor, break early
 					break;
 				}
 			}
-			if (consIter == otherTypeCast->constructorTypes.end()) { // if we matched all constructor types (we didn't break early), continue
-				// verify member downcastability
-				vector<string>::const_iterator memberNameIter;
-				vector<Type *>::const_iterator memberTypeIter;
-				for (memberNameIter = otherTypeCast->memberNames.begin(), memberTypeIter = otherTypeCast->memberTypes.begin();
-						memberNameIter != otherTypeCast->memberNames.end();
-						memberNameIter++, memberTypeIter++) {
-					vector<string>::const_iterator memberNameIter2;
-					vector<Type *>::const_iterator memberTypeIter2;
-					for (memberNameIter2 = memberNames.begin(), memberTypeIter2 = memberTypes.begin();
-							memberNameIter2 != memberNames.end();
-							memberNameIter2++, memberTypeIter2++) {
-						if ((*memberNameIter2 == *memberNameIter) && (*memberTypeIter2)->baseEquals(**memberTypeIter) && (**memberTypeIter2 == **memberTypeIter)) {
+			if (insIter == otherTypeCast->instructorTypes.end()) { // if we matched all constructor types (we didn't break early), continue
+				// verify outstructor downcastability
+				vector<TypeList *>::const_iterator outsIter;
+				for (outsIter = otherTypeCast->outstructorTypes.begin(); outsIter != otherTypeCast->outstructorTypes.end(); outsIter++) {
+					vector<TypeList *>::const_iterator outsIter2;
+					for (outsIter2 = outstructorTypes.begin(); outsIter2 != outstructorTypes.end(); outsIter2++) {
+						if ((*outsIter2)->baseEquals(**outsIter) && (**outsIter2 == **outsIter)) {
 							break;
 						}
 					}
-					if (memberNameIter2 == memberNames.end()) { // if we failed to find a match for this member, break early
+					if (outsIter2 == outstructorTypes.end()) { // if we failed to find a match for this constructor, break early
 						break;
 					}
 				}
-				if (memberNameIter == otherTypeCast->memberNames.end()) { // if we matched all mambers (we didn't break early), return success
-					return true;
+				if (outsIter == otherTypeCast->outstructorTypes.end()) { // if we matched all constructor types (we didn't break early), continue
+					// verify member downcastability
+					vector<string>::const_iterator memberNameIter;
+					vector<Type *>::const_iterator memberTypeIter;
+					for (memberNameIter = otherTypeCast->memberNames.begin(), memberTypeIter = otherTypeCast->memberTypes.begin();
+							memberNameIter != otherTypeCast->memberNames.end();
+							memberNameIter++, memberTypeIter++) {
+						vector<string>::const_iterator memberNameIter2;
+						vector<Type *>::const_iterator memberTypeIter2;
+						for (memberNameIter2 = memberNames.begin(), memberTypeIter2 = memberTypes.begin();
+								memberNameIter2 != memberNames.end();
+								memberNameIter2++, memberTypeIter2++) {
+							if ((*memberNameIter2 == *memberNameIter) && (*memberTypeIter2)->baseEquals(**memberTypeIter) && (**memberTypeIter2 == **memberTypeIter)) {
+								break;
+							}
+						}
+						if (memberNameIter2 == memberNames.end()) { // if we failed to find a match for this member, break early
+							break;
+						}
+					}
+					if (memberNameIter == otherTypeCast->memberNames.end()) { // if we matched all mambers (we didn't break early), return success
+						return true;
+					}
 				}
 			}
 		}
-		// otherwise, try to connect the left object into a constructor on the right object
-		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
-			for (vector<TypeList *>::const_iterator iter = otherTypeCast->constructorTypes.begin(); iter != otherTypeCast->constructorTypes.end(); iter++) {
-				if (*this >> **iter) {
-					return true;
-				}
+		// try to connect the left object into a constructor on the right object
+		for (vector<TypeList *>::const_iterator insIter = otherTypeCast->instructorTypes.begin(); insIter != otherTypeCast->instructorTypes.end(); insIter++) {
+			if (*this >> **insIter) {
+				return true;
 			}
-		} else {
-			return false;
 		}
+		// otherwise, try to find an outstructed downcastability from the left object to the right object
+		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (**outsIter >> *otherTypeCast) {
+				return true;
+			}
+		}
+		// if we had no matches to any of the above cases, conclude that the objects are not downcastable and return false
+		return false;
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return false;
@@ -977,21 +1047,33 @@ bool ObjectType::operator>>(const Type &otherType) const {
 string ObjectType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
 	acc = "{";
-	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+	for (vector<TypeList *>::const_iterator iter = instructorTypes.begin(); iter != instructorTypes.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
 		acc += "=[";
 		acc += (*iter)->toString(tabDepth+1);
 		acc += ']';
-		if (iter+1 != constructorTypes.end()) {
+		if (iter+1 != instructorTypes.end()) {
 			acc += ", ";
 		}
 	}
-	if (constructorTypes.size() > 0 && memberNames.size() > 0) {
+	if (instructorTypes.size() > 0 && outstructorTypes.size() > 0) {
 		acc += ", ";
 	}
-	vector<string>::const_iterator memberNameIter = memberNames.begin();
-	vector<Type *>::const_iterator memberTypeIter = memberTypes.begin();
-	while (memberNameIter != memberNames.end()) {
+	for (vector<TypeList *>::const_iterator iter = outstructorTypes.begin(); iter != outstructorTypes.end(); iter++) {
+		TYPE_TO_STRING_INDENT;
+		acc += "=[-->";
+		acc += (*iter)->toString(tabDepth+1);
+		acc += ']';
+		if (iter+1 != outstructorTypes.end()) {
+			acc += ", ";
+		}
+	}
+	if (outstructorTypes.size() > 0 && memberNames.size() > 0) {
+		acc += ", ";
+	}
+	vector<string>::const_iterator memberNameIter;
+	vector<Type *>::const_iterator memberTypeIter;
+	for (memberNameIter = memberNames.begin(), memberTypeIter = memberTypes.begin(); memberNameIter != memberNames.end(); memberNameIter++, memberTypeIter++) {
 		TYPE_TO_STRING_INDENT;
 		acc += *memberNameIter;
 		acc += '=';
@@ -999,9 +1081,6 @@ string ObjectType::toString(unsigned int tabDepth) {
 		if (memberNameIter+1 != memberNames.end()) {
 			acc += ", ";
 		}
-		// advance
-		memberNameIter++;
-		memberTypeIter++;
 	}
 	TYPE_TO_STRING_INDENT_CLOSE;
 	acc += '}';
@@ -1011,29 +1090,37 @@ string ObjectType::toString(unsigned int tabDepth) {
 ObjectType::operator string() {
 	TYPE_TO_STRING_HEADER;
 	acc = "{";
-	for (vector<TypeList *>::const_iterator iter = constructorTypes.begin(); iter != constructorTypes.end(); iter++) {
+	for (vector<TypeList *>::const_iterator iter = instructorTypes.begin(); iter != instructorTypes.end(); iter++) {
 		acc += "=[";
 		acc += (string)(**iter);
 		acc += ']';
-		if (iter+1 != constructorTypes.end()) {
+		if (iter+1 != instructorTypes.end()) {
 			acc += ", ";
 		}
 	}
-	if (constructorTypes.size() > 0 && memberNames.size() > 0) {
+	if (instructorTypes.size() > 0 && outstructorTypes.size() > 0) {
 		acc += ", ";
 	}
-	vector<string>::const_iterator memberNameIter = memberNames.begin();
-	vector<Type *>::const_iterator memberTypeIter = memberTypes.begin();
-	while (memberNameIter != memberNames.end()) {
+	for (vector<TypeList *>::const_iterator iter = outstructorTypes.begin(); iter != outstructorTypes.end(); iter++) {
+		acc += "=[-->";
+		acc += (string)(**iter);
+		acc += ']';
+		if (iter+1 != outstructorTypes.end()) {
+			acc += ", ";
+		}
+	}
+	if (outstructorTypes.size() > 0 && memberNames.size() > 0) {
+		acc += ", ";
+	}
+	vector<string>::const_iterator memberNameIter;
+	vector<Type *>::const_iterator memberTypeIter;
+	for (memberNameIter = memberNames.begin(), memberTypeIter = memberTypes.begin(); memberNameIter != memberNames.end(); memberNameIter++, memberTypeIter++) {
 		acc += *memberNameIter;
 		acc += '=';
 		acc += (string)(**memberTypeIter);
 		if (memberNameIter+1 != memberNames.end()) {
 			acc += ", ";
 		}
-		// advance
-		memberNameIter++;
-		memberTypeIter++;
 	}
 	acc += '}';
 	acc += suffixString();

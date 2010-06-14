@@ -220,7 +220,8 @@ class FilterType : public Type {
 class ObjectType : public Type {
 	public:
 		// data members
-		vector<TypeList *> constructorTypes; // list of the types of this object's constructors (each one is a TypeList)
+		vector<TypeList *> instructorTypes; // list of the types of this object's instructors (each one is a TypeList)
+		vector<TypeList *> outstructorTypes; // list of the types of this object's outstructors (each one is a TypeList)
 		vector<string> memberNames; // list of names of raw non-constructor members of this object
 		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
 		vector<Tree *> memberDefSites; // list of the definition sites of raw non-constructor members of this object, used for sub-identifier binding
@@ -228,8 +229,8 @@ class ObjectType : public Type {
 		bool propagationHandled; // used for recursively dependent copy update propagation
 		// allocators/deallocators
 		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const vector<TypeList *> &constructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const vector<TypeList *> &constructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;

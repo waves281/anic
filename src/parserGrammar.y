@@ -72,17 +72,17 @@ Program : Pipes
 	;
 Pipes :
 	| LastPipe
+	| Pipe
 	| Pipe NonEmptyPipes
 	;
 NonEmptyPipes : LastPipe
+	| Pipe
 	| Pipe NonEmptyPipes
 	;
 Pipe : Declaration
 	| NonEmptyTerms SEMICOLON
 	;
-LastPipe : Declaration
-	| NonEmptyTerms SEMICOLON
-	| LastDeclaration
+LastPipe : LastDeclaration
 	| NonEmptyTerms
 	;
 Declaration : ID EQUALS TypedStaticTerm
@@ -283,6 +283,8 @@ FilterHeader : LSQUARE ParamList RSQUARE
 NonRetFilterHeader : LSQUARE RSQUARE
 	| LSQUARE ParamList RSQUARE
 	;
+RetFilterHeader : LSQUARE RetList RSQUARE
+	;
 ParamList : Param
 	| Param COMMA ParamList
 	;
@@ -314,16 +316,18 @@ FilterType : LSQUARE TypeList RSQUARE
 ObjectType : LCURLY RCURLY
 	| LCURLY ObjectTypeList RCURLY
 	;
-ObjectTypeList : ConstructorType
-	| ConstructorType COMMA ObjectTypeList
-	| MemberList
+ObjectTypeList : InstructorType
+	| InstructorType COMMA ObjectTypeList
+	| OutstructorType
+	| OutstructorType COMMA ObjectTypeList
+	| MemberType
+	| MemberType COMMA ObjectTypeList
 	;
-ConstructorType : EQUALS
+InstructorType : EQUALS
 	| EQUALS LSQUARE RSQUARE
 	| EQUALS LSQUARE TypeList RSQUARE
 	;
-MemberList : MemberType
-	| MemberType COMMA MemberList
+OutstructorType : EQUALS LSQUARE DRARROW TypeList RSQUARE
 	;
 MemberType : ID EQUALS Type
 	;
@@ -332,23 +336,33 @@ TypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
-Object : LCURLY Constructors NonEmptyPipes RCURLY
-	| LCURLY OnlyConstructors RCURLY
+Object : LCURLY InstructedObjectPipes RCURLY
 	;
-Constructors : Constructor
-	| Constructor Constructors
+InstructedObjectPipes : LastInstructor
+	| Instructor
+	| Instructor ObjectPipes
+	| Outstructor InstructedObjectPipes
+	| Pipe InstructedObjectPipes
 	;
-OnlyConstructors : Constructor
-	| Constructor Constructors
-	| LastConstructor
+ObjectPipes : LastInstructor
+	| Instructor
+	| Instructor ObjectPipes
+	| Outstructor
+	| Outstructor ObjectPipes
+	| LastPipe
+	| Pipe
+	| Pipe ObjectPipes
 	;
-Constructor : EQUALS SEMICOLON
+Instructor : EQUALS SEMICOLON
 	| EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;
-LastConstructor : EQUALS
+LastInstructor : EQUALS
 	| EQUALS LSQUARE RSQUARE
+	;
+Outstructor : EQUALS RetFilterHeader Block
+	| EQUALS RetFilterHeader Block SEMICOLON
 	;
 Access : SingleAccessor Node
 	| MultiAccessor Node

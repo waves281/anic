@@ -18,10 +18,11 @@
 #define KIND_BLOCK 4
 #define KIND_DECLARATION 5
 #define KIND_PARAMETER 6
-#define KIND_CONSTRUCTOR 7
-#define KIND_FILTER 8
-#define KIND_OBJECT 9
-#define KIND_FAKE 10
+#define KIND_INSTRUCTOR 7
+#define KIND_OUTSTRUCTOR 8
+#define KIND_FILTER 9
+#define KIND_OBJECT 10
+#define KIND_FAKE 11
 
 class SymbolTable {
 	public:
@@ -56,7 +57,8 @@ TypeStatus getStatusPrimLiteral(Tree *tree, const TypeStatus &inStatus = TypeSta
 TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
-TypeStatus getStatusConstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));

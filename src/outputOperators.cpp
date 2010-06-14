@@ -27,8 +27,10 @@ void printDefs(SymbolTable *st, int depth) {
 		}
 	}
 	if (st->kind != KIND_BLOCK && st->kind != KIND_CLOSED_IMPORT && st->kind != KIND_OPEN_IMPORT) {
-		if (st->kind == KIND_CONSTRUCTOR) {
-			cout << CONSTRUCTOR_NODE_STRING;
+		if (st->kind == KIND_INSTRUCTOR) {
+			cout << INSTRUCTOR_NODE_STRING;
+		} else if (st->kind == KIND_OUTSTRUCTOR) {
+			cout << OUTSTRUCTOR_NODE_STRING;
 		} else if (st->kind == KIND_FILTER) {
 			cout << FILTER_NODE_STRING;
 		} else if (st->kind == KIND_OBJECT) {

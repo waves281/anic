@@ -28,10 +28,11 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	5, (8 == 9 || (false || true)) someFilter ->std.out;
 	1, 2 + , 5 * , 5 % - ++ >> 2 << 1 ->someInt;
 	someObj = {
-		=[int\ x] {\x ->xStream;}
 		xStream = [int\\];
 		\\xStream ->std.out;
 		toString = [--> string] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
+		=[int\ x] {\x ->xStream;}
+		=[--> float] {2.0 -->};
 	};
 	\someObj ->std.out;
 	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);

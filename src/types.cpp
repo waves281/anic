@@ -1061,7 +1061,7 @@ string ObjectType::toString(unsigned int tabDepth) {
 	}
 	for (vector<TypeList *>::const_iterator iter = outstructorTypes.begin(); iter != outstructorTypes.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
-		acc += "=[-->";
+		acc += "=[--> ";
 		acc += (*iter)->toString(tabDepth+1);
 		acc += ']';
 		if (iter+1 != outstructorTypes.end()) {

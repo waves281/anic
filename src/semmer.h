@@ -30,14 +30,15 @@ class SymbolTable {
 		int kind;
 		string id;
 		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
+		Tree *copyImportSite; // if this node is a copy-import, the site where we're importing from; NULL otherwise
 		SymbolTable *parent;
 		map<string, SymbolTable *> children;
 		// allocators/deallocators
-		SymbolTable(int kind, const string &id, Tree *defSite = NULL);
-		SymbolTable(int kind, const char *id, Tree *defSite = NULL);
-		SymbolTable(int kind, const string &id, Type *defType);
-		SymbolTable(int kind, const char *id, Type *defType);
-		SymbolTable(const SymbolTable &st);
+		SymbolTable(int kind, const string &id, Tree *defSite = NULL, Tree *copyImportSite = false);
+		SymbolTable(int kind, const char *id, Tree *defSite = NULL, Tree *copyImportSite = false);
+		SymbolTable(int kind, const string &id, Type *defType, Tree *copyImportSite = false);
+		SymbolTable(int kind, const char *id, Type *defType, Tree *copyImportSite = false);
+		SymbolTable(const SymbolTable &st, Tree *copyImportSite = false);
 		~SymbolTable();
 		// copy assignment operator
 		SymbolTable &operator=(const SymbolTable &st);

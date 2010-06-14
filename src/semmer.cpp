@@ -30,19 +30,23 @@ FilterType *stringCompOpType;
 // SymbolTable functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(int kind, const string &id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {
+SymbolTable::SymbolTable(int kind, const string &id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite) : kind(kind), id(id), defSite(defSite), parent(NULL) {
+SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTable::SymbolTable(int kind, const string &id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
-SymbolTable::SymbolTable(int kind, const char *id, Type *defType) : kind(kind), id(id), parent(NULL) {TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;}
-SymbolTable::SymbolTable(const SymbolTable &st) : kind(st.kind), id(st.id), defSite(st.defSite), parent(st.parent), children(st.children) {}
+SymbolTable::SymbolTable(int kind, const string &id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
+}
+SymbolTable::SymbolTable(int kind, const char *id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
+}
+SymbolTable::SymbolTable(const SymbolTable &st, Tree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(st.parent), children(st.children) {}
 SymbolTable::~SymbolTable() {
 	// delete all of the child nodes
 	for (map<string, SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
@@ -54,6 +58,7 @@ SymbolTable::~SymbolTable() {
 SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 	kind = st.kind;
 	defSite = st.defSite;
+	copyImportSite = st.copyImportSite;
 	if (id != st.id) { // if the id is changing
 		if (parent != NULL) { // ... and there exists a parent, fix up the parent's children map to use the new id
 			parent->children.erase(id);
@@ -153,7 +158,8 @@ void initStdTypes() {
 	// build the stringerType
 	vector<TypeList *> instructorTypes;
 	vector<TypeList *> outstructorTypes;
-	outstructorTypes.push_back(new TypeList(stdStringType));
+	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
+	outstructorTypes.push_back(stringOutstructorType);
 	stringerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); stringerType->operable = false;
 	// build some auxiliary types
 	// latches
@@ -532,13 +538,14 @@ void subImportDecls(vector<SymbolTable *> importList) {
 		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
 			Tree *importdcn = (*importIter)->defSite->child->next;
-			Tree *importSid = (*importdcn == TOKEN_NonArrayedIdentifier || *importdcn == TOKEN_ArrayedIdentifier) ?
-				(*importIter)->defSite->child->next :
-				(*importIter)->defSite->child->next->next; // NonArrayedIdentifier or ArrayedIdentifier
+			bool copyImport = (*importdcn == TOKEN_LSQUARE); // whether this is a copy-import
+			Tree *importSid = copyImport ?
+				(*importIter)->defSite->child->next->next :
+				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
 			string importPath = *importSid; // NonArrayedIdentifier or ArrayedIdentifier
 			SymbolTable *importParent = (*importIter)->parent;
 			// standard import special-casing
-			if (importPath == "std") { // if it's the standard import
+			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
 					(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
 					stdExplicitlyImported = true;
@@ -554,7 +561,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					string importPathTip = binding->id; // must exist if binding succeeed
 					map<string, SymbolTable *>::const_iterator conflictFind = importParent->children.find(importPathTip);
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
-						**importIter = *binding;
+						**importIter = *(new SymbolTable(*binding, (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
 					} else { // else if there was a conflict, flag an error
 						Token curDefToken = importSid->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
@@ -588,10 +595,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
 								if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
 									if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
-										**importIter = *((*bindingBaseIter).second);
+										**importIter = *(new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
 										firstInsert = false;
 									} else { // else if this is not the first insertion, latch in a copy of the child
-										SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second));
+										SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
 										*((*importIter)->parent) *= baseChildCopy;
 									}
 								} else { // else if there is a member naming conflict
@@ -647,6 +654,12 @@ void subImportDecls(vector<SymbolTable *> importList) {
 void typeSt(SymbolTable *root) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTable(root);
+	} else if (root->kind == STD_STD) { // else if it's a standard node, check for copy-imports of non-referensible types
+		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
+			Token curToken = root->copyImportSite->t;
+			semmerError(curToken.fileName,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->id<<"'");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<root->defSite->status.type<<")");
+		}
 	}
 	// recurse on this node's children
 	for (map<string, SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
@@ -654,6 +667,7 @@ void typeSt(SymbolTable *root) {
 	}
 }
 
+// reports errors
 TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
@@ -1612,36 +1626,42 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	} else /* if (*itc == TOKEN_SingleAccessor || *itc == TOKEN_MultiAccessor) */ { // else if it's a copy-style instantiation
 		TypeStatus idStatus = getStatusIdentifier(itc->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		if (*idStatus) { // if we managed to derive a type for the identifier we're copying from
-			TypeStatus mutableIdStatus = idStatus;
-			mutableIdStatus.type = mutableIdStatus.type->copy();
 			Tree *accessorc = itc->child; // SLASH, DSLASH, or LSQUARE
-			if (*accessorc == TOKEN_SLASH) {
-				if (mutableIdStatus.type->copyDelatch()) {
-					returnStatus(mutableIdStatus);
-				} else {
-					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-					mutableIdStatus.type->erase();
+			if (idStatus->operable) { // if the type that we're copying is operable
+				TypeStatus mutableIdStatus = idStatus;
+				mutableIdStatus.type = mutableIdStatus.type->copy();
+				if (*accessorc == TOKEN_SLASH) {
+					if (mutableIdStatus.type->copyDelatch()) {
+						returnStatus(mutableIdStatus);
+					} else {
+						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+						mutableIdStatus.type->erase();
+					}
+				} else if (*accessorc == TOKEN_DSLASH) {
+					if (mutableIdStatus.type->copyDestream()) {
+						returnStatus(mutableIdStatus);
+					} else {
+						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+						semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+						mutableIdStatus.type->erase();
+					}
+				} else /* if (*accessorc == TOKEN_LSQUARE) */ {
+					if (mutableIdStatus.type->copyDelist()) {
+						returnStatus(mutableIdStatus);
+					} else {
+						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delist of incompatible type");
+						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
+						mutableIdStatus.type->erase();
+					}
 				}
-			} else if (*accessorc == TOKEN_DSLASH) {
-				if (mutableIdStatus.type->copyDestream()) {
-					returnStatus(mutableIdStatus);
-				} else {
-					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-					mutableIdStatus.type->erase();
-				}
-			} else /* if (*accessorc == TOKEN_LSQUARE) */ {
-				if (mutableIdStatus.type->copyDelist()) {
-					returnStatus(mutableIdStatus);
-				} else {
-					Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-					semmerError(curToken.fileName,curToken.row,curToken.col,"copy delist of incompatible type");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-					mutableIdStatus.type->erase();
-				}
+			} else {
+				Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+				semmerError(curToken.fileName,curToken.row,curToken.col,"copy instantiation of non-referensible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
 			}
 		}
 	}

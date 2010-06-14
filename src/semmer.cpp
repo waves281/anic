@@ -1260,6 +1260,13 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 			memberTypes.push_back(NULL);
 			memberDefSites.push_back(defSite); // Declaration
 			memberTokens.push_back(defToken); // ID
+		} else if ((*memberIter).second->kind == KIND_STD) { // else if it's an imported standard node
+			Tree *defSite = (*memberIter).second->defSite;
+			Token defToken = defSite->t;
+			memberNames.push_back((*memberIter).second->id);
+			memberTypes.push_back(defSite->status.type);
+			memberDefSites.push_back(NULL);
+			memberTokens.push_back(defToken); // ID
 		}
 	}
 	// commit the fake member names and types, as well as their definition sites
@@ -1326,7 +1333,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	}
 	// derive types for all of the members that haven't had their types derived already
 	for (unsigned int i=0; i < ((ObjectType *)fakeType)->memberTypes.size(); i++) {
-		if ((((ObjectType *)fakeType)->memberTypes)[i] == NULL) { // if we haven't yet derived a type for this member, do so now
+		if (((((ObjectType *)fakeType)->memberTypes)[i] == NULL) && (memberDefSites[i] != NULL)) { // if we haven't yet derived a type for this member and it's not a KIND_STD with a NULL defSite, do so now
 			TypeStatus memberStatus = getStatusDeclaration(memberDefSites[i], inStatus);
 			if (*memberStatus) { // if we successfully derived a type for this Declaration
 				(((ObjectType *)fakeType)->memberTypes)[i] = memberStatus.type;

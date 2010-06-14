@@ -30,10 +30,11 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	someObj = {
 		xStream = [int\\];
 		\\xStream ->std.out;
-		 = [--> string] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
+		=[--> string] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
 		=[int\ x] {\x ->xStream;}
 		=[--> float] {2.0 -->};
 	};
+	someObj [{=[-->float]} someObjCompat --> float] {someObjCompat -->;};
 	\someObj ->std.out;
 	((1 < (2|1)) && (true || false)) ? (4+someInt) : (2-- * someInt++);
 	true ? {"Hi" ->std.out};

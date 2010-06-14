@@ -34,8 +34,8 @@ class Tree {
 		// core methods
 		IRTree *code() const;
 		Type &typeRef() const;
-		DataTree *cast(const Type &destType) const;
-		DataTree *castCommon(const Type &otherType) const;
+		DataTree *castCode(const Type &destType) const;
+		DataTree *castCommonCode(const Type &otherType) const;
 		// comparison operators
 		bool operator==(int tokenType) const;
 		bool operator!=(int tokenType) const;

@@ -1046,7 +1046,7 @@ TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), 
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}
-DataTree *TypeStatus::cast(const Type &destType) const {
+DataTree *TypeStatus::castCode(const Type &destType) const {
 	StdType *thisType = (StdType *)type;
 	StdType *otherType = (StdType *)(&destType);
 	if (thisType->kind == otherType->kind) {
@@ -1072,9 +1072,9 @@ DataTree *TypeStatus::cast(const Type &destType) const {
 	}
 	return (DataTree *)code;
 }
-DataTree *TypeStatus::castCommon(const Type &otherType) const {
+DataTree *TypeStatus::castCommonCode(const Type &otherType) const {
 	if (*type >> otherType) {
-		return cast(otherType);
+		return castCode(otherType);
 	} else /* if (otherType >> *type) */ {
 		return (DataTree *)code;
 	}

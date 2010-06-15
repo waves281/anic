@@ -587,7 +587,7 @@ bool StdType::operator>>(const Type &otherType) const {
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
-			// try to do a basic constructor send
+			// try to do a basic instructor send
 			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->instructorTypes.begin(); iter != otherTypeCast->instructorTypes.end(); iter++) {
 				if (*this >> **iter) {

@@ -155,12 +155,6 @@ void initStdTypes() {
 	stdStringType = new StdType(STD_STRING); stdStringType->operable = false;
 	stdNullLitType = new StdType(STD_NULL);
 	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
-	// build the stringerType
-	vector<TypeList *> instructorTypes;
-	vector<TypeList *> outstructorTypes;
-	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
-	outstructorTypes.push_back(stringOutstructorType);
-	stringerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); stringerType->operable = false;
 	// build some auxiliary types
 	// latches
 	Type *boolLatchType = new StdType(STD_BOOL, SUFFIX_LATCH);
@@ -186,6 +180,12 @@ void initStdTypes() {
 	vector<Type *> stringPair;
 	stringPair.push_back(stdStringType); stringPair.push_back(stdStringType);
 	Type *stringPairType = new TypeList(stringPair);
+	// build the stringerType
+	vector<TypeList *> instructorTypes;
+	vector<TypeList *> outstructorTypes;
+	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
+	outstructorTypes.push_back(stringOutstructorType);
+	stringerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); stringerType->operable = false;
 	// build the boolUnOpType
 	boolUnOpType = new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH); boolUnOpType->operable = false;
 	// build the intUnOpType
@@ -573,7 +573,6 @@ void subImportDecls(vector<SymbolTable *> importList) {
 							prevDefToken.col = 0;
 						}
 						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in open-importing '"<<importPathTip<<"'");
-						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"-- (conflicting identifier is '"<<(*conflictFind).second->id<<"')");
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					}
 				} else if ((*importIter)->kind == KIND_OPEN_IMPORT) { // else if this is an open-import
@@ -591,29 +590,17 @@ void subImportDecls(vector<SymbolTable *> importList) {
 						for (map<string, SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
 								bindingBaseIter != bindingBase->children.end();
 								bindingBaseIter++) {
-								// check for member naming conflicts (constructor type conflicts will be resolved later)
-								map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
-								if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
-									if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
-										**importIter = *(new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
-										firstInsert = false;
-									} else { // else if this is not the first insertion, latch in a copy of the child
-										SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
-										*((*importIter)->parent) *= baseChildCopy;
-									}
-								} else { // else if there is a member naming conflict
-									Token curDefToken = importSid->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
-									Token prevDefToken;
-									if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
-										prevDefToken = (*conflictFind).second->defSite->t;
-									} else { // otherwise, it must be a standard definition, so make up the token as if it was
-										prevDefToken.fileName = STANDARD_LIBRARY_STRING;
-										prevDefToken.row = 0;
-										prevDefToken.col = 0;
-									}
-									semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
-									semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
+							// check for member naming conflicts (constructor type conflicts will be resolved later)
+							map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
+							if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
+								if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
+									**importIter = *(new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
+									firstInsert = false;
+								} else { // else if this is not the first insertion, latch in a copy of the child
+									SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
+									*((*importIter)->parent) *= baseChildCopy;
 								}
+							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
 						}
 					} else { // else if we didn't find a binding in the open-import's children, flag an error
 						Token curDefToken = importSid->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier

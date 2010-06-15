@@ -50,7 +50,8 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 intBinOp = [int x, int y --> int\] {\std.randInt -->};
 + <->intBinOp;
 stringCompOp = [string x, string y --> bool\] {false -->};
-== <->stringCompOp;
+\stringCompOp;
+== ->stringCompOp;
 
 // array and pool testing
 intArray = [int[256]];

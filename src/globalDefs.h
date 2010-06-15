@@ -58,17 +58,16 @@ extern StdType *stdNullLitType;
 extern StdType *stdBoolLitType;
 class ObjectType;
 extern ObjectType *stringerType;
-class FilterType;
-extern FilterType *boolUnOpType;
-extern FilterType *intUnOpType;
-extern FilterType *boolBinOpType;
-extern FilterType *intBinOpType;
-extern FilterType *floatBinOpType;
-extern FilterType *boolCompOpType;
-extern FilterType *intCompOpType;
-extern FilterType *floatCompOpType;
-extern FilterType *charCompOpType;
-extern FilterType *stringCompOpType;
+extern ObjectType *boolUnOpType;
+extern ObjectType *intUnOpType;
+extern ObjectType *boolBinOpType;
+extern ObjectType *intBinOpType;
+extern ObjectType *floatBinOpType;
+extern ObjectType *boolCompOpType;
+extern ObjectType *intCompOpType;
+extern ObjectType *floatCompOpType;
+extern ObjectType *charCompOpType;
+extern ObjectType *stringCompOpType;
 
 // global function forward declarations
 

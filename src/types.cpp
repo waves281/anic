@@ -1,5 +1,7 @@
 #include "types.h"
 
+#include "outputOperators.h"
+
 // Type functions
 Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), operable(true), toStringHandled(false) {}
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
@@ -209,7 +211,8 @@ TypeList::~TypeList() {
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
 Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
-void TypeList::erase() {list.clear(); delete this;}
+void TypeList::erase() {clear(); delete this;}
+void TypeList::clear() {list.clear();}
 bool TypeList::operator==(const Type &otherType) const {
 	if (this == &otherType) { // if the lists are actually the same object instance, return true
 		return true;
@@ -218,14 +221,12 @@ bool TypeList::operator==(const Type &otherType) const {
 		if (list.size() != otherTypeCast->list.size()) {
 			return false;
 		}
-		vector<Type *>::const_iterator iter1 = list.begin();
-		vector<Type *>::const_iterator iter2 = otherTypeCast->list.begin();
-		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
+		vector<Type *>::const_iterator iter1;
+		vector<Type *>::const_iterator iter2;
+		for (iter1 = list.begin(), iter2 = otherTypeCast->list.begin(); iter1 != list.end(); iter1++, iter2++) {
 			if (**iter1 != **iter2) {
 				return false;
 			}
-			iter1++;
-			iter2++;
 		}
 		return true;
 	} else if (list.size() == 1) {
@@ -378,6 +379,7 @@ ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
 Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
 void ErrorType::erase() {delete this;}
+void ErrorType::clear() {}
 bool ErrorType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_ERRORTYPE) {
 		return (this == &otherType);
@@ -499,39 +501,94 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 	}
 	return make_pair(errType, false); // return false, since we're not consuming the nextTerm (though this doesn't really matter -- it's an error anyway)
 }
-bool StdType::filterTypePromotion(const FilterType &otherType) const {
-	if (otherType == *boolUnOpType &&
-			kind == STD_NOT) {
-		return true;
-	} else if (otherType == *intUnOpType &&
-			(kind == STD_COMPLEMENT || kind == STD_DPLUS || kind == STD_DMINUS || kind == STD_PLUS || kind == STD_MINUS)) {
-		return true;
-	} else if (otherType == *boolBinOpType &&
-			(kind == STD_DOR || kind == STD_DAND)) {
-		return true;
-	} else if (otherType == *intBinOpType &&
-			(kind == STD_OR || kind == STD_AND || kind == STD_XOR || kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD || kind == STD_LS || kind == STD_RS)) {
-		return true;
-	} else if (otherType == *floatBinOpType &&
-			(kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD)) {
-		return true;
-	} else if ((otherType == *boolCompOpType || otherType == *intCompOpType || otherType == *floatCompOpType || otherType == *charCompOpType || otherType == *stringCompOpType) &&
-			(kind == STD_DEQUALS || kind == STD_NEQUALS || kind == STD_LT || kind == STD_GT || kind == STD_LE || kind == STD_GE)) {
-		return true;
-	} else {
-		return false;
+bool StdType::objectTypePromotion(const Type &otherType) const {
+	ObjectType *tempObjectType;
+	bool result;
+	if (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE &&
+			otherType.category == CATEGORY_OBJECTTYPE) {
+		tempObjectType = new ObjectType(*stringerType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
 	}
-}
-bool StdType::objectTypePromotion(const ObjectType &otherType) const {
-	if (otherType == *stringerType &&
-			(kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE)) {
-		return true;
-	} else {
-		return false;
+	if (kind == STD_NOT) {
+		tempObjectType = new ObjectType(*boolUnOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
 	}
+	if (kind == STD_COMPLEMENT || kind == STD_DPLUS || kind == STD_DMINUS || kind == STD_PLUS || kind == STD_MINUS) {
+		tempObjectType = new ObjectType(*intUnOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+	}
+	if (kind == STD_DOR || kind == STD_DAND) {
+		tempObjectType = new ObjectType(*boolBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+	}
+	if (kind == STD_OR || kind == STD_AND || kind == STD_XOR || kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD || kind == STD_LS || kind == STD_RS) {
+		tempObjectType = new ObjectType(*intBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+	}
+	if (kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD) {
+		tempObjectType = new ObjectType(*floatBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+	}
+	if (kind == STD_DEQUALS || kind == STD_NEQUALS || kind == STD_LT || kind == STD_GT || kind == STD_LE || kind == STD_GE) {
+		tempObjectType = new ObjectType(*boolCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+		tempObjectType = new ObjectType(*intCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+		tempObjectType = new ObjectType(*floatCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+		tempObjectType = new ObjectType(*charCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		if (result) {
+			return true;
+		}
+		tempObjectType = new ObjectType(*stringCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
+		result = (*tempObjectType >> otherType);
+		tempObjectType->erase();
+		return result;
+	}
+	// none of the above cases succeeded, so return false
+	return false;
 }
 Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->operable = true; return retVal;}
 void StdType::erase() {delete this;}
+void StdType::clear() {}
 bool StdType::operator==(const Type &otherType) const {
 	if (otherType.category == CATEGORY_STDTYPE) {
 		StdType *otherTypeCast = (StdType *)(&otherType);
@@ -578,31 +635,19 @@ bool StdType::operator>>(const Type &otherType) const {
 			return false;
 		}
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		// check for a StdType -> FilterType promotion case
-		if (baseSendable(otherType) && filterTypePromotion(*otherTypeCast)) {
-			return true;
-		} else {
-			return false;
-		}
+		return (objectTypePromotion(otherType));
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 		if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
 			// try to do a basic instructor send
-			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
 			for (vector<TypeList *>::const_iterator iter = otherTypeCast->instructorTypes.begin(); iter != otherTypeCast->instructorTypes.end(); iter++) {
 				if (*this >> **iter) {
 					return true;
 				}
 			}
-			// basic constructor sending failed, so check for a StdType -> ObjectType promotion case
-			if (objectTypePromotion(*otherTypeCast)) {
-				return true;
-			} else {
-				return false;
-			}
-		} else {
-			return false;
 		}
+		// basic instructor sending failed, so check for a StdType -> ObjectType promotion case
+		return (objectTypePromotion(*otherTypeCast));
 	}
 	// otherType.category == CATEGORY_ERRORTYPE
 	return false;
@@ -709,7 +754,8 @@ FilterType::~FilterType() {
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
 Type *FilterType::copy() {Type *retVal = new FilterType(*this); retVal->operable = true; return retVal;}
-void FilterType::erase() {from = NULL; to = NULL; delete this;}
+void FilterType::erase() {clear(); delete this;}
+void FilterType::clear() {from = NULL; to = NULL;}
 bool FilterType::operator==(const Type &otherType) const {
 	if (this == &otherType) { // if the filters are actually the same object instance, return true
 		return true;
@@ -823,7 +869,8 @@ ObjectType::~ObjectType() {
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
 Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); copyList.push_back(retVal); retVal->operable = true; return retVal;}
-void ObjectType::erase() {instructorTypes.clear(); outstructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear(); delete this;}
+void ObjectType::erase() {clear(); delete this;}
+void ObjectType::clear() {instructorTypes.clear(); outstructorTypes.clear(); memberNames.clear(); memberTypes.clear(); memberDefSites.clear();}
 void ObjectType::propagateToCopies() {
 	if (propagationHandled) { // if we've already propagated to this node and got here through a recursive type loop, we're done
 		return;
@@ -932,47 +979,35 @@ bool ObjectType::operator>>(const Type &otherType) const {
 			return true;
 		}
 		// otherwise, try an outstructed downcastability
-		vector<TypeList *>::const_iterator outsIter;
-		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
-			if (!((*outsIter)->baseEquals(*otherTypeCast) && (**outsIter == *otherTypeCast))) { // if there is a type mismatch, break early
-				break;
+		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (**outsIter >> *otherTypeCast) { // if there is a type match, return true
+				return true;
 			}
 		}
-		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
-			return true;
-		} else { // else if there was a type mismatch somewhere, disallow the downcastability
-			return false;
-		}
+		// else if we didn't find a type match, return false
+		return false;
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		// try an outstructed downcastability
-		vector<TypeList *>::const_iterator outsIter;
-		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
-			if (!((*outsIter)->baseEquals(otherType) && (**outsIter == otherType))) { // if there is a type mismatch, break early
-				break;
+		// otherwise, try an outstructed downcastability
+		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (**outsIter >> otherType) { // if there is a type match, return true
+				return true;
 			}
 		}
-		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
-			return true;
-		} else { // else if there was a type mismatch somewhere, disallow the downcastability
-			return false;
-		}
+		// else if we didn't find a type match, return false
+		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		// try an outstructed downcastability
-		vector<TypeList *>::const_iterator outsIter;
-		for (outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
-			if (!((*outsIter)->baseEquals(otherType) && (**outsIter == otherType))) { // if there is a type mismatch, break early
-				break;
+		// otherwise, try an outstructed downcastability
+		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (**outsIter >> otherType) { // if there is a type match, return true
+				return true;
 			}
 		}
-		if (outsIter == outstructorTypes.end()) { // if we managed to match all of the types, allow the downcastability
-			return true;
-		} else { // else if there was a type mismatch somewhere, disallow the downcastability
-			return false;
-		}
+		// else if we didn't find a type match, return false
+		return false;
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-		// try to find a direct downcastability from the left object to the right one
 		if (baseSendable(otherType)) {
+			// try to find a direct downcastability from the left object to the right one
 			// verify instructor downcastability
 			vector<TypeList *>::const_iterator insIter;
 			for (insIter = otherTypeCast->instructorTypes.begin(); insIter != otherTypeCast->instructorTypes.end(); insIter++) {
@@ -1025,18 +1060,18 @@ bool ObjectType::operator>>(const Type &otherType) const {
 					}
 				}
 			}
-		}
-		// try to connect the left object into a constructor on the right object
-		for (vector<TypeList *>::const_iterator insIter = otherTypeCast->instructorTypes.begin(); insIter != otherTypeCast->instructorTypes.end(); insIter++) {
-			if (*this >> **insIter) {
+			// try to connect the left object into a constructor on the right object
+			for (vector<TypeList *>::const_iterator insIter = otherTypeCast->instructorTypes.begin(); insIter != otherTypeCast->instructorTypes.end(); insIter++) {
+				if (*this >> **insIter) {
+					return true;
+				}
+			}
+			// otherwise, try an outstructed downcastability from the left object to the right object
+			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			if (**outsIter >> *otherTypeCast) { // if there is a type match, return true
 				return true;
 			}
 		}
-		// otherwise, try to find an outstructed downcastability from the left object to the right object
-		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
-			if (**outsIter >> *otherTypeCast) {
-				return true;
-			}
 		}
 		// if we had no matches to any of the above cases, conclude that the objects are not downcastable and return false
 		return false;

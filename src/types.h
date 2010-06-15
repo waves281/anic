@@ -70,6 +70,7 @@ class Type {
 		virtual bool isComparable(const Type &otherType) const = 0;
 		virtual Type *copy() = 0;
 		virtual void erase() = 0;
+		virtual void clear() = 0;
 		virtual string toString(unsigned int tabDepth = 1) = 0;
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
@@ -104,6 +105,7 @@ class TypeList : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
+		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -122,6 +124,7 @@ class ErrorType : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
+		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -182,10 +185,10 @@ class StdType : public Type {
 		bool isComparable(const Type &otherType) const;
 		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
-		bool filterTypePromotion(const FilterType &otherType) const; // returns whether we can specially promote this StdType to the given FilterType
-		bool objectTypePromotion(const ObjectType &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
+		bool objectTypePromotion(const Type &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
 		Type *copy();
 		void erase();
+		void clear();
 		string kindToString() const;
 		string toString(unsigned int tabDepth);
 		// operators
@@ -208,6 +211,7 @@ class FilterType : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
+		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(const Type &otherType) const;
@@ -236,6 +240,7 @@ class ObjectType : public Type {
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
+		void clear();
 		void propagateToCopies();
 		string toString(unsigned int tabDepth);
 		// operators

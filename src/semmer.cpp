@@ -16,16 +16,16 @@ StdType *stdStringType;
 StdType *stdNullLitType;
 StdType *stdBoolLitType;
 ObjectType *stringerType;
-FilterType *boolUnOpType;
-FilterType *intUnOpType;
-FilterType *boolBinOpType;
-FilterType *intBinOpType;
-FilterType *floatBinOpType;
-FilterType *boolCompOpType;
-FilterType *intCompOpType;
-FilterType *floatCompOpType;
-FilterType *charCompOpType;
-FilterType *stringCompOpType;
+ObjectType *boolUnOpType;
+ObjectType *intUnOpType;
+ObjectType *boolBinOpType;
+ObjectType *intBinOpType;
+ObjectType *floatBinOpType;
+ObjectType *boolCompOpType;
+ObjectType *intCompOpType;
+ObjectType *floatCompOpType;
+ObjectType *charCompOpType;
+ObjectType *stringCompOpType;
 
 // SymbolTable functions
 
@@ -128,18 +128,18 @@ void catStdLib(SymbolTable *&stRoot) {
 	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM, 1));
-	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM));
+	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM));
+	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM));
+	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM));
 	*stdLib *= new SymbolTable(KIND_STD, "out", stringerType);
 	*stdLib *= new SymbolTable(KIND_STD, "err", stringerType);
 	// control nodes
-	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM, 1));
+	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM));
 	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
 	// standard library
 	// generators
-	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
+	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM), SUFFIX_LATCH));
 	// concatenate the library to the root
 	*stRoot *= stdLib;
 }
@@ -182,30 +182,53 @@ void initStdTypes() {
 	Type *stringPairType = new TypeList(stringPair);
 	// build the stringerType
 	vector<TypeList *> instructorTypes;
-	vector<TypeList *> outstructorTypes;
+	vector<TypeList *> stringerOutstructorTypes;
 	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
-	outstructorTypes.push_back(stringOutstructorType);
-	stringerType = new ObjectType(instructorTypes, outstructorTypes, SUFFIX_STREAM, 1); stringerType->operable = false;
+	stringerOutstructorTypes.push_back(stringOutstructorType);
+	stringerType = new ObjectType(instructorTypes, stringerOutstructorTypes, SUFFIX_LIST); stringerType->operable = false;
+	// prepare to build the standard operator types
+	TypeList *filterOutstructorType;
+	vector<TypeList *> opOutstructorTypes;
 	// build the boolUnOpType
-	boolUnOpType = new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH); boolUnOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	boolUnOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolUnOpType->operable = false;
 	// build the intUnOpType
-	intUnOpType = new FilterType(stdIntType, intLatchType, SUFFIX_LATCH); intUnOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(stdIntType, intLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	intUnOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intUnOpType->operable = false;
 	// build the boolBinOpType
-	boolBinOpType = new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH); boolBinOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	boolBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolBinOpType->operable = false;
 	// build the intBinOpType
-	intBinOpType = new FilterType(intPairType, intLatchType, SUFFIX_LATCH); intBinOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(intPairType, intLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	intBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intBinOpType->operable = false;
 	// build the floatBinOpType
-	floatBinOpType = new FilterType(floatPairType, floatLatchType, SUFFIX_LATCH); floatBinOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(floatPairType, floatLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	floatBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); floatBinOpType->operable = false;
 	// build the boolCompOpType
-	boolCompOpType = new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH); boolCompOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	boolCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolCompOpType->operable = false;
 	// build the intCompOpType
-	intCompOpType = new FilterType(intPairType, boolLatchType, SUFFIX_LATCH); intCompOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(intPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	intCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intCompOpType->operable = false;
 	// build the floatCompOpType
-	floatCompOpType = new FilterType(floatPairType, boolLatchType, SUFFIX_LATCH); floatCompOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(floatPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	floatCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); floatCompOpType->operable = false;
 	// build the charCompOpType
-	charCompOpType = new FilterType(charPairType, boolLatchType, SUFFIX_LATCH); charCompOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(charPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	charCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); charCompOpType->operable = false;
 	// build the stringCompOpType
-	stringCompOpType = new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH); stringCompOpType->operable = false;
+	filterOutstructorType = new TypeList(new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH));
+	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
+	stringCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); stringCompOpType->operable = false;
 }
 
 SymbolTable *genDefaultDefs() {

@@ -1016,7 +1016,6 @@ TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusPrimOpNode(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *ponc = tree->child->child; // the operator token itself
-	// generate the type based on the specific operator it is
 	switch (ponc->t.tokenType) {
 		case TOKEN_NOT:
 			returnType(new StdType(STD_NOT, SUFFIX_LATCH));
@@ -1805,7 +1804,9 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 	// first, derive the Type of the Node that we're acting upon
 	TypeStatus nodeStatus = getStatusNode(tree->child->next, inStatus); // Node
 	if (*nodeStatus) { // if we managed to derive a type for the subnode
-		if (nodeStatus->operable && (nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the identifier allows access operators
+		if (nodeStatus->operable &&
+				(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType) &&
+				(nodeStatus.type->category != CATEGORY_STDTYPE || ((StdType *)(nodeStatus.type))->isComparable())) { // if the identifier allows access operators
 			// copy the Type so that our mutations don't propagate to the Node
 			TypeStatus mutableNodeStatus = nodeStatus;
 			mutableNodeStatus.type = mutableNodeStatus.type->copy();
@@ -1843,9 +1844,13 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
-		} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+		} else if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) { // else if it's an access of a standard literal, flag an error
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
+		} else /* if (nodeStatus.type->category == CATEGORY_STDTYPE && !(((StdType *)(nodeStatus.type))->isComparable())) */ { // else if it's an access of an incomparable StdType, flag an error
+			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
+			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable standard node");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 		}
 	}
 	GET_STATUS_CODE;

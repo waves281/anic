@@ -398,11 +398,14 @@ ErrorType::operator string() {return toString(1);}
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : Type(CATEGORY_STDTYPE, suffix, depth), kind(kind) {}
 StdType::~StdType() {}
+bool StdType::isComparable() const {
+	return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);
+}
 bool StdType::isComparable(const Type &otherType) const {
 	return (otherType.category == CATEGORY_STDTYPE && (kindCast(*((StdType *)(&otherType))) || ((StdType *)(&otherType))->kindCast(*this)));
 }
 int StdType::kindCast(const StdType &otherType) const {
-	if (kind < STD_MIN_COMPARABLE || kind > STD_MAX_COMPARABLE || otherType.kind < STD_MIN_COMPARABLE || otherType.kind > STD_MAX_COMPARABLE) {
+	if (!(isComparable()) || !(otherType.isComparable())) {
 		return STD_NULL;
 	} else if (kind == otherType.kind) {
 		return kind;

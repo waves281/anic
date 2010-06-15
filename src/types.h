@@ -182,6 +182,7 @@ class StdType : public Type {
 		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~StdType();
 		// core methods
+		bool isComparable() const;
 		bool isComparable(const Type &otherType) const;
 		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation

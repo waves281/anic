@@ -505,85 +505,83 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 	return make_pair(errType, false); // return false, since we're not consuming the nextTerm (though this doesn't really matter -- it's an error anyway)
 }
 bool StdType::objectTypePromotion(const Type &otherType) const {
-	ObjectType *tempObjectType;
-	bool result;
 	if (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE &&
 			otherType.category == CATEGORY_OBJECTTYPE) {
-		tempObjectType = new ObjectType(*stringerType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*stringerType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_NOT) {
-		tempObjectType = new ObjectType(*boolUnOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*boolUnOpType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_COMPLEMENT || kind == STD_DPLUS || kind == STD_DMINUS || kind == STD_PLUS || kind == STD_MINUS) {
-		tempObjectType = new ObjectType(*intUnOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*intUnOpType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_DOR || kind == STD_DAND) {
-		tempObjectType = new ObjectType(*boolBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*boolBinOpType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_OR || kind == STD_AND || kind == STD_XOR || kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD || kind == STD_LS || kind == STD_RS) {
-		tempObjectType = new ObjectType(*intBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*intBinOpType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_PLUS || kind == STD_MINUS || kind == STD_TIMES || kind == STD_DIVIDE || kind == STD_MOD) {
-		tempObjectType = new ObjectType(*floatBinOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType(*floatBinOpType); tempObjectType.suffix = suffix; tempObjectType.depth = depth;
+		bool result = (tempObjectType >> otherType);
+		tempObjectType.clear();
 		if (result) {
 			return true;
 		}
 	}
 	if (kind == STD_DEQUALS || kind == STD_NEQUALS || kind == STD_LT || kind == STD_GT || kind == STD_LE || kind == STD_GE) {
-		tempObjectType = new ObjectType(*boolCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType1(*boolCompOpType); tempObjectType1.suffix = suffix; tempObjectType1.depth = depth;
+		bool result = (tempObjectType1 >> otherType);
+		tempObjectType1.clear();
 		if (result) {
 			return true;
 		}
-		tempObjectType = new ObjectType(*intCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType2(*intCompOpType); tempObjectType2.suffix = suffix; tempObjectType2.depth = depth;
+		result = (tempObjectType2 >> otherType);
+		tempObjectType2.clear();
 		if (result) {
 			return true;
 		}
-		tempObjectType = new ObjectType(*floatCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType3(*floatCompOpType); tempObjectType3.suffix = suffix; tempObjectType3.depth = depth;
+		result = (tempObjectType3 >> otherType);
+		tempObjectType3.clear();
 		if (result) {
 			return true;
 		}
-		tempObjectType = new ObjectType(*charCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType4(*charCompOpType); tempObjectType4.suffix = suffix; tempObjectType4.depth = depth;
+		result = (tempObjectType4 >> otherType);
+		tempObjectType4.clear();
 		if (result) {
 			return true;
 		}
-		tempObjectType = new ObjectType(*stringCompOpType); tempObjectType->suffix = suffix; tempObjectType->depth = depth;
-		result = (*tempObjectType >> otherType);
-		tempObjectType->erase();
+		ObjectType tempObjectType5(*stringCompOpType); tempObjectType5.suffix = suffix; tempObjectType5.depth = depth;
+		result = (tempObjectType5 >> otherType);
+		tempObjectType5.clear();
 		return result;
 	}
 	// none of the above cases succeeded, so return false

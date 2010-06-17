@@ -1873,7 +1873,7 @@ TypeStatus getStatusStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *dtc = tree->child;
-	if (*dtc == TOKEN_Compound) {
+	if (*dtc == TOKEN_Compose) {
 		TypeStatus compoundStatus = getStatusStaticTerm(dtc->child->next, inStatus);
 		if (*compoundStatus) { // if we managed to derive the compounding term's type
 			Type *curType = inStatus;

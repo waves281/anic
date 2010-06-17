@@ -147,7 +147,7 @@ LabeledTerm: StaticTerm COLON SimpleTerm
 LastLabeledTerm : COLON SimpleTerm
 	| COLON SimpleTerm SEMICOLON
 	;
-DynamicTerm : Compound
+DynamicTerm : Compose
 	| Link
 	| Send
 	| Swap
@@ -372,7 +372,7 @@ SingleAccessor : SLASH
 MultiAccessor : DSLASH
 	| LSQUARE RSQUARE
 	;
-Compound : COMMA StaticTerm
+Compose : COMMA StaticTerm
 	;
 Link : DCOLON StaticTerm
 	;

@@ -983,15 +983,32 @@ Type *ObjectType::operator,(const Type &otherType) const {
 		if (otherTypeCast->list.size() == 1) {
 			return (*this , *(otherTypeCast->list[0]));
 		} else {
+			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+				Type *outstructorFlowType = (**outsIter , *otherTypeCast);
+				if (*outstructorFlowType) {
+					return outstructorFlowType;
+				}
+			}
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
+		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+			Type *outstructorFlowType = (**outsIter , otherType);
+			if (*outstructorFlowType) {
+				return outstructorFlowType;
+			}
+		}
 		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from))) {
+		if (*this >> *(otherTypeCast->from)) {
 			return (otherTypeCast->to);
 		} else {
+			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+				if (**outsIter >> *(otherTypeCast->from)) {
+					return (otherTypeCast->to);
+				}
+			}
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
@@ -1000,6 +1017,7 @@ Type *ObjectType::operator,(const Type &otherType) const {
 	// otherType.category == CATEGORY_ERRORTYPE
 	return errType;
 }
+
 bool ObjectType::operator>>(const Type &otherType) const {
 	if (this == &otherType) { // if the objects are actually the same object instance, allow the downcastability
 		return true;

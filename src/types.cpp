@@ -197,6 +197,27 @@ bool Type::unpack() {
 		return true;
 	}
 }
+Type *Type::link(const Type &otherType) const {
+	if (suffix == SUFFIX_LIST && otherType.suffix == SUFFIX_LIST && depth == otherType.depth) {
+		if (*this >> otherType) {
+			return (Type *)(&otherType);
+		} else if (otherType >> *this) {
+			return (Type *)this;
+		} else {
+			return errType;
+		}
+	} else if (suffix == SUFFIX_STREAM && otherType.suffix == SUFFIX_STREAM && depth == otherType.depth) {
+		if (*this >> otherType) {
+			return (Type *)(&otherType);
+		} else if (otherType >> *this) {
+			return (Type *)this;
+		} else {
+			return errType;
+		}
+	} else {
+		return false;
+	}
+}
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
 bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}
 bool Type::operator!=(const Type &otherType) const {return (!(operator==(otherType)));};

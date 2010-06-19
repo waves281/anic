@@ -60,6 +60,7 @@ class Type {
 		void copyDelatch();
 		bool pack();
 		bool unpack();
+		Type *link(const Type &otherType) const;
 		// allocators/deallocators
 		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		virtual ~Type() = 0;

@@ -1872,8 +1872,9 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Link) {
 		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next);
 		if (*linkStatus) { // if we managed to derive a type for the Link subnode
-			if (*linkStatus >> *inStatus) { // if the we can back-cast into a successful link, log return the incoming type
-				returnStatus(inStatus);
+			Type *linkType = inStatus->link(*inStatus);
+			if (*linkType) { // if the types are link-compatible, return the resulting type
+				returnTypeRet(linkType, inStatus.retType);
 			} else {
 				Token curToken = dtc->child->t; // DCOLON
 				semmerError(curToken.fileName,curToken.row,curToken.col,"link with incompatible type");

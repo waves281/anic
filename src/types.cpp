@@ -982,7 +982,7 @@ Type *ObjectType::operator,(const Type &otherType) const {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
 			return (*this , *(otherTypeCast->list[0]));
-		} else {
+		} else if (suffix == SUFFIX_LATCH) {
 			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
 				Type *outstructorFlowType = (**outsIter , *otherTypeCast);
 				if (*outstructorFlowType) {
@@ -990,25 +990,33 @@ Type *ObjectType::operator,(const Type &otherType) const {
 				}
 			}
 			return errType;
+		} else {
+			return errType;
 		}
 	} else if (otherType.category == CATEGORY_STDTYPE) {
-		for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
-			Type *outstructorFlowType = (**outsIter , otherType);
-			if (*outstructorFlowType) {
-				return outstructorFlowType;
+		if (suffix == SUFFIX_LATCH) {
+			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
+				Type *outstructorFlowType = (**outsIter , otherType);
+				if (*outstructorFlowType) {
+					return outstructorFlowType;
+				}
 			}
+			return errType;
+		} else {
+			return errType;
 		}
-		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from)) {
 			return (otherTypeCast->to);
-		} else {
+		} else if (suffix == SUFFIX_LATCH) {
 			for (vector<TypeList *>::const_iterator outsIter = outstructorTypes.begin(); outsIter != outstructorTypes.end(); outsIter++) {
 				if (**outsIter >> *(otherTypeCast->from)) {
 					return (otherTypeCast->to);
 				}
 			}
+			return errType;
+		} else {
 			return errType;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {

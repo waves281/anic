@@ -320,10 +320,12 @@
 
 // state 107 (| seen)
 107 | DOR -1
+107 > RFLAG -1
 
 // state 108 (< seen)
 108 < LS -1
 108 = LE -1
+108 | LFLAG -1
 108 - LARROW 109
 
 // state 109 (<- seen)

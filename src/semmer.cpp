@@ -128,18 +128,18 @@ void catStdLib(SymbolTable *&stRoot) {
 	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_STREAM));
-	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_STREAM));
-	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_STREAM));
-	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_STREAM));
+	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_LATCH));
+	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_LATCH));
+	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_LATCH));
+	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_LATCH));
 	*stdLib *= new SymbolTable(KIND_STD, "out", stringerType);
 	*stdLib *= new SymbolTable(KIND_STD, "err", stringerType);
 	// control nodes
-	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_STREAM));
+	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_LATCH));
 	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
 	// standard library
 	// generators
-	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM), SUFFIX_LATCH));
+	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
 	// concatenate the library to the root
 	*stRoot *= stdLib;
 }
@@ -185,7 +185,7 @@ void initStdTypes() {
 	vector<TypeList *> stringerOutstructorTypes;
 	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
 	stringerOutstructorTypes.push_back(stringOutstructorType);
-	stringerType = new ObjectType(instructorTypes, stringerOutstructorTypes, SUFFIX_LIST); stringerType->operable = false;
+	stringerType = new ObjectType(instructorTypes, stringerOutstructorTypes, SUFFIX_LIST, 1); stringerType->operable = false;
 	// prepare to build the standard operator types
 	TypeList *filterOutstructorType;
 	vector<TypeList *> opOutstructorTypes;
@@ -710,7 +710,7 @@ TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus) {
 			Type *mutableStType = stStatus;
 			if (binding.second) { // do the upstream-mandated constantization if needed
 				mutableStType = mutableStType->copy();
-				mutableStType->constantizeType();
+				mutableStType->constantize();
 			}
 			returnType(mutableStType);
 		}
@@ -1392,14 +1392,19 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		suffixVal = SUFFIX_CONSTANT;
 	} else if (*(typeSuffix->child) == TOKEN_SLASH && typeSuffix->child->next == NULL) {
 		suffixVal = SUFFIX_LATCH;
-	} else if (*(typeSuffix->child) == TOKEN_LSQUARE) {
+	} else if (*(typeSuffix->child) == TOKEN_ListTypeSuffix) {
 		suffixVal = SUFFIX_LIST;
-	} else if (*(typeSuffix->child) == TOKEN_DSLASH) {
+		for (Tree *lts = typeSuffix->child; lts != NULL; lts = (lts->child->next->next != NULL) ? lts->child->next->next : NULL) { // ListTypeSuffix
+			depthVal++;
+		}
+	} else if (*(typeSuffix->child) == TOKEN_StreamTypeSuffix) {
 		suffixVal = SUFFIX_STREAM;
+		for (Tree *sts = typeSuffix->child; sts != NULL; sts = (sts->child->next != NULL) ? sts->child->next : NULL) { // StreamTypeSuffix
+			depthVal++;
+		}
 	} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
 		suffixVal = SUFFIX_ARRAY;
-		Tree *ats = typeSuffix->child; // ArrayTypeSuffix
-		for(;;) {
+		for (Tree *ats = typeSuffix->child; ats != NULL; ats = (ats->child->next->next->next != NULL) ? ats->child->next->next->next : NULL) { // ArrayTypeSuffix
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(ats->child->next, inStatus); // Exp
@@ -1409,17 +1414,10 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
 			}
-			// advance
-			if (ats->child->next->next->next != NULL) {
-				ats = ats->child->next->next->next; // ArrayTypeSuffix
-			} else {
-				break;
-			}
 		}
-	} else { // *(typeSuffix->child) == TOKEN_PoolTypeSuffix
+	} else /* if (*(typeSuffix->child) == TOKEN_PoolTypeSuffix) */ {
 		suffixVal = SUFFIX_POOL;
-		Tree *pts = typeSuffix->child; // PoolTypeSuffix
-		for(;;) {
+		for(Tree *pts = typeSuffix->child; pts != NULL; pts = (pts->child->next->next->next->next != NULL) ? pts->child->next->next->next->next : NULL) { // PoolTypeSuffix
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(pts->child->next->next, inStatus); // Exp
@@ -1428,12 +1426,6 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"pool subscript is invalid");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
-			}
-			// advance
-			if (pts->child->next->next->next->next != NULL) {
-				pts = pts->child->next->next->next->next; // PoolTypeSuffix
-			} else {
-				break;
 			}
 		}
 	}
@@ -1642,40 +1634,14 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	} else /* if (*itc == TOKEN_SingleAccessor || *itc == TOKEN_MultiAccessor) */ { // else if it's a copy-style instantiation
 		TypeStatus idStatus = getStatusIdentifier(itc->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		if (*idStatus) { // if we managed to derive a type for the identifier we're copying from
-			Tree *accessorc = itc->child; // SLASH, DSLASH, or LSQUARE
+			Tree *accessorc = itc->child; // SLASH
 			if (idStatus->operable) { // if the type that we're copying is operable
 				TypeStatus mutableIdStatus = idStatus;
 				mutableIdStatus.type = mutableIdStatus.type->copy();
-				if (*accessorc == TOKEN_SLASH) {
-					if (mutableIdStatus.type->copyDelatch()) {
-						returnStatus(mutableIdStatus);
-					} else {
-						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delatch of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-						mutableIdStatus.type->erase();
-					}
-				} else if (*accessorc == TOKEN_DSLASH) {
-					if (mutableIdStatus.type->copyDestream()) {
-						returnStatus(mutableIdStatus);
-					} else {
-						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-						semmerError(curToken.fileName,curToken.row,curToken.col,"copy destream of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-						mutableIdStatus.type->erase();
-					}
-				} else /* if (*accessorc == TOKEN_LSQUARE) */ {
-					if (mutableIdStatus.type->copyDelist()) {
-						returnStatus(mutableIdStatus);
-					} else {
-						Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
-						semmerError(curToken.fileName,curToken.row,curToken.col,"copy delist of incompatible type");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-						mutableIdStatus.type->erase();
-					}
-				}
+				mutableIdStatus.type->copyDelatch();
+				returnStatus(mutableIdStatus);
 			} else {
-				Token curToken = accessorc->t; // SLASH, DSLASH, or LSQUARE
+				Token curToken = accessorc->t; // SLASH
 				semmerError(curToken.fileName,curToken.row,curToken.col,"copy instantiation of non-referensible type");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
 			}
@@ -1765,14 +1731,8 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 					// first, copy the Type so that our mutations don't propagate to the StaticTerm
 					TypeStatus mutableNodeStatus = nodeStatus;
 					mutableNodeStatus.type = mutableNodeStatus.type->copy();
-					if (mutableNodeStatus->constantizeReference()) { // if the NonArrayedIdentifier or ArrayedIdentifier can be constantized, log it as the return status
-						returnStatus(mutableNodeStatus);
-					} else { // if the NonArrayedIdentifier or ArrayedIdentifier cannot be constantized, flag an error
-						Token curToken = tstc->child->child->t;
-						semmerError(curToken.fileName,curToken.row,curToken.col,"constant reference to dynamic term");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (term type is "<<nodeStatus<<")");
-						mutableNodeStatus->erase();
-					}
+					mutableNodeStatus->constantize();
+					returnStatus(mutableNodeStatus);
 				} else { // else if the node doesn't need to be constantized, just return the nodeStatus
 					returnStatus(nodeStatus);
 				}
@@ -1886,6 +1846,28 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			// finally, add the compounding term to the ongoing TypeList
 			curTypeList->list.push_back(compoundStatus.type);
 			returnType(curTypeList);
+		}
+	} else if (*dtc == TOKEN_Pack) {
+		TypeStatus packedStatus = inStatus;
+		packedStatus.type = packedStatus.type->copy();
+		if (packedStatus->pack()) { // if we managed to pack the type, proceed normally
+			returnStatus(packedStatus);
+		} else { // else if we failed to pack the type, erase the copied type and flag an error
+			Token curToken = dtc->child->t; // RFLAG
+			semmerError(curToken.fileName,curToken.row,curToken.col,"incoming type cannot be packed");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
+			packedStatus->erase();
+		}
+	} else if (*dtc == TOKEN_Unpack) {
+		TypeStatus unpackedStatus = inStatus;
+		unpackedStatus.type = unpackedStatus.type->copy();
+		if (unpackedStatus->unpack()) { // if we managed to unpack the type, proceed normally
+			returnStatus(unpackedStatus);
+		} else { // else if we failed to unpack the type, erase the copied type and flag an error
+			Token curToken = dtc->child->t; // LFLAG
+			semmerError(curToken.fileName,curToken.row,curToken.col,"incoming type cannot be unpacked");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<inStatus<<")");
+			unpackedStatus->erase();
 		}
 	} else if (*dtc == TOKEN_Link) {
 		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next);

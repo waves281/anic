@@ -17,6 +17,8 @@
 %token RCURLY
 %token LSQUARE
 %token RSQUARE
+%token RFLAG
+%token LFLAG
 %token RARROW
 %token DRARROW
 %token ERARROW
@@ -148,6 +150,8 @@ LastLabeledTerm : COLON SimpleTerm
 	| COLON SimpleTerm SEMICOLON
 	;
 DynamicTerm : Compose
+	| Pack
+	| Unpack
 	| Link
 	| Send
 	| Swap
@@ -225,8 +229,6 @@ NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix
 	;
 CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
-	| MultiAccessor NonArrayedIdentifier
-	| MultiAccessor ArrayedIdentifier
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE
@@ -298,10 +300,16 @@ Type : NonArrayedIdentifier TypeSuffix
 	;
 TypeSuffix :
 	| SLASH
-	| LSQUARE RSQUARE
-	| DSLASH
+	| ListTypeSuffix
+	| StreamTypeSuffix
 	| ArrayTypeSuffix
 	| PoolTypeSuffix
+	;
+ListTypeSuffix : LSQUARE RSQUARE
+	| LSQUARE RSQUARE ListTypeSuffix
+	;
+StreamTypeSuffix : DSLASH
+	| DSLASH StreamTypeSuffix
 	;
 ArrayTypeSuffix : LSQUARE Exp RSQUARE
 	| LSQUARE Exp RSQUARE ArrayTypeSuffix
@@ -373,6 +381,10 @@ MultiAccessor : DSLASH
 	| LSQUARE RSQUARE
 	;
 Compose : COMMA StaticTerm
+	;
+Pack : RFLAG
+	;
+Unpack : LFLAG
 	;
 Link : DCOLON StaticTerm
 	;

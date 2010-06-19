@@ -52,16 +52,14 @@ class Type {
 		bool operable; // whether a node of this type can be operated upon
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
-		void constantizeType(); // for when sub-identifier's type is constrained by upstream identifiers
-		bool constantizeReference(); // for when an identifier is present without an accessor
+		void constantize(); // for when an identifier is present without an accessor or a sub-identifier's type is constrained by upstream identifiers
 		void decreaseDepth();
-		bool delatch();
+		bool delatch() const;
 		bool delist();
 		bool destream();
-		bool copyDelatch();
-		bool copyDelist();
-		bool copyDestream();
-		bool constantDestream();
+		void copyDelatch();
+		bool pack();
+		bool unpack();
 		// allocators/deallocators
 		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		virtual ~Type() = 0;

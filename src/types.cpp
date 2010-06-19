@@ -7,9 +7,12 @@ Type::Type(int category, int suffix, int depth) : category(category), suffix(suf
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
 	return (
-		(suffix == SUFFIX_CONSTANT && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LIST)) ||
-		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_LIST || otherType.suffix == SUFFIX_STREAM)) ||
-		(suffix == SUFFIX_ARRAY && otherType.suffix == SUFFIX_ARRAY && depth == otherType.depth) ||
+		(suffix == SUFFIX_CONSTANT && (otherType.suffix == SUFFIX_CONSTANT || (otherType.suffix == SUFFIX_LIST && otherType.depth == 1))) ||
+		(suffix == SUFFIX_LATCH && (otherType.suffix == SUFFIX_CONSTANT || otherType.suffix == SUFFIX_LATCH ||
+			((otherType.suffix == SUFFIX_LIST || otherType.suffix == SUFFIX_STREAM) && otherType.depth == 1))) ||
+		(suffix == SUFFIX_LIST && (otherType.suffix == SUFFIX_LIST) && depth == otherType.depth) ||
+		(suffix == SUFFIX_STREAM && (otherType.suffix == SUFFIX_LIST || otherType.suffix == SUFFIX_STREAM) && depth == otherType.depth) ||
+		(suffix == SUFFIX_ARRAY && (otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth) ||
 		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
 	);
 }
@@ -18,12 +21,15 @@ string Type::suffixString() const {
 	if (suffix == SUFFIX_LATCH) {
 		acc = '\\';
 	} else if (suffix == SUFFIX_LIST) {
-		acc = "[]";
+		for (int i = 0; i < depth; i++) {
+			acc = "[]";
+		}
 	} else if (suffix == SUFFIX_STREAM) {
-		acc = "\\\\";
+		for (int i = 0; i < depth; i++) {
+			acc = "\\\\";
+		}
 	} else if (suffix == SUFFIX_ARRAY) {
-		acc = "[.]";
-		for (int i = 1; i < depth; i++) {
+		for (int i = 0; i < depth; i++) {
 			acc += "[.]";
 		}
 	} else if (suffix == SUFFIX_POOL) {
@@ -35,30 +41,13 @@ string Type::suffixString() const {
 	return acc;
 }
 Type::~Type() {}
-void Type::constantizeType() {
+void Type::constantize() {
 	if (suffix == SUFFIX_LATCH) {
 		suffix = SUFFIX_CONSTANT;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_ARRAY;
+		suffix = SUFFIX_LIST;
 	} else if (suffix == SUFFIX_POOL) {
 		suffix = SUFFIX_ARRAY;
-	}
-}
-bool Type::constantizeReference() {
-	if (suffix == SUFFIX_CONSTANT) {
-		return true;
-	} else if (suffix == SUFFIX_LATCH) {
-		suffix = SUFFIX_CONSTANT;
-		return true;
-	} else if (suffix == SUFFIX_LIST) {
-		return false;
-	} else if (suffix == SUFFIX_STREAM) {
-		return false;
-	} else if (suffix == SUFFIX_ARRAY) {
-		return true;
-	} else /* if (suffix == SUFFIX_POOL) */ {
-		suffix = SUFFIX_ARRAY;
-		return true;
 	}
 }
 void Type::decreaseDepth() {
@@ -74,16 +63,14 @@ void Type::decreaseDepth() {
 		}
 	}
 }
-bool Type::delatch() {
+bool Type::delatch() const {
 	if (suffix == SUFFIX_CONSTANT) {
 		return false;
 	} else if (suffix == SUFFIX_LATCH) {
 		return true;
 	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_CONSTANT;
-		return true;
+		return false;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LATCH;
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
@@ -97,10 +84,18 @@ bool Type::delist() {
 	} else if (suffix == SUFFIX_LATCH) {
 		return false;
 	} else if (suffix == SUFFIX_LIST) {
-		suffix = SUFFIX_CONSTANT;
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
 		return true;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_CONSTANT;
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		} else {
+			suffix = SUFFIX_LIST;
+		}
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		depth--;
@@ -126,7 +121,10 @@ bool Type::destream() {
 	} else if (suffix == SUFFIX_LIST) {
 		return false;
 	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LATCH;
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_LATCH;
+		}
 		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
@@ -138,53 +136,64 @@ bool Type::destream() {
 		return true;
 	}
 }
-bool Type::copyDelatch() {
+void Type::copyDelatch() {
 	if (suffix == SUFFIX_CONSTANT) {
 		suffix = SUFFIX_LATCH;
-		return true;
-	} else if (suffix == SUFFIX_LATCH) {
-		return true;
-	} else if (suffix == SUFFIX_LIST) {
-		return false;
-	} else if (suffix == SUFFIX_STREAM) {
-		return false;
-	} else if (suffix == SUFFIX_ARRAY) {
-		return false;
-	} else /* if (suffix == SUFFIX_POOL) */ {
-		return false;
-	}
-}
-bool Type::copyDelist() {
-	if (suffix == SUFFIX_CONSTANT) {
-		return false;
-	} else if (suffix == SUFFIX_LATCH) {
-		return false;
-	} else if (suffix == SUFFIX_LIST) {
-		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		suffix = SUFFIX_LIST;
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		return true;
-	} else /* if (suffix == SUFFIX_POOL) */ {
-		suffix = SUFFIX_ARRAY;
-		return true;
-	}
-}
-bool Type::copyDestream() {
-	if (suffix == SUFFIX_CONSTANT) {
-		return false;
-	} else if (suffix == SUFFIX_LATCH) {
-		return false;
 	} else if (suffix == SUFFIX_LIST) {
 		suffix = SUFFIX_STREAM;
-		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		return true;
 	} else if (suffix == SUFFIX_ARRAY) {
 		suffix = SUFFIX_POOL;
+	}
+}
+bool Type::pack() {
+	if (suffix == SUFFIX_CONSTANT) {
+		suffix = SUFFIX_LIST;
+		depth = 1;
+		return true;
+	} else if (suffix == SUFFIX_LATCH) {
+		suffix = SUFFIX_STREAM;
+		depth = 1;
+		return true;
+	} else if (suffix == SUFFIX_LIST) {
+		depth++;
+		return true;
+	} else if (suffix == SUFFIX_STREAM) {
+		depth++;
+		return true;
+	} else if (suffix == SUFFIX_ARRAY) {
 		return false;
 	} else /* if (suffix == SUFFIX_POOL) */ {
+		return false;
+	}
+}
+bool Type::unpack() {
+	if (suffix == SUFFIX_CONSTANT) {
+		return false;
+	} else if (suffix == SUFFIX_LATCH) {
+		return false;
+	} else if (suffix == SUFFIX_LIST) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
+		return true;
+	} else if (suffix == SUFFIX_STREAM) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_LATCH;
+		}
+		return true;
+	} else if (suffix == SUFFIX_ARRAY) {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_CONSTANT;
+		}
+		return true;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		depth--;
+		if (depth == 0) {
+			suffix = SUFFIX_LATCH;
+		}
 		return true;
 	}
 }

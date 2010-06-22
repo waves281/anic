@@ -136,7 +136,11 @@ SimpleTerm : StaticTerm
 	| SwitchTerm
 	;
 StaticTerm : TypedStaticTerm
-	| Access
+	| SingleAccess
+	| MultiAccess
+	;
+SingleStaticTerm : TypedStaticTerm
+	| SingleAccess
 	;
 SwitchTerm : DQUESTION LCURLY LabeledTerms RCURLY
 	;
@@ -149,7 +153,7 @@ LabeledTerm: TypedStaticTerm COLON SimpleTerm
 LastLabeledTerm : COLON SimpleTerm
 	| COLON SimpleTerm SEMICOLON
 	;
-DynamicTerm : Compose
+DynamicTerm : Compound
 	| Pack
 	| Unpack
 	| Link
@@ -372,15 +376,16 @@ LastInstructor : EQUALS
 Outstructor : EQUALS RetFilterHeader Block
 	| EQUALS RetFilterHeader Block SEMICOLON
 	;
-Access : SingleAccessor Node
-	| MultiAccessor Node
+SingleAccess : SingleAccessor Node
+	;
+MultiAccess : MultiAccessor Node
 	;
 SingleAccessor : SLASH
 	;
 MultiAccessor : DSLASH
 	| LSQUARE RSQUARE
 	;
-Compose : COMMA StaticTerm
+Compound : COMMA SingleStaticTerm
 	;
 Pack : RFLAG
 	;

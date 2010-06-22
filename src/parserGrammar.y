@@ -143,8 +143,8 @@ SwitchTerm : DQUESTION LCURLY LabeledTerms RCURLY
 LabeledTerms : LastLabeledTerm
 	| LabeledTerm LabeledTerms
 	;
-LabeledTerm: StaticTerm COLON SimpleTerm
-	| StaticTerm COLON SimpleTerm SEMICOLON
+LabeledTerm: TypedStaticTerm COLON SimpleTerm
+	| TypedStaticTerm COLON SimpleTerm SEMICOLON
 	;
 LastLabeledTerm : COLON SimpleTerm
 	| COLON SimpleTerm SEMICOLON

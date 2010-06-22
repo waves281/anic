@@ -1970,9 +1970,9 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 	for (Tree *ltCur = tree->child->next->next->child; ltCur != NULL; ltCur = (ltCur->next != NULL) ? ltCur->next->child : NULL) { // invariant: ltc is a LabeledTerm or LastLabeledTerm
 		Tree *ltc = ltCur->child; // StaticTerm or COLON
 		// if there is a non-default label on this pipe, check its validity
-		if (*ltc == TOKEN_StaticTerm) {
+		if (*ltc == TOKEN_TypedStaticTerm) {
 			// derive the label's type
-			TypeStatus label = getStatusStaticTerm(ltc, inStatus);
+			TypeStatus label = getStatusTypedStaticTerm(ltc, inStatus);
 			if (!(*label >> *inStatus)) { // if the type doesn't match, throw an error
 				Token curToken = ltc->t;
 				semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible switch label");
@@ -1981,7 +1981,7 @@ TypeStatus getStatusSwitchTerm(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 		// derive the to-type of this label
-		Tree *toTree = (*ltc == TOKEN_StaticTerm) ? ltc->next->next : ltc->next; // SimpleTerm
+		Tree *toTree = (*ltc == TOKEN_TypedStaticTerm) ? ltc->next->next : ltc->next; // SimpleTerm
 		TypeStatus to = getStatusSimpleTerm(toTree, inStatus);
 		// log the to-type and to-tree of this label
 		toStatus.push_back(to);

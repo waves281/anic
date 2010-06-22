@@ -1661,10 +1661,18 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			Tree *st = it->next->next->next; // StaticTerm
 			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
 			if (*initializer) { //  if we successfully derived a type for the initializer
-				// pipe the types into the status
-				if (*initializer >> *instantiation) {
+				// try the ObjectType outstructor special case for instantiation
+				 if (initializer->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
+					for (vector<TypeList *>::const_iterator outsIter = ((ObjectType *)(initializer.type))->outstructorTypes.begin(); outsIter != ((ObjectType *)(initializer.type))->outstructorTypes.end(); outsIter++) {
+						if (**outsIter >> *instantiation) {
+							returnStatus(instantiation);
+						}
+					}
+				}
+				// special case failed, so try a direct complatibility
+				if (*initializer >> *instantiation) { // if the initializer is directly compatible, allow it
 					returnStatus(instantiation);
-				} else { // if the types are incompatible, throw an error
+				} else { // else if the initializer is incompatible, throw an error
 					Token curToken = st->t; // StaticTerm
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");

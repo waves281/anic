@@ -1651,40 +1651,75 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	GET_STATUS_FOOTER;
 }
 
+TypeStatus getStatusInitializer(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *ic = tree->child; // SingleStaticTerm or LBRACKET
+	if (*ic == TOKEN_SingleStaticTerm) {
+		returnStatus(getStatusStaticTerm(ic, inStatus));
+	} else /* if (*ic == TOKEN_LBRACKET) */ {
+		vector<Type *> list;
+		bool failed = false;
+		for (Tree *exp = ic->next->child;;) {
+			TypeStatus leftExpStatus = getStatusExp(exp, inStatus);
+			list.push_back(leftExpStatus.type);
+			if (!(*leftExpStatus)) {
+				failed = true;
+			}
+			if (*(exp->next->next) == TOKEN_InitializerList) {
+				exp = exp->next->next->child;
+			} else {
+				TypeStatus rightExpStatus = getStatusExp(exp->next->next, inStatus);
+				list.push_back(rightExpStatus.type);
+				if (!(*rightExpStatus)) {
+					failed = true;
+				}
+				break;
+			}
+		}
+		if (!failed) {
+			returnTypeRet(new TypeList(list), inStatus.retType);
+		}
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
 // reports errors
 TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *it = tree->child->next; // InstantiationSource
-	TypeStatus instantiation = getStatusInstantiationSource(it, inStatus); // NonCopyInstantiationSource or CopyInstantiationSource
-	if (*instantiation) { // if we successfully derived a type for the instantiation
-		if (it->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
-			Tree *st = it->next->next->next; // StaticTerm
-			TypeStatus initializer = getStatusStaticTerm(st, inStatus);
-			if (*initializer) { //  if we successfully derived a type for the initializer
+	Tree *is = tree->child->next; // InstantiationSource
+	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // NonCopyInstantiationSource or CopyInstantiationSource
+	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
+		if (is->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
+			Tree *initializer = is->next->next->next; // Initializer
+			TypeStatus initializerStatus = getStatusInitializer(initializer, inStatus);
+			if (*initializerStatus) { //  if we successfully derived a type for the initializer
 				// try the ObjectType outstructor special case for instantiation
-				 if (initializer->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
-					for (vector<TypeList *>::const_iterator outsIter = ((ObjectType *)(initializer.type))->outstructorTypes.begin(); outsIter != ((ObjectType *)(initializer.type))->outstructorTypes.end(); outsIter++) {
-						if (**outsIter >> *instantiation) {
-							returnStatus(instantiation);
+				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
+					for (vector<TypeList *>::const_iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorTypes.begin();
+							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorTypes.end();
+							outsIter++) {
+						if (**outsIter >> *instantiationStatus) {
+							returnStatus(instantiationStatus);
 						}
 					}
 				}
 				// special case failed, so try a direct complatibility
-				if (*initializer >> *instantiation) { // if the initializer is directly compatible, allow it
-					returnStatus(instantiation);
+				if (*initializerStatus >> *instantiationStatus) { // if the initializer is directly compatible, allow it
+					returnStatus(instantiationStatus);
 				} else { // else if the initializer is incompatible, throw an error
-					Token curToken = st->t; // StaticTerm
+					Token curToken = initializer->t; // Initializer
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializer<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
 				}
 			}
 		} else { // else if there is no initializer, check if the type requires one
-			if (instantiation->category != CATEGORY_OBJECTTYPE) { // if it's not an object type, it definitely doesn't require an initializer
-				returnStatus(instantiation);
+			if (instantiationStatus->category != CATEGORY_OBJECTTYPE) { // if it's not an object type, it definitely doesn't require an initializer
+				returnStatus(instantiationStatus);
 			} else { // else if it's an object type
 				// check if the object type has a null constructor
-				ObjectType *instantiationTypeCast = (ObjectType *)(instantiation.type);
+				ObjectType *instantiationTypeCast = (ObjectType *)(instantiationStatus.type);
 				vector<TypeList *>::const_iterator iter;
 				for (iter = instantiationTypeCast->instructorTypes.begin(); iter != instantiationTypeCast->instructorTypes.end(); iter++) {
 					if (**iter == *nullType) { // if this is a null constructor, break
@@ -1692,11 +1727,11 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 				if (iter != instantiationTypeCast->instructorTypes.end()) { // if we managed to find a null constructor, allow the instantiation
-					returnStatus(instantiation);
+					returnStatus(instantiationStatus);
 				} else { // else if we didn't find a null constructor, flag an error
-					Token curToken = it->t; // InstantiationSource
+					Token curToken = is->t; // InstantiationSource
 					semmerError(curToken.fileName,curToken.row,curToken.col,"null instantiation of object without null constructor");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiation<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
 				}
 			}
 		}

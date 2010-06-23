@@ -224,10 +224,16 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
+Initializer : SingleStaticTerm
+	| LBRACKET InitializerList LBRACKET
+	;
+InitializerList : Exp COMMA Exp
+	| Exp COMMA InitializerList
+	;
 BlankInstantiation : LSQUARE NonCopyInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
-	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW StaticTerm
+	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW Initializer
 	;
 NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix
 	;

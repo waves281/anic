@@ -2,7 +2,7 @@
 
 // basic expression testing
 @std;
-exp1 = [float\] <- 5;
+exp1 = [float\] <- (5);
 exp2 = (-7+(-5--++-(-1))*2++-100.0e+10);
 exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;

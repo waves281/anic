@@ -164,7 +164,11 @@ DynamicTerm : Compound
 TypedStaticTerm : Node
 	| BracketedExp
 	;
-BracketedExp : LBRACKET Exp RBRACKET
+BracketedExp : LBRACKET RBRACKET
+	| LBRACKET ExpList RBRACKET
+	;
+ExpList : Exp
+	| Exp COMMA ExpList
 	;
 Exp : Primary
 	| Exp DOR Exp
@@ -224,16 +228,10 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-Initializer : SingleStaticTerm
-	| LBRACKET InitializerList LBRACKET
-	;
-InitializerList : Exp COMMA Exp
-	| Exp COMMA InitializerList
-	;
 BlankInstantiation : LSQUARE NonCopyInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
-	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW Initializer
+	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW SingleStaticTerm
 	;
 NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix
 	;

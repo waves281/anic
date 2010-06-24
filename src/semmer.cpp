@@ -761,7 +761,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*pbc == TOKEN_PrimLiteral) {
 		returnStatus(getStatusPrimLiteral(pbc, inStatus));
 	} else if (*pbc == TOKEN_BracketedExp) {
-		returnStatus(getStatusExp(pbc->child->next, inStatus)); // move past the bracket to the actual Exp node
+		returnStatus(getStatusBracketedExp(pbc, inStatus));
 	} else if (*pbc == TOKEN_PrimaryBase) { // postfix operator application
 		TypeStatus baseStatus = getStatusPrimaryBase(pbc, inStatus); // derive the status of the base node
 		if (*baseStatus) { // if we managed to derive the status of the base node
@@ -856,6 +856,34 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	}
+	GET_STATUS_FOOTER;
+}
+
+TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *becn = tree->child->next; // LBRACKET or ExpList
+	if (*becn == TOKEN_LBRACKET) {
+		returnTypeRet(nullType, inStatus.retType);
+	} else /* if (*becn == TOKEN_ExpList) */ {
+		Tree *exp = becn->child;
+		if (exp->next == NULL) { // if it's just a single Exp
+			returnStatus(getStatusExp(exp, inStatus));
+		} else { // else if it's a true ExpList, we must derive the corresponding TypeList
+			bool failed = false;
+			vector<Type *> list;
+			for (; exp != NULL; exp = (exp->next != NULL) ? exp->next->next->child : NULL) {
+				Type *thisExpType = getStatusExp(exp, inStatus);
+				list.push_back(thisExpType);
+				if (!(*thisExpType)) {
+					failed = true;
+				}
+			}
+			if (!failed) {
+				returnTypeRet(new TypeList(list), inStatus.retType);
+			}
+		}
+	}
+	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
@@ -1651,39 +1679,6 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	GET_STATUS_FOOTER;
 }
 
-TypeStatus getStatusInitializer(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	Tree *ic = tree->child; // SingleStaticTerm or LBRACKET
-	if (*ic == TOKEN_SingleStaticTerm) {
-		returnStatus(getStatusStaticTerm(ic, inStatus));
-	} else /* if (*ic == TOKEN_LBRACKET) */ {
-		vector<Type *> list;
-		bool failed = false;
-		for (Tree *exp = ic->next->child;;) {
-			TypeStatus leftExpStatus = getStatusExp(exp, inStatus);
-			list.push_back(leftExpStatus.type);
-			if (!(*leftExpStatus)) {
-				failed = true;
-			}
-			if (*(exp->next->next) == TOKEN_InitializerList) {
-				exp = exp->next->next->child;
-			} else {
-				TypeStatus rightExpStatus = getStatusExp(exp->next->next, inStatus);
-				list.push_back(rightExpStatus.type);
-				if (!(*rightExpStatus)) {
-					failed = true;
-				}
-				break;
-			}
-		}
-		if (!failed) {
-			returnTypeRet(new TypeList(list), inStatus.retType);
-		}
-	}
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
-}
-
 // reports errors
 TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
@@ -1691,8 +1686,8 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // NonCopyInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
 		if (is->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
-			Tree *initializer = is->next->next->next; // Initializer
-			TypeStatus initializerStatus = getStatusInitializer(initializer, inStatus);
+			Tree *initializer = is->next->next->next; // StaticTerm
+			TypeStatus initializerStatus = getStatusStaticTerm(initializer, inStatus);
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
 				// try the ObjectType outstructor special case for instantiation
 				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
@@ -1708,7 +1703,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				if (*initializerStatus >> *instantiationStatus) { // if the initializer is directly compatible, allow it
 					returnStatus(instantiationStatus);
 				} else { // else if the initializer is incompatible, throw an error
-					Token curToken = initializer->t; // Initializer
+					Token curToken = initializer->t; // StaticTerm
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
@@ -1786,7 +1781,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	} else if (*tstc == TOKEN_BracketedExp) { // else if it's an expression
-		TypeStatus expStatus = getStatusExp(tstc->child->next, inStatus); // move past the bracket to the actual Exp node
+		TypeStatus expStatus = getStatusBracketedExp(tstc, inStatus);
 		if (*expStatus) { // if we managed to derive a type for the expression node
 			if (expStatus.type->suffix != SUFFIX_LIST && expStatus.type->suffix != SUFFIX_STREAM) { // if the type isn't inherently dynamic, return the status normally
 				returnStatus(expStatus);

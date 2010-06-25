@@ -54,7 +54,6 @@ extern StdType *stdIntType;
 extern StdType *stdFloatType;
 extern StdType *stdCharType;
 extern StdType *stdStringType;
-extern StdType *stdNullLitType;
 extern StdType *stdBoolLitType;
 class ObjectType;
 extern ObjectType *stringerType;

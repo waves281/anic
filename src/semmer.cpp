@@ -13,7 +13,6 @@ StdType *stdIntType;
 StdType *stdFloatType;
 StdType *stdCharType;
 StdType *stdStringType;
-StdType *stdNullLitType;
 StdType *stdBoolLitType;
 ObjectType *stringerType;
 ObjectType *boolUnOpType;
@@ -117,7 +116,6 @@ void catStdNodes(SymbolTable *&stRoot) {
 	*stRoot *= new SymbolTable(KIND_STD, "bool", stdBoolType);
 	*stRoot *= new SymbolTable(KIND_STD, "char", stdCharType);
 	*stRoot *= new SymbolTable(KIND_STD, "string", stdStringType);
-	*stRoot *= new SymbolTable(KIND_STD, "null", stdNullLitType);
 	*stRoot *= new SymbolTable(KIND_STD, "true", stdBoolLitType);
 	*stRoot *= new SymbolTable(KIND_STD, "false", stdBoolLitType);
 }
@@ -153,7 +151,6 @@ void initStdTypes() {
 	stdFloatType = new StdType(STD_FLOAT); stdFloatType->operable = false;
 	stdCharType = new StdType(STD_CHAR); stdCharType->operable = false;
 	stdStringType = new StdType(STD_STRING); stdStringType->operable = false;
-	stdNullLitType = new StdType(STD_NULL);
 	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
 	// build some auxiliary types
 	// latches
@@ -1462,7 +1459,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		if (*typec == TOKEN_NonArrayedIdentifier || *typec == TOKEN_ArrayedIdentifier) { // if it's an identifier-defined type
 			TypeStatus idStatus = getStatusIdentifier(typec, inStatus); // NonArrayedIdentifier
 			if (*idStatus) { // if we managed to derive a type for the instantiation identifier
-				if (idStatus.type != stdNullLitType && idStatus.type != stdBoolLitType) { // if the type isn't defined by a standard literal
+				if (idStatus.type != stdBoolLitType) { // if the type isn't defined by a standard literal
 					idStatus.type = idStatus.type->copy(); // make a copy of the identifier's type, so that the below mutation doesn't propagate to it
 					idStatus->suffix = suffixVal;
 					idStatus->depth = depthVal;
@@ -1803,7 +1800,7 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 	TypeStatus nodeStatus = getStatusNode(tree->child->next, inStatus); // Node
 	if (*nodeStatus) { // if we managed to derive a type for the subnode
 		if (nodeStatus->operable &&
-				(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType) &&
+				(nodeStatus.type != stdBoolLitType) &&
 				(nodeStatus.type->category != CATEGORY_STDTYPE || ((StdType *)(nodeStatus.type))->isComparable())) { // if the identifier allows access operators
 			// copy the Type so that our mutations don't propagate to the Node
 			TypeStatus mutableNodeStatus = nodeStatus;
@@ -1842,7 +1839,7 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
-		} else if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) { // else if it's an access of a standard literal, flag an error
+		} else if (nodeStatus.type == stdBoolLitType) { // else if it's an access of a standard literal, flag an error
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable literal '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 		} else /* if (nodeStatus.type->category == CATEGORY_STDTYPE && !(((StdType *)(nodeStatus.type))->isComparable())) */ { // else if it's an access of an incomparable StdType, flag an error
@@ -1924,7 +1921,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
 			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
-					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
+					(nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);
 				} else { // else if the Send is invalid, flag an error
@@ -1937,7 +1934,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				Token curToken = dtc->child->t; // RARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable node '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
-			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+			} else /* if (nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 				Token curToken = dtc->child->t; // RARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable literal '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 			}
@@ -1946,7 +1943,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
 			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
-					(nodeStatus.type != stdNullLitType && nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
+					(nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);
 				} else { // else if the Send is invalid, flag an error
@@ -1959,7 +1956,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				Token curToken = dtc->child->t; // LRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable node '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
-			} else /* if (nodeStatus.type == stdNullLitType || nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
+			} else /* if (nodeStatus.type == stdBoolLitType) */ { // else if it's an access of a standard literal, flag an error
 				Token curToken = dtc->child->t; // LRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable literal '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 			}

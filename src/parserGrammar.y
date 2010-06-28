@@ -22,7 +22,6 @@
 %token RARROW
 %token DRARROW
 %token ERARROW
-%token LARROW
 %token LRARROW
 %token SLASH
 %token DSLASH
@@ -228,12 +227,14 @@ IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
 	;
-BlankInstantiation : LSQUARE NonCopyInstantiationSource RSQUARE
+BlankInstantiation : LSQUARE BlankInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
-	| LSQUARE NonCopyInstantiationSource RSQUARE LARROW SingleStaticTerm
+	| LSQUARE InitInstantiationSource RSQUARE BracketedExp
 	;
-NonCopyInstantiationSource : NonArrayedIdentifier TypeSuffix
+BlankInstantiationSource : NonArrayedIdentifier TypeSuffix
+	;
+InitInstantiationSource : NonArrayedIdentifier
 	;
 CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
@@ -302,12 +303,14 @@ RetList : DRARROW TypeList
 	;
 Param : Type ID
 	;
-Type : NonArrayedIdentifier TypeSuffix
+Type : NonArrayedIdentifier
+	| FilterType
+	| ObjectType
+	| NonArrayedIdentifier TypeSuffix
 	| FilterType TypeSuffix
 	| ObjectType TypeSuffix
 	;
-TypeSuffix :
-	| SLASH
+TypeSuffix : SLASH
 	| ListTypeSuffix
 	| StreamTypeSuffix
 	| ArrayTypeSuffix

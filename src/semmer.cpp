@@ -1413,7 +1413,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	bool failed = false;
 	int suffixVal;
 	int depthVal = 0;
-	if (typeSuffix->child == NULL) {
+	if (typeSuffix == NULL) {
 		suffixVal = SUFFIX_CONSTANT;
 	} else if (*(typeSuffix->child) == TOKEN_SLASH && typeSuffix->child->next == NULL) {
 		suffixVal = SUFFIX_LATCH;
@@ -1653,13 +1653,17 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 // reports errors
 TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *itc = tree->child; // NonArrayedIdentifier, SingleAccessor, or MultiAccessor
-	if (*itc == TOKEN_NonArrayedIdentifier) { // if it's a regular identifier + suffix-style instantiation
-		returnStatus(getStatusType(tree, inStatus)); // InstantiationSource (compatible in this form as a Type)
-	} else /* if (*itc == TOKEN_SingleAccessor || *itc == TOKEN_MultiAccessor) */ { // else if it's a copy-style instantiation
-		TypeStatus idStatus = getStatusIdentifier(itc->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
+	if (*tree == TOKEN_BlankInstantiationSource) { // if it's a blank slot instantiation 
+		returnStatus(getStatusType(tree, inStatus)); // BlankInstantiationSource (compatible in this form as a Type)
+	} else if (*tree == TOKEN_InitInstantiationSource) { // if it's a regular initialized instantiation
+		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // InitInstantiationSource (compatible in this form as a Type)
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->latchize();
+		returnStatus(mutableIdStatus);
+	} else /* if (*tree == TOKEN_CopyInstantiationSource) */ { // else if it's a copy-style instantiation
+		TypeStatus idStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		if (*idStatus) { // if we managed to derive a type for the identifier we're copying from
-			Tree *accessorc = itc->child; // SLASH
+			Tree *accessorc = tree->child->child; // SLASH
 			if (idStatus->operable) { // if the type that we're copying is operable
 				TypeStatus mutableIdStatus = idStatus;
 				mutableIdStatus.type = mutableIdStatus.type->copy();
@@ -1680,11 +1684,11 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *is = tree->child->next; // InstantiationSource
-	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // NonCopyInstantiationSource or CopyInstantiationSource
+	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
 		if (is->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
-			Tree *initializer = is->next->next->next; // StaticTerm
-			TypeStatus initializerStatus = getStatusStaticTerm(initializer, inStatus);
+			Tree *initializer = is->next->next; // BracketedExp
+			TypeStatus initializerStatus = getStatusBracketedExp(initializer, inStatus);
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
 				// try the ObjectType outstructor special case for instantiation
 				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
@@ -1700,7 +1704,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				if (*initializerStatus >> *instantiationStatus) { // if the initializer is directly compatible, allow it
 					returnStatus(instantiationStatus);
 				} else { // else if the initializer is incompatible, throw an error
-					Token curToken = initializer->t; // StaticTerm
+					Token curToken = initializer->t; // BracketedExp
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");

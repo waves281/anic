@@ -50,6 +50,10 @@ void Type::constantize() {
 		suffix = SUFFIX_ARRAY;
 	}
 }
+void Type::latchize() {
+	suffix = SUFFIX_LATCH;
+	depth = 0;
+}
 void Type::decreaseDepth() {
 	if (suffix == SUFFIX_ARRAY) {
 		depth--;

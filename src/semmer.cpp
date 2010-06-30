@@ -2244,7 +2244,6 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 	if (fakeRetType != NULL) { // if we previously logged a recursion alert here (and we don't have a memoized type to return), flag an ill-formed recursion error
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	} else { // else if there is no recursion alert for this Declaration and it's not a standard literal override, continue
 		// if the sub-node is not recursion-safe, institute a recursion warning for this Declaration
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL

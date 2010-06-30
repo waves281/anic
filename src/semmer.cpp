@@ -1678,7 +1678,9 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
-		if (is->next->next != NULL) { // if there's an initializer, we need to make sure that the types are compatible
+		if (*is != TOKEN_InitInstantiationSource) { // if there is no initializer, simply return the derived type
+			returnStatus(instantiationStatus);
+		} else { // else if there is an initializer, make sure that its type is compatible
 			Tree *initializer = is->next->next; // BracketedExp
 			TypeStatus initializerStatus = getStatusBracketedExp(initializer, inStatus);
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
@@ -1700,26 +1702,6 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
-				}
-			}
-		} else { // else if there is no initializer, check if the type requires one
-			if (instantiationStatus->category != CATEGORY_OBJECTTYPE) { // if it's not an object type, it definitely doesn't require an initializer
-				returnStatus(instantiationStatus);
-			} else { // else if it's an object type
-				// check if the object type has a null constructor
-				ObjectType *instantiationTypeCast = (ObjectType *)(instantiationStatus.type);
-				vector<TypeList *>::const_iterator iter;
-				for (iter = instantiationTypeCast->instructorTypes.begin(); iter != instantiationTypeCast->instructorTypes.end(); iter++) {
-					if (**iter == *nullType) { // if this is a null constructor, break
-						break;
-					}
-				}
-				if (iter != instantiationTypeCast->instructorTypes.end()) { // if we managed to find a null constructor, allow the instantiation
-					returnStatus(instantiationStatus);
-				} else { // else if we didn't find a null constructor, flag an error
-					Token curToken = is->t; // InstantiationSource
-					semmerError(curToken.fileName,curToken.row,curToken.col,"null instantiation of object without null constructor");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
 				}
 			}
 		}

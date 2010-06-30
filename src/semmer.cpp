@@ -1371,12 +1371,14 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (!failed) { // if we successfully derived the lists
 		// validate all of the regular pipes in this Object definition
-		for (Tree *pipe = tree->child->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a Pipe or LastPipe
-			Tree *pipec = pipe->child;
-			if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
-				TypeStatus pipeStatus = getStatusPipe(pipe);
-				if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
-					failed = true;
+		for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
+			if (*pipe == TOKEN_Pipe || *pipe == TOKEN_LastPipe) {
+				Tree *pipec = pipe->child;
+				if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
+					TypeStatus pipeStatus = getStatusPipe(pipe);
+					if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
+						failed = true;
+					}
 				}
 			}
 		}

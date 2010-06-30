@@ -20,8 +20,8 @@
 %token RFLAG
 %token LFLAG
 %token RARROW
+%token LARROW
 %token DRARROW
-%token ERARROW
 %token LRARROW
 %token SLASH
 %token DSLASH
@@ -397,7 +397,7 @@ Unpack : LFLAG
 	;
 Link : DCOLON StaticTerm
 	;
-Loopback : ERARROW
+Loopback : LARROW
 	;
 Send : RARROW Node
 	;

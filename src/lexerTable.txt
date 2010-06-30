@@ -326,7 +326,7 @@
 108 < LS -1
 108 = LE -1
 108 | LFLAG -1
-108 - ERROR 109
+108 - LARROW 109
 
 // state 109 (<- seen)
 109 > LRARROW -1

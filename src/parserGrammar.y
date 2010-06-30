@@ -83,14 +83,12 @@ NonEmptyPipes : LastPipe
 Pipe : Declaration
 	| NonEmptyTerms SEMICOLON
 	;
-LastPipe : LastDeclaration
-	| NonEmptyTerms
+LastPipe : NonEmptyTerms
 	;
 Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
 	| ID EQUALS BlankInstantiation
 	| ID EQUALS BlankInstantiation SEMICOLON
-	| ID ERARROW NonEmptyTerms SEMICOLON
 	| AT NonArrayedIdentifier
 	| AT ArrayedIdentifier
 	| AT NonArrayedIdentifier SEMICOLON
@@ -107,8 +105,6 @@ Declaration : ID EQUALS TypedStaticTerm
 	| DAT LSQUARE ArrayedIdentifier RSQUARE
 	| DAT LSQUARE NonArrayedIdentifier RSQUARE SEMICOLON
 	| DAT LSQUARE ArrayedIdentifier RSQUARE SEMICOLON
-	;
-LastDeclaration : ID ERARROW NonEmptyTerms
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -156,6 +152,7 @@ DynamicTerm : Compound
 	| Pack
 	| Unpack
 	| Link
+	| Loopback
 	| Send
 	| Swap
 	| Return
@@ -399,6 +396,8 @@ Pack : RFLAG
 Unpack : LFLAG
 	;
 Link : DCOLON StaticTerm
+	;
+Loopback : ERARROW
 	;
 Send : RARROW Node
 	;

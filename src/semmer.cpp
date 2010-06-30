@@ -321,20 +321,12 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// recurse
 		buildSt(tree->child, consDef, importList); // child of Outstructor
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Declaration || *tree == TOKEN_LastDeclaration) { // if it's a Declaration-style node
+	} else if (*tree == TOKEN_Declaration) { // if it's a Declaration-style node
 		Token defToken = tree->child->t; // ID, AT, or DAT
 		if (defToken.tokenType != TOKEN_ID || (defToken.s != "null" && defToken.s != "true" && defToken.s != "false")) { // if this isn't a standard literal override, proceed normally
 			Tree *dcn = tree->child->next;
 			if (*dcn == TOKEN_EQUALS) { // standard static declaration
 				// allocate the new declaration node
-				SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
-				// ... and link it in
-				*st *= newDef;
-				// recurse
-				buildSt(tree->child, newDef, importList); // child of Declaration
-				buildSt(tree->next, st, importList); // right
-			} else if (*dcn == TOKEN_ERARROW) { // flow-through declaration
-				// allocate the new definition node
 				SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
 				// ... and link it in
 				*st *= newDef;
@@ -455,7 +447,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						stCurType = (*childFind).second->defSite->status.type;
 					}
 				}
-			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type (we can't derive flow-through types so naively, but these cannot be sub-identified anyway)
+			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type
 				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
 				if (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
 					stCurType = getStatusDeclaration(stCur->defSite);
@@ -657,7 +649,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-// derives the types of all named nodes in the passed-in SymbolTable
+// recursively derives the types of all named nodes in the passed-in SymbolTable
 void typeSt(SymbolTable *root) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTable(root);
@@ -1114,7 +1106,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		// try to get a type for this pipe
 		Tree *pipec = pipe->child;
-		if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a declaration-style Pipe, ignore the returned retType (it's used for recursion detection instead)
+		if (*pipec == TOKEN_Declaration) { // if it's a declaration-style Pipe, ignore the returned retType (it's used for recursion detection instead)
 			TypeStatus thisDeclarationPipeStatus = getStatusPipe(pipe, inStatus);
 			if (!(*thisDeclarationPipeStatus)) { // if we failed to derive a type for this declaration-style Pipe, flag this fact
 				pipeTypesValid = false;
@@ -1381,7 +1373,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 		// validate all of the regular pipes in this Object definition
 		for (Tree *pipe = tree->child->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a Pipe or LastPipe
 			Tree *pipec = pipe->child;
-			if (*pipec != TOKEN_Declaration && *pipec != TOKEN_LastDeclaration) { // if it's not a declaration-style Pipe, derive and validate its status
+			if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
 				TypeStatus pipeStatus = getStatusPipe(pipe);
 				if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
 					failed = true;
@@ -1919,6 +1911,64 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (link type is "<<linkStatus<<")");
 			}
 		}
+	} else if (*dtc == TOKEN_Loopback) {
+		SymbolTable *enclosingEnv = dtc->env;
+		if (enclosingEnv->kind == KIND_BLOCK && enclosingEnv->parent != NULL) {
+			SymbolTable *enclosingParent = enclosingEnv->parent;
+			if (enclosingParent->kind == KIND_FILTER) {
+				FilterType *enclosingType = (FilterType *)(enclosingParent->defSite->status.type);
+				if ((*inStatus == *nullType && *(enclosingType->from) == *nullType) || (*inStatus >> *(enclosingType->from))) {
+					if (enclosingType->to->list.size() == 1) {
+						returnTypeRet(enclosingType->to->list[0], inStatus.retType);
+					} else {
+						returnTypeRet(enclosingType->to, inStatus.retType);
+					}
+				} else {
+					Token curToken = dtc->child->t; // ERARROW
+					semmerError(curToken.fileName,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus); // KOL
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<(enclosingType->from)<<")");
+				}
+			} else if (enclosingParent->kind == KIND_INSTRUCTOR) {
+				TypeList *enclosingType = (TypeList *)(enclosingParent->defSite->status.type);
+				if (*inStatus >> *enclosingType) {
+					returnTypeRet(nullType, inStatus.retType);
+				} else {
+					Token curToken = dtc->child->t; // ERARROW
+					semmerError(curToken.fileName,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<enclosingType<<")");
+				}
+			} else if (enclosingParent->kind == KIND_OUTSTRUCTOR) {
+				TypeList *enclosingType = (TypeList *)(enclosingParent->defSite->status.type);
+				if (*inStatus == *nullType) {
+					if (enclosingType->list.size() == 1) {
+						returnTypeRet(enclosingType->list[0], inStatus.retType);
+					} else {
+						returnTypeRet(enclosingType, inStatus.retType);
+					}
+				} else {
+					Token curToken = dtc->child->t; // ERARROW
+					semmerError(curToken.fileName,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<enclosingType<<")");
+				}
+			}
+		} else {
+			Token curToken = dtc->child->t; // ERARROW
+			semmerError(curToken.fileName,curToken.row,curToken.col,"loopback outside of a filter block");
+		}
+	/*
+		TypeStatus linkStatus = getStatusLoopback(dtc->child->next);
+		if (*linkStatus) { // if we managed to derive a type for the Link subnode
+			Type *linkType = inStatus->link(*inStatus);
+			if (*linkType) { // if the types are link-compatible, return the resulting type
+				returnTypeRet(linkType, inStatus.retType);
+			} else {
+				Token curToken = dtc->child->t; // DCOLON
+				semmerError(curToken.fileName,curToken.row,curToken.col,"link with incompatible type");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (link type is "<<linkStatus<<")");
+			}
+		}
+	*/
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
@@ -2205,19 +2255,10 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 		// proceed with the normal derivation
 		if (*(tree->child) != TOKEN_AT && *(tree->child) != TOKEN_DAT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
-			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a regular declaration
+			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a standard declaration
 				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);
 			} else if (*declarationSub == TOKEN_BlankInstantiation) { // else if it's a blank instantiation declaration
 				returnTypeRet(getStatusInstantiation(declarationSub), NULL);
-			} else if (*declarationSub == TOKEN_NonEmptyTerms) { // else if it's a regular flow-through declaration
-				// first, set the identifier's type to the type of the NonEmptyTerms stream (an inputType consumer) in order to allow for recursion
-				tree->status.type = new FilterType(inStatus, nullType, SUFFIX_LATCH);
-				// then, verify types for the declaration sub-block
-				TypeStatus netsStatus = getStatusNonEmptyTerms(declarationSub, inStatus);
-				// delete the temporary filter type
-				delete (tree->status.type);
-				// finally, return the type of the declaration sub-block
-				returnTypeRet(netsStatus, NULL);
 			}
 		} else { // otherwise, if it's an import declaration, do nothing; typing of the import will be handled at the definition site
 			returnTypeRet(nullType, NULL);
@@ -2229,8 +2270,8 @@ TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *pipec = tree->child; // Declaration, NonEmptyTerms, or LastDeclaration
-	if (*pipec == TOKEN_Declaration || *pipec == TOKEN_LastDeclaration) { // if it's a Declaration-style pipe
+	Tree *pipec = tree->child; // Declaration or NonEmptyTerms
+	if (*pipec == TOKEN_Declaration) { // if it's a Declaration-style pipe
 		returnStatus(getStatusDeclaration(pipec, inStatus));
 	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		returnStatus(getStatusNonEmptyTerms(pipec, inStatus));

@@ -538,7 +538,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	bool stdExplicitlyImported = false;
 	for(;;) { // per-change loop
 		// per-import loop
-		vector<SymbolTable *> newImportList;
+		vector<SymbolTable *> redoList; // the list of imports that we couldn't handle this round and must redo in the next one
 		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
 			Tree *importdcn = (*importIter)->defSite->child->next;
@@ -548,7 +548,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
 			string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
 			SymbolTable *importParent = (*importIter)->parent;
-			// standard import special-casing
+			// check for the standard library import special case
 			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
 					(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
@@ -579,15 +579,15 @@ void subImportDecls(vector<SymbolTable *> importList) {
 						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					}
-				} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import KOL
-					// try to find an object-style child in the binding's children
+				} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import
+					// verify that what's being open-imported is actually an object by finding an object-style child in the binding's children
 					map<string, SymbolTable *>::const_iterator bindingChildIter;
 					for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
 						if ((*bindingChildIter).second->kind == KIND_OBJECT) {
 							break;
 						}
 					}
-					if (bindingChildIter != binding->children.end()) { // if we found an object in the open-import binding's children
+					if (bindingChildIter != binding->children.end()) { // if we found an object-style child in this open-import's children (it's a valid open-impoprt of an object)
 						SymbolTable *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
 						// add in the imported nodes, scanning for conflicts along the way
 						bool firstInsert = true;
@@ -606,7 +606,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 								}
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
 						}
-					} else { // else if we didn't find a binding in the open-import's children, flag an error
+					} else { // else if we didn't find an object-style child in this open-import's children (it's an open-impoprt of a non-object), flag an error
 						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
 						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
@@ -621,11 +621,11 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					}
 				}
 			} else { // else if no binding could be found
-				newImportList.push_back(*importIter); // log the failed node for rebinding during the next round
+				redoList.push_back(*importIter); // log the failed node for rebinding during the next round
 			}
 		} // per-import loop
-		if (newImportList.size() == importList.size()) { // if the import table has stabilized
-			for (vector<SymbolTable *>::const_iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
+		if (redoList.size() == importList.size()) { // if the import table has stabilized
+			for (vector<SymbolTable *>::const_iterator importIter = redoList.begin(); importIter != redoList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
 				Tree *importdcn = (*importIter)->defSite->child->next;
 				Tree *importId = (*importdcn == TOKEN_NonArrayedIdentifier || *importdcn == TOKEN_ArrayedIdentifier) ?
@@ -636,7 +636,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			}
 			break;
 		} else { // else if the import table hasn't stabilized yet, do another substitution round on the failed binding list
-			importList = newImportList;
+			importList = redoList;
 		}
 	} // per-change loop
 }

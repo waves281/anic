@@ -178,54 +178,54 @@ void initStdTypes() {
 	stringPair.push_back(stdStringType); stringPair.push_back(stdStringType);
 	Type *stringPairType = new TypeList(stringPair);
 	// build the stringerType
-	vector<TypeList *> instructorTypes;
-	vector<TypeList *> stringerOutstructorTypes;
+	StructorList instructorList;
+	StructorList stringerOutstructorList;
 	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
-	stringerOutstructorTypes.push_back(stringOutstructorType);
-	stringerType = new ObjectType(instructorTypes, stringerOutstructorTypes, SUFFIX_LIST, 1); stringerType->operable = false;
+	stringerOutstructorList.add(stringOutstructorType);
+	stringerType = new ObjectType(instructorList, stringerOutstructorList, SUFFIX_LIST, 1); stringerType->operable = false;
 	// prepare to build the standard operator types
 	TypeList *filterOutstructorType;
-	vector<TypeList *> opOutstructorTypes;
+	StructorList opOutstructorList;
 	// build the boolUnOpType
 	filterOutstructorType = new TypeList(new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	boolUnOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolUnOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	boolUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolUnOpType->operable = false;
 	// build the intUnOpType
 	filterOutstructorType = new TypeList(new FilterType(stdIntType, intLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	intUnOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intUnOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	intUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intUnOpType->operable = false;
 	// build the boolBinOpType
 	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	boolBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolBinOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	boolBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolBinOpType->operable = false;
 	// build the intBinOpType
 	filterOutstructorType = new TypeList(new FilterType(intPairType, intLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	intBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intBinOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	intBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intBinOpType->operable = false;
 	// build the floatBinOpType
 	filterOutstructorType = new TypeList(new FilterType(floatPairType, floatLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	floatBinOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); floatBinOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	floatBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatBinOpType->operable = false;
 	// build the boolCompOpType
 	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	boolCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); boolCompOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	boolCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolCompOpType->operable = false;
 	// build the intCompOpType
 	filterOutstructorType = new TypeList(new FilterType(intPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	intCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); intCompOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	intCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intCompOpType->operable = false;
 	// build the floatCompOpType
 	filterOutstructorType = new TypeList(new FilterType(floatPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	floatCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); floatCompOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	floatCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatCompOpType->operable = false;
 	// build the charCompOpType
 	filterOutstructorType = new TypeList(new FilterType(charPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	charCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); charCompOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	charCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); charCompOpType->operable = false;
 	// build the stringCompOpType
 	filterOutstructorType = new TypeList(new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH));
-	opOutstructorTypes = stringerOutstructorTypes; opOutstructorTypes.push_back(filterOutstructorType);
-	stringCompOpType = new ObjectType(instructorTypes, opOutstructorTypes, SUFFIX_LATCH); stringCompOpType->operable = false;
+	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
+	stringCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); stringCompOpType->operable = false;
 }
 
 SymbolTable *genDefaultDefs() {
@@ -449,11 +449,11 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				}
 			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type
 				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-				if (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
+				if (discriminant != NULL && (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation)) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
 					stCurType = getStatusDeclaration(stCur->defSite);
 				}
 			} else if (stCur->kind == KIND_PARAMETER) { // else if it's a Param binding, naively get its type
-				stCurType = getStatusParam(stCur->defSite);
+				stCurType = getStatusType(stCur->defSite->child); // Type
 			} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
 				stCurType = stCur->defSite->status.type;
 			}
@@ -476,8 +476,6 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
 							stCur = (*fakeFind).second;
 						} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
-							// note that the member type that we're using here *will* be defined by this point;
-							// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
 							Type *mutableStCurType = stCurType;
 							if (id[i] == "[]") { // if it's an expression access (as opposed to a range access), decrease the type's depth
 								mutableStCurType = mutableStCurType->copy(); // make a mutable copy of the type
@@ -497,30 +495,24 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						stCurType = errType;
 					}
 				} else if (stCurType->category == CATEGORY_OBJECTTYPE) { // else if it's an Object constant or latch (the only other category that can have sub-identifiers)
-					// if it's a constant type, flag the fact that it must be constantized
+					// if it's a constant type, flag the fact that this identifier will need to be constantized
 					if (stCurType->suffix == SUFFIX_CONSTANT) {
 						needsConstantization = true;
 					}
 					// proceed with binding the sub-identifier as normal by trying to find a match in the Object's members
 					ObjectType *stCurTypeCast = ((ObjectType *)stCurType);
-					unsigned int j;
-					for (j=0; j < stCurTypeCast->memberNames.size(); j++) {
-						if ((stCurTypeCast->memberNames)[j] == id[i]) { // if we found a match for this sub-identifier, break
-							break;
-						}
-					}
-					if (j != stCurTypeCast->memberNames.size()) { // if we managed to find a matching sub-identifier
-						if ((stCurTypeCast->memberDefSites)[j] != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
-							stCur = ((stCurTypeCast->memberDefSites)[j])->env;
+					MemberList::iterator findIter = stCurTypeCast->memberList.find(id[i]);
+					if (findIter != stCurTypeCast->memberList.end()) { // if we managed to find a matching sub-identifier
+						if ((*findIter).defSite() != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
+							stCur = (*findIter).defSite()->env;
 						} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
 							// but first, check if a SymbolTable node has already been faked for this member
-							map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
-							if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
-								stCur = (*fakeFind).second;
+							map<string, SymbolTable *>::const_iterator fakeFindIter = stCur->children.find(id[i]);
+							if (fakeFindIter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+								stCur = (*fakeFindIter).second;
+								stCur = (*fakeFindIter).second;
 							} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
-								// note that the member type that we're using here *will* be defined by this point;
-								// if we got here, the ObjectType was in-place defined in a Param (which cannot be recursive), and getStatusParam catches recursion errors
-								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (stCurTypeCast->memberTypes)[j]);
+								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (*findIter));
 								// attach the new fake node to the main SymbolTable
 								*stCur *= fakeStNode;
 								// accept the new fake node and proceed deeper into the binding
@@ -551,10 +543,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			// extract the import path out of the iterator
 			Tree *importdcn = (*importIter)->defSite->child->next;
 			bool copyImport = (*importdcn == TOKEN_LSQUARE); // whether this is a copy-import
-			Tree *importSid = copyImport ?
+			Tree *importId = copyImport ?
 				(*importIter)->defSite->child->next->next :
 				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
-			string importPath = *importSid; // NonArrayedIdentifier or ArrayedIdentifier
+			string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
 			SymbolTable *importParent = (*importIter)->parent;
 			// standard import special-casing
 			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
@@ -575,7 +567,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
 						**importIter = *(new SymbolTable(*binding, (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
 					} else { // else if there was a conflict, flag an error
-						Token curDefToken = importSid->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
+						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
 						if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
 							prevDefToken = (*conflictFind).second->defSite->t;
@@ -584,10 +576,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 							prevDefToken.row = 0;
 							prevDefToken.col = 0;
 						}
-						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in open-importing '"<<importPathTip<<"'");
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
 						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 					}
-				} else if ((*importIter)->kind == KIND_OPEN_IMPORT) { // else if this is an open-import
+				} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import KOL
 					// try to find an object-style child in the binding's children
 					map<string, SymbolTable *>::const_iterator bindingChildIter;
 					for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
@@ -615,7 +607,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
 						}
 					} else { // else if we didn't find a binding in the open-import's children, flag an error
-						Token curDefToken = importSid->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
+						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
 						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
 							prevDefToken = binding->defSite->t;
@@ -636,10 +628,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			for (vector<SymbolTable *>::const_iterator importIter = newImportList.begin(); importIter != newImportList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
 				Tree *importdcn = (*importIter)->defSite->child->next;
-				Tree *importSid = (*importdcn == TOKEN_NonArrayedIdentifier || *importdcn == TOKEN_ArrayedIdentifier) ?
+				Tree *importId = (*importdcn == TOKEN_NonArrayedIdentifier || *importdcn == TOKEN_ArrayedIdentifier) ?
 					(*importIter)->defSite->child->next :
 					(*importIter)->defSite->child->next->next; // NonArrayedIdentifier or ArrayedIdentifier
-				string importPath = *importSid; // NonArrayedIdentifier or ArrayedIdentifier
+				string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve import '"<<importPath<<"'");
 			}
 			break;
@@ -671,9 +663,9 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
 	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
-		returnStatus(getStatusDeclaration(tree, inStatus));
+		returnStatus(getStatusDeclaration(tree));
 	} else if (st->kind == KIND_PARAMETER) { // else if the symbol was defined as a Param-style node
-		returnStatus(getStatusParam(tree, inStatus)); // Param
+		returnStatus(getStatusType(tree->child, inStatus)); // Type
 	} else if (st->kind == KIND_INSTRUCTOR) { // else if the symbol was defined as an instructor-style node
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
 	} else if (st->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
@@ -773,9 +765,9 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 		TypeStatus subStatus = getStatusIdentifier(subSI, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		if (*subStatus) { // if we successfully derived a subtype
 			if ((*subStatus).suffix == SUFFIX_LATCH) { // if we're delatching from a latch
-				// KOL delatching-from-latch code
+				// LOL delatching-from-latch code
 			} else if ((*subStatus).suffix == SUFFIX_STREAM) { // else if we're delatching from a stream
-				// KOL delatching-from-stream code
+				// LOL delatching-from-stream code
 			}
 		}
 	} else if (*pbc == TOKEN_PrimaryBase) { // postfix operator application
@@ -1150,252 +1142,233 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
-TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	// fake a type for this node in order to allow for recursion
-	Type *&fakeType = tree->status.type;
-	fakeType = new FilterType(nullType, nullType, SUFFIX_LATCH);
-	TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
-	startStatus.retType = NULL; // make no initial presuppositions about what type the Block should return
-	// derive the declared type of the filter
-	Tree *filterCur = tree->child; // Block or FilterHeader
-	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, its type is a consumer of the input type
-		((FilterType *)fakeType)->from = (inStatus.type->category == CATEGORY_TYPELIST) ? ((TypeList *)(inStatus.type)) : new TypeList(inStatus.type);
-		// set the type to feed into the block derivation to be the one coming in to this filter
-		startStatus = inStatus.type;
-	} else if (*filterCur == TOKEN_FilterHeader) { // else if it's an explicit header-defined filter, its type is the type of the header
-		TypeStatus tempStatus = getStatusFilterHeader(filterCur, inStatus); // derive the (possibly recursive) type of the filter header
-		if (*tempStatus) { // if we successfully derived a type for the header
-			// log the derived type into the fake type that we previously created
-			((FilterType *)fakeType)->from = ((FilterType *)(tempStatus.type))->from;
-			((FilterType *)fakeType)->to = ((FilterType *)(tempStatus.type))->to;
+// reports errors; assumes that the corresponding Filter thunk was generated successfully
+TypeStatus verifyStatusFilter(Tree *tree) {
+	FilterType *headerType = (FilterType *)(tree->status.type);
+	if (*(headerType->from())) { // if the header evaluates to a valid type
+		Tree *block;
+		TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
+		startStatus.retType = NULL; // make no initial presuppositions about what type the Block should return
+		if (*(tree->child) == TOKEN_Block) { // if this is an implicitly block-defined filter
+			block = tree->child; // Block
+			// set the type to feed into the block derivation to be the one coming in to this filter
+			startStatus = headerType->from();
+		} else { // else if this is an explicitly header-defined filter
+			block = tree->child->next; // Block
 			// nullify the type to feed into the block derivation, since we have an explicit parameter list
 			startStatus = nullType;
-			// advance to the Block definition node
-			filterCur = filterCur->next;
-		} else { // else if we failed to derive a type for the header, move the fakeType to the LCURLY or LSQUARE below, and set it as erroneous
-			tree->child->child->status = fakeType; // LCURLY or LSQUARE
-			fakeType = errType;
 		}
-	}
-	if (*fakeType) { // if we successfully derived a type for the header, verify the filter definition Block
-		TypeStatus blockStatus = getStatusBlock(filterCur, startStatus); // derive the definition Block's Type
-		if (*blockStatus) { // if we successfully derived a type for the definition Block (meaning there were no return type inconsistencies)
-			if ((*(((FilterType *)(blockStatus.type))->to) == *nullType && *(((FilterType *)fakeType)->to) == *nullType) ||
-					(*(((FilterType *)(blockStatus.type))->to) >> *(((FilterType *)fakeType)->to))) { // if the header and Block return types are compatible
-				// log the header type as the return status
-				returnType(fakeType);
+		TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
+		if (*blockStatus) { // if we successfully verified the definition Block (meaning there were no internal return type inconsistencies)
+			if ((*(((FilterType *)(blockStatus.type))->to()) == *nullType && *(headerType->to()) == *nullType) ||
+					(*(((FilterType *)(blockStatus.type))->to()) >> *(headerType->to()))) { // if the header and Block return types are compatible
+				returnTypeRet(headerType, NULL);
 			} else { // else if the header and Block don't match
-				Token curToken = filterCur->child->t; // LCURLY
-				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<((FilterType *)(blockStatus.type))->to);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<((FilterType *)fakeType)->to<<")");
+				Token curToken = block->child->t; // LCURLY
+				semmerError(curToken.fileName,curToken.row,curToken.col,"block returns unexpected type "<<((FilterType *)(blockStatus.type))->to());
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<headerType->to()<<")");
 			}
 		}
-	} else { // else if we derived an erroneous type for the header
-		Token curToken = tree->child->child->t; // LCURLY or LSQUARE
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve filter header's type");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
+// generates a thunk; does not actually generate any code
+TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	// derive the declared type of the filter
+	Tree *filterCur = tree->child; // Block or FilterHeader
+	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, return its type as a consumer of the input type
+		returnTypeRet(new FilterType(inStatus.type, nullType, SUFFIX_LATCH), NULL);
+	} else /* if (*filterCur == TOKEN_FilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
+		returnTypeRet(new FilterType(filterCur, SUFFIX_LATCH), NULL);
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
+// assumes that the corresponding Filter thunk was generated successfully
+TypeStatus verifyStatusInstructor(Tree *tree) {
+	FilterType *headerType = (FilterType *)(tree->status.type);
+	if (*(headerType->from())) { // if the header evaluates to a valid type
+		Tree *block = tree->child->next->next; // NULL, RSQUARE, or Block
+		if (block != NULL && *block == TOKEN_Block) { // if there's actually an explicit definition block to verify
+			TypeStatus startStatus(nullType, errType); // set retType = errType to make sure that the instructor doesn't return anything
+			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
+			if (*verifiedStatus) { // if we successfully verified this instructor (meaning there were no internal return type inconsistencies)
+				returnTypeRet(headerType, NULL);
+			}
+		} else { // else if there is no explicit definition block to verify, simply return the previously derived status
+			returnStatus(tree->status);
+		}
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
+// generates a thunk; does not actually generate any code
 TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
-	if (conscn == NULL || *conscn == TOKEN_SEMICOLON || *conscn == TOKEN_LSQUARE) {
-		returnType(new TypeList());
-	} else if (*conscn == TOKEN_NonRetFilterHeader) {
-		TypeStatus headerStatus = getStatusFilterHeader(conscn, inStatus);
-		if (*headerStatus) { // if we managed to derive a type for the header
-			// fake a type for this node in order to allow for recursion in the upcoming Block
-			Type *&fakeType = tree->status.type;
-			fakeType = ((FilterType *)(headerStatus.type))->from;
-			// verify the instructor definition Block
-			Tree *block = conscn->next; // Block
-			TypeStatus startStatus = inStatus;
-			startStatus.retType = errType; // ensure that the Block does not return anything
-			TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
-			if (*blockStatus) { // if we successfully derived a type for the definition Block, log the header's from-type as the return status
-				returnType(((FilterType *)(headerStatus.type))->from);
-			} else { // else if we failed to derive a type for the Block, move the fakeType to the EQUALS below
-				tree->child->status = fakeType; // EQUALS
+	Tree *icn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
+	if (icn == NULL || *icn == TOKEN_SEMICOLON || *icn == TOKEN_LSQUARE) {
+		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
+	} else if (*icn == TOKEN_NonRetFilterHeader) {
+		returnTypeRet(new FilterType(icn, SUFFIX_LATCH), NULL);
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
+// reports errors; assumes that the corresponding Filter thunk was generated successfully
+TypeStatus verifyStatusOutstructor(Tree *tree) {
+	FilterType *headerType = (FilterType *)(tree->status.type);
+	if (*(headerType->to())) { // if the header evaluates to a valid type
+		Tree *block = tree->child->next->next; // NULL, RSQUARE, or Block
+		if (block != NULL && *block == TOKEN_Block) { // if there's an explicit block to verify for this Outstructor
+			TypeStatus startStatus(nullType, NULL); // set retType = NULL to allow the oustructor to return any type (for now) 
+			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
+			if (*verifiedStatus) { // if we successfully verified this outstructor (meaning there were no internal return type inconsistencies)
+				if (*(((FilterType *)(verifiedStatus.type))->to()) >> *(headerType->to())) { // if the return types are compatible, log the header's to-type as the return status
+					returnTypeRet(headerType, NULL);
+				} else { // if the return types are not compatible, flag an error
+					Token curToken = block->child->t; // LCURLY
+					semmerError(curToken.fileName,curToken.row,curToken.col,"outstructor returns unexpected type "<<((FilterType *)(verifiedStatus.type))->to());
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<headerType->to()<<")");
+				}
 			}
-		} else { // else if we failed to derive a type for the header, flag an error
-			Token curToken = conscn->child->t; // LSQUARE
-			semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve instructor's header type");
+		} else { // else if there is no explicit block to verify for this Outstructor (it's an implicitly null outstructor)
+			returnStatus(tree->status);
 		}
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
+// generates a thunk; does not actually generate any code
 TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *rfh = tree->child->next; // RetFilterHeader
-	TypeStatus headerStatus = getStatusFilterHeader(rfh, inStatus);
-	if (*headerStatus) { // if we managed to derive a type for the header
-		// fake a type for this node in order to allow for recursion in the upcoming Block
-		Type *&fakeType = tree->status.type;
-		fakeType = ((FilterType *)(headerStatus.type))->to;
-		// verify the outstructor definition Block
-		Tree *block = rfh->next; // Block
-		TypeStatus startStatus = inStatus;
-		startStatus.retType = NULL; // clear the Block's return type
-		TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
-		if (*blockStatus) { // if we successfully derived a type for the definition Block
-			if (*(((FilterType *)(blockStatus.type))->to) >> *fakeType) { // if the return types are compatible, log the header's to-type as the return status
-				returnType(((FilterType *)(headerStatus.type))->to);
-			} else { // if the return types are not compatible, flag an error
-				Token curToken = block->child->t; // LCURLY
-				semmerError(curToken.fileName,curToken.row,curToken.col,"outstructor returns unexpected type "<<((FilterType *)(blockStatus.type))->to);
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<fakeType<<")");
+	returnTypeRet(new FilterType(tree->child->next, SUFFIX_LATCH), NULL); // RetFilterHeader
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
+// reports errors; assumes that the corresponding Object thunk was generated successfully
+TypeStatus verifyStatusObject(Tree *tree) {
+	// overview:
+	// derive types for instructors and outstructors from headers, making sure that there are no conflicts
+	// verify the definitions of all instructors and outstructors
+	// derive types for and verify all members
+	// verify all remaining raw pipes in this Object definition
+	ObjectType *objectType = (ObjectType *)(tree->status.type);
+	bool failed = false;
+	// derive types for all instructors and outstructors from their headers, making sure that there are no type conflicts
+	for (StructorList::iterator iter1 = objectType->instructorList.begin(); iter1 != objectType->instructorList.end(); iter1++) {
+		Type *insType1 = *iter1;
+		if (*insType1) { // if we managed to derive a type for this instructor, check that it doesn't conflict with any other instructor
+			for (StructorList::iterator iter2 = objectType->instructorList.begin(); iter2 != objectType->instructorList.end(); iter2++) {
+				if (iter2 != iter1) { // if this isn't the same instructor as in the outer loop
+					Type *insType2 = *iter2;
+					if (*insType2 && *insType2 == *insType1) {
+						Token curDefToken = (*iter1).defSite()->t; // Instructor
+						Token prevDefToken = (*iter2).defSite()->t; // Instructor
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate instructor of type "<<insType1);
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+						failed = true;
+						break;
+					}
+				}
 			}
-		} else { // else if we failed to derive a type for the Block, move the fakeType to the EQUALS below
-			tree->child->status = fakeType; // EQUALS
+			
+		} else { // else if we failed to derive a type for this instructor
+			failed = true;
 		}
-	} else { // else if we failed to derive a type for the header, flag an error
-		Token curToken = rfh->child->t; // LSQUARE
-		semmerError(curToken.fileName,curToken.row,curToken.col,"cannot resolve outstructor's header type");
+	}
+	for (StructorList::iterator iter1 = objectType->outstructorList.begin(); iter1 != objectType->outstructorList.end(); iter1++) {
+		Type *outsType1 = *iter1;
+		if (*outsType1) { // if we managed to derive a type for this outstructor, check that it doesn't conflict with any other outstructor
+			for (StructorList::iterator iter2 = objectType->outstructorList.begin(); iter2 != objectType->outstructorList.end(); iter2++) {
+				if (iter2 != iter1) { // if this isn't the same outstructor as in the outer loop
+					Type *outsType2 = *iter2;
+					if (*outsType2 && *outsType2 == *outsType1) {
+						Token curDefToken = (*iter1).defSite()->t; // Outstructor
+						Token prevDefToken = (*iter2).defSite()->t; // Outstructor
+						semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate outstructor of type "<<outsType1);
+						semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
+						failed = true;
+						break;
+					}
+				}
+			}
+		} else { // else if we failed to derive a type for this outstructor
+			failed = true;
+		}
+	}
+	// verify the definitions of all instructors and outstructors
+	for (StructorList::iterator iter = objectType->instructorList.begin(); iter != objectType->instructorList.end(); iter++) {
+		if (**iter) { // if this instructor has a valid header type
+			TypeStatus verifiedStatus = verifyStatusInstructor((*iter).defSite()); // Instructor
+			if (!(*verifiedStatus)) { // if the verification failed, flag this fact
+				failed = true;
+			}
+		}
+	}
+	for (StructorList::iterator iter = objectType->outstructorList.begin(); iter != objectType->outstructorList.end(); iter++) {
+		if (**iter) { // if this outstructor has a valid header type
+			TypeStatus verifiedStatus = verifyStatusOutstructor((*iter).defSite()); // Outstructor
+			if (!(*verifiedStatus)) { // if the verification failed, flag this fact
+				failed = true;
+			}
+		}
+	}
+	// derive the types and verify the definitions of all members
+	for (MemberList::iterator iter = objectType->memberList.begin(); iter != objectType->memberList.end(); iter++) {
+		Type *memberType = *iter;
+		if (!(*memberType)) { // if we failed to derive the type of this member, flag this fact
+			failed = true;
+		}
+	}
+	// verify all remaining regular pipes in this Object definition
+	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
+		if (*pipe == TOKEN_Pipe || *pipe == TOKEN_LastPipe) {
+			Tree *pipec = pipe->child;
+			if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
+				TypeStatus pipeStatus = getStatusPipe(pipe);
+				if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
+					failed = true;
+				}
+			}
+		}
+	}
+	// finally, do the verified return
+	if (!failed) { // if we successfully verified everything, return the originally derived status
+		returnStatus(tree->status);
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
+// generates a thunk; does not actually generate any code
 TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	// fake a type for this node in order to allow for recursion
-	Type *&fakeType = tree->status.type;
-	fakeType = new ObjectType(SUFFIX_LATCH);
-	// fake names and types for all members, and log their definition sites
-	bool failed = false;
-	vector<string> memberNames;
-	vector<Type *> memberTypes;
-	vector<Tree *> memberDefSites;
-	vector<Token> memberTokens;
+	// log the definition sites of all intructors, outstructors, and members
+	StructorList instructorList;
+	StructorList outstructorList;
+	MemberList memberList;
 	SymbolTable *objectSt = tree->env;
 	for (map<string, SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
-		if ((*memberIter).second->kind == KIND_DECLARATION) { // if it's a declaration-style node
-			Tree *defSite = (*memberIter).second->defSite; // Declaration
-			Token defToken = defSite->child->t; // ID
-			memberNames.push_back(defToken.s); // ID
-			memberTypes.push_back(NULL);
-			memberDefSites.push_back(defSite); // Declaration
-			memberTokens.push_back(defToken); // ID
-		} else if ((*memberIter).second->kind == KIND_STD) { // else if it's an imported standard node
-			Tree *defSite = (*memberIter).second->defSite;
-			Token defToken = defSite->t;
-			memberNames.push_back((*memberIter).second->id);
-			memberTypes.push_back(defSite->status.type);
-			memberDefSites.push_back(NULL);
-			memberTokens.push_back(defToken); // ID
-		}
-	}
-	// commit the fake member names and types, as well as their definition sites
-	((ObjectType *)fakeType)->memberNames = memberNames;
-	((ObjectType *)fakeType)->memberTypes = memberTypes;
-	((ObjectType *)fakeType)->memberDefSites = memberDefSites;
-	// derive types for all of the intructors and outstructors
-	vector<TypeList *> instructorTypes;
-	vector<Token> instructorTokens;
-	vector<TypeList *> outstructorTypes;
-	vector<Token> outstructorTokens;
-	for (map<string, SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
 		if ((*memberIter).second->kind == KIND_INSTRUCTOR) { // if it's an instructor-style node
-			Tree *defSite = (*memberIter).second->defSite; // Instructor
-			TypeStatus insStatus = getStatusInstructor(defSite, inStatus); // Instructor
-			if (*insStatus) { // if we successfully derived a type for this instructor
-				// check if there's already an instructor of this type
-				vector<TypeList *>::const_iterator iter1;
-				vector<Token>::const_iterator iter2;
-				for (iter1 = instructorTypes.begin(), iter2 = instructorTokens.begin(); iter1 != instructorTypes.end(); iter1++, iter2++) {
-					if (**iter1 == *insStatus) { // if we've found an outstructor with this same type, break
-						break;
-					}
-				}
-				if (iter1 == instructorTypes.end()) { // if there were no conflicts, log the instructor's type in the list
-					instructorTypes.push_back((TypeList *)(insStatus.type));
-					instructorTokens.push_back(defSite->child->t); // EQUALS
-				} else { // otherwise, flag the conflict as an error
-					Token curDefToken = defSite->child->t; // EQUALS
-					Token prevDefToken = *iter2;
-					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate instructor of type "<<insStatus);
-					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
-					failed = true;
-				}
-			} else { // otherwise, if we failed to derive a type for this instructor
-				failed = true;
-			}
+			instructorList.add((*memberIter).second->defSite); // Instructor
 		} else if ((*memberIter).second->kind == KIND_OUTSTRUCTOR) { // else if it's an outstructor-style node
-			Tree *defSite = (*memberIter).second->defSite; // Outstructor
-			TypeStatus outsStatus = getStatusOutstructor(defSite, inStatus); // Outstructor
-			if (*outsStatus) { // if we successfully derived a type for this outstructor
-				// check if there's already a outstructor of this type
-				vector<TypeList *>::const_iterator iter1;
-				vector<Token>::const_iterator iter2;
-				for (iter1 = outstructorTypes.begin(), iter2 = outstructorTokens.begin(); iter1 != outstructorTypes.end(); iter1++, iter2++) {
-					if (**iter1 == *outsStatus) { // if we've found an outstructor with this same type, break
-						break;
-					}
-				}
-				if (iter1 == outstructorTypes.end()) { // if there were no conflicts, log the outstructor's type in the list
-					outstructorTypes.push_back((TypeList *)(outsStatus.type));
-					outstructorTokens.push_back(defSite->child->t); // EQUALS
-				} else { // otherwise, flag the conflict as an error
-					Token curDefToken = defSite->child->t; // EQUALS
-					Token prevDefToken = *iter2;
-					semmerError(curDefToken.fileName,curDefToken.row,curDefToken.col,"duplicate outstructor of type "<<outsStatus);
-					semmerError(prevDefToken.fileName,prevDefToken.row,prevDefToken.col,"-- (previous definition was here)");
-					failed = true;
-				}
-			} else { // otherwise, if we failed to derive a type for this outstructor
-				failed = true;
-			}
+			outstructorList.add((*memberIter).second->defSite); // Outstructor
+		} else if ((*memberIter).second->kind == KIND_DECLARATION) { // else if it's a declaration-style node
+			memberList.add((*memberIter).second->id, (*memberIter).second->defSite);
+		} else if ((*memberIter).second->kind == KIND_STD) { // else if it's an imported standard node
+			memberList.add((*memberIter).second->id, (*memberIter).second->defSite->status.type);
 		}
 	}
-	// derive types for all of the members that haven't had their types derived already
-	for (unsigned int i=0; i < ((ObjectType *)fakeType)->memberTypes.size(); i++) {
-		if (((((ObjectType *)fakeType)->memberTypes)[i] == NULL) && (memberDefSites[i] != NULL)) { // if we haven't yet derived a type for this member and it's not a KIND_STD with a NULL defSite, do so now
-			TypeStatus memberStatus = getStatusDeclaration(memberDefSites[i], inStatus);
-			if (*memberStatus) { // if we successfully derived a type for this Declaration
-				(((ObjectType *)fakeType)->memberTypes)[i] = memberStatus.type;
-			} else { // else if we failed to derive a type
-				(((ObjectType *)fakeType)->memberTypes)[i] = errType;
-				failed = true;
-			}
-		}
-	}
-	if (!failed) { // if we successfully derived the lists
-		// validate all of the regular pipes in this Object definition
-		for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
-			if (*pipe == TOKEN_Pipe || *pipe == TOKEN_LastPipe) {
-				Tree *pipec = pipe->child;
-				if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
-					TypeStatus pipeStatus = getStatusPipe(pipe);
-					if (!(*pipeStatus)) { // if we failed to derive a type for this Pipe, flag an error
-						failed = true;
-					}
-				}
-			}
-		}
-		if (!failed) { // if we successfully validated all of the remaining pipes
-			// log the derived lists into the fake type that we previously created
-			((ObjectType *)fakeType)->instructorTypes = instructorTypes;
-			((ObjectType *)fakeType)->outstructorTypes = outstructorTypes;
-			// propagate the change to all copies
-			((ObjectType *)fakeType)->propagateToCopies();
-			// finally, log the completed type as the return status
-			returnType(fakeType);
-		} else { // else if we failed to validate the remaining pipes, move the fakeType to the LCURLY below
-			tree->child->status = fakeType; // LCURLY
-		}
-	} else { // else if we failed to derive the lists, move the fakeType to the LCURLY below
-		tree->child->status = fakeType; // LCURLY
-	}
+	// return a thunk representing this ObjectType
+	returnTypeRet(new ObjectType(instructorList, outstructorList, memberList, SUFFIX_LATCH), NULL);
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
@@ -1481,13 +1454,11 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
 				returnType(new ObjectType(suffixVal, depthVal));
 			} else /* if (*otcn == TOKEN_ObjectTypeList) */ { // else if it's a custom-defined object type
-				vector<TypeList *> instructorTypes;
+				StructorList instructorList;
 				vector<Token> instructorTokens;
-				vector<TypeList *> outstructorTypes;
+				StructorList outstructorList;
 				vector<Token> outstructorTokens;
-				vector<string> memberNames;
-				vector<Type *> memberTypes;
-				vector<Tree *> memberDefSites;
+				MemberList memberList;
 				vector<Token> memberTokens;
 				bool failed = false;
 				for(Tree *cur = otcn->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a child of ObjectTypeList
@@ -1500,15 +1471,15 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 						}
 						if (*insStatus) { // if we successfully derived a type for this instructor
 							// check if there's already a instructor of this type
-							vector<TypeList *>::const_iterator iter1;
+							StructorList::iterator iter1;
 							vector<Token>::const_iterator iter2;
-							for (iter1 = instructorTypes.begin(), iter2 = instructorTokens.begin(); iter1 != instructorTypes.end(); iter1++, iter2++) {
+							for (iter1 = instructorList.begin(), iter2 = instructorTokens.begin(); iter1 != instructorList.end(); iter1++, iter2++) {
 								if (**iter1 == *insStatus) {
 									break;
 								}
 							}
-							if (iter1 == instructorTypes.end()) { // if there were no conflicts, add the instructor's type to the list
-								instructorTypes.push_back((TypeList *)(insStatus.type));
+							if (iter1 == instructorList.end()) { // if there were no conflicts, add the instructor's type to the list
+								instructorList.add((TypeList *)(insStatus.type));
 								instructorTokens.push_back(cur->child->t); // EQUALS
 							} else { // otherwise, flag the conflict as an error
 								Token curDefToken = cur->child->t; // EQUALS
@@ -1524,15 +1495,15 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 						TypeStatus outsStatus = getStatusTypeList(cur->child->next->next->next, inStatus); // TypeList
 						if (*outsStatus) { // if we successfully derived a type for this outstructor
 							// check if there's already a outstructor of this type
-							vector<TypeList *>::const_iterator iter1;
+							StructorList::iterator iter1;
 							vector<Token>::const_iterator iter2;
-							for (iter1 = outstructorTypes.begin(), iter2 = outstructorTokens.begin(); iter1 != outstructorTypes.end(); iter1++, iter2++) {
+							for (iter1 = outstructorList.begin(), iter2 = outstructorTokens.begin(); iter1 != outstructorList.end(); iter1++, iter2++) {
 								if (**iter1 == *outsStatus) {
 									break;
 								}
 							}
-							if (iter1 == outstructorTypes.end()) { // if there were no conflicts, add the outstructor's type to the list
-								outstructorTypes.push_back((TypeList *)(outsStatus.type));
+							if (iter1 == outstructorList.end()) { // if there were no conflicts, add the outstructor's type to the list
+								outstructorList.add((TypeList *)(outsStatus.type));
 								outstructorTokens.push_back(cur->child->t); // EQUALS
 							} else { // otherwise, flag the conflict as an error
 								Token curDefToken = cur->child->t; // EQUALS
@@ -1547,19 +1518,17 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					} else if (*cur == TOKEN_MemberType) { // else if it's a member type
 						// check for naming conflicts with this member
 						string &stringToAdd = cur->child->t.s; // ID
-						vector<string>::const_iterator iter1;
+						MemberList::iterator iter1;
 						vector<Token>::const_iterator iter2;
-						for (iter1 = memberNames.begin(), iter2 = memberTokens.begin(); iter1 != memberNames.end(); iter1++, iter2++) {
-							if (*iter1 == stringToAdd) {
+						for (iter1 = memberList.begin(), iter2 = memberTokens.begin(); iter1 != memberList.end(); iter1++, iter2++) {
+							if ((string)(*iter1) == stringToAdd) {
 								break;
 							}
 						}
-						if (iter1 == memberNames.end()) { // if there were no naming conflicts with this member
+						if (iter1 == memberList.end()) { // if there were no naming conflicts with this member
 							TypeStatus memberStatus = getStatusType(cur->child->next->next, inStatus); // Type
 							if (*memberStatus) { // if we successfully derived a type for this Declaration
-								memberNames.push_back(stringToAdd); // ID
-								memberTypes.push_back(memberStatus.type);
-								memberDefSites.push_back(NULL);
+								memberList.add(stringToAdd, memberStatus.type);
 								memberTokens.push_back(cur->child->t); // ID
 							} else { // else if we failed to derive a type
 								failed = true;
@@ -1575,7 +1544,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 				if (!failed) {
-					returnType(new ObjectType(instructorTypes, outstructorTypes, memberNames, memberTypes, memberDefSites, suffixVal, depthVal));
+					returnType(new ObjectType(instructorList, outstructorList, memberList, suffixVal, depthVal));
 				}
 			}
 		}
@@ -1606,30 +1575,12 @@ TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-// reports errors
-TypeStatus getStatusParam(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	// check if this is a recursive invocation
-	if (tree->status.retType) { // if we previously logged a recursion alert here (and we don't have a true type to return), flag an ill-formed recursion error
-		tree->status.retType = NULL; // fix up the retType to serve its original purpose
-		Token curToken = tree->child->next->t; // ID
-		semmerError(curToken.fileName,curToken.row,curToken.col,"recursive definition of parameter '"<<curToken.s<<"'");
-		semmerError(curToken.fileName,curToken.row,curToken.col,"-- (input type is "<<inStatus<<")");
-	} else { // else if there is no recursion alert for this Param, log one, then continue
-		tree->status.retType = errType; // log a recursion alert
-		// derive the type normally
-		returnStatus(getStatusType(tree->child, inStatus)); // Type
-	}
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
-}
-
 TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<Type *> list;
 	bool failed = false;
 	for (Tree *cur = tree->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a Param
-		TypeStatus paramStatus = getStatusParam(cur, inStatus);
+		TypeStatus paramStatus = getStatusType(cur->child, inStatus); // Type
 		if (*paramStatus) { // if we successfully derived a type for this node
 			// commit the type to the list
 			list.push_back(paramStatus.type);
@@ -1688,8 +1639,8 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
 				// try the ObjectType outstructor special case for instantiation
 				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
-					for (vector<TypeList *>::const_iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorTypes.begin();
-							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorTypes.end();
+					for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
+							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
 							outsIter++) {
 						if (**outsIter >> *instantiationStatus) {
 							returnStatus(instantiationStatus);
@@ -1901,16 +1852,16 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			SymbolTable *enclosingParent = enclosingEnv->parent;
 			if (enclosingParent->kind == KIND_FILTER) {
 				FilterType *enclosingType = (FilterType *)(enclosingParent->defSite->status.type);
-				if ((*inStatus == *nullType && *(enclosingType->from) == *nullType) || (*inStatus >> *(enclosingType->from))) {
-					if (enclosingType->to->list.size() == 1) {
-						returnTypeRet(enclosingType->to->list[0], inStatus.retType);
+				if ((*inStatus == *nullType && *(enclosingType->from()) == *nullType) || (*inStatus >> *(enclosingType->from()))) {
+					if (enclosingType->to()->list.size() == 1) {
+						returnTypeRet(enclosingType->to()->list[0], inStatus.retType);
 					} else {
-						returnTypeRet(enclosingType->to, inStatus.retType);
+						returnTypeRet(enclosingType->to(), inStatus.retType);
 					}
 				} else {
 					Token curToken = dtc->child->t; // ERARROW
-					semmerError(curToken.fileName,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus); // KOL
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<(enclosingType->from)<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (expected type is "<<enclosingType->from()<<")");
 				}
 			} else if (enclosingParent->kind == KIND_INSTRUCTOR) {
 				TypeList *enclosingType = (TypeList *)(enclosingParent->defSite->status.type);
@@ -1939,20 +1890,6 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			Token curToken = dtc->child->t; // ERARROW
 			semmerError(curToken.fileName,curToken.row,curToken.col,"loopback outside of a filter block");
 		}
-	/*
-		TypeStatus linkStatus = getStatusLoopback(dtc->child->next);
-		if (*linkStatus) { // if we managed to derive a type for the Link subnode
-			Type *linkType = inStatus->link(*inStatus);
-			if (*linkType) { // if the types are link-compatible, return the resulting type
-				returnTypeRet(linkType, inStatus.retType);
-			} else {
-				Token curToken = dtc->child->t; // DCOLON
-				semmerError(curToken.fileName,curToken.row,curToken.col,"link with incompatible type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (link type is "<<linkStatus<<")");
-			}
-		}
-	*/
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
@@ -2221,21 +2158,46 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 }
 
 // reports errors
-TypeStatus getStatusDeclaration(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusDeclaration(Tree *tree) {
 	GET_STATUS_HEADER;
 	// check if this is a recursive invocation
 	Type *&fakeRetType = tree->status.retType;
 	if (fakeRetType != NULL) { // if we previously logged a recursion alert here (and we don't have a memoized type to return), flag an ill-formed recursion error
 		Token curToken = tree->child->t;
 		semmerError(curToken.fileName,curToken.row,curToken.col,"irresolvable recursive definition of '"<<curToken.s<<"'");
-	} else { // else if there is no recursion alert for this Declaration and it's not a standard literal override, continue
-		// if the sub-node is not recursion-safe, institute a recursion warning for this Declaration
+	} else { // else if there is no recursion alert for this Declaration
+		// flag a recursion alert for this Declaration and proceed normally
+		fakeRetType = errType;
+		// check if this is a Filter or Object derivation special case
 		Tree *declarationSub = tree->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-		if (!(declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node &&
-				(*(declarationSub->child->child) == TOKEN_Object || *(declarationSub->child->child) == TOKEN_Filter))) { // only Objects and Filters are exempt
-			fakeRetType = errType; // log a recursion alert
+		if (declarationSub != NULL && *declarationSub == TOKEN_TypedStaticTerm && *(declarationSub->child) == TOKEN_Node) {
+			if (*(declarationSub->child->child) == TOKEN_Filter) {
+				TypeStatus derivedStatus = getStatusFilter(declarationSub->child->child); // blindly generates a thunk; never fails
+				// log the derived type as the return value of this declaration
+				Type *&fakeType = tree->status.type;
+				fakeType = derivedStatus.type;
+				// verify the internal contents of the filter
+				TypeStatus verifiedStatus = verifyStatusFilter(declarationSub->child->child);
+				if (*verifiedStatus) { // if the verification was successful, return the derived status
+					returnTypeRet(verifiedStatus, NULL);
+				} else { // else if the verification failed
+					returnTypeRet(errType, NULL);
+				}
+			} else if (*(declarationSub->child->child) == TOKEN_Object) {
+				TypeStatus derivedStatus = getStatusObject(declarationSub->child->child); // blindly generates a thunk; never fails
+				// log the derived type as the return value of this declaration
+				Type *&fakeType = tree->status.type;
+				fakeType = derivedStatus.type;
+				// verify the internal contents of the object
+				TypeStatus verifiedStatus = verifyStatusObject(declarationSub->child->child);
+				if (*verifiedStatus) { // if the verification was successful, return the derived status
+					returnTypeRet(verifiedStatus, NULL);
+				} else { // else if the verification failed
+					returnTypeRet(errType, NULL);
+				}
+			}
 		}
-		// proceed with the normal derivation
+		// otherwise, if this is not a Filter or Object special case
 		if (*(tree->child) != TOKEN_AT && *(tree->child) != TOKEN_DAT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a standard declaration
@@ -2255,7 +2217,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *pipec = tree->child; // Declaration or NonEmptyTerms
 	if (*pipec == TOKEN_Declaration) { // if it's a Declaration-style pipe
-		returnStatus(getStatusDeclaration(pipec, inStatus));
+		returnStatus(getStatusDeclaration(pipec));
 	} else if (*pipec == TOKEN_NonEmptyTerms) { // else if it's a raw NonEmptyTerms pipe
 		returnStatus(getStatusNonEmptyTerms(pipec, inStatus));
 	}

@@ -52,6 +52,16 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	5 ->packStream; 6.0e-1 ->packStream; 8.1 |> ->packStream;
 };
 
+/*
+// standard object construction testing
+BinTree = {
+	x = [int\];
+	leftTree = [BinTree\] <- 1; rightTree = [BinTree\] <- 2;
+	=[int\ x] {\x ->BinTree.x};
+	=[BinTree\ leftTree, BinTree\ rightTree] {\leftTree <->BinTree.leftTree; \rightTree <->BinTree.rightTree;}
+}
+*/
+
 // standard upcast testing
 intBinOp = [int x, int y --> int\] {\std.randInt -->};
 + <->intBinOp;

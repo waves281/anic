@@ -34,6 +34,10 @@ class MemberedType;
 class ErrorType;
 class StdType;
 class FilterType;
+class StructorListResult;
+class StructorList;
+class MemberListResult;
+class MemberList;
 class ObjectType;
 class ErrorType;
 class TypeStatusBase;
@@ -78,15 +82,15 @@ class Type {
 		string suffixString() const;
 		// operators
 		// virtual
-		virtual bool operator==(const Type &otherType) const = 0;
+		virtual bool operator==(Type &otherType) = 0;
 		virtual bool operator==(int kind) const = 0;
-		virtual Type *operator,(const Type &otherType) const = 0;
-		virtual bool operator>>(const Type &otherType) const = 0;
+		virtual Type *operator,(Type &otherType) = 0;
+		virtual bool operator>>(Type &otherType) = 0;
 		virtual operator string() = 0;
 		// non-virtual
 		operator bool() const;
 		bool operator!() const;
-		bool operator!=(const Type &otherType) const;
+		bool operator!=(Type &otherType);
 		bool operator!=(int kind) const;
 };
 
@@ -108,10 +112,10 @@ class TypeList : public Type {
 		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
-		bool operator==(const Type &otherType) const;
+		bool operator==(Type &otherType);
 		bool operator==(int kind) const;
-		Type *operator,(const Type &otherType) const;
-		bool operator>>(const Type &otherType) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
 		operator string();
 };
 
@@ -127,10 +131,10 @@ class ErrorType : public Type {
 		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
-		bool operator==(const Type &otherType) const;
+		bool operator==(Type &otherType);
 		bool operator==(int kind) const;
-		Type *operator,(const Type &otherType) const;
-		bool operator>>(const Type &otherType) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
 		operator string();
 };
 
@@ -186,69 +190,172 @@ class StdType : public Type {
 		bool isComparable(const Type &otherType) const;
 		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
-		bool objectTypePromotion(const Type &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
+		bool objectTypePromotion(Type &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
 		Type *copy();
 		void erase();
 		void clear();
 		string kindToString() const;
 		string toString(unsigned int tabDepth);
 		// operators
-		bool operator==(const Type &otherType) const;
+		bool operator==(Type &otherType);
 		bool operator==(int kind) const;
-		Type *operator,(const Type &otherType) const;
-		bool operator>>(const Type &otherType) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
 		operator string();
 };
 
 class FilterType : public Type {
 	public:
 		// data members
-		TypeList *from; // the source of this object type
-		TypeList *to; // the destination of this object type
+		TypeList *fromInternal; // the source of this object type
+		TypeList *toInternal; // the destination of this object type
+		Tree *defSite; // the FilterHeader tree node that defines this FilterType
 		// allocators/deallocators
-		FilterType(Type *from = nullType, Type *to = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *fromInternal = nullType, Type *toInternal = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Tree *defSite, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~FilterType();
 		// core methods
+		TypeList *from();
+		TypeList *to();
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
 		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
-		bool operator==(const Type &otherType) const;
+		bool operator==(Type &otherType);
 		bool operator==(int kind) const;
-		Type *operator,(const Type &otherType) const;
-		bool operator>>(const Type &otherType) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
 		operator string();
+};
+
+class StructorListResult {
+	public:
+		// data members
+		const pair<Type *, Tree *> &internalPair;
+		// allocators/deallocators
+		StructorListResult(const pair<Type *, Tree *> &internalPair);
+		~StructorListResult();
+		// converters
+		operator Type *() const;
+		// core methods
+		Tree *defSite() const;
+		// operators
+		Type *operator->() const;
+		bool operator==(const StructorListResult &otherResult) const;
+		bool operator!=(const StructorListResult &otherResult) const;
+};
+
+class StructorList {
+	public:
+		// data members
+		vector<pair<Type *, Tree *> > structors;
+		// allocators/deallocators
+		StructorList();
+		StructorList(const StructorList &otherStructorList);
+		~StructorList();
+		// core methods
+		void add(TypeList *typeList);
+		void add(Tree *tree);
+		unsigned int size() const;
+		void clear();
+		// iterator methods
+		class iterator {
+			public:
+				// data members
+				vector<pair<Type *, Tree *> >::iterator internalIter;
+				// allocators/deallocators
+				iterator();
+				iterator(const iterator &otherIter);
+				iterator(const vector<pair<Type *, Tree *> >::iterator &internalIter);
+				~iterator();
+				// operators
+				iterator &operator=(const iterator &otherIter);
+				void operator++(int);
+				bool operator==(const iterator &otherIter);
+				bool operator!=(const iterator &otherIter);
+				StructorListResult operator*();
+		};
+		iterator begin();
+		iterator end();
+};
+
+class MemberListResult {
+	public:
+		// data members
+		const pair<string, pair<Type *, Tree *> > &internalPair;
+		// allocators/deallocators
+		MemberListResult(const pair<string, pair<Type *, Tree *> > &internalPair);
+		~MemberListResult();
+		// converters
+		operator string() const;
+		operator Type *() const;
+		// core methods
+		Tree *defSite() const;
+		// operators
+		Type *operator->() const;
+		bool operator==(const MemberListResult &otherResult) const;
+		bool operator!=(const MemberListResult &otherResult) const;
+};
+
+class MemberList {
+	public:
+		// data members
+		map<string, pair<Type *, Tree *> > memberMap;
+		// allocators/deallocators
+		MemberList();
+		MemberList(const MemberList &otherMemberList);
+		~MemberList();
+		// core methods
+		void add(string name, Type *type);
+		void add(string name, Tree *tree);
+		unsigned int size() const;
+		void clear();
+		// iterator methods
+		class iterator {
+			public:
+				// data members
+				map<string, pair<Type *, Tree *> >::iterator internalIter;
+				// allocators/deallocators
+				iterator();
+				iterator(const iterator &otherIter);
+				iterator(const map<const string, pair<Type *, Tree *> >::iterator &internalIter);
+				~iterator();
+				// operators
+				iterator &operator=(const iterator &otherIter);
+				void operator++(int);
+				bool operator==(const iterator &otherIter);
+				bool operator!=(const iterator &otherIter);
+				MemberListResult operator*();
+		};
+		iterator begin();
+		iterator end();
+		iterator find(const string &name);
 };
 
 class ObjectType : public Type {
 	public:
 		// data members
-		vector<TypeList *> instructorTypes; // list of the types of this object's instructors (each one is a TypeList)
-		vector<TypeList *> outstructorTypes; // list of the types of this object's outstructors (each one is a TypeList)
-		vector<string> memberNames; // list of names of raw non-constructor members of this object
-		vector<Type *> memberTypes; // list of types of raw non-constructor members of this object
-		vector<Tree *> memberDefSites; // list of the definition sites of raw non-constructor members of this object, used for sub-identifier binding
-		vector<ObjectType *> copyList; // used for propagating post-creation updates to recursively dependent copies created with copy()
-		bool propagationHandled; // used for recursively dependent copy update propagation
+		StructorList instructorList; // list of the types of this object's instructors (each one is a TypeList)
+		StructorList outstructorList; // list of the types of this object's outstructors (each one is a TypeList)
+		MemberList memberList; // smart map of the names of members to their types
 		// allocators/deallocators
 		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const vector<TypeList *> &instructorTypes, const vector<TypeList *> &outstructorTypes, const vector<string> &memberNames, const vector<Type *> &memberTypes, const vector<Tree *> &memberDefSites, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy();
 		void erase();
 		void clear();
-		void propagateToCopies();
 		string toString(unsigned int tabDepth);
 		// operators
-		bool operator==(const Type &otherType) const;
+		bool operator==(Type &otherType);
 		bool operator==(int kind) const;
-		Type *operator,(const Type &otherType) const;
-		bool operator>>(const Type &otherType) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
 		operator string();
 };
 
@@ -273,10 +380,10 @@ class TypeStatus {
 		// operators
 		TypeStatus &operator=(const TypeStatus &otherStatus);
 		TypeStatus &operator=(Type *otherType);
-		const Type &operator*() const;
+		Type &operator*() const;
 		Type *operator->() const;
-		bool operator==(const Type &otherType) const;
-		bool operator!=(const Type &otherType) const;
+		bool operator==(Type &otherType);
+		bool operator!=(Type &otherType);
 };
 
 // external linkage specifiers

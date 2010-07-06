@@ -1192,8 +1192,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus verifyStatusInstructor(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
 	if (*(headerType->from())) { // if the header evaluates to a valid type
-		Tree *block = tree->child->next->next; // NULL, RSQUARE, or Block
-		if (block != NULL && *block == TOKEN_Block) { // if there's actually an explicit definition block to verify
+		Tree *block = (tree->child->next != NULL) ? tree->child->next->next : NULL; // NULL or Block
+		if (block != NULL) { // if there's actually an explicit definition block to verify
 			TypeStatus startStatus(nullType, errType); // set retType = errType to make sure that the instructor doesn't return anything
 			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
 			if (*verifiedStatus) { // if we successfully verified this instructor (meaning there were no internal return type inconsistencies)
@@ -1210,10 +1210,10 @@ TypeStatus verifyStatusInstructor(Tree *tree) {
 // generates a thunk; does not actually generate any code
 TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *icn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
-	if (icn == NULL || *icn == TOKEN_SEMICOLON || *icn == TOKEN_LSQUARE) {
+	Tree *icn = tree->child->next; // NULL, SEMICOLON, or NonRetFilterHeader
+	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
 		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
-	} else if (*icn == TOKEN_NonRetFilterHeader) {
+	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
 		returnTypeRet(new FilterType(icn, SUFFIX_LATCH), NULL);
 	}
 	GET_STATUS_CODE;

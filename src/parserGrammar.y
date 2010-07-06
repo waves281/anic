@@ -370,12 +370,10 @@ ObjectPipes : LastInstructor
 	| Pipe ObjectPipes
 	;
 Instructor : EQUALS SEMICOLON
-	| EQUALS LSQUARE RSQUARE SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;
 LastInstructor : EQUALS
-	| EQUALS LSQUARE RSQUARE
 	;
 Outstructor : EQUALS RetFilterHeader Block
 	| EQUALS RetFilterHeader Block SEMICOLON

@@ -68,14 +68,17 @@ stringCompOp = [string x, string y --> bool\] {false -->};
 == ->stringCompOp;
 
 // array and pool testing
-intArray = [int[256]];
-7 ->intArray.[0];
-10 ->intArray.[7];
-intArray.[0] ->std.out;
-intArray.[intArray.[0]] ->intArray.[42];
-floatPool = [float\[128 * 2]];
-1.01e-8 ->floatPool.[intArray.[42 * 2 / 2]];
-\floatPool.[intArray.[42]] ->std.out;
+intPool = [int[256]](0);
+7 ->intPool.[0];
+10 ->intPool.[7];
+intPool.[0] ->std.out;
+\intPool.[intPool.[0]] ->intPool.[42];
+
+intArray = intPool;
+
+floatPool = [float]{1,2,3,4,5,6,7,8,9,0.0};
+1.01e-8 ->floatPool.[intArray.[42 * 2 / 42]];
+\floatPool.[intArray.[2]] ->std.out;
 
 // object sub-identifier testing
 obj = {

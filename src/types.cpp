@@ -54,6 +54,12 @@ void Type::latchize() {
 	suffix = SUFFIX_LATCH;
 	depth = 0;
 }
+void Type::poolize() {
+	suffix = SUFFIX_POOL;
+	if (depth == 0) {
+		depth = 1;
+	}
+}
 void Type::decreaseDepth() {
 	if (suffix == SUFFIX_ARRAY) {
 		depth--;

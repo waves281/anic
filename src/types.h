@@ -57,7 +57,8 @@ class Type {
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
 		void constantize(); // for when an identifier is present without an accessor or a sub-identifier's type is constrained by upstream identifiers
-		void latchize(); // for when we're instantiating a node with an initializer
+		void latchize(); // for when we're instantiating a node with a single initializer
+		void poolize(); // for when we're instantiating a node with a multi initializer
 		void decreaseDepth();
 		bool delatch() const;
 		bool delist();

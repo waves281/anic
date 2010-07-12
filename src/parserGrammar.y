@@ -163,6 +163,8 @@ TypedStaticTerm : Node
 BracketedExp : LBRACKET RBRACKET
 	| LBRACKET ExpList RBRACKET
 	;
+CurlyBracketedExp : LCURLY ExpList RCURLY
+	;
 ExpList : Exp
 	| Exp COMMA ExpList
 	;
@@ -227,11 +229,15 @@ IdentifierSuffix :
 BlankInstantiation : LSQUARE BlankInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
-	| LSQUARE InitInstantiationSource RSQUARE BracketedExp
+	| LSQUARE SingleInitInstantiationSource RSQUARE BracketedExp
+	| LSQUARE SingleInitInstantiationSource RSQUARE CurlyBracketedExp
+	| LSQUARE MultiInitInstantiationSource RSQUARE BracketedExp
 	;
-BlankInstantiationSource : NonArrayedIdentifier TypeSuffix
+BlankInstantiationSource : NonArrayedIdentifier BlankInstantiationTypeSuffix
 	;
-InitInstantiationSource : NonArrayedIdentifier
+SingleInitInstantiationSource : NonArrayedIdentifier
+	;
+MultiInitInstantiationSource : NonArrayedIdentifier MultiInitInstantiationTypeSuffix
 	;
 CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
@@ -312,6 +318,12 @@ TypeSuffix : SLASH
 	| StreamTypeSuffix
 	| ArrayTypeSuffix
 	| PoolTypeSuffix
+	;
+BlankInstantiationTypeSuffix : SLASH
+	| StreamTypeSuffix
+	| PoolTypeSuffix
+	;
+MultiInitInstantiationTypeSuffix : ArrayTypeSuffix
 	;
 ListTypeSuffix : LSQUARE RSQUARE
 	| LSQUARE RSQUARE ListTypeSuffix

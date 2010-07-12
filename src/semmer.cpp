@@ -842,8 +842,8 @@ TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *becn = tree->child->next; // LBRACKET or ExpList
-	if (*becn == TOKEN_LBRACKET) {
+	Tree *becn = tree->child->next; // RBRACKET or ExpList
+	if (*becn == TOKEN_RBRACKET) {
 		returnTypeRet(nullType, inStatus.retType);
 	} else /* if (*becn == TOKEN_ExpList) */ {
 		Tree *exp = becn->child;
@@ -1382,7 +1382,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	int depthVal = 0;
 	if (typeSuffix == NULL) {
 		suffixVal = SUFFIX_CONSTANT;
-	} else if (*(typeSuffix->child) == TOKEN_SLASH && typeSuffix->child->next == NULL) {
+	} else if (*(typeSuffix->child) == TOKEN_SLASH) {
 		suffixVal = SUFFIX_LATCH;
 	} else if (*(typeSuffix->child) == TOKEN_ListTypeSuffix) {
 		suffixVal = SUFFIX_LIST;
@@ -1600,10 +1600,15 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	GET_STATUS_HEADER;
 	if (*tree == TOKEN_BlankInstantiationSource) { // if it's a blank slot instantiation 
 		returnStatus(getStatusType(tree, inStatus)); // BlankInstantiationSource (compatible in this form as a Type)
-	} else if (*tree == TOKEN_InitInstantiationSource) { // if it's a regular initialized instantiation
-		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // InitInstantiationSource (compatible in this form as a Type)
+	} else if (*tree == TOKEN_SingleInitInstantiationSource) { // else if it's a regular Single-initialized instantiation
+		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource or MultiInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->latchize();
+		returnStatus(mutableIdStatus);
+	} else if (*tree == TOKEN_MultiInitInstantiationSource) { // else if it's a regular Multi-initialized instantiation
+		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource or MultiInitInstantiationSource (compatible in this form as a Type)
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->poolize();
 		returnStatus(mutableIdStatus);
 	} else /* if (*tree == TOKEN_CopyInstantiationSource) */ { // else if it's a copy-style instantiation
 		TypeStatus idStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
@@ -1631,31 +1636,73 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
-		if (*is != TOKEN_InitInstantiationSource) { // if there is no initializer, simply return the derived type
+		if (is->next->next == NULL) { // if there is no initializer, simply return the derived type
 			returnStatus(instantiationStatus);
-		} else { // else if there is an initializer, make sure that its type is compatible
+		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible
 			Tree *initializer = is->next->next; // BracketedExp
 			TypeStatus initializerStatus = getStatusBracketedExp(initializer, inStatus);
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
+				// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization
+				Type *mutableInstantiationType = instantiationStatus.type->copy();
+				if (*is == TOKEN_MultiInitInstantiationSource) { // if it's a multi initialization, decrease the pool's depth to get at the initializable base type
+					mutableInstantiationType->decreaseDepth();
+				}
 				// try the ObjectType outstructor special case for instantiation
 				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
 					for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
 							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
 							outsIter++) {
-						if (**outsIter >> *instantiationStatus) {
+						if (**outsIter >> *mutableInstantiationType) {
+							mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
 							returnStatus(instantiationStatus);
 						}
 					}
 				}
-				// special case failed, so try a direct complatibility
-				if (*initializerStatus >> *instantiationStatus) { // if the initializer is directly compatible, allow it
+				// if the special case failed, try a direct compatibility
+				if (*initializerStatus >> *mutableInstantiationType) { // if the initializer is directly compatible, allow it
+					mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
 					returnStatus(instantiationStatus);
 				} else { // else if the initializer is incompatible, throw an error
 					Token curToken = initializer->t; // BracketedExp
 					semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer");
-					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
+					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<mutableInstantiationType<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
+					mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
 				}
+			}
+		} else /* if (*(is->next->next) == TOKEN_CurlyBracketedExp) */ { // else if there is an initializer list, make sure that all of the initializers are compatiable
+			bool failed = false;
+			for (Tree *initializer = is->next->next->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // invariant: initializer is an Exp
+				TypeStatus initializerStatus = getStatusExp(initializer, inStatus);
+				if (*initializerStatus) { //  if we successfully derived a type for the initializer
+					// try the ObjectType outstructor special case for instantiation
+					bool objectOutstructorFound = false;
+					if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
+						for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
+								outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
+								outsIter++) {
+							if (**outsIter >> *instantiationStatus) {
+								objectOutstructorFound = true;
+								break;
+							}
+						}
+					}
+					if (!objectOutstructorFound) { // if the special case failed, try a direct compatibility
+						if (!(*initializerStatus >> *instantiationStatus)) { // if the initializer is incompatible, throw an error
+							Token curToken = initializer->t; // Exp
+							semmerError(curToken.fileName,curToken.row,curToken.col,"incompatible initializer in list");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
+							semmerError(curToken.fileName,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
+							failed = true;
+						}
+					}
+				}
+			}
+			if (!failed) { // if we didn't find any incompatible initializers, return a poolized version of the instantiation type
+				TypeStatus mutableInstantiationStatus = instantiationStatus;
+				mutableInstantiationStatus.type = mutableInstantiationStatus.type->copy();
+				mutableInstantiationStatus.type->poolize();
+				returnStatus(mutableInstantiationStatus);
 			}
 		}
 	}

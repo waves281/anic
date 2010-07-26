@@ -296,7 +296,6 @@
 
 // state 10 (= seen)
 10 = DEQUALS -1
-10 > ERARROW -1
 
 // state 11 (! seen)
 11 = NEQUALS -1

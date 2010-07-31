@@ -296,8 +296,10 @@ int main(int argc, char **argv) {
 
 	// allocate symbol table root (will be filled with user-level definitions during parsing)
 	SymbolTable *stRoot;
+	// allocate the intermediate representation tree root (will be bound at the end of parsing)
+	IRTree *codeRoot;
 
-	int semmerErrorCode = sem(treeRoot, stRoot);
+	int semmerErrorCode = sem(treeRoot, stRoot, codeRoot);
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(
@@ -318,11 +320,12 @@ int main(int argc, char **argv) {
 	// generate the intermediate code tree
 
 	VERBOSE(printNotice("generating code dump...");)
+	
+	// allocate the string buffer into which we will dump the resulting assembly code
+	string asmString;
 
-	// allocate symbol table root (will be filled with user-level code during genning)
-	CodeTree *codeRoot;
-
-	int gennerErrorCode = gen(treeRoot, stRoot, codeRoot);
+	// generate the actual assembly code
+	int gennerErrorCode = gen(codeRoot, asmString);
 	// now, check if genning failed and kill the system as appropriate
 	if (gennerErrorCode) {
 		VERBOSE(

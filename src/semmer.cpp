@@ -2281,8 +2281,19 @@ void typePipes(Tree *treeRoot) {
 	}
 }
 
-// main semming function; makes no assumptions about stRoot's value; it's just a return parameter
-int sem(Tree *treeRoot, SymbolTable *&stRoot) {
+// creates the top-level IRTree node, which is a SchedTree containing all of the LabelTrees that should be initially scheduled
+IRTree *genCodeRoot(Tree *treeRoot) {
+	// build the list of labels that should be initially scheduled
+	vector<LabelTree *> labelList;
+	
+	// LOL need to actually build the list of initial pipes to run
+	
+	// finally, return the resulting SchedTree
+	return (new SchedTree(labelList));
+}
+
+// main semming function; makes no assumptions about stRoot and codeRoot's values; they're just return parameters
+int sem(Tree *treeRoot, SymbolTable *&stRoot, IRTree *&codeRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;
@@ -2306,6 +2317,8 @@ int sem(Tree *treeRoot, SymbolTable *&stRoot) {
 	typeSt(stRoot);
 	// derive types for the remaining pipes
 	typePipes(treeRoot);
+	// create the root-level IRTree node
+	codeRoot = genCodeRoot(treeRoot);
 	
 	VERBOSE( cout << stRoot; )
 

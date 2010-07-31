@@ -59,6 +59,9 @@ class IRTree {
 		// allocators/deallocators
 		IRTree(int category);
 		virtual ~IRTree();
+		// core methods
+		virtual string toString(unsigned int tabDepth = 1) const = 0;
+		virtual void asmDump(string &asmString) const = 0; // returns the assembly code representation of this IRTree node
 };
 
 // LabelTree classes
@@ -74,6 +77,7 @@ class LabelTree : public IRTree {
 		~LabelTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // SeqTree classes
@@ -89,6 +93,7 @@ class SeqTree : public IRTree {
 		~SeqTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // DataTree classes
@@ -99,8 +104,6 @@ class DataTree : public IRTree {
 		// allocators/deallocators
 		DataTree(int category);
 		virtual ~DataTree();
-		// core methods
-		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
 // usage: an in-place inclusion of a data word
@@ -113,6 +116,7 @@ class WordTree : public DataTree {
 		~WordTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: an in-place inclusion of a byte-array of data
@@ -125,6 +129,7 @@ class ArrayTree : public DataTree {
 		~ArrayTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: allocate temporary storage for the result of an operation
@@ -137,6 +142,7 @@ class TempTree : public DataTree {
 		~TempTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: read memory from the specified memory address
@@ -149,6 +155,7 @@ class ReadTree : public DataTree {
 		~ReadTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // OpTree classes
@@ -163,7 +170,6 @@ class OpTree : public IRTree {
 		virtual ~OpTree();
 		// core methods
 		string kindToString() const;
-		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
 // definitions of arithmetic operator kinds
@@ -217,6 +223,7 @@ class UnOpTree : public OpTree {
 		~UnOpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: perform the given kind of binary operation on subNodeLeft and subNodeRight
@@ -230,6 +237,7 @@ class BinOpTree : public OpTree {
 		~BinOpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // definitions of conversion operator kinds
@@ -251,6 +259,7 @@ class ConvOpTree : public OpTree {
 		~ConvOpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // CodeTree classes
@@ -261,8 +270,6 @@ class CodeTree : public IRTree {
 		// allocators/deallocators
 		CodeTree(int category);
 		virtual ~CodeTree();
-		// core methods
-		virtual string toString(unsigned int tabDepth = 1) const = 0;
 };
 
 // usage: grab a lock on the specified memory address
@@ -275,6 +282,7 @@ class LockTree : public CodeTree {
 		~LockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: release a lock on the specified memory address
@@ -287,6 +295,7 @@ class UnlockTree : public CodeTree {
 		~UnlockTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: if the boolean data word test is true, run trueBranch; otherwise, run falseBranch
@@ -301,6 +310,7 @@ class CondTree : public CodeTree {
 		~CondTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: use the value of a test word to index into the given jumpTable and jump to the code contained there; the test word is guaranteed to be a valid index into the jumpTable
@@ -314,6 +324,7 @@ class JumpTree : public CodeTree {
 		~JumpTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: write the source data to the specified destination memory address
@@ -327,6 +338,7 @@ class WriteTree : public CodeTree {
 		~WriteTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: copy a length of memory bytes from the specified sourceAddress to the specified destinationAddress
@@ -341,6 +353,7 @@ class CopyTree : public CodeTree {
 		~CopyTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: schedule all of the label nodes in the labelList for execution
@@ -353,10 +366,11 @@ class SchedTree : public CodeTree {
 		~SchedTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // main code generation function
 
-int gen(Tree *treeRoot, SymbolTable *stRoot, CodeTree *&codeRoot);
+int gen(IRTree *codeRoot, string &asmString);
 
 #endif

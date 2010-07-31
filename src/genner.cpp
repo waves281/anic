@@ -22,6 +22,9 @@ string LabelTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void LabelTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // SeqTree functions
 SeqTree::SeqTree(const vector<CodeTree *> &codeList) : IRTree(CATEGORY_SEQ), codeList(codeList) {}
@@ -40,6 +43,9 @@ string SeqTree::toString(unsigned int tabDepth) const {
 	}
 	return acc;
 }
+void SeqTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // DataTree functions
 DataTree::DataTree(int category) : IRTree(category) {}
@@ -56,6 +62,9 @@ string WordTree::toString(unsigned int tabDepth) const {
 	acc += ']';
 	return acc;
 }
+void WordTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // ArrayTree functions
 ArrayTree::ArrayTree(const vector<unsigned char> &data) : DataTree(CATEGORY_ARRAY), data(data) {}
@@ -70,6 +79,9 @@ string ArrayTree::toString(unsigned int tabDepth) const {
 	acc += ']';
 	return acc;
 }
+void ArrayTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // TempTree functions
 TempTree::TempTree(OpTree *opNode) : DataTree(CATEGORY_TEMP), opNode(opNode) {}
@@ -80,6 +92,9 @@ string TempTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void TempTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // ReadTree functions
 ReadTree::ReadTree(DataTree *address) : DataTree(CATEGORY_READ), address(address) {}
@@ -89,6 +104,9 @@ string ReadTree::toString(unsigned int tabDepth) const {
 	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
+}
+void ReadTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // OpTree functions
@@ -175,6 +193,9 @@ string UnOpTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void UnOpTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // BinOpTree functions
 BinOpTree::BinOpTree(int kind, DataTree *subNodeLeft, DataTree *subNodeRight) : OpTree(CATEGORY_BINOP, kind), subNodeLeft(subNodeLeft), subNodeRight(subNodeRight) {}
@@ -188,6 +209,9 @@ string BinOpTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void BinOpTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // ConvOpTree functions
 ConvOpTree::ConvOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_CONVOP, kind), subNode(subNode) {}
@@ -198,6 +222,9 @@ string ConvOpTree::toString(unsigned int tabDepth) const {
 	acc += subNode->toString(tabDepth+1);
 	acc += ')';
 	return acc;
+}
+void ConvOpTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // CodeTree functions
@@ -213,6 +240,9 @@ string LockTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void LockTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // UnlockTree functions
 UnlockTree::UnlockTree(DataTree *address) : CodeTree(CATEGORY_UNLOCK), address(address) {}
@@ -222,6 +252,9 @@ string UnlockTree::toString(unsigned int tabDepth) const {
 	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
+}
+void UnlockTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // CondTree functions
@@ -236,6 +269,9 @@ string CondTree::toString(unsigned int tabDepth) const {
 	acc += falseBranch->toString(tabDepth+1);
 	acc += ')';
 	return acc;
+}
+void CondTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // JumpTree functions
@@ -258,6 +294,9 @@ string JumpTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void JumpTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
 // WriteTree functions
 WriteTree::WriteTree(DataTree *source, DataTree *address) : CodeTree(CATEGORY_WRITE), source(source), address(address) {}
@@ -269,6 +308,9 @@ string WriteTree::toString(unsigned int tabDepth) const {
 	acc += address->toString(tabDepth+1);
 	acc += ')';
 	return acc;
+}
+void WriteTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // CopyTree functions
@@ -283,6 +325,9 @@ string CopyTree::toString(unsigned int tabDepth) const {
 	acc += length;
 	acc += ')';
 	return acc;
+}
+void CopyTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
 }
 
 // SchedTree functions
@@ -299,14 +344,18 @@ string SchedTree::toString(unsigned int tabDepth) const {
 	acc += ')';
 	return acc;
 }
+void SchedTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
 
-// main genning function; makes no assumptions about codeRoot's value; it's just a return parameter
-int gen(Tree *treeRoot, SymbolTable *stRoot, CodeTree *&codeRoot) {
+// main code generation function; asmDump is the assembler text generated
+int gen(IRTree *codeRoot, string &asmString) {
 
 	// initialize error code
 	gennerErrorCode = 0;
 	
-	codeRoot = NULL; // LOL
+	// recursively generate the assembly code for the program
+	codeRoot->asmDump(asmString);
 
 	// finally, return to the caller
 	return gennerErrorCode ? 1 : 0;

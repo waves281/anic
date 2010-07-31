@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
 	// allocate symbol table root (will be filled with user-level definitions during parsing)
 	SymbolTable *stRoot;
 	// allocate the intermediate representation tree root (will be bound at the end of parsing)
-	IRTree *codeRoot;
+	SchedTree *codeRoot;
 
 	int semmerErrorCode = sem(treeRoot, stRoot, codeRoot);
 	// now, check if semming failed and kill the system as appropriate

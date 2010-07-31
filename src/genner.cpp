@@ -9,6 +9,60 @@ int gennerErrorCode;
 // IRTree functions
 IRTree::IRTree(int category) : category(category) {}
 IRTree::~IRTree() {}
+void IRTree::asmDump(string &asmString) const {
+	switch(category) {
+		case CATEGORY_LABEL:
+			((LabelTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_SEQ:
+			((SeqTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD:
+			((WordTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_ARRAY:
+			((ArrayTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_TEMP:
+			((TempTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_READ:
+			((ReadTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_UNOP:
+			((UnOpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_BINOP:
+			((BinOpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_CONVOP:
+			((ConvOpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_LOCK:
+			((LockTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_UNLOCK:
+			((UnlockTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_COND:
+			((CondTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_JUMP:
+			((JumpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WRITE:
+			((WriteTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_COPY:
+			((CopyTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_SCHED:
+			((SchedTree *)this)->asmDump(asmString);
+			break;
+		default: // can't happen; the above should cover all cases
+			break;
+	}
+}
 
 // LabelTree functions
 LabelTree::LabelTree(const string &id, SeqTree *code) : IRTree(CATEGORY_LABEL), id(id), code(code) {}
@@ -50,6 +104,38 @@ void SeqTree::asmDump(string &asmString) const {
 // DataTree functions
 DataTree::DataTree(int category) : IRTree(category) {}
 DataTree::~DataTree() {}
+string DataTree::toString(unsigned int tabDepth) const {
+	switch(category) {
+		case CATEGORY_WORD:
+			return ((WordTree *)this)->toString(tabDepth);
+		case CATEGORY_ARRAY:
+			return ((ArrayTree *)this)->toString(tabDepth);
+		case CATEGORY_TEMP:
+			return ((TempTree *)this)->toString(tabDepth);
+		case CATEGORY_READ:
+			return ((ReadTree *)this)->toString(tabDepth);
+		default: // can't happen; the above should cover all cases
+			return "";
+	}
+}
+void DataTree::asmDump(string &asmString) const {
+	switch(category) {
+		case CATEGORY_WORD:
+			((WordTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_ARRAY:
+			((ArrayTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_TEMP:
+			((TempTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_READ:
+			((ReadTree *)this)->asmDump(asmString);
+			break;
+		default: // can't happen; the above should cover all cases
+			break;
+	}
+}
 
 // WordTree functions
 WordTree::WordTree(uint32_t data) : DataTree(CATEGORY_WORD), data(data) {}
@@ -182,6 +268,33 @@ string OpTree::kindToString() const {
 			return "";
 	}
 }
+string OpTree::toString(unsigned int tabDepth) const {
+	switch(category) {
+		case CATEGORY_UNOP:
+			return ((UnOpTree *)this)->toString(tabDepth);
+		case CATEGORY_BINOP:
+			return ((BinOpTree *)this)->toString(tabDepth);
+		case CATEGORY_CONVOP:
+			return ((ConvOpTree *)this)->toString(tabDepth);
+		default: // can't happen; the above should cover all cases
+			return "";
+	}
+}
+void OpTree::asmDump(string &asmString) const {
+	switch(category) {
+		case CATEGORY_UNOP:
+			((UnOpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_BINOP:
+			((BinOpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_CONVOP:
+			((ConvOpTree *)this)->asmDump(asmString);
+			break;
+		default: // can't happen; the above should cover all cases
+			break;
+	}
+}
 
 // UnOpTree functions
 UnOpTree::UnOpTree(int kind, DataTree *subNode) : OpTree(CATEGORY_UNOP, kind), subNode(subNode) {}
@@ -230,6 +343,53 @@ void ConvOpTree::asmDump(string &asmString) const {
 // CodeTree functions
 CodeTree::CodeTree(int category) : IRTree(category) {}
 CodeTree::~CodeTree() {}
+string CodeTree::toString(unsigned int tabDepth) const {
+	switch(category) {
+		case CATEGORY_LOCK:
+			return ((LockTree *)this)->toString(tabDepth);
+		case CATEGORY_UNLOCK:
+			return ((UnlockTree *)this)->toString(tabDepth);
+		case CATEGORY_COND:
+			return ((CondTree *)this)->toString(tabDepth);
+		case CATEGORY_JUMP:
+			return ((JumpTree *)this)->toString(tabDepth);
+		case CATEGORY_WRITE:
+			return ((WriteTree *)this)->toString(tabDepth);
+		case CATEGORY_COPY:
+			return ((CopyTree *)this)->toString(tabDepth);
+		case CATEGORY_SCHED:
+			return ((SchedTree *)this)->toString(tabDepth);
+		default: // can't happen; the above should cover all cases
+			return "";
+	}
+}
+void CodeTree::asmDump(string &asmString) const {
+	switch(category) {
+		case CATEGORY_LOCK:
+			((LockTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_UNLOCK:
+			((UnlockTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_COND:
+			((CondTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_JUMP:
+			((JumpTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WRITE:
+			((WriteTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_COPY:
+			((CopyTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_SCHED:
+			((SchedTree *)this)->asmDump(asmString);
+			break;
+		default: // can't happen; the above should cover all cases
+			break;
+	}
+}
 
 // LockTree functions
 LockTree::LockTree(DataTree *address) : CodeTree(CATEGORY_LOCK), address(address) {}
@@ -349,7 +509,7 @@ void SchedTree::asmDump(string &asmString) const {
 }
 
 // main code generation function; asmDump is the assembler text generated
-int gen(IRTree *codeRoot, string &asmString) {
+int gen(SchedTree *codeRoot, string &asmString) {
 
 	// initialize error code
 	gennerErrorCode = 0;

@@ -131,6 +131,6 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 
 // main semantic analysis function
 
-int sem(Tree *treeRoot, SymbolTable *&stRoot, IRTree *&codeRoot);
+int sem(Tree *treeRoot, SymbolTable *&stRoot, SchedTree *&codeRoot);
 
 #endif

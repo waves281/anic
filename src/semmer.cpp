@@ -2281,8 +2281,8 @@ void typePipes(Tree *treeRoot) {
 	}
 }
 
-// creates the top-level IRTree node, which is a SchedTree containing all of the LabelTrees that should be initially scheduled
-IRTree *genCodeRoot(Tree *treeRoot) {
+// creates the top-level SchedTree containing all of the LabelTrees that should be initially scheduled
+SchedTree *genCodeRoot(Tree *treeRoot) {
 	// build the list of labels that should be initially scheduled
 	vector<LabelTree *> labelList;
 	
@@ -2293,7 +2293,7 @@ IRTree *genCodeRoot(Tree *treeRoot) {
 }
 
 // main semming function; makes no assumptions about stRoot and codeRoot's values; they're just return parameters
-int sem(Tree *treeRoot, SymbolTable *&stRoot, IRTree *&codeRoot) {
+int sem(Tree *treeRoot, SymbolTable *&stRoot, SchedTree *&codeRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;

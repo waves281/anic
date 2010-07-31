@@ -42,7 +42,7 @@ class ObjectType;
 class ErrorType;
 class TypeStatusBase;
 class TypeStatus;
-class IRTree;
+class SchedTree;
 class DataTree;
 
 // core Type class

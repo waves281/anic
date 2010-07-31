@@ -60,8 +60,8 @@ class IRTree {
 		IRTree(int category);
 		virtual ~IRTree();
 		// core methods
-		virtual string toString(unsigned int tabDepth = 1) const = 0;
-		virtual void asmDump(string &asmString) const = 0; // returns the assembly code representation of this IRTree node
+		string toString(unsigned int tabDepth = 1) const;
+		void asmDump(string &asmString) const;
 };
 
 // LabelTree classes
@@ -104,6 +104,9 @@ class DataTree : public IRTree {
 		// allocators/deallocators
 		DataTree(int category);
 		virtual ~DataTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: an in-place inclusion of a data word
@@ -170,6 +173,8 @@ class OpTree : public IRTree {
 		virtual ~OpTree();
 		// core methods
 		string kindToString() const;
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // definitions of arithmetic operator kinds
@@ -270,6 +275,9 @@ class CodeTree : public IRTree {
 		// allocators/deallocators
 		CodeTree(int category);
 		virtual ~CodeTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
 };
 
 // usage: grab a lock on the specified memory address
@@ -371,6 +379,6 @@ class SchedTree : public CodeTree {
 
 // main code generation function
 
-int gen(IRTree *codeRoot, string &asmString);
+int gen(SchedTree *codeRoot, string &asmString);
 
 #endif

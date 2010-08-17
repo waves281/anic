@@ -3,7 +3,7 @@
 #include "outputOperators.h"
 
 // Type functions
-Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), operable(true), toStringHandled(false) {}
+Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), repInternal(NULL), operable(true), toStringHandled(false) {}
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
 	return (
@@ -250,6 +250,7 @@ TypeList::~TypeList() {
 	}
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
+RepTree *TypeList::rep() const {return NULL;} // LOL
 Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
 void TypeList::erase() {clear(); delete this;}
 void TypeList::clear() {list.clear();}
@@ -417,6 +418,7 @@ TypeList::operator string() {
 ErrorType::ErrorType() : Type(CATEGORY_ERRORTYPE) {}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
+RepTree *ErrorType::rep() const {return NULL;}
 Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
 void ErrorType::erase() {delete this;}
 void ErrorType::clear() {}
@@ -627,6 +629,7 @@ bool StdType::objectTypePromotion(Type &otherType) const {
 	// none of the above cases succeeded, so return false
 	return false;
 }
+RepTree *StdType::rep() const {return NULL;} // LOL
 Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->operable = true; return retVal;}
 void StdType::erase() {delete this;}
 void StdType::clear() {}
@@ -821,6 +824,7 @@ TypeList *FilterType::to() { // either TypeList or errType
 	return toInternal;
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
+RepTree *FilterType::rep() const {return NULL;} // LOL
 Type *FilterType::copy() {Type *retVal = new FilterType(*this); retVal->operable = true; return retVal;}
 void FilterType::erase() {clear(); delete this;}
 void FilterType::clear() {fromInternal = NULL; toInternal = NULL; defSite = NULL;}
@@ -1024,6 +1028,7 @@ ObjectType::~ObjectType() {
 	}
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
+RepTree *ObjectType::rep() const {return NULL;} // LOL
 Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); retVal->operable = true; return retVal;}
 void ObjectType::erase() {clear(); delete this;}
 void ObjectType::clear() {instructorList.clear(); outstructorList.clear(); memberList.clear();}

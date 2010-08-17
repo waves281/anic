@@ -89,7 +89,7 @@ class LabelTree : public IRTree {
 		string id; // string representation of this label
 		SeqTree *code; // pointer to the tree node containing the sequence of code trees to run
 		// allocators/deallocators
-		LabelTree(const string &id, SeqTree *code);
+		LabelTree(SeqTree *code);
 		~LabelTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
@@ -102,7 +102,6 @@ class LabelTree : public IRTree {
 class SeqTree : public IRTree {
 	public:
 		// data members
-		string id; // string representation of this label
 		vector<CodeTree *> codeList; // vector representing the sequence of code trees to execute in order
 		// allocators/deallocators
 		SeqTree(const vector<CodeTree *> &seqList);

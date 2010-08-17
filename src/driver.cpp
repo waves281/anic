@@ -62,6 +62,11 @@ unsigned int nextUniqueInt = 0;
 unsigned int getUniqueInt() {
 	return (nextUniqueInt++);
 }
+string getUniqueId() {
+	string acc(UNIQUE_ID_PREFIX);
+	acc += getUniqueInt();
+	return acc;
+}
 
 int containsString(vector<string> inFileNames, string &s) {
 	for (unsigned int i=0; i < inFileNames.size(); i++) { // scan the vector for matches

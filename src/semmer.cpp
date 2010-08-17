@@ -2269,6 +2269,11 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 		returnStatus(getStatusNonEmptyTerms(pipec, inStatus));
 	}
 	GET_STATUS_CODE;
+	vector<CodeTree *> seqList;
+	
+	// LOL need to actually fill seqList with the CodeTree nodes to execute in this pipe
+	
+	returnCode(new SeqTree(seqList));
 	GET_STATUS_FOOTER;
 }
 
@@ -2285,9 +2290,11 @@ void typePipes(Tree *treeRoot) {
 SchedTree *genCodeRoot(Tree *treeRoot) {
 	// build the list of labels that should be initially scheduled
 	vector<LabelTree *> labelList;
-	
-	// LOL need to actually build the list of initial pipes to run
-	
+	for (Tree *programCur = treeRoot; programCur != NULL; programCur = programCur->next) {
+		for (Tree *pipeCur = programCur->child->child; pipeCur != NULL; pipeCur = (pipeCur->next != NULL) ? pipeCur->next->child : NULL) {
+			labelList.push_back(new LabelTree((SeqTree *)(pipeCur->status.code)));
+		}
+	}
 	// finally, return the resulting SchedTree
 	return (new SchedTree(labelList));
 }

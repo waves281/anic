@@ -80,7 +80,7 @@ void IRTree::asmDump(string &asmString) const {
 }
 
 // LabelTree functions
-LabelTree::LabelTree(const string &id, SeqTree *code) : IRTree(CATEGORY_LABEL), id(id), code(code) {}
+LabelTree::LabelTree(SeqTree *code) : IRTree(CATEGORY_LABEL), id(getUniqueId()), code(code) {}
 LabelTree::~LabelTree() {
 	delete code;
 }

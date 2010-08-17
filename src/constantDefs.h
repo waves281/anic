@@ -43,6 +43,8 @@
 #define IMPORT_DECL_STRING "<UNRESOLVED_IMPORT>"
 #define STANDARD_IMPORT_DECL_STRING "<STD_IMPORT>"
 
+#define UNIQUE_ID_PREFIX "idLabel"
+
 #define VERBOSE(s) if (verboseOutput) {s}
 
 #endif

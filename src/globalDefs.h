@@ -71,5 +71,6 @@ extern ObjectType *stringCompOpType;
 // global function forward declarations
 
 unsigned int getUniqueInt();
+string getUniqueId();
 
 #endif

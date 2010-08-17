@@ -1320,8 +1320,8 @@ ObjectType::operator string() {
 }
 
 // TypeStatus functions
-TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType), rep(NULL), code(NULL) {}
-TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType), rep(NULL), code(NULL) {}
+TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType), code(NULL) {}
+TypeStatus::TypeStatus(Type *type, const TypeStatus &otherStatus) : type(type), retType(otherStatus.retType), code(NULL) {}
 TypeStatus::~TypeStatus() {}
 TypeStatus::operator Type *() const {return type;}
 TypeStatus::operator unsigned int() const {return (unsigned int)type;}

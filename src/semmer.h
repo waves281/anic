@@ -97,40 +97,29 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 #define returnType(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x), inStatus.retType);\
-	goto genRepTree
+	goto genIRTree
 
 #define returnTypeRet(x,y) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x),(y));\
-	goto genRepTree
+	goto genIRTree
 
 #define returnStatus(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = (x);\
-	goto genRepTree
-
-#define GET_STATUS_REP \
-	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
-	tree->status = TypeStatus(errType, NULL);\
-	return (tree->status);\
-	/* label the entry point for memory representation tree generation */\
-	genRepTree:\
-	/* if we derived a valid return status, proceed to build the memory and intermediate representation code trees */\
-	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
-
-#define returnRep(x) \
-	/* memoize the memory representation tree and jump to code generation */\
-	tree->status.rep = (x);\
 	goto genIRTree
 
 #define GET_STATUS_CODE \
-	/* if we failed to do a returnRep, simply proceed to build the intermediate representation code tree */\
-	goto genIRTree;\
+	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
+	tree->status = TypeStatus(errType, NULL);\
+	return (tree->status);\
 	/* label the entry point for intermediate code tree generation */\
-	genIRTree:
+	genIRTree:\
+	/* if we derived a valid return status, proceed to build the intermediate code tree */\
+	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
 
 #define returnCode(x) \
-	/* memoize the intermediate representation code tree and return from this function */\
+	/* memoize the intermediate code tree and return from this function */\
 	tree->status.code = (x);\
 	return (tree->status)
 

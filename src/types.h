@@ -368,7 +368,6 @@ class TypeStatus {
 		// data members
 		Type *type; // the type derived for this parse tree node
 		Type *retType; // the carry-over return type derived for this parse tree node
-		RepTree *rep; // the memory representation tree for this parse tree node
 		IRTree *code; // the intermediate representation code tree for this parse tree node
 		// allocators/deallocators
 		TypeStatus(Type *type = NULL, Type *retType = NULL);

@@ -32,20 +32,20 @@
 class SymbolTree {
 	public:
 		// data members
-		int kind;
-		string id;
+		int kind; // node kind
+		string id; // string representation of this node used for binding
 		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
-		Tree *copyImportSite; // if this node is a copy-import, the site where we're importing from; NULL otherwise
-		SymbolTree *parent;
-		map<string, SymbolTree *> children;
+		SymbolTree *copyImportSite; // if this node is a copy-import, the node from which we're importing; NULL otherwise
+		SymbolTree *parent; // pointer ot the parent of this node
+		map<string, SymbolTree *> children; // list of this node's children
 		int offsetKind; // the kind of child this node apprears as to its lexical parent
 		unsigned int offsetIndex; // the offset of this child in the lexical parent's offset kind
 		// allocators/deallocators
-		SymbolTree(int kind, const string &id, Tree *defSite = NULL, Tree *copyImportSite = NULL);
-		SymbolTree(int kind, const char *id, Tree *defSite = NULL, Tree *copyImportSite = NULL);
-		SymbolTree(int kind, const string &id, Type *defType, Tree *copyImportSite = NULL);
-		SymbolTree(int kind, const char *id, Type *defType, Tree *copyImportSite = NULL);
-		SymbolTree(const SymbolTree &st, Tree *copyImportSite = NULL);
+		SymbolTree(int kind, const string &id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
+		SymbolTree(int kind, const char *id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
+		SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite = NULL);
+		SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite = NULL);
+		SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite = NULL);
 		~SymbolTree();
 		// copy assignment operator
 		SymbolTree &operator=(const SymbolTree &st);

@@ -29,23 +29,23 @@ ObjectType *stringCompOpType;
 // SymbolTree functions
 
 // allocators/deallocators
-SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const string &id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(int kind, const char *id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(const SymbolTree &st, Tree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(st.parent), children(st.children) {}
+SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children) {}
 SymbolTree::~SymbolTree() {
 	// delete all of the child nodes
 	for (map<string, SymbolTree *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
@@ -566,7 +566,7 @@ void subImportDecls(vector<SymbolTree *> importList) {
 					string importPathTip = binding->id; // must exist if binding succeeed
 					map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find(importPathTip);
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
-						**importIter = *(new SymbolTree(*binding, (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
+						**importIter = *(new SymbolTree(*binding, importParent, (copyImport) ? binding : NULL)); // log the copy-import site, if necessary
 					} else { // else if there was a conflict, flag an error
 						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
@@ -599,10 +599,10 @@ void subImportDecls(vector<SymbolTree *> importList) {
 							map<string, SymbolTree *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
 							if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
 								if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
-									**importIter = *(new SymbolTree(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
+									**importIter = *(new SymbolTree(*((*bindingBaseIter).second), importParent, (copyImport) ? (*bindingBaseIter).second : NULL)); // log the copy-import site, if necessary
 									firstInsert = false;
 								} else { // else if this is not the first insertion, latch in a copy of the child
-									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
+									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), importParent, (copyImport) ? (*bindingBaseIter).second : NULL); // log the copy-import site, if necessary
 									*((*importIter)->parent) *= baseChildCopy;
 								}
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
@@ -646,9 +646,9 @@ void subImportDecls(vector<SymbolTree *> importList) {
 void semSt(SymbolTree *root) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTree(root);
-	} else if (root->kind == STD_STD) { // else if it's a standard node, check for copy-imports of non-referensible types
+	} else if (root->kind == STD_STD) { // else if it's a standard node, ensure that it's not a copy-import of a non-referensible type
 		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
-			Token curToken = root->copyImportSite->t;
+			Token curToken = root->copyImportSite->defSite->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->id<<"'");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<root->defSite->status.type<<")");
 		}

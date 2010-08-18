@@ -26,35 +26,35 @@ ObjectType *floatCompOpType;
 ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
 
-// SymbolTable functions
+// SymbolTree functions
 
 // allocators/deallocators
-SymbolTable::SymbolTable(int kind, const string &id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTable::SymbolTable(int kind, const char *id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, Tree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTable::SymbolTable(int kind, const string &id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTable::SymbolTable(int kind, const char *id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Type *defType, Tree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTable::SymbolTable(const SymbolTable &st, Tree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(st.parent), children(st.children) {}
-SymbolTable::~SymbolTable() {
+SymbolTree::SymbolTree(const SymbolTree &st, Tree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(st.parent), children(st.children) {}
+SymbolTree::~SymbolTree() {
 	// delete all of the child nodes
-	for (map<string, SymbolTable *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+	for (map<string, SymbolTree *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 		delete (*childIter).second;
 	}
 }
 
 // copy assignment operator
-SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
+SymbolTree &SymbolTree::operator=(const SymbolTree &st) {
 	kind = st.kind;
 	defSite = st.defSite;
 	copyImportSite = st.copyImportSite;
@@ -70,13 +70,13 @@ SymbolTable &SymbolTable::operator=(const SymbolTable &st) {
 }
 
 // concatenators
-SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
+SymbolTree &SymbolTree::operator*=(SymbolTree *st) {
 	// first, check for conflicting bindings
 	if (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER) { // if this is a conflictable (non-special system-level binding)
 		// per-symbol loop
-		map<string, SymbolTable *>::const_iterator conflictFind = children.find(st->id);
+		map<string, SymbolTree *>::const_iterator conflictFind = children.find(st->id);
 		if (conflictFind != children.end()) { // if we've found a conflict
-			SymbolTable *conflictSt = (*conflictFind).second;
+			SymbolTree *conflictSt = (*conflictFind).second;
 			Token curDefToken;
 			if (st->defSite != NULL) { // if there is a definition site for the current symbol
 				curDefToken = st->defSite->t;
@@ -110,34 +110,34 @@ SymbolTable &SymbolTable::operator*=(SymbolTable *st) {
 
 // Main semantic analysis functions
 
-void catStdNodes(SymbolTable *&stRoot) {
-	*stRoot *= new SymbolTable(KIND_STD, "int", stdIntType);
-	*stRoot *= new SymbolTable(KIND_STD, "float", stdFloatType);
-	*stRoot *= new SymbolTable(KIND_STD, "bool", stdBoolType);
-	*stRoot *= new SymbolTable(KIND_STD, "char", stdCharType);
-	*stRoot *= new SymbolTable(KIND_STD, "string", stdStringType);
-	*stRoot *= new SymbolTable(KIND_STD, "true", stdBoolLitType);
-	*stRoot *= new SymbolTable(KIND_STD, "false", stdBoolLitType);
+void catStdNodes(SymbolTree *&stRoot) {
+	*stRoot *= new SymbolTree(KIND_STD, "int", stdIntType);
+	*stRoot *= new SymbolTree(KIND_STD, "float", stdFloatType);
+	*stRoot *= new SymbolTree(KIND_STD, "bool", stdBoolType);
+	*stRoot *= new SymbolTree(KIND_STD, "char", stdCharType);
+	*stRoot *= new SymbolTree(KIND_STD, "string", stdStringType);
+	*stRoot *= new SymbolTree(KIND_STD, "true", stdBoolLitType);
+	*stRoot *= new SymbolTree(KIND_STD, "false", stdBoolLitType);
 }
 
-void catStdLib(SymbolTable *&stRoot) {
+void catStdLib(SymbolTree *&stRoot) {
 	// standard root
 	StdType *stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->operable = false;
-	SymbolTable *stdLib = new SymbolTable(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
+	SymbolTree *stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTable(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_LATCH));
-	*stdLib *= new SymbolTable(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_LATCH));
-	*stdLib *= new SymbolTable(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_LATCH));
-	*stdLib *= new SymbolTable(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_LATCH));
-	*stdLib *= new SymbolTable(KIND_STD, "out", stringerType);
-	*stdLib *= new SymbolTable(KIND_STD, "err", stringerType);
+	*stdLib *= new SymbolTree(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "out", stringerType);
+	*stdLib *= new SymbolTree(KIND_STD, "err", stringerType);
 	// control nodes
-	*stdLib *= new SymbolTable(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_LATCH));
-	*stdLib *= new SymbolTable(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "randInt", new StdType(STD_INT, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "delay", new FilterType(new StdType(STD_INT), nullType, SUFFIX_LATCH));
 	// standard library
 	// generators
-	*stdLib *= new SymbolTable(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "gen", new FilterType(new StdType(STD_INT), new StdType(STD_INT, SUFFIX_STREAM, 1), SUFFIX_LATCH));
 	// concatenate the library to the root
 	*stRoot *= stdLib;
 }
@@ -228,9 +228,9 @@ void initStdTypes() {
 	stringCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); stringCompOpType->operable = false;
 }
 
-SymbolTable *genDefaultDefs() {
+SymbolTree *genDefaultDefs() {
 	// generate the root block node
-	SymbolTable *stRoot = new SymbolTable(KIND_BLOCK, BLOCK_NODE_STRING);
+	SymbolTree *stRoot = new SymbolTree(KIND_BLOCK, BLOCK_NODE_STRING);
 	// concatenate in the standard types
 	catStdNodes(stRoot);
 	// concatenate in the standard library
@@ -240,12 +240,12 @@ SymbolTable *genDefaultDefs() {
 }
 
 // recursively extracts the appropriate nodes from the given tree and appropriately populates the passed containers
-void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
+void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 	// base case
 	if (tree == NULL) {
 		return;
 	}
-	// log the current symbol environment in the tree (this pointer will potentially be overridden by a SymbolTable() constructor)
+	// log the current symbol environment in the tree (this pointer will potentially be overridden by a SymbolTree() constructor)
 	tree->env = st;
 	// recursive cases
 	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
@@ -261,8 +261,8 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			fakeId = OBJECT_NODE_STRING;
 			fakeId += (unsigned int)tree;
 		}
-		SymbolTable *blockDef = new SymbolTable(kind, fakeId, tree);
-		// latch the new node into the SymbolTable trunk
+		SymbolTree *blockDef = new SymbolTree(kind, fakeId, tree);
+		// latch the new node into the SymbolTree trunk
 		*st *= blockDef;
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block or Object
@@ -272,18 +272,18 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// generate a fake identifier for the filter node from a hash of the Tree node
 		string fakeId(FILTER_NODE_STRING);
 		fakeId += (unsigned int)tree;
-		SymbolTable *filterDef = new SymbolTable(KIND_FILTER, fakeId, tree);
+		SymbolTree *filterDef = new SymbolTree(KIND_FILTER, fakeId, tree);
 		// parse out the header's parameter declarations and add them to the st
 		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
 		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
-				SymbolTable *paramDef = new SymbolTable(KIND_PARAMETER, param->child->next->t.s, param);
+				SymbolTree *paramDef = new SymbolTree(KIND_PARAMETER, param->child->next->t.s, param);
 				// ... and link it into the filter definition node
 				*filterDef *= paramDef;
 			}
 		} // if there is a parameter list to process
-		// latch the new node into the SymbolTable trunk
+		// latch the new node into the SymbolTree trunk
 		*st *= filterDef;
 		// recurse
 		buildSt(tree->child, filterDef, importList); // child of Filter
@@ -293,7 +293,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// generate a fake identifier for the instructor node from a hash of the Tree node
 		string fakeId(INSTRUCTOR_NODE_STRING);
 		fakeId += (unsigned int)tree;
-		SymbolTable *consDef = new SymbolTable(KIND_INSTRUCTOR, fakeId, tree);
+		SymbolTree *consDef = new SymbolTree(KIND_INSTRUCTOR, fakeId, tree);
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this instructor, if any
@@ -302,7 +302,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			Tree *pl = conscn->child->next; // ParamList
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
-				SymbolTable *paramDef = new SymbolTable(KIND_PARAMETER, param->child->next->t.s, param);
+				SymbolTree *paramDef = new SymbolTree(KIND_PARAMETER, param->child->next->t.s, param);
 				// ... and link it into the instructor definition node
 				*consDef *= paramDef;
 			}
@@ -315,7 +315,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 		// generate a fake identifier for the outstructor node from a hash of the Tree node
 		string fakeId(OUTSTRUCTOR_NODE_STRING);
 		fakeId += (unsigned int)tree;
-		SymbolTable *consDef = new SymbolTable(KIND_OUTSTRUCTOR, fakeId, tree);
+		SymbolTree *consDef = new SymbolTree(KIND_OUTSTRUCTOR, fakeId, tree);
 		// .. and link it in
 		*st *= consDef;
 		// recurse
@@ -327,7 +327,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 			Tree *dcn = tree->child->next;
 			if (*dcn == TOKEN_EQUALS) { // standard static declaration
 				// allocate the new declaration node
-				SymbolTable *newDef = new SymbolTable(KIND_DECLARATION, tree->child->t.s, tree);
+				SymbolTree *newDef = new SymbolTree(KIND_DECLARATION, tree->child->t.s, tree);
 				// ... and link it in
 				*st *= newDef;
 				// recurse
@@ -335,7 +335,7 @@ void buildSt(Tree *tree, SymbolTable *st, vector<SymbolTable *> &importList) {
 				buildSt(tree->next, st, importList); // right
 			} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
 				// allocate the new definition node
-				SymbolTable *newDef = new SymbolTable((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
+				SymbolTree *newDef = new SymbolTree((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
 				// ... and link it in
 				*st *= newDef;
 				// also, since it's an import declaration, log it to the import list
@@ -388,31 +388,32 @@ string rebuildId(const vector<string> &choppedList, unsigned int depth) {
 }
 
 // reports errors
-pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeStatus &inStatus = TypeStatus()) {
+// second component is whether we passed through constantication for this binding
+pair<SymbolTree *, bool> bindId(const string &s, SymbolTree *env, const TypeStatus &inStatus = TypeStatus()) {
 	vector<string> id = chopId(s); // chop up the input identifier into its components
-	SymbolTable *stRoot = NULL; // the latch point of the binding
+	SymbolTree *stRoot = NULL; // the latch point of the binding
 	if (id[0] == "..") { // if the identifier begins with a recall
 		Type *recallType = inStatus.type;
-		if (recallType) { // if there's a recall binding passed in, use a fake SymbolTable node for it
+		if (recallType) { // if there's a recall binding passed in, use a fake SymbolTree node for it
 			// generate a fake identifier for the recall binding node from a hash of the recall identifier's Type object
 			string fakeId(FAKE_RECALL_NODE_PREFIX);
 			fakeId += (unsigned int)inStatus;
-			// check if a SymbolTable node with this identifier already exists -- if so, use it
-			map<string, SymbolTable *>::const_iterator fakeFind = env->children.find(fakeId);
+			// check if a SymbolTree node with this identifier already exists -- if so, use it
+			map<string, SymbolTree *>::const_iterator fakeFind = env->children.find(fakeId);
 			if (fakeFind != env->children.end()) { // if we found a match, use it
 				stRoot = (*fakeFind).second;
 			} else { // else if we didn't find a match, create a new fake latch point to use
-				SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, fakeId);
-				// attach the new fake node to the main SymbolTable
+				SymbolTree *fakeStNode = new SymbolTree(KIND_FAKE, fakeId);
+				// attach the new fake node to the main SymbolTree
 				*env *= fakeStNode;
 				// accept the new fake node as the latch point
 				stRoot = fakeStNode;
 			}
 		} else { // else if there is no known recall binding, return an error
-			return make_pair((SymbolTable *)NULL, false);
+			return make_pair((SymbolTree *)NULL, false);
 		}
 	} else { // else if it's a regular identifier
-		for (SymbolTable *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
+		for (SymbolTree *stCur = env; stCur != NULL; stCur = stCur->parent) { // scan for a latch point for the beginning of the identifier
 			if ((stCur->kind == KIND_STD ||
 					stCur->kind == KIND_DECLARATION ||
 					stCur->kind == KIND_PARAMETER) &&
@@ -423,7 +424,7 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 					stCur->kind == KIND_OBJECT ||
 					stCur->kind == KIND_INSTRUCTOR ||
 					stCur->kind == KIND_FILTER) { // else if this is a valid basis block, scan its children for a latch point
-				map<string, SymbolTable *>::const_iterator latchFind = stCur->children.find(id[0]);
+				map<string, SymbolTree *>::const_iterator latchFind = stCur->children.find(id[0]);
 				if (latchFind != stCur->children.end()) { // if we've found a latch point in the children
 					stRoot = (*latchFind).second;
 					break;
@@ -433,12 +434,12 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 	}
 	if (stRoot != NULL) { // if we managed to find a latch point, verify the rest of the binding
 		bool needsConstantization = false; // whether this identifier needs to be constantized due to going though a constant reference in the chain
-		SymbolTable *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
+		SymbolTree *stCur = stRoot; // the basis under which we're hoping to bind the current sub-identifier (KIND_STD, KIND_DECLARATION, or KIND_PARAMETER)
 		for (unsigned int i = 1; i < id.size(); i++) { // for each sub-identifier of the identifier we're trying to find the binding for
 			bool success = false;
 			Type *stCurType = errType;
 			if (stCur->kind == KIND_STD) { // if it's a standard system-level binding, look in the list of children for a match to this sub-identifier
-				map<string, SymbolTable *>::const_iterator childFind = stCur->children.find(id[i]);
+				map<string, SymbolTree *>::const_iterator childFind = stCur->children.find(id[i]);
 				if (childFind != stCur->children.end()) { // if there's a match to this sub-identifier, proceed
 					if (*(stCur->defSite->status.type) == STD_STD) { // if it's the root std node, just log the child as stCur and continue in the derivation
 						stCur = (*childFind).second;
@@ -454,10 +455,10 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				}
 			} else if (stCur->kind == KIND_PARAMETER) { // else if it's a Param binding, naively get its type
 				stCurType = getStatusType(stCur->defSite->child); // Type
-			} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTable node, get its type from the fake Tree node we created for it
+			} else if (stCur->kind == KIND_FAKE) { // else if it's a faked SymbolTree node, get its type from the fake Tree node we created for it
 				stCurType = stCur->defSite->status.type;
 			}
-			if (*stCurType) { // if we managed to derive a type for this SymbolTable node
+			if (*stCurType) { // if we managed to derive a type for this SymbolTree node
 				// handle some special cases based on the suffix of the type we just derived
 				if (stCurType->suffix == SUFFIX_LIST || stCurType->suffix == SUFFIX_STREAM) { // else if it's a list or a stream, flag an error, since we can't traverse down those
 					Token curToken = stCur->defSite->t;
@@ -470,19 +471,19 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 						if (stCurType->suffix == SUFFIX_ARRAY) {
 							needsConstantization = true;
 						}
-						// we're about to fake a SymbolTable node for this subscript access
-						// but first, check if a SymbolTable node has already been faked for this member
-						map<string, SymbolTable *>::const_iterator fakeFind = stCur->children.find(id[i]);
-						if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+						// we're about to fake a SymbolTree node for this subscript access
+						// but first, check if a SymbolTree node has already been faked for this member
+						map<string, SymbolTree *>::const_iterator fakeFind = stCur->children.find(id[i]);
+						if (fakeFind != stCur->children.end()) { // if we've already faked a SymbolTree node for this member, accept it and proceed deeper into the binding
 							stCur = (*fakeFind).second;
-						} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
+						} else { // else if we haven't yet faked a SymbolTree node for this member, do so now
 							Type *mutableStCurType = stCurType;
 							if (id[i] == "[]") { // if it's an expression access (as opposed to a range access), decrease the type's depth
 								mutableStCurType = mutableStCurType->copy(); // make a mutable copy of the type
 								mutableStCurType->decreaseDepth();
 							}
-							SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], mutableStCurType);
-							// attach the new fake node to the main SymbolTable
+							SymbolTree *fakeStNode = new SymbolTree(KIND_FAKE, id[i], mutableStCurType);
+							// attach the new fake node to the main SymbolTree
 							*stCur *= fakeStNode;
 							// accept the new fake node and proceed deeper into the binding
 							stCur = fakeStNode;
@@ -505,15 +506,15 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 					if (findIter != stCurTypeCast->memberList.end()) { // if we managed to find a matching sub-identifier
 						if ((*findIter).defSite() != NULL) { // if the member has a real definition site, accept it and proceed deeper into the binding
 							stCur = (*findIter).defSite()->env;
-						} else { // else if the member has no real definition site, we'll need to fake a SymbolTable node for it
-							// but first, check if a SymbolTable node has already been faked for this member
-							map<string, SymbolTable *>::const_iterator fakeFindIter = stCur->children.find(id[i]);
-							if (fakeFindIter != stCur->children.end()) { // if we've already faked a SymbolTable node for this member, accept it and proceed deeper into the binding
+						} else { // else if the member has no real definition site, we'll need to fake a SymbolTree node for it
+							// but first, check if a SymbolTree node has already been faked for this member
+							map<string, SymbolTree *>::const_iterator fakeFindIter = stCur->children.find(id[i]);
+							if (fakeFindIter != stCur->children.end()) { // if we've already faked a SymbolTree node for this member, accept it and proceed deeper into the binding
 								stCur = (*fakeFindIter).second;
 								stCur = (*fakeFindIter).second;
-							} else { // else if we haven't yet faked a SymbolTable node for this member, do so now
-								SymbolTable *fakeStNode = new SymbolTable(KIND_FAKE, id[i], (*findIter));
-								// attach the new fake node to the main SymbolTable
+							} else { // else if we haven't yet faked a SymbolTree node for this member, do so now
+								SymbolTree *fakeStNode = new SymbolTree(KIND_FAKE, id[i], (*findIter));
+								// attach the new fake node to the main SymbolTree
 								*stCur *= fakeStNode;
 								// accept the new fake node and proceed deeper into the binding
 								stCur = fakeStNode;
@@ -524,22 +525,22 @@ pair<SymbolTable *, bool> bindId(const string &s, SymbolTable *env, const TypeSt
 				}
 			}
 			if (!success) { // if we didn't find a binding for this sub-identifier, return failure
-				return make_pair((SymbolTable *)NULL, false);
+				return make_pair((SymbolTree *)NULL, false);
 			} // else if we managed to find a binding for this sub-identifier, continue onto trying to bind the next one
 		}
 		// if we managed to bind all of the sub-identifiers, return the tail of the binding as well as whether we need to post-constantize it
 		return make_pair(stCur, needsConstantization);
 	} else { // else if we failed to find an initial latch point, return failure
-		return make_pair((SymbolTable *)NULL, false);
+		return make_pair((SymbolTree *)NULL, false);
 	}
 }
 
-void subImportDecls(vector<SymbolTable *> importList) {
+void subImportDecls(vector<SymbolTree *> importList) {
 	bool stdExplicitlyImported = false;
 	for(;;) { // per-change loop
 		// per-import loop
-		vector<SymbolTable *> redoList; // the list of imports that we couldn't handle this round and must redo in the next one
-		for (vector<SymbolTable *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
+		vector<SymbolTree *> redoList; // the list of imports that we couldn't handle this round and must redo in the next one
+		for (vector<SymbolTree *>::const_iterator importIter = importList.begin(); importIter != importList.end(); importIter++) {
 			// extract the import path out of the iterator
 			Tree *importdcn = (*importIter)->defSite->child->next;
 			bool copyImport = (*importdcn == TOKEN_LSQUARE); // whether this is a copy-import
@@ -547,7 +548,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				(*importIter)->defSite->child->next->next :
 				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
 			string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
-			SymbolTable *importParent = (*importIter)->parent;
+			SymbolTree *importParent = (*importIter)->parent;
 			// check for the standard library import special case
 			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -557,15 +558,15 @@ void subImportDecls(vector<SymbolTable *> importList) {
 				}
 			}
 			// otherwise, try to find a non-std binding for this import
-			SymbolTable *binding = bindId(importPath, *importIter).first;
+			SymbolTree *binding = bindId(importPath, *importIter).first;
 			if (binding != NULL) { // if we found a valid binding
 				string importPathTip = binding->id; // must exist if binding succeeed
 				if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import
 					// check to make sure that this import doesn't cause a binding conflict
 					string importPathTip = binding->id; // must exist if binding succeeed
-					map<string, SymbolTable *>::const_iterator conflictFind = importParent->children.find(importPathTip);
+					map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find(importPathTip);
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
-						**importIter = *(new SymbolTable(*binding, (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
+						**importIter = *(new SymbolTree(*binding, (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
 					} else { // else if there was a conflict, flag an error
 						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
@@ -581,27 +582,27 @@ void subImportDecls(vector<SymbolTable *> importList) {
 					}
 				} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import
 					// verify that what's being open-imported is actually an object by finding an object-style child in the binding's children
-					map<string, SymbolTable *>::const_iterator bindingChildIter;
+					map<string, SymbolTree *>::const_iterator bindingChildIter;
 					for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
 						if ((*bindingChildIter).second->kind == KIND_OBJECT) {
 							break;
 						}
 					}
 					if (bindingChildIter != binding->children.end()) { // if we found an object-style child in this open-import's children (it's a valid open-impoprt of an object)
-						SymbolTable *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
+						SymbolTree *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
 						// add in the imported nodes, scanning for conflicts along the way
 						bool firstInsert = true;
-						for (map<string, SymbolTable *>::const_iterator bindingBaseIter = bindingBase->children.begin();
+						for (map<string, SymbolTree *>::const_iterator bindingBaseIter = bindingBase->children.begin();
 								bindingBaseIter != bindingBase->children.end();
 								bindingBaseIter++) {
 							// check for member naming conflicts (constructor type conflicts will be resolved later)
-							map<string, SymbolTable *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
+							map<string, SymbolTree *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
 							if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
 								if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
-									**importIter = *(new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
+									**importIter = *(new SymbolTree(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL)); // log whether this is a copy-import
 									firstInsert = false;
 								} else { // else if this is not the first insertion, latch in a copy of the child
-									SymbolTable *baseChildCopy = new SymbolTable(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
+									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), (copyImport) ? (*importIter)->defSite : NULL); // log whether this is a copy-import
 									*((*importIter)->parent) *= baseChildCopy;
 								}
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
@@ -625,7 +626,7 @@ void subImportDecls(vector<SymbolTable *> importList) {
 			}
 		} // per-import loop
 		if (redoList.size() == importList.size()) { // if the import table has stabilized
-			for (vector<SymbolTable *>::const_iterator importIter = redoList.begin(); importIter != redoList.end(); importIter++) {
+			for (vector<SymbolTree *>::const_iterator importIter = redoList.begin(); importIter != redoList.end(); importIter++) {
 				Token curToken = (*importIter)->defSite->t;
 				Tree *importdcn = (*importIter)->defSite->child->next;
 				Tree *importId = (*importdcn == TOKEN_NonArrayedIdentifier || *importdcn == TOKEN_ArrayedIdentifier) ?
@@ -641,10 +642,10 @@ void subImportDecls(vector<SymbolTable *> importList) {
 	} // per-change loop
 }
 
-// recursively derives the types of all named nodes in the passed-in SymbolTable
-void typeSt(SymbolTable *root) {
+// recursively derives the types of all named nodes in the passed-in SymbolTree
+void semSt(SymbolTree *root) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
-		getStatusSymbolTable(root);
+		getStatusSymbolTree(root);
 	} else if (root->kind == STD_STD) { // else if it's a standard node, check for copy-imports of non-referensible types
 		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
 			Token curToken = root->copyImportSite->t;
@@ -653,13 +654,13 @@ void typeSt(SymbolTable *root) {
 		}
 	}
 	// recurse on this node's children
-	for (map<string, SymbolTable *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
-		typeSt((*iter).second);
+	for (map<string, SymbolTree *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
+		semSt((*iter).second);
 	}
 }
 
 // reports errors
-TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
+TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
 	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
@@ -683,11 +684,11 @@ TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus) {
 TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	string id = *tree; // string representation of this identifier
-	pair<SymbolTable *, bool> binding = bindId(id, tree->env, inStatus);
-	SymbolTable *st = binding.first;
+	pair<SymbolTree *, bool> binding = bindId(id, tree->env, inStatus);
+	SymbolTree *st = binding.first;
 	if (st != NULL) { // if we found a binding
-		TypeStatus stStatus = getStatusSymbolTable(st, inStatus);
-		if (*stStatus) { // if we successfully extracted a type for this SymbolTable entry
+		TypeStatus stStatus = getStatusSymbolTree(st, inStatus);
+		if (*stStatus) { // if we successfully extracted a type for this SymbolTree entry
 			Type *mutableStType = stStatus;
 			if (binding.second) { // do the upstream-mandated constantization if needed
 				mutableStType = mutableStType->copy();
@@ -1355,8 +1356,8 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	StructorList instructorList;
 	StructorList outstructorList;
 	MemberList memberList;
-	SymbolTable *objectSt = tree->env;
-	for (map<string, SymbolTable *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+	SymbolTree *objectSt = tree->env;
+	for (map<string, SymbolTree *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
 		if ((*memberIter).second->kind == KIND_INSTRUCTOR) { // if it's an instructor-style node
 			instructorList.add((*memberIter).second->defSite); // Instructor
 		} else if ((*memberIter).second->kind == KIND_OUTSTRUCTOR) { // else if it's an outstructor-style node
@@ -1894,9 +1895,9 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			}
 		}
 	} else if (*dtc == TOKEN_Loopback) {
-		SymbolTable *enclosingEnv = dtc->env;
+		SymbolTree *enclosingEnv = dtc->env;
 		if (enclosingEnv->kind == KIND_BLOCK && enclosingEnv->parent != NULL) {
-			SymbolTable *enclosingParent = enclosingEnv->parent;
+			SymbolTree *enclosingParent = enclosingEnv->parent;
 			if (enclosingParent->kind == KIND_FILTER) {
 				FilterType *enclosingType = (FilterType *)(enclosingParent->defSite->status.type);
 				if ((*inStatus == *nullType && *(enclosingType->from()) == *nullType) || (*inStatus >> *(enclosingType->from()))) {
@@ -2277,7 +2278,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
-void typePipes(Tree *treeRoot) {
+void semPipes(Tree *treeRoot) {
 	TypeStatus rootStatus(nullType, stdIntType);
 	for (Tree *programCur = treeRoot; programCur != NULL; programCur = programCur->next) {
 		for (Tree *pipeCur = programCur->child->child; pipeCur != NULL; pipeCur = (pipeCur->next != NULL) ? pipeCur->next->child : NULL) {
@@ -2300,30 +2301,30 @@ SchedTree *genCodeRoot(Tree *treeRoot) {
 }
 
 // main semming function; makes no assumptions about stRoot and codeRoot's values; they're just return parameters
-int sem(Tree *treeRoot, SymbolTable *&stRoot, SchedTree *&codeRoot) {
+int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 
 	// initialize error code
 	semmerErrorCode = 0;
 
-	VERBOSE( printNotice("building symbol table..."); )
+	VERBOSE( printNotice("building symbol tree..."); )
 
 	// initialize the standard types used for comparison
 	initStdTypes();
 	
-	// initialize the symbol table root with the default definitions
+	// initialize the symbol tree root with the default definitions
 	stRoot = genDefaultDefs();
 
-	// populate the symbol table with definitions from the user parseme, and log the used imports
-	vector<SymbolTable *> importList; // import Declaration nodes
+	// populate the symbol tree with definitions from the user parseme, and log the used imports
+	vector<SymbolTree *> importList; // list of import Declaration nodes
 	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
-	subImportDecls(importList); // resolve and substitute import declarations into the symbol table
+	subImportDecls(importList); // resolve and substitute import declarations into the symbol tree
 
 	VERBOSE( printNotice("tracing data flow..."); )
 
-	// derive types of all identifiers in the SymbolTable
-	typeSt(stRoot);
-	// derive types for the remaining pipes
-	typePipes(treeRoot);
+	// perform semantic analysis on all identifiers in the SymbolTree
+	semSt(stRoot);
+	// perform semantic analysis on the remaining pipes
+	semPipes(treeRoot);
 	// create the root-level IRTree node
 	codeRoot = genCodeRoot(treeRoot);
 	

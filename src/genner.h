@@ -44,28 +44,6 @@ class RepTree {
 #define CATEGORY_COPY 14
 #define CATEGORY_SCHED 15
 
-// forward declarations
-class IRTree;
-	class LabelTree;
-	class SeqTree;
-	class DataTree;
-		class WordTree;
-		class ArrayTree;
-		class TempTree;
-		class ReadTree;
-	class OpTree;
-		class UnOpTree;
-		class BinOpTree;
-		class ConvTree;
-	class CodeTree;
-		class LockTree;
-		class UnlockTree;
-		class CondTree;
-		class JumpTree;
-		class WriteTree;
-		class CopyTree;
-		class ScheduleTree;
-
 // IRTree classes
 
 class IRTree {

@@ -12,7 +12,7 @@ ostream &operator<< (ostream &os, Tree *&tree) {
 	return os;
 }
 
-void printDefs(SymbolTable *st, int depth) {
+void printDefs(SymbolTree *st, int depth) {
 	if (st == NULL || st->kind == KIND_FAKE) {
 		return;
 	}
@@ -48,12 +48,12 @@ void printDefs(SymbolTable *st, int depth) {
 		cout << st->id;
 	}
 	cout << '\n';
-	for (map<string, SymbolTable *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
+	for (map<string, SymbolTree *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
 		printDefs((*childIter).second, depth+1);
 	}
 }
 
-ostream &operator<< (ostream &os, SymbolTable *&st) {
+ostream &operator<< (ostream &os, SymbolTree *&st) {
 	printDefs(st, 1);
 	return os;
 }

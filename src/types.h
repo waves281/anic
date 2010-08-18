@@ -7,12 +7,6 @@
 
 #include "../tmp/parserStruct.h"
 
-// forward declarations
-class Tree;
-class SymbolTable;
-class RepTree;
-class IRTree;
-
 // Type category specifiers
 #define CATEGORY_TYPELIST 0
 #define CATEGORY_STDTYPE 1
@@ -27,24 +21,6 @@ class IRTree;
 #define SUFFIX_STREAM 3
 #define SUFFIX_ARRAY 4
 #define SUFFIX_POOL 5
-
-// forward declarations
-class Type;
-class TypeList;
-class MemberedType;
-class ErrorType;
-class StdType;
-class FilterType;
-class StructorListResult;
-class StructorList;
-class MemberListResult;
-class MemberList;
-class ObjectType;
-class ErrorType;
-class TypeStatusBase;
-class TypeStatus;
-class SchedTree;
-class DataTree;
 
 // core Type class
 

@@ -32,6 +32,43 @@ using std::stack;
 using std::pair;
 using std::make_pair;
 
+// class forward declarations
+
+class Tree;
+class SymbolTree;
+class Type;
+class TypeList;
+class StdType;
+class FilterType;
+class StructorListResult;
+class StructorList;
+class MemberListResult;
+class MemberList;
+class ObjectType;
+class ErrorType;
+class TypeStatus;
+class RepTree;
+class IRTree;
+	class LabelTree;
+	class SeqTree;
+	class DataTree;
+		class WordTree;
+		class ArrayTree;
+		class TempTree;
+		class ReadTree;
+	class OpTree;
+		class UnOpTree;
+		class BinOpTree;
+		class ConvTree;
+	class CodeTree;
+		class LockTree;
+		class UnlockTree;
+		class CondTree;
+		class JumpTree;
+		class WriteTree;
+		class CopyTree;
+		class SchedTree;
+
 // global variable linkage specifiers
 
 extern int optimizationLevel;
@@ -45,7 +82,6 @@ extern int parserErrorCode;
 extern int semmerErrorCode;
 extern int gennerErrorCode;
 
-class Type;
 extern Type *nullType;
 extern Type *errType;
 class StdType;
@@ -55,7 +91,7 @@ extern StdType *stdFloatType;
 extern StdType *stdCharType;
 extern StdType *stdStringType;
 extern StdType *stdBoolLitType;
-class ObjectType;
+
 extern ObjectType *stringerType;
 extern ObjectType *boolUnOpType;
 extern ObjectType *intUnOpType;

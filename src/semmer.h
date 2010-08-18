@@ -10,8 +10,7 @@
 #include "types.h"
 #include "genner.h"
 
-// SymbolTable node kinds
-
+// SymbolTree node kinds
 #define KIND_STD 1
 #define KIND_CLOSED_IMPORT 2
 #define KIND_OPEN_IMPORT 3
@@ -24,31 +23,39 @@
 #define KIND_OBJECT 10
 #define KIND_FAKE 11
 
-class SymbolTable {
+// SymbolTree offset kinds
+#define OFFSET_ROOT 0
+#define OFFSET_RAW 1
+#define OFFSET_BLOCK 2
+#define OFFSET_PARTITION 3
+
+class SymbolTree {
 	public:
 		// data members
 		int kind;
 		string id;
 		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
 		Tree *copyImportSite; // if this node is a copy-import, the site where we're importing from; NULL otherwise
-		SymbolTable *parent;
-		map<string, SymbolTable *> children;
+		SymbolTree *parent;
+		map<string, SymbolTree *> children;
+		int offsetKind; // the kind of child this node apprears as to its lexical parent
+		unsigned int offsetIndex; // the offset of this child in the lexical parent's offset kind
 		// allocators/deallocators
-		SymbolTable(int kind, const string &id, Tree *defSite = NULL, Tree *copyImportSite = false);
-		SymbolTable(int kind, const char *id, Tree *defSite = NULL, Tree *copyImportSite = false);
-		SymbolTable(int kind, const string &id, Type *defType, Tree *copyImportSite = false);
-		SymbolTable(int kind, const char *id, Type *defType, Tree *copyImportSite = false);
-		SymbolTable(const SymbolTable &st, Tree *copyImportSite = false);
-		~SymbolTable();
+		SymbolTree(int kind, const string &id, Tree *defSite = NULL, Tree *copyImportSite = NULL);
+		SymbolTree(int kind, const char *id, Tree *defSite = NULL, Tree *copyImportSite = NULL);
+		SymbolTree(int kind, const string &id, Type *defType, Tree *copyImportSite = NULL);
+		SymbolTree(int kind, const char *id, Type *defType, Tree *copyImportSite = NULL);
+		SymbolTree(const SymbolTree &st, Tree *copyImportSite = NULL);
+		~SymbolTree();
 		// copy assignment operator
-		SymbolTable &operator=(const SymbolTable &st);
+		SymbolTree &operator=(const SymbolTree &st);
 		// concatenators
-		SymbolTable &operator*=(SymbolTable *st);
+		SymbolTree &operator*=(SymbolTree *st);
 };
 
 // forward declarations of mutually recursive typing functions
 
-TypeStatus getStatusSymbolTable(SymbolTable *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
@@ -131,6 +138,6 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 
 // main semantic analysis function
 
-int sem(Tree *treeRoot, SymbolTable *&stRoot, SchedTree *&codeRoot);
+int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot);
 
 #endif

@@ -299,8 +299,8 @@ int main(int argc, char **argv) {
 
 	VERBOSE(printNotice("mapping semantics...");)
 
-	// allocate symbol table root (will be filled with user-level definitions during parsing)
-	SymbolTable *stRoot;
+	// allocate symbol tree root (will be filled with user-level definitions during parsing)
+	SymbolTree *stRoot;
 	// allocate the intermediate representation tree root (will be bound at the end of parsing)
 	SchedTree *codeRoot;
 

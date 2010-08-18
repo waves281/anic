@@ -10,7 +10,7 @@
 #include "types.h"
 
 // forward declarations
-class SymbolTable;
+class SymbolTree;
 class Type;
 class TypeStatus;
 class IRTree;
@@ -24,7 +24,7 @@ class Tree {
 		Tree *back;
 		Tree *child;
 		Tree *parent;
-		SymbolTable *env; // the symbol environment in which this node occurs
+		SymbolTree *env; // the symbol environment in which this node occurs
 		TypeStatus status; // the status coming OUT of this node
 		// allocators/deallocators
 		Tree(const Token &t);

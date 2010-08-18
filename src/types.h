@@ -54,7 +54,6 @@ class Type {
 		int category; // the category that this Type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
-		RepTree *repInternal; // memory representation tree for this type
 		bool operable; // whether a node of this type can be operated upon
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
@@ -75,7 +74,6 @@ class Type {
 		// core methods
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
-		virtual RepTree *rep() const = 0;
 		virtual Type *copy() = 0;
 		virtual void erase() = 0;
 		virtual void clear() = 0;
@@ -111,7 +109,6 @@ class TypeList : public Type {
 		~TypeList();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		RepTree *rep() const;
 		Type *copy();
 		void erase();
 		void clear();
@@ -131,7 +128,6 @@ class ErrorType : public Type {
 		~ErrorType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		RepTree *rep() const;
 		Type *copy();
 		void erase();
 		void clear();
@@ -197,7 +193,6 @@ class StdType : public Type {
 		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
 		bool objectTypePromotion(Type &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
-		RepTree *rep() const;
 		Type *copy();
 		void erase();
 		void clear();
@@ -225,7 +220,6 @@ class FilterType : public Type {
 		TypeList *from();
 		TypeList *to();
 		bool isComparable(const Type &otherType) const;
-		RepTree *rep() const;
 		Type *copy();
 		void erase();
 		void clear();
@@ -355,7 +349,6 @@ class ObjectType : public Type {
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		RepTree *rep() const;
 		Type *copy();
 		void erase();
 		void clear();

@@ -566,7 +566,11 @@ void subImportDecls(vector<SymbolTree *> importList) {
 					string importPathTip = binding->id; // must exist if binding succeeed
 					map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find(importPathTip);
 					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
-						**importIter = *(new SymbolTree(*binding, importParent, (copyImport) ? binding : NULL)); // log the copy-import site, if necessary
+						if (copyImport) { // if this is a copy-import
+							**importIter = *(new SymbolTree(*binding, importParent, binding)); // scope to the local environment
+						} else { // else if this is not a copy-import
+							**importIter = *(new SymbolTree(*binding, binding->parent, NULL)); // scope to the foreign environment
+						}
 					} else { // else if there was a conflict, flag an error
 						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
 						Token prevDefToken;
@@ -599,11 +603,21 @@ void subImportDecls(vector<SymbolTree *> importList) {
 							map<string, SymbolTree *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
 							if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
 								if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
-									**importIter = *(new SymbolTree(*((*bindingBaseIter).second), importParent, (copyImport) ? (*bindingBaseIter).second : NULL)); // log the copy-import site, if necessary
+									if (copyImport) { // if this is a copy-import
+										**importIter = *(new SymbolTree(*((*bindingBaseIter).second), importParent, (*bindingBaseIter).second)); // scope to the local environment
+									} else { // else if this is not a copy-import
+										**importIter = *(new SymbolTree(*((*bindingBaseIter).second), (*bindingBaseIter).second->parent, NULL)); // scope to the foreign environment
+									}
 									firstInsert = false;
 								} else { // else if this is not the first insertion, latch in a copy of the child
-									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), importParent, (copyImport) ? (*bindingBaseIter).second : NULL); // log the copy-import site, if necessary
-									*((*importIter)->parent) *= baseChildCopy;
+									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), NULL, (copyImport) ? (*bindingBaseIter).second : NULL); // build the copy, scoping to NULL for now
+									*((*importIter)->parent) *= baseChildCopy; // latch in the copy
+									// correct the scope based on whether this is a copy-import or not
+									if (copyImport) { // if this is a copy-import
+										baseChildCopy->parent = importParent; // scope to the local environment
+									} else { // else if this is not a copy-import
+										baseChildCopy->parent = (*bindingBaseIter).second->parent; // scope to the foreign environment
+									}
 								}
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
 						}

@@ -351,7 +351,7 @@ class TypeStatus {
 		~TypeStatus();
 		// converters
 		operator Type *() const;
-		operator unsigned int() const;
+		operator uintptr_t() const;
 		// core methods
 		DataTree *castCode(const Type &destType) const;
 		DataTree *castCommonCode(const Type &otherType) const;

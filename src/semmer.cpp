@@ -259,7 +259,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		} else { // else if it's an object node, generate a fake identifier from a hash of the Tree node
 			kind = KIND_OBJECT;
 			fakeId = OBJECT_NODE_STRING;
-			fakeId += (unsigned int)tree;
+			fakeId += (uintptr_t)tree;
 		}
 		SymbolTree *blockDef = new SymbolTree(kind, fakeId, tree);
 		// latch the new node into the SymbolTree trunk
@@ -271,7 +271,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// allocate the new filter definition node
 		// generate a fake identifier for the filter node from a hash of the Tree node
 		string fakeId(FILTER_NODE_STRING);
-		fakeId += (unsigned int)tree;
+		fakeId += (uintptr_t)tree;
 		SymbolTree *filterDef = new SymbolTree(KIND_FILTER, fakeId, tree);
 		// parse out the header's parameter declarations and add them to the st
 		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
@@ -292,7 +292,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// allocate the new instructor definition node
 		// generate a fake identifier for the instructor node from a hash of the Tree node
 		string fakeId(INSTRUCTOR_NODE_STRING);
-		fakeId += (unsigned int)tree;
+		fakeId += (uintptr_t)tree;
 		SymbolTree *consDef = new SymbolTree(KIND_INSTRUCTOR, fakeId, tree);
 		// .. and link it in
 		*st *= consDef;
@@ -314,7 +314,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// allocate the new outstructor definition node
 		// generate a fake identifier for the outstructor node from a hash of the Tree node
 		string fakeId(OUTSTRUCTOR_NODE_STRING);
-		fakeId += (unsigned int)tree;
+		fakeId += (uintptr_t)tree;
 		SymbolTree *consDef = new SymbolTree(KIND_OUTSTRUCTOR, fakeId, tree);
 		// .. and link it in
 		*st *= consDef;

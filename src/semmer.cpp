@@ -673,8 +673,7 @@ void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	}
 }
 
-// reports errors
-// derives the status of this SymbolTree node, as well as deriving its offset from its parent
+// reports errors; derives the status of this SymbolTree node, as well as deriving its offset from its parent
 TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;

@@ -656,10 +656,10 @@ void subImportDecls(vector<SymbolTree *> importList) {
 	} // per-change loop
 }
 
-// recursively derives the types of all named nodes in the passed-in SymbolTree
-void semSt(SymbolTree *root) {
+// recursively derives the Type and IR trees of all named nodes in the passed-in SymbolTree
+void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
-		getStatusSymbolTree(root);
+		getStatusSymbolTree(root, parent);
 	} else if (root->kind == STD_STD) { // else if it's a standard node, ensure that it's not a copy-import of a non-referensible type
 		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
 			Token curToken = root->copyImportSite->defSite->t;
@@ -669,27 +669,34 @@ void semSt(SymbolTree *root) {
 	}
 	// recurse on this node's children
 	for (map<string, SymbolTree *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
-		semSt((*iter).second);
+		semSt((*iter).second, root);
 	}
 }
 
 // reports errors
-TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus) {
+// derives the status of this SymbolTree node, as well as deriving its offset from its parent
+TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
 	GET_STATUS_HEADER;
+	TypeStatus retStatus;
 	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
-		returnStatus(getStatusDeclaration(tree));
+		retStatus = getStatusDeclaration(tree);
 	} else if (st->kind == KIND_PARAMETER) { // else if the symbol was defined as a Param-style node
-		returnStatus(getStatusType(tree->child, inStatus)); // Type
+		retStatus = getStatusType(tree->child, inStatus); // Type
 	} else if (st->kind == KIND_INSTRUCTOR) { // else if the symbol was defined as an instructor-style node
-		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
+		retStatus = getStatusInstructor(tree, inStatus); // Instructor
 	} else if (st->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
-		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
+		retStatus = getStatusOutstructor(tree, inStatus); // OutStructor
 	} else if (st->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		returnTypeRet(tree->status.type, inStatus);
 	}
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
+	// derive the offset of this node in relation to its parent
+	/* if (*retStatus) { // if we managed to derive a type for this SymbolTree node
+	// LOL need to actually derive the offset
+	} */
+	// return the status that we derived earlier
+	returnStatus(retStatus);
+	GET_STATUS_NO_CODE_FOOTER;
 }
 
 // typing function definitions
@@ -701,7 +708,7 @@ TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	pair<SymbolTree *, bool> binding = bindId(id, tree->env, inStatus);
 	SymbolTree *st = binding.first;
 	if (st != NULL) { // if we found a binding
-		TypeStatus stStatus = getStatusSymbolTree(st, inStatus);
+		TypeStatus stStatus = getStatusSymbolTree(st, st->parent, inStatus);
 		if (*stStatus) { // if we successfully extracted a type for this SymbolTree entry
 			Type *mutableStType = stStatus;
 			if (binding.second) { // do the upstream-mandated constantization if needed
@@ -2322,24 +2329,23 @@ int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 
 	VERBOSE( printNotice("building symbol tree..."); )
 
-	// initialize the standard types used for comparison
+	// initialize the standard types used for type comparison during analysis
 	initStdTypes();
 	
-	// initialize the symbol tree root with the default definitions
-	stRoot = genDefaultDefs();
-
-	// populate the symbol tree with definitions from the user parseme, and log the used imports
-	vector<SymbolTree *> importList; // list of import Declaration nodes
-	buildSt(treeRoot, stRoot, importList); // get user definitions/imports
+	// build the symbol tree
+	stRoot = genDefaultDefs(); // initialize the symbol tree root with the default definitions
+	vector<SymbolTree *> importList; // list of import Declaration nodes; will be populated in the next step
+	buildSt(treeRoot, stRoot, importList); // get user definitions and populate the import list
 	subImportDecls(importList); // resolve and substitute import declarations into the symbol tree
 
 	VERBOSE( printNotice("tracing data flow..."); )
 
-	// perform semantic analysis on all identifiers in the SymbolTree
+	// perform semantic analysis (derivation of Type and IR trees) on all identifiers in the SymbolTree
 	semSt(stRoot);
-	// perform semantic analysis on the remaining pipes
+	// perform semantic analysis (derivation of Type and IR trees) on the remaining pipes
 	semPipes(treeRoot);
-	// create the root-level IRTree node
+	
+	// build the root-level IRTree node at which assembly dumping will start
 	codeRoot = genCodeRoot(treeRoot);
 	
 	VERBOSE( cout << stRoot; )

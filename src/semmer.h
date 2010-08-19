@@ -55,7 +55,7 @@ class SymbolTree {
 
 // forward declarations of mutually recursive typing functions
 
-TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
@@ -104,24 +104,24 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 #define returnType(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x), inStatus.retType);\
-	goto genIRTree
+	goto endTypeDerivation
 
 #define returnTypeRet(x,y) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x),(y));\
-	goto genIRTree
+	goto endTypeDerivation
 
 #define returnStatus(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = (x);\
-	goto genIRTree
+	goto endTypeDerivation
 
 #define GET_STATUS_CODE \
 	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
 	tree->status = TypeStatus(errType, NULL);\
 	return (tree->status);\
-	/* label the entry point for intermediate code tree generation */\
-	genIRTree:\
+	/* label the exit point of type derivation (i.e. the entry point for code genration) */\
+	endTypeDerivation:\
 	/* if we derived a valid return status, proceed to build the intermediate code tree */\
 	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
 
@@ -136,6 +136,14 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	/* if we failed to do a returnCode, simply return from this function */\
 	return (tree->status)
 
+#define GET_STATUS_NO_CODE_FOOTER \
+	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
+	tree->status = TypeStatus(errType, NULL);\
+	/* label the exit point for type derivation */\
+	endTypeDerivation:\
+	/* return from this function */\
+	return (tree->status)
+	
 // main semantic analysis function
 
 int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot);

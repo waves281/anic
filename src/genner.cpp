@@ -6,21 +6,6 @@
 
 int gennerErrorCode;
 
-// RepTree functions
-RepTree::RepTree(unsigned int raws, const vector< pair<RepTree *, Tree *> > &blocks, const vector<RepTree *> &partitions) : raws(raws), blocks(blocks), partitions(partitions) {}
-RepTree::RepTree(const RepTree &otherRep) : raws(otherRep.raws), blocks(otherRep.blocks), partitions(otherRep.partitions) {}
-RepTree::~RepTree() {}
-RepTree::operator string() const {
-	string acc("<");
-	acc += raws;
-	acc += ':';
-	acc += blocks.size();
-	acc += '|';
-	acc += partitions.size();
-	acc += '>';
-	return acc;
-}
-
 // IRTree functions
 IRTree::IRTree(int category) : category(category) {}
 IRTree::~IRTree() {}

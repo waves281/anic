@@ -27,33 +27,37 @@ ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
 
 // SymbolTree functions
-
-// allocators/deallocators
-SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NOT_ALLOCATED), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NOT_ALLOCATED), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NOT_ALLOCATED), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL) {
+SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NOT_ALLOCATED), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children) {}
+SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children),
+	offsetKind(st.offsetKind), offsetIndex(st.offsetIndex), numRaws(st.numRaws), numBlocks(st.numBlocks), numPartitions(st.numPartitions) {}
 SymbolTree::~SymbolTree() {
 	// delete all of the child nodes
 	for (map<string, SymbolTree *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
 		delete (*childIter).second;
 	}
 }
-
-// copy assignment operator
+unsigned int SymbolTree::addRaw() {return (numRaws++);}
+unsigned int SymbolTree::addBlock() {return (numBlocks++);}
+unsigned int SymbolTree::addPartition() {return (numPartitions++);}
 SymbolTree &SymbolTree::operator=(const SymbolTree &st) {
 	kind = st.kind;
 	defSite = st.defSite;
@@ -68,8 +72,6 @@ SymbolTree &SymbolTree::operator=(const SymbolTree &st) {
 	children = st.children;
 	return *this;
 }
-
-// concatenators
 SymbolTree &SymbolTree::operator*=(SymbolTree *st) {
 	// first, check for conflicting bindings
 	if (st->kind == KIND_STD || st->kind == KIND_DECLARATION || st->kind == KIND_PARAMETER) { // if this is a conflictable (non-special system-level binding)
@@ -106,6 +108,85 @@ SymbolTree &SymbolTree::operator*=(SymbolTree *st) {
 	} else {
 		return *this;
 	}
+}
+string SymbolTree::toString(unsigned int tabDepth) {
+	if (kind == KIND_FAKE) {
+		return "";
+	}
+	string acc("\t");
+	for (unsigned int i = 0; i < tabDepth; i++) {
+		if (i < (tabDepth-2)) {
+			acc += "| ";
+		} else if (i == (tabDepth-2)) {
+			acc += "|-";
+		} else if (i == (tabDepth-1)) {
+			acc += "--";
+		}
+	}
+	if (kind != KIND_BLOCK && kind != KIND_CLOSED_IMPORT && kind != KIND_OPEN_IMPORT) {
+		if (kind == KIND_INSTRUCTOR) {
+			acc += INSTRUCTOR_NODE_STRING;
+		} else if (kind == KIND_OUTSTRUCTOR) {
+			acc += OUTSTRUCTOR_NODE_STRING;
+		} else if (kind == KIND_FILTER) {
+			acc += FILTER_NODE_STRING;
+		} else if (kind == KIND_OBJECT) {
+			acc += OBJECT_NODE_STRING;
+		} else {
+			acc += id;
+		}
+		if (kind != KIND_OBJECT) {
+			Type *defType = defSite->status.type;
+			if (defType != NULL) {
+				acc += " : ";
+				acc += defType->toString();
+			}
+		}
+		acc += " <";
+		switch(offsetKind) {
+			case OFFSET_NOT_ALLOCATED: {
+				acc += "NUL";
+				break;
+			}
+			case OFFSET_RAW: {
+				acc += "RAW:";
+				char offsetString[MAX_INT_STRING_LENGTH];
+				sprintf(offsetString, "%u", offsetIndex);
+				acc += offsetString;
+				break;
+			}
+			case OFFSET_BLOCK: {
+				acc += "BLK:";
+				char offsetString[MAX_INT_STRING_LENGTH];
+				sprintf(offsetString, "%u", offsetIndex);
+				acc += offsetString;
+				break;
+			}
+			case OFFSET_PARTITION: {
+				acc += "PRT:";
+				char offsetString[MAX_INT_STRING_LENGTH];
+				sprintf(offsetString, "%u", offsetIndex);
+				acc += offsetString;
+				break;
+			}
+			default: // can't happen; the above should cover all cases
+				break;
+		}
+		acc += '>';
+	} else {
+		acc += id;
+	}
+	acc += '\n';
+	for (map<string, SymbolTree *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {
+		SymbolTree *childCur = (*childIter).second;
+		if (childCur != NULL) {
+			acc += childCur->toString(tabDepth+1);
+		}
+	}
+	return acc;
+}
+SymbolTree::operator string() {
+	return toString(1);
 }
 
 // Main semantic analysis functions
@@ -676,7 +757,7 @@ void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 // reports errors; derives the status of this SymbolTree node, as well as deriving its offset from its parent
 TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeStatus &inStatus) {
 	Tree *tree = st->defSite; // set up the tree varaible that the header expects
-	GET_STATUS_HEADER;
+	GET_STATUS_HEADER; // LOL need to fix this to not return so eagerly, or else offsets won't be computed properly
 	TypeStatus retStatus;
 	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
 		retStatus = getStatusDeclaration(tree);
@@ -688,11 +769,17 @@ TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeSta
 		retStatus = getStatusOutstructor(tree, inStatus); // OutStructor
 	} else if (st->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		returnTypeRet(tree->status.type, inStatus);
-	}
+	}	
 	// derive the offset of this node in relation to its parent
-	/* if (*retStatus) { // if we managed to derive a type for this SymbolTree node
-	// LOL need to actually derive the offset
-	} */
+	if (*retStatus) { // if we managed to derive a type for this SymbolTree node
+	
+		// LOL need to actually derive the offset properly for all cases
+
+		if (retStatus.type->category == CATEGORY_STDTYPE && (((StdType *)(retStatus.type))->kind != STD_STRING)) {
+			st->offsetKind = OFFSET_RAW;
+			st->offsetIndex = parent->addRaw();
+		}
+	}
 	// return the status that we derived earlier
 	returnStatus(retStatus);
 	GET_STATUS_NO_CODE_FOOTER;

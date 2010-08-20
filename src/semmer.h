@@ -24,7 +24,7 @@
 #define KIND_FAKE 11
 
 // SymbolTree offset kinds
-#define OFFSET_ROOT 0
+#define OFFSET_NOT_ALLOCATED 0
 #define OFFSET_RAW 1
 #define OFFSET_BLOCK 2
 #define OFFSET_PARTITION 3
@@ -36,10 +36,13 @@ class SymbolTree {
 		string id; // string representation of this node used for binding
 		Tree *defSite; // where the symbol is defined in the Tree (Declaration or Param)
 		SymbolTree *copyImportSite; // if this node is a copy-import, the node from which we're importing; NULL otherwise
-		SymbolTree *parent; // pointer ot the parent of this node
+		SymbolTree *parent; // pointer ot the parent of this node; populated during SymbolTree status derivation
 		map<string, SymbolTree *> children; // list of this node's children
 		int offsetKind; // the kind of child this node apprears as to its lexical parent
 		unsigned int offsetIndex; // the offset of this child in the lexical parent's offset kind
+		unsigned int numRaws; // the number of raw-represented children for this node
+		unsigned int numBlocks; // the number of block-represented children for this node
+		unsigned int numPartitions; // the number of partition-represented children for this node
 		// allocators/deallocators
 		SymbolTree(int kind, const string &id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
 		SymbolTree(int kind, const char *id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
@@ -47,10 +50,15 @@ class SymbolTree {
 		SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite = NULL);
 		SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite = NULL);
 		~SymbolTree();
-		// copy assignment operator
+		// core methods
+		unsigned int addRaw();
+		unsigned int addBlock();
+		unsigned int addPartition();
+		string toString(unsigned int tabDepth);
+		// operators
 		SymbolTree &operator=(const SymbolTree &st);
-		// concatenators
 		SymbolTree &operator*=(SymbolTree *st);
+		operator string();
 };
 
 // forward declarations of mutually recursive typing functions

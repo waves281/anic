@@ -116,8 +116,7 @@ class ErrorType : public Type {
 		operator string();
 };
 
-// Type kind specifiers
-
+// StdType node kinds
 #define STD_NULL 0
 #define STD_STD 1
 

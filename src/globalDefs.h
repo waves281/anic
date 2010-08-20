@@ -47,7 +47,6 @@ class MemberList;
 class ObjectType;
 class ErrorType;
 class TypeStatus;
-class RepTree;
 class IRTree;
 	class LabelTree;
 	class SeqTree;

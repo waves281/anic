@@ -26,6 +26,7 @@
 #define TOLERABLE_ERROR_LIMIT 256
 
 #define MAX_STRING_LENGTH (sizeof(char)*4096)
+#define MAX_INT_STRING_LENGTH 21
 
 #define STD_IN_FILE_NAME "<stdin>"
 

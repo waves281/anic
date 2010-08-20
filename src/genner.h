@@ -10,22 +10,6 @@
 #include "types.h"
 #include "semmer.h"
 
-// RepTree class
-
-class RepTree {
-	public:
-		// data members
-		unsigned int raws; // number of raw (non-pool) bytes used by this node
-		vector< pair<RepTree *, Tree *> > blocks; // pool blocks used by this node
-		vector<RepTree *> partitions;
-		// allocators/deallocators
-		RepTree(unsigned int raws, const vector< pair<RepTree *, Tree *> > &blocks, const vector<RepTree *> &partitions);
-		RepTree(const RepTree &otherRepTree);
-		~RepTree();
-		// operators
-		operator string() const;
-};
-
 // CodeTree category specifiers
 #define CATEGORY_LABEL 0
 #define CATEGORY_SEQ 1

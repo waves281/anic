@@ -12,49 +12,8 @@ ostream &operator<< (ostream &os, Tree *&tree) {
 	return os;
 }
 
-void printDefs(SymbolTree *st, int depth) {
-	if (st == NULL || st->kind == KIND_FAKE) {
-		return;
-	}
-	cout << '\t';
-	for (int i = 0; i < depth; i++) {
-		if (i < (depth-2)) {
-			cout << "| ";
-		} else if (i == (depth-2)) {
-			cout << "|-";
-		} else if (i == (depth-1)) {
-			cout << "--";
-		}
-	}
-	if (st->kind != KIND_BLOCK && st->kind != KIND_CLOSED_IMPORT && st->kind != KIND_OPEN_IMPORT) {
-		if (st->kind == KIND_INSTRUCTOR) {
-			cout << INSTRUCTOR_NODE_STRING;
-		} else if (st->kind == KIND_OUTSTRUCTOR) {
-			cout << OUTSTRUCTOR_NODE_STRING;
-		} else if (st->kind == KIND_FILTER) {
-			cout << FILTER_NODE_STRING;
-		} else if (st->kind == KIND_OBJECT) {
-			cout << OBJECT_NODE_STRING;
-		} else {
-			cout << st->id;
-		}
-		if (st->kind != KIND_OBJECT) {
-			Type *defType = st->defSite->status.type;
-			if (defType != NULL) {
-				cout << " : " << (defType->toString());
-			}
-		}
-	} else {
-		cout << st->id;
-	}
-	cout << '\n';
-	for (map<string, SymbolTree *>::iterator childIter = st->children.begin(); childIter != st->children.end(); childIter++) {
-		printDefs((*childIter).second, depth+1);
-	}
-}
-
-ostream &operator<< (ostream &os, SymbolTree *&st) {
-	printDefs(st, 1);
+ostream &operator<< (ostream &os, SymbolTree *st) {
+	os << ((string)(*st));
 	return os;
 }
 

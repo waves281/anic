@@ -291,15 +291,25 @@ PrimLiteral : INUM
 	;
 Filter : Block
 	| FilterHeader Block
+	| MergedFilterHeader MergedBlock
 	;
 FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
 	;
+MergedFilterHeader : LSQUARE ParamList RCSQUARE
+	| LSQUARE ParamList RetList RCSQUARE
+	| LSQUARE RetList RCSQUARE
+	;
 NonRetFilterHeader : LSQUARE RSQUARE
 	| LSQUARE ParamList RSQUARE
 	;
+MergedNonRetFilterHeader : LSQUARE RCSQUARE
+	| LSQUARE ParamList RCSQUARE
+	;
 RetFilterHeader : LSQUARE RetList RSQUARE
+	;
+MergedRetFilterHeader : LSQUARE RetList RCSQUARE
 	;
 ParamList : Param
 	| Param COMMA ParamList
@@ -366,6 +376,8 @@ TypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
+MergedBlock : Pipes RCURLY
+	;
 Object : LCURLY InstructedObjectPipes RCURLY
 	;
 InstructedObjectPipes : LastInstructor
@@ -386,11 +398,15 @@ ObjectPipes : LastInstructor
 Instructor : EQUALS SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
+	| EQUALS MergedNonRetFilterHeader MergedBlock
+	| EQUALS MergedNonRetFilterHeader MergedBlock SEMICOLON
 	;
 LastInstructor : EQUALS
 	;
 Outstructor : EQUALS RetFilterHeader Block
 	| EQUALS RetFilterHeader Block SEMICOLON
+	| EQUALS MergedRetFilterHeader MergedBlock
+	| EQUALS MergedRetFilterHeader MergedBlock SEMICOLON
 	;
 SingleAccess : SingleAccessor Node
 	;

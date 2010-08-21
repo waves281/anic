@@ -229,9 +229,11 @@ IdentifierSuffix :
 BlankInstantiation : LSQUARE BlankInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
+	| LSQUARE SingleInitInstantiationSource RSQUARE
 	| LSQUARE SingleInitInstantiationSource RBSQUARE RBRACKET
 	| LSQUARE SingleInitInstantiationSource RBSQUARE ExpList RBRACKET
 	| LSQUARE SingleInitInstantiationSource RCSQUARE ExpList RCURLY
+	| LSQUARE MultiInitInstantiationSource RSQUARE
 	| LSQUARE MultiInitInstantiationSource RBSQUARE RBRACKET
 	| LSQUARE MultiInitInstantiationSource RBSQUARE ExpList RBRACKET
 	;

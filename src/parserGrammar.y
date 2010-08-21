@@ -17,6 +17,8 @@
 %token RCURLY
 %token LSQUARE
 %token RSQUARE
+%token RBSQUARE
+%token RCSQUARE
 %token RFLAG
 %token LFLAG
 %token RARROW
@@ -163,8 +165,6 @@ TypedStaticTerm : Node
 BracketedExp : LBRACKET RBRACKET
 	| LBRACKET ExpList RBRACKET
 	;
-CurlyBracketedExp : LCURLY ExpList RCURLY
-	;
 ExpList : Exp
 	| Exp COMMA ExpList
 	;
@@ -229,9 +229,12 @@ IdentifierSuffix :
 BlankInstantiation : LSQUARE BlankInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
-	| LSQUARE SingleInitInstantiationSource RSQUARE BracketedExp
-	| LSQUARE SingleInitInstantiationSource RSQUARE CurlyBracketedExp
-	| LSQUARE MultiInitInstantiationSource RSQUARE BracketedExp
+	| LSQUARE SingleInitInstantiationSource RBSQUARE RBRACKET
+	| LSQUARE SingleInitInstantiationSource RBSQUARE ExpList RBRACKET
+	| LSQUARE SingleInitInstantiationSource RCSQUARE RCURLY
+	| LSQUARE SingleInitInstantiationSource RCSQUARE ExpList RCURLY
+	| LSQUARE MultiInitInstantiationSource RBSQUARE RBRACKET
+	| LSQUARE MultiInitInstantiationSource RBSQUARE ExpList RBRACKET
 	;
 BlankInstantiationSource : NonArrayedIdentifier BlankInstantiationTypeSuffix
 	;

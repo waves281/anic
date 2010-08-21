@@ -355,7 +355,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		fakeId += (uintptr_t)tree;
 		SymbolTree *filterDef = new SymbolTree(KIND_FILTER, fakeId, tree);
 		// parse out the header's parameter declarations and add them to the st
-		Tree *pl = (*(tree->child) == TOKEN_FilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
+		Tree *pl = (*(tree->child) == TOKEN_FilterHeader || *(tree->child) == TOKEN_MergedFilterHeader) ? tree->child->child->next : NULL; // RSQUARE, ParamList, RetList, or NULL
 		if (pl != NULL && *pl == TOKEN_ParamList) { // if there is a parameter list to process
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
@@ -378,8 +378,8 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// .. and link it in
 		*st *= consDef;
 		// link in the parameters of this instructor, if any
-		Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, or NonRetFilterHeader
-		if (conscn != NULL && *conscn == TOKEN_NonRetFilterHeader && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this instructor
+		Tree *conscn = tree->child->next; // NULL, SEMICOLON, LSQUARE, NonRetFilterHeader, or MergedNonRetFilterHeader
+		if (conscn != NULL && (*conscn == TOKEN_NonRetFilterHeader || *conscn == TOKEN_MergedNonRetFilterHeader) && *(conscn->child->next) == TOKEN_ParamList) { // if there is actually a parameter list on this instructor
 			Tree *pl = conscn->child->next; // ParamList
 			for (Tree *param = pl->child; param != NULL; param = (param->next != NULL) ? param->next->next->child : NULL) { // per-param loop
 				// allocate the new parameter definition node
@@ -1226,7 +1226,7 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	bool pipeTypesValid = true;
 	TypeStatus curStatus = inStatus;
-	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
+	for (Tree *pipe = (tree->child->child == NULL) ? tree->child->next->child : tree->child->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // Pipe or LastPipe
 		// try to get a type for this pipe
 		Tree *pipec = pipe->child;
 		if (*pipec == TOKEN_Declaration) { // if it's a declaration-style Pipe, ignore the returned retType (it's used for recursion detection instead)
@@ -1285,7 +1285,7 @@ TypeStatus verifyStatusFilter(Tree *tree) {
 			// set the type to feed into the block derivation to be the one coming in to this filter
 			startStatus = headerType->from();
 		} else { // else if this is an explicitly header-defined filter
-			block = tree->child->next; // Block
+			block = tree->child->next; // Block or MergedBlock
 			// nullify the type to feed into the block derivation, since we have an explicit parameter list
 			startStatus = nullType;
 		}
@@ -1312,18 +1312,17 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	Tree *filterCur = tree->child; // Block or FilterHeader
 	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, return its type as a consumer of the input type
 		returnTypeRet(new FilterType(inStatus.type, nullType, SUFFIX_LATCH), NULL);
-	} else /* if (*filterCur == TOKEN_FilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
+	} else /* if (*filterCur == TOKEN_FilterHeader || *filterCur == TOKEN_MergedFilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
 		returnTypeRet(new FilterType(filterCur, SUFFIX_LATCH), NULL);
 	}
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
+	GET_STATUS_NO_CODE_FOOTER;
 }
 
 // assumes that the corresponding Filter thunk was generated successfully
 TypeStatus verifyStatusInstructor(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
 	if (*(headerType->from())) { // if the header evaluates to a valid type
-		Tree *block = (tree->child->next != NULL) ? tree->child->next->next : NULL; // NULL or Block
+		Tree *block = (tree->child->next != NULL) ? tree->child->next->next : NULL; // NULL, Block, or MergedBlock
 		if (block != NULL) { // if there's actually an explicit definition block to verify
 			TypeStatus startStatus(nullType, errType); // set retType = errType to make sure that the instructor doesn't return anything
 			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
@@ -1341,14 +1340,13 @@ TypeStatus verifyStatusInstructor(Tree *tree) {
 // generates a thunk; does not actually generate any code
 TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *icn = tree->child->next; // NULL, SEMICOLON, or NonRetFilterHeader
+	Tree *icn = tree->child->next; // NULL, SEMICOLON, NonRetFilterHeader, or MergedNonRetFilterHeader
 	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
 		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
-	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
+	} else /* if (*icn == TOKEN_NonRetFilterHeader || *icn == TOKEN_MergedNonRetFilterHeader) */ {
 		returnTypeRet(new FilterType(icn, SUFFIX_LATCH), NULL);
 	}
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
+	GET_STATUS_NO_CODE_FOOTER;
 }
 
 // reports errors; assumes that the corresponding Filter thunk was generated successfully
@@ -1379,9 +1377,8 @@ TypeStatus verifyStatusOutstructor(Tree *tree) {
 // generates a thunk; does not actually generate any code
 TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	returnTypeRet(new FilterType(tree->child->next, SUFFIX_LATCH), NULL); // RetFilterHeader
-	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
+	returnTypeRet(new FilterType(tree->child->next, SUFFIX_LATCH), NULL); // RetFilterHeader or MergedRetFilterHeader
+	GET_STATUS_NO_CODE_FOOTER;
 }
 
 // reports errors; assumes that the corresponding Object thunk was generated successfully

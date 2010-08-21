@@ -976,6 +976,29 @@ TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+TypeStatus getStatusExpList(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *exp = tree->child;
+	if (exp->next == NULL) { // if it's just a single Exp
+		returnStatus(getStatusExp(exp, inStatus));
+	} else { // else if it's a true ExpList, we must derive the corresponding TypeList
+		bool failed = false;
+		vector<Type *> list;
+		for (; exp != NULL; exp = (exp->next != NULL) ? exp->next->next->child : NULL) {
+			Type *thisExpType = getStatusExp(exp, inStatus);
+			list.push_back(thisExpType);
+			if (!(*thisExpType)) {
+				failed = true;
+			}
+		}
+		if (!failed) {
+			returnTypeRet(new TypeList(list), inStatus.retType);
+		}
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
 // reports errors
 TypeStatus getStatusExp(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
@@ -1744,11 +1767,11 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
-		if (is->next->next == NULL) { // if there is no initializer, simply return the derived type
+		if (is->next->next == NULL || *(is->next->next) == TOKEN_RBRACKET) { // if there is no initializer or a default initializer, simply return the derived type
 			returnStatus(instantiationStatus);
-		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible
-			Tree *initializer = is->next->next; // BracketedExp
-			TypeStatus initializerStatus = getStatusBracketedExp(initializer, inStatus);
+		} else if (*(is->next) == TOKEN_RBSQUARE) { // else if there is a regular initializer, make sure that its type is compatible
+			Tree *initializer = is->next->next; // ExpList
+			TypeStatus initializerStatus = getStatusExpList(initializer, inStatus);
 			if (*initializerStatus) { //  if we successfully derived a type for the initializer
 				// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization
 				Type *mutableInstantiationType = instantiationStatus.type->copy();
@@ -1778,9 +1801,9 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
 				}
 			}
-		} else /* if (*(is->next->next) == TOKEN_CurlyBracketedExp) */ { // else if there is an initializer list, make sure that all of the initializers are compatiable
+		} else /* if (*(is->next) == TOKEN_RCSQUARE) */ { // else if there is an initializer list, make sure that all of the initializers are compatiable
 			bool failed = false;
-			for (Tree *initializer = is->next->next->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // invariant: initializer is an Exp
+			for (Tree *initializer = is->next->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // invariant: initializer is an Exp
 				TypeStatus initializerStatus = getStatusExp(initializer, inStatus);
 				if (*initializerStatus) { //  if we successfully derived a type for the initializer
 					// try the ObjectType outstructor special case for instantiation

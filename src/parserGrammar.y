@@ -66,7 +66,8 @@
 %left PLUS MINUS
 %left TIMES DIVIDE MOD
 %left NOT COMPLEMENT
-%left LBRACKET RBRACKET
+%left LSQUARE RSQUARE
+%left LBRACKET RBRACKET LCURLY RCURLY
 
 %%
 Program : Pipes
@@ -229,8 +230,10 @@ IdentifierSuffix :
 BlankInstantiation : LSQUARE BlankInstantiationSource RSQUARE
 	;
 Instantiation : LSQUARE CopyInstantiationSource RSQUARE
+	| LSQUARE SingleInitInstantiationSource RSQUARE
 	| LSQUARE SingleInitInstantiationSource RSQUARE BracketedExp
 	| LSQUARE SingleInitInstantiationSource RSQUARE CurlyBracketedExp
+	| LSQUARE MultiInitInstantiationSource RSQUARE
 	| LSQUARE MultiInitInstantiationSource RSQUARE BracketedExp
 	;
 BlankInstantiationSource : NonArrayedIdentifier BlankInstantiationTypeSuffix

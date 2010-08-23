@@ -1744,7 +1744,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
-		if (is->next->next == NULL) { // if there is no initializer, simply return the derived type
+		if (is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) { // if there is no initializer or a null initializer, simply return the derived type
 			returnStatus(instantiationStatus);
 		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible
 			Tree *initializer = is->next->next; // BracketedExp

@@ -233,208 +233,6 @@ bool Type::operator!() const {return (category == CATEGORY_ERRORTYPE);}
 bool Type::operator!=(Type &otherType) {return (!(operator==(otherType)));};
 bool Type::operator!=(int kind) const {return (!(operator==(kind)));}
 
-// TypeList functions
-// constructor works on ParamList and TypeList
-TypeList::TypeList(const vector<Type *> &list) : Type(CATEGORY_TYPELIST), list(list) {}
-TypeList::TypeList(Type *type) : Type(CATEGORY_TYPELIST) {
-	list.push_back(type);
-}
-TypeList::TypeList() : Type(CATEGORY_TYPELIST) {
-	list.push_back(nullType);
-}
-TypeList::~TypeList() {
-	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
-			delete (*iter);
-		}
-	}
-}
-bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
-Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
-void TypeList::erase() {clear(); delete this;}
-void TypeList::clear() {list.clear();}
-bool TypeList::operator==(Type &otherType) {
-	if (this == &otherType) { // if the lists are actually the same object instance, return true
-		return true;
-	} else if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (list.size() != otherTypeCast->list.size()) {
-			return false;
-		}
-		vector<Type *>::const_iterator iter1;
-		vector<Type *>::const_iterator iter2;
-		for (iter1 = list.begin(), iter2 = otherTypeCast->list.begin(); iter1 != list.end(); iter1++, iter2++) {
-			if (**iter1 != **iter2) {
-				return false;
-			}
-		}
-		return true;
-	} else if (list.size() == 1) {
-		return (*(list[0]) == otherType);
-	} else {
-		return false;
-	}
-}
-bool TypeList::operator==(int kind) const {return (list.size() == 1 && list[0]->category == CATEGORY_STDTYPE && ((StdType *)(list[0]))->kind == kind);}
-Type *TypeList::operator,(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
-		return errType;
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (list.size() == 1 && (list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) {
-			StdType *thisTypeCast = (StdType *)(list[0]);
-			if (otherTypeCast->kind == STD_NOT && (*thisTypeCast >> *stdBoolType)) {
-				return (new StdType(STD_BOOL, SUFFIX_LATCH));
-			} else if (otherTypeCast->kind == STD_COMPLEMENT && (*thisTypeCast >> *stdIntType)) {
-				return (new StdType(STD_INT, SUFFIX_LATCH));
-			} else if ((otherTypeCast->kind == STD_DPLUS || otherTypeCast->kind == STD_DMINUS) && (*thisTypeCast >> *stdIntType)) {
-				return (new StdType(STD_INT, SUFFIX_LATCH));
-			} else if (otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
-				if (*thisTypeCast >> *stdIntType) {
-					return (new StdType(STD_INT, SUFFIX_LATCH));
-				} else if (*thisTypeCast >> *stdFloatType){
-					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
-				} else {
-					return errType;
-				}
-			} else {
-				return errType;
-			}
-		} else if (list.size() == 2 &&
-				((list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) &&
-				((list[1])->category == CATEGORY_STDTYPE && ((list[1])->suffix == SUFFIX_CONSTANT || (list[1])->suffix == SUFFIX_LATCH))) {
-			StdType *thisTypeCast1 = (StdType *)(list[0]);
-			StdType *thisTypeCast2 = (StdType *)(list[1]);
-			if ((otherTypeCast->kind == STD_DOR || otherTypeCast->kind == STD_DAND) &&
-					((*thisTypeCast1 >> *stdBoolType) && (*thisTypeCast2 >> *stdBoolType))) {
-				return (new StdType(STD_BOOL, SUFFIX_LATCH));
-			} else if ((otherTypeCast->kind == STD_OR || otherTypeCast->kind == STD_XOR || otherTypeCast->kind == STD_AND) &&
-					((*thisTypeCast1 >> *stdIntType) && (*thisTypeCast2 >> *stdIntType))) {
-				return (new StdType(STD_INT, SUFFIX_LATCH));
-			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
-					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
-					otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
-				if (thisTypeCast1->kindCast(*thisTypeCast2)) {
-					return (new StdType(STD_BOOL, SUFFIX_LATCH));
-				} else {
-					return errType;
-				}
-			} else if (otherTypeCast->kind == STD_TIMES || otherTypeCast->kind == STD_DIVIDE || otherTypeCast->kind == STD_MOD ||
-					otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
-				if ((*thisTypeCast1 >> *stdIntType) && (*thisTypeCast2 >> *stdIntType)) {
-					return (new StdType(STD_INT, SUFFIX_LATCH));
-				} else if ((*thisTypeCast1 >> *stdFloatType) && (*thisTypeCast2 >> *stdFloatType)) {
-					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
-				} else {
-					return errType;
-				}
-			}
-		} else {
-			return errType;
-		}
-	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		FilterType *otherTypeCast = (FilterType *)(&otherType);
-		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
-			return otherTypeCast->to();
-		} else {
-			return errType;
-		}
-	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		return errType;
-	}
-	// otherType.category == CATEGORY_ERRORTYPE
-	return errType;
-}
-bool TypeList::operator>>(Type &otherType) {
-	if (this == &otherType) { // if the lists are actually the same object instance
-		return true;
-	} else if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (list.size() != otherTypeCast->list.size()) {
-			return false;
-		}
-		vector<Type *>::const_iterator iter1 = list.begin();
-		vector<Type *>::const_iterator iter2 = otherTypeCast->list.begin();
-		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
-			if (!(**iter1 >> **iter2)) {
-				return false;
-			}
-			iter1++;
-			iter2++;
-		}
-		return true;
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		if (list.size() == 1 && (*(list[0]) >> otherType)) {
-			return true;
-		} else {
-			return false;
-		}
-	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		if (list.size() == 1 && (*(list[0]) >> otherType)) {
-			return true;
-		} else {
-			return false;
-		}
-	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
-		if (list.size() == 1) {
-			return (*(list[0]) >> otherType);
-		} else if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
-			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
-			for (StructorList::iterator iter = otherTypeCast->instructorList.begin(); iter != otherTypeCast->instructorList.end(); iter++) {
-				if (*this >> **iter) {
-					return true;
-				}
-			}
-		} else {
-			return false;
-		}
-	}
-	// otherType.category == CATEGORY_ERRORTYPE
-	return false;
-}
-string TypeList::toString(unsigned int tabDepth) {
-	TYPE_TO_STRING_HEADER;
-	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
-		acc += (*iter)->toString(tabDepth);
-		if ((iter+1) != list.end()) {
-			acc += ", ";
-		}
-	}
-	TYPE_TO_STRING_FOOTER;
-}
-TypeList::operator string() {
-	TYPE_TO_STRING_HEADER;
-	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
-		acc += (string)(**iter);
-		if ((iter+1) != list.end()) {
-			acc += ", ";
-		}
-	}
-	TYPE_TO_STRING_FOOTER;
-}
-
-// ErrorType functions
-ErrorType::ErrorType() : Type(CATEGORY_ERRORTYPE) {}
-ErrorType::~ErrorType() {}
-bool ErrorType::isComparable(const Type &otherType) const {return false;}
-Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
-void ErrorType::erase() {delete this;}
-void ErrorType::clear() {}
-bool ErrorType::operator==(Type &otherType) {
-	if (otherType.category == CATEGORY_ERRORTYPE) {
-		return (this == &otherType);
-	} else {
-		return false;
-	}
-}
-bool ErrorType::operator==(int kind) const {return false;}
-Type *ErrorType::operator,(Type &otherType) {return errType;}
-bool ErrorType::operator>>(Type &otherType) {return false;}
-string ErrorType::toString(unsigned int tabDepth) {
-	return "<ERROR>";
-}
-ErrorType::operator string() {return toString(1);}
-
 // StdType functions
 StdType::StdType(int kind, int suffix, int depth) : Type(CATEGORY_STDTYPE, suffix, depth), kind(kind) {}
 StdType::~StdType() {}
@@ -640,15 +438,15 @@ bool StdType::operator==(Type &otherType) {
 }
 bool StdType::operator==(int kind) const {return (this->kind == kind);}
 Type *StdType::operator,(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		return errType;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
 			return (*this , *(otherTypeCast->list[0]));
 		} else {
 			return errType;
 		}
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from())) {
@@ -661,16 +459,16 @@ Type *StdType::operator,(Type &otherType) {
 	return errType;
 }
 bool StdType::operator>>(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		StdType *otherTypeCast = (StdType *)(&otherType);
+		if (baseSendable(otherType) && kindCast(*otherTypeCast)) {
 			return true;
 		} else {
 			return false;
 		}
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		StdType *otherTypeCast = (StdType *)(&otherType);
-		if (baseSendable(otherType) && kindCast(*otherTypeCast)) {
+	} else if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
 			return true;
 		} else {
 			return false;
@@ -772,6 +570,186 @@ string StdType::toString(unsigned int tabDepth) {
 }
 StdType::operator string() {return toString(1);}
 
+// TypeList functions
+// constructor works on ParamList and TypeList
+TypeList::TypeList(const vector<Type *> &list) : Type(CATEGORY_TYPELIST), list(list) {}
+TypeList::TypeList(Type *type) : Type(CATEGORY_TYPELIST) {
+	list.push_back(type);
+}
+TypeList::TypeList() : Type(CATEGORY_TYPELIST) {
+	list.push_back(nullType);
+}
+TypeList::~TypeList() {
+	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+			delete (*iter);
+		}
+	}
+}
+bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
+Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
+void TypeList::erase() {clear(); delete this;}
+void TypeList::clear() {list.clear();}
+bool TypeList::operator==(Type &otherType) {
+	if (this == &otherType) { // if the lists are actually the same object instance, return true
+		return true;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (list.size() != otherTypeCast->list.size()) {
+			return false;
+		}
+		vector<Type *>::const_iterator iter1;
+		vector<Type *>::const_iterator iter2;
+		for (iter1 = list.begin(), iter2 = otherTypeCast->list.begin(); iter1 != list.end(); iter1++, iter2++) {
+			if (**iter1 != **iter2) {
+				return false;
+			}
+		}
+		return true;
+	} else if (list.size() == 1) {
+		return (*(list[0]) == otherType);
+	} else {
+		return false;
+	}
+}
+bool TypeList::operator==(int kind) const {return (list.size() == 1 && list[0]->category == CATEGORY_STDTYPE && ((StdType *)(list[0]))->kind == kind);}
+Type *TypeList::operator,(Type &otherType) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		StdType *otherTypeCast = (StdType *)(&otherType);
+		if (list.size() == 1 && (list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) {
+			StdType *thisTypeCast = (StdType *)(list[0]);
+			if (otherTypeCast->kind == STD_NOT && (*thisTypeCast >> *stdBoolType)) {
+				return (new StdType(STD_BOOL, SUFFIX_LATCH));
+			} else if (otherTypeCast->kind == STD_COMPLEMENT && (*thisTypeCast >> *stdIntType)) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
+			} else if ((otherTypeCast->kind == STD_DPLUS || otherTypeCast->kind == STD_DMINUS) && (*thisTypeCast >> *stdIntType)) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
+			} else if (otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
+				if (*thisTypeCast >> *stdIntType) {
+					return (new StdType(STD_INT, SUFFIX_LATCH));
+				} else if (*thisTypeCast >> *stdFloatType){
+					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
+				} else {
+					return errType;
+				}
+			} else {
+				return errType;
+			}
+		} else if (list.size() == 2 &&
+				((list[0])->category == CATEGORY_STDTYPE && ((list[0])->suffix == SUFFIX_CONSTANT || (list[0])->suffix == SUFFIX_LATCH)) &&
+				((list[1])->category == CATEGORY_STDTYPE && ((list[1])->suffix == SUFFIX_CONSTANT || (list[1])->suffix == SUFFIX_LATCH))) {
+			StdType *thisTypeCast1 = (StdType *)(list[0]);
+			StdType *thisTypeCast2 = (StdType *)(list[1]);
+			if ((otherTypeCast->kind == STD_DOR || otherTypeCast->kind == STD_DAND) &&
+					((*thisTypeCast1 >> *stdBoolType) && (*thisTypeCast2 >> *stdBoolType))) {
+				return (new StdType(STD_BOOL, SUFFIX_LATCH));
+			} else if ((otherTypeCast->kind == STD_OR || otherTypeCast->kind == STD_XOR || otherTypeCast->kind == STD_AND) &&
+					((*thisTypeCast1 >> *stdIntType) && (*thisTypeCast2 >> *stdIntType))) {
+				return (new StdType(STD_INT, SUFFIX_LATCH));
+			} else if (otherTypeCast->kind == STD_DEQUALS || otherTypeCast->kind == STD_NEQUALS ||
+					otherTypeCast->kind == STD_LT || otherTypeCast->kind == STD_GT ||
+					otherTypeCast->kind == STD_LE || otherTypeCast->kind == STD_GE) {
+				if (thisTypeCast1->kindCast(*thisTypeCast2)) {
+					return (new StdType(STD_BOOL, SUFFIX_LATCH));
+				} else {
+					return errType;
+				}
+			} else if (otherTypeCast->kind == STD_TIMES || otherTypeCast->kind == STD_DIVIDE || otherTypeCast->kind == STD_MOD ||
+					otherTypeCast->kind == STD_PLUS || otherTypeCast->kind == STD_MINUS) {
+				if ((*thisTypeCast1 >> *stdIntType) && (*thisTypeCast2 >> *stdIntType)) {
+					return (new StdType(STD_INT, SUFFIX_LATCH));
+				} else if ((*thisTypeCast1 >> *stdFloatType) && (*thisTypeCast2 >> *stdFloatType)) {
+					return (new StdType(STD_FLOAT, SUFFIX_LATCH));
+				} else {
+					return errType;
+				}
+			}
+		} else {
+			return errType;
+		}
+	} else if (otherType.category == CATEGORY_TYPELIST) {
+		return errType;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		FilterType *otherTypeCast = (FilterType *)(&otherType);
+		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
+			return otherTypeCast->to();
+		} else {
+			return errType;
+		}
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		return errType;
+	}
+	// otherType.category == CATEGORY_ERRORTYPE
+	return errType;
+}
+bool TypeList::operator>>(Type &otherType) {
+	if (this == &otherType) { // if the lists are actually the same object instance
+		return true;
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		if (list.size() == 1 && (*(list[0]) >> otherType)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (list.size() != otherTypeCast->list.size()) {
+			return false;
+		}
+		vector<Type *>::const_iterator iter1 = list.begin();
+		vector<Type *>::const_iterator iter2 = otherTypeCast->list.begin();
+		while (iter1 != list.end() && iter2 != otherTypeCast->list.end()) {
+			if (!(**iter1 >> **iter2)) {
+				return false;
+			}
+			iter1++;
+			iter2++;
+		}
+		return true;
+	} else if (otherType.category == CATEGORY_FILTERTYPE) {
+		if (list.size() == 1 && (*(list[0]) >> otherType)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
+		if (list.size() == 1) {
+			return (*(list[0]) >> otherType);
+		} else if (otherType.suffix == SUFFIX_LATCH || otherType.suffix == SUFFIX_STREAM) {
+			ObjectType *otherTypeCast = (ObjectType *)(&otherType);
+			for (StructorList::iterator iter = otherTypeCast->instructorList.begin(); iter != otherTypeCast->instructorList.end(); iter++) {
+				if (*this >> **iter) {
+					return true;
+				}
+			}
+		} else {
+			return false;
+		}
+	}
+	// otherType.category == CATEGORY_ERRORTYPE
+	return false;
+}
+string TypeList::toString(unsigned int tabDepth) {
+	TYPE_TO_STRING_HEADER;
+	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
+		acc += (*iter)->toString(tabDepth);
+		if ((iter+1) != list.end()) {
+			acc += ", ";
+		}
+	}
+	TYPE_TO_STRING_FOOTER;
+}
+TypeList::operator string() {
+	TYPE_TO_STRING_HEADER;
+	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
+		acc += (string)(**iter);
+		if ((iter+1) != list.end()) {
+			acc += ", ";
+		}
+	}
+	TYPE_TO_STRING_FOOTER;
+}
+
 // FilterType functions
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth) : Type(CATEGORY_FILTERTYPE, suffix, depth), defSite(NULL) {
 	if (from->category == CATEGORY_TYPELIST) {
@@ -836,15 +814,15 @@ bool FilterType::operator==(Type &otherType) {
 }
 bool FilterType::operator==(int kind) const {return false;}
 Type *FilterType::operator,(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		return errType;
+	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1) {
 			return (*this , *(otherTypeCast->list[0]));
 		} else {
 			return errType;
 		}
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return errType;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
@@ -861,6 +839,8 @@ Type *FilterType::operator,(Type &otherType) {
 bool FilterType::operator>>(Type &otherType) {
 	if (this == &otherType) { // if the filters are actually the same object instance
 		return true;
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		return false;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		if (otherTypeCast->list.size() == 1 && (*this >> *(otherTypeCast->list[0]))) {
@@ -868,8 +848,6 @@ bool FilterType::operator>>(Type &otherType) {
 		} else {
 			return false;
 		}
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		if (baseSendable(otherType) && operator==(otherType)) {
 			return true;
@@ -1076,13 +1054,10 @@ bool ObjectType::operator==(Type &otherType) {
 }
 bool ObjectType::operator==(int kind) const {return false;}
 Type *ObjectType::operator,(Type &otherType) {
-	if (otherType.category == CATEGORY_TYPELIST) {
-		TypeList *otherTypeCast = (TypeList *)(&otherType);
-		if (otherTypeCast->list.size() == 1) {
-			return (*this , *(otherTypeCast->list[0]));
-		} else if (suffix == SUFFIX_LATCH) {
+	if (otherType.category == CATEGORY_STDTYPE) {
+		if (suffix == SUFFIX_LATCH) {
 			for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
-				Type *outstructorFlowType = (**outsIter , *otherTypeCast);
+				Type *outstructorFlowType = (**outsIter , otherType);
 				if (*outstructorFlowType) {
 					return outstructorFlowType;
 				}
@@ -1091,10 +1066,13 @@ Type *ObjectType::operator,(Type &otherType) {
 		} else {
 			return errType;
 		}
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		if (suffix == SUFFIX_LATCH) {
+	} else if (otherType.category == CATEGORY_TYPELIST) {
+		TypeList *otherTypeCast = (TypeList *)(&otherType);
+		if (otherTypeCast->list.size() == 1) {
+			return (*this , *(otherTypeCast->list[0]));
+		} else if (suffix == SUFFIX_LATCH) {
 			for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
-				Type *outstructorFlowType = (**outsIter , otherType);
+				Type *outstructorFlowType = (**outsIter , *otherTypeCast);
 				if (*outstructorFlowType) {
 					return outstructorFlowType;
 				}
@@ -1127,6 +1105,15 @@ Type *ObjectType::operator,(Type &otherType) {
 bool ObjectType::operator>>(Type &otherType) {
 	if (this == &otherType) { // if the objects are actually the same object instance, allow the downcastability
 		return true;
+	} else if (otherType.category == CATEGORY_STDTYPE) {
+		// try an outstructed downcastability
+		for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
+			if (**outsIter >> otherType) { // if there is a type match, return true
+				return true;
+			}
+		}
+		// else if we didn't find a type match, return false
+		return false;
 	} else if (otherType.category == CATEGORY_TYPELIST) {
 		TypeList *otherTypeCast = (TypeList *)(&otherType);
 		// try a direct downcastability
@@ -1141,17 +1128,8 @@ bool ObjectType::operator>>(Type &otherType) {
 		}
 		// else if we didn't find a type match, return false
 		return false;
-	} else if (otherType.category == CATEGORY_STDTYPE) {
-		// otherwise, try an outstructed downcastability
-		for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
-			if (**outsIter >> otherType) { // if there is a type match, return true
-				return true;
-			}
-		}
-		// else if we didn't find a type match, return false
-		return false;
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
-		// otherwise, try an outstructed downcastability
+		// try an outstructed downcastability
 		for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
 			if (**outsIter >> otherType) { // if there is a type match, return true
 				return true;
@@ -1318,6 +1296,28 @@ ObjectType::operator string() {
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
+
+// ErrorType functions
+ErrorType::ErrorType() : Type(CATEGORY_ERRORTYPE) {}
+ErrorType::~ErrorType() {}
+bool ErrorType::isComparable(const Type &otherType) const {return false;}
+Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
+void ErrorType::erase() {delete this;}
+void ErrorType::clear() {}
+bool ErrorType::operator==(Type &otherType) {
+	if (otherType.category == CATEGORY_ERRORTYPE) {
+		return (this == &otherType);
+	} else {
+		return false;
+	}
+}
+bool ErrorType::operator==(int kind) const {return false;}
+Type *ErrorType::operator,(Type &otherType) {return errType;}
+bool ErrorType::operator>>(Type &otherType) {return false;}
+string ErrorType::toString(unsigned int tabDepth) {
+	return "<ERROR>";
+}
+ErrorType::operator string() {return toString(1);}
 
 // TypeStatus functions
 TypeStatus::TypeStatus(Type *type, Type *retType) : type(type), retType(retType), code(NULL) {}

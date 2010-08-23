@@ -8,8 +8,8 @@
 #include "../tmp/parserStruct.h"
 
 // Type category specifiers
-#define CATEGORY_TYPELIST 0
-#define CATEGORY_STDTYPE 1
+#define CATEGORY_STDTYPE 0
+#define CATEGORY_TYPELIST 1
 #define CATEGORY_FILTERTYPE 2
 #define CATEGORY_OBJECTTYPE 3
 #define CATEGORY_ERRORTYPE 4
@@ -74,48 +74,6 @@ class Type {
 
 // Type subclasses
 
-class TypeList : public Type {
-	public:
-		// data members
-		vector<Type *> list; // pointers to the underlying list of types
-		// allocators/deallocators
-		TypeList(const vector<Type *> &list);
-		TypeList(Type *type);
-		TypeList();
-		~TypeList();
-		// core methods
-		bool isComparable(const Type &otherType) const;
-		Type *copy();
-		void erase();
-		void clear();
-		string toString(unsigned int tabDepth);
-		// operators
-		bool operator==(Type &otherType);
-		bool operator==(int kind) const;
-		Type *operator,(Type &otherType);
-		bool operator>>(Type &otherType);
-		operator string();
-};
-
-class ErrorType : public Type {
-	public:
-		// allocators/deallocators
-		ErrorType();
-		~ErrorType();
-		// core methods
-		bool isComparable(const Type &otherType) const;
-		Type *copy();
-		void erase();
-		void clear();
-		string toString(unsigned int tabDepth);
-		// operators
-		bool operator==(Type &otherType);
-		bool operator==(int kind) const;
-		Type *operator,(Type &otherType);
-		bool operator>>(Type &otherType);
-		operator string();
-};
-
 // StdType node kinds
 #define STD_NULL 0
 #define STD_STD 1
@@ -172,6 +130,29 @@ class StdType : public Type {
 		void erase();
 		void clear();
 		string kindToString() const;
+		string toString(unsigned int tabDepth);
+		// operators
+		bool operator==(Type &otherType);
+		bool operator==(int kind) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
+		operator string();
+};
+
+class TypeList : public Type {
+	public:
+		// data members
+		vector<Type *> list; // pointers to the underlying list of types
+		// allocators/deallocators
+		TypeList(const vector<Type *> &list);
+		TypeList(Type *type);
+		TypeList();
+		~TypeList();
+		// core methods
+		bool isComparable(const Type &otherType) const;
+		Type *copy();
+		void erase();
+		void clear();
 		string toString(unsigned int tabDepth);
 		// operators
 		bool operator==(Type &otherType);
@@ -322,6 +303,25 @@ class ObjectType : public Type {
 		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix = SUFFIX_CONSTANT, int depth = 0);
 		~ObjectType();
+		// core methods
+		bool isComparable(const Type &otherType) const;
+		Type *copy();
+		void erase();
+		void clear();
+		string toString(unsigned int tabDepth);
+		// operators
+		bool operator==(Type &otherType);
+		bool operator==(int kind) const;
+		Type *operator,(Type &otherType);
+		bool operator>>(Type &otherType);
+		operator string();
+};
+
+class ErrorType : public Type {
+	public:
+		// allocators/deallocators
+		ErrorType();
+		~ErrorType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
 		Type *copy();

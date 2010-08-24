@@ -24,10 +24,11 @@
 #define KIND_FAKE 11
 
 // SymbolTree offset kinds
-#define OFFSET_NOT_ALLOCATED 0
+#define OFFSET_NULL 0
 #define OFFSET_RAW 1
 #define OFFSET_BLOCK 2
 #define OFFSET_PARTITION 3
+#define OFFSET_FREE 4
 
 class SymbolTree {
 	public:
@@ -63,7 +64,7 @@ class SymbolTree {
 
 // forward declarations of mutually recursive typing functions
 
-TypeStatus getStatusSymbolTree(SymbolTree *st, SymbolTree *parent, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
@@ -109,6 +110,14 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	}\
 	/* otherwise, compute the type normally */
 
+#define GET_STATUS_SYMBOL_TREE_HEADER \
+	/* if the type is memoized, short-circuit evaluate */\
+	Tree *tree = st->defSite;\
+	if (tree->status.type != NULL) {\
+		returnStatus(tree->status);\
+	}\
+	/* otherwise, compute the type and offset normally */
+
 #define returnType(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
 	tree->status = TypeStatus((x), inStatus.retType);\
@@ -128,7 +137,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
 	tree->status = TypeStatus(errType, NULL);\
 	return (tree->status);\
-	/* label the exit point of type derivation (i.e. the entry point for code genration) */\
+	/* label the exit point of type derivation (i.e. the entry point for code generation) */\
 	endTypeDerivation:\
 	/* if we derived a valid return status, proceed to build the intermediate code tree */\
 	if (tree->status.type->category != CATEGORY_ERRORTYPE) {

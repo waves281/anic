@@ -148,8 +148,8 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	return (tree->status);\
 	/* label the exit point of type derivation (i.e. the entry point for offset derivation) */\
 	endTypeDerivation:\
-	/* if we derived a valid return status and the offset hasn't been derived yet, proceed to derive it */\
-	if (tree->status.type->category != CATEGORY_ERRORTYPE && root->offsetKind == OFFSET_NULL) {
+	/* if the offset hasn't been derived yet and we have a valid return status, derive the offset now */\
+	if (root->offsetKind == OFFSET_NULL && tree->status.type->category != CATEGORY_ERRORTYPE) {
 
 #define returnCode(x) \
 	/* memoize the intermediate code tree and return from this function */\

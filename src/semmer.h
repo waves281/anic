@@ -24,6 +24,7 @@
 #define KIND_FAKE 11
 
 // SymbolTree offset kinds
+#define OFFSET_NULL 0
 #define OFFSET_RAW 1
 #define OFFSET_BLOCK 2
 #define OFFSET_PARTITION 3
@@ -63,7 +64,7 @@ class SymbolTree {
 
 // forward declarations of mutually recursive typing functions
 
-TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusPrimary(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
@@ -105,13 +106,13 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 #define GET_STATUS_HEADER \
 	/* if the type is memoized, short-circuit evaluate */\
 	if (tree->status.type != NULL) {\
-		return tree->status;\
+		return (tree->status);\
 	}\
 	/* otherwise, compute the type normally */
 
 #define GET_STATUS_SYMBOL_TREE_HEADER \
 	/* if the type is memoized, short-circuit evaluate */\
-	Tree *tree = st->defSite;\
+	Tree *tree = root->defSite;\
 	if (tree->status.type != NULL) {\
 		returnStatus(tree->status);\
 	}\
@@ -141,6 +142,15 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	/* if we derived a valid return status, proceed to build the intermediate code tree */\
 	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
 
+#define GET_STATUS_OFFSET \
+	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
+	tree->status = TypeStatus(errType, NULL);\
+	return (tree->status);\
+	/* label the exit point of type derivation (i.e. the entry point for offset derivation) */\
+	endTypeDerivation:\
+	/* if we derived a valid return status and the offset hasn't been derived yet, proceed to derive it */\
+	if (tree->status.type->category != CATEGORY_ERRORTYPE && root->offsetKind == OFFSET_NULL) {
+
 #define returnCode(x) \
 	/* memoize the intermediate code tree and return from this function */\
 	tree->status.code = (x);\
@@ -149,7 +159,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 #define GET_STATUS_FOOTER \
 	/* close the if-statement */\
 	}\
-	/* if we failed to do a returnCode, simply return from this function */\
+	/* if we failed to do a returnCode, returnKind, or returnKindIndex, simply return from this function */\
 	return (tree->status)
 
 #define GET_STATUS_NO_CODE_FOOTER \

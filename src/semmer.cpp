@@ -27,20 +27,24 @@ ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
 
 // SymbolTree functions
-SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0) {
+SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0) {
+SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), 
+		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0){
+SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0){
+SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
+		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
 SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children),
@@ -736,15 +740,7 @@ void subImportDecls(vector<SymbolTree *> importList) {
 // recursively derives the Type trees and offsets of all named nodes in the passed-in SymbolTree
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
-		getStatusSymbolTree(root);
-		// KOL need to properly derive the offset for all cases
-		Type *&type = root->defSite->status.type;
-		if (type->category == CATEGORY_STDTYPE && (((StdType *)(type))->kind != STD_STRING)) {
-			root->offsetKind = OFFSET_RAW;
-			root->offsetIndex = parent->addRaw();
-		} else {
-			root->offsetKind = OFFSET_FREE;
-		}
+		getStatusSymbolTree(root, parent);
 	} else if (root->kind == STD_STD) { // else if it's a standard node, ensure that it's not a copy-import of a non-referensible type
 		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
 			Token curToken = root->copyImportSite->defSite->t;
@@ -764,20 +760,29 @@ void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 }
 
 // reports errors; derives the status of this SymbolTree node, as well as deriving its subnode offset properties
-TypeStatus getStatusSymbolTree(SymbolTree *st, const TypeStatus &inStatus) {
+TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeStatus &inStatus) {
 	GET_STATUS_SYMBOL_TREE_HEADER;
-	if (st->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
+	if (root->kind == KIND_DECLARATION) { // if the symbol was defined as a Declaration-style node
 		returnStatus(getStatusDeclaration(tree));
-	} else if (st->kind == KIND_PARAMETER) { // else if the symbol was defined as a Param-style node
+	} else if (root->kind == KIND_PARAMETER) { // else if the symbol was defined as a Param-style node
 		returnStatus(getStatusType(tree->child, inStatus)); // Type
-	} else if (st->kind == KIND_INSTRUCTOR) { // else if the symbol was defined as an instructor-style node
+	} else if (root->kind == KIND_INSTRUCTOR) { // else if the symbol was defined as an instructor-style node
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
-	} else if (st->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
+	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
-	} else if (st->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
+	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		returnTypeRet(tree->status.type, inStatus);
-	}	
-	GET_STATUS_NO_CODE_FOOTER;
+	}
+	GET_STATUS_OFFSET;
+	// KOL need to properly derive the offset for all cases
+	Type *&type = root->defSite->status.type;
+	if (type->category == CATEGORY_STDTYPE && (((StdType *)(type))->kind != STD_STRING)) {
+		root->offsetKind = OFFSET_RAW;
+		root->offsetIndex = parent->addRaw();
+	} else {
+		root->offsetKind = OFFSET_FREE;
+	}
+	GET_STATUS_FOOTER;
 }
 
 // typing function definitions
@@ -789,7 +794,7 @@ TypeStatus getStatusIdentifier(Tree *tree, const TypeStatus &inStatus) {
 	pair<SymbolTree *, bool> binding = bindId(id, tree->env, inStatus);
 	SymbolTree *st = binding.first;
 	if (st != NULL) { // if we found a binding
-		TypeStatus stStatus = getStatusSymbolTree(st, inStatus);
+		TypeStatus stStatus = getStatusSymbolTree(st, st->parent, inStatus);
 		if (*stStatus) { // if we successfully extracted a type for this SymbolTree entry
 			Type *mutableStType = stStatus;
 			if (binding.second) { // do the upstream-mandated constantization if needed

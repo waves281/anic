@@ -27,24 +27,20 @@ ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
 
 // SymbolTree functions
-SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0) {
+SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0) {
+SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
-SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0){
+SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
-SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), offsetIndex(0), numRaws(0), numBlocks(0), numPartitions(0){
+SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
 SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children),
@@ -144,10 +140,6 @@ string SymbolTree::toString(unsigned int tabDepth) {
 		}
 		acc += " <";
 		switch(offsetKind) {
-			case OFFSET_NULL: {
-				acc += "???";
-				break;
-			}
 			case OFFSET_RAW: {
 				acc += "RAW:";
 				char offsetString[MAX_INT_STRING_LENGTH];

@@ -24,7 +24,6 @@
 #define KIND_FAKE 11
 
 // SymbolTree offset kinds
-#define OFFSET_NULL 0
 #define OFFSET_RAW 1
 #define OFFSET_BLOCK 2
 #define OFFSET_PARTITION 3

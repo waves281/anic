@@ -111,10 +111,10 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	/* otherwise, compute the type normally */
 
 #define GET_STATUS_SYMBOL_TREE_HEADER \
-	/* if the type is memoized, short-circuit evaluate */\
+	/* if the type is memoized, skip over type derivation */\
 	Tree *tree = root->defSite;\
 	if (tree->status.type != NULL) {\
-		returnStatus(tree->status);\
+		goto endTypeDerivation;\
 	}\
 	/* otherwise, compute the type and offset normally */
 

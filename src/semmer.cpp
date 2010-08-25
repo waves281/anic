@@ -1494,7 +1494,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	Tree *typeSuffix = tree->child->next; // TypeSuffix
-	// derive the suffix and depth first, since we'll need to know then to construct the Type object
+	// derive the suffix and depth first, since we'll need to know them in order to construct the Type object
 	bool failed = false;
 	int suffixVal;
 	int depthVal = 0;
@@ -1675,12 +1675,17 @@ TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	vector<Type *> list;
 	bool failed = false;
-	for(Tree *treeCur = tree; treeCur != NULL; treeCur = (treeCur->child->next != NULL) ? treeCur->child->next->next : NULL) { // invariant: treeCur is a TypeList
-		Tree *type = treeCur->child; // Type
-		TypeStatus curTypeStatus = getStatusType(type, inStatus);
+	for (Tree *cur = tree->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a Type
+		TypeStatus curTypeStatus = getStatusType(cur, inStatus);
 		if (*curTypeStatus) { // if we successfully derived a type for this node
-			// commit the type to the list
-			list.push_back(curTypeStatus.type);
+			if (curTypeStatus.type->instantiable) { // if the derived type is instantiable
+				list.push_back(curTypeStatus.type); // commit the type to the list
+			} else { // else if the derived type is not instantiable, flag an error
+				Token curToken = cur->t; // Type
+				semmerError(curToken.fileName,curToken.row,curToken.col,"parameterized non-instantiable node '"<<cur->child<<"'"); // NonArrayedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (parameter type is "<<curTypeStatus<<")");
+				failed = true;
+			}
 		} else { // else if we failed to derive a type for this node
 			failed = true;
 			break;
@@ -1704,7 +1709,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 				list.push_back(paramStatus.type); // commit the type to the list
 			} else { // else if the derived type is not instantiable, flag an error
 				Token curToken = cur->t; // Param
-				semmerError(curToken.fileName,curToken.row,curToken.col,"parameterization of non-instantiable node '"<<cur->child->child<<"'"); // NonArrayedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"parameterized non-instantiable node '"<<cur->child->child<<"'"); // NonArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (parameter type is "<<paramStatus<<")");
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
 				failed = true;

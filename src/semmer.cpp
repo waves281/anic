@@ -1700,8 +1700,15 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	for (Tree *cur = tree->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a Param
 		TypeStatus paramStatus = getStatusType(cur->child, inStatus); // Type
 		if (*paramStatus) { // if we successfully derived a type for this node
-			// commit the type to the list
-			list.push_back(paramStatus.type);
+			if (paramStatus.type->instantiable) { // if the derived type is instantiable
+				list.push_back(paramStatus.type); // commit the type to the list
+			} else { // else if the derived type is not instantiable, flag an error
+				Token curToken = cur->t; // Param
+				semmerError(curToken.fileName,curToken.row,curToken.col,"parameterization of non-instantiable node '"<<cur->child->child<<"'"); // NonArrayedIdentifier
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (parameter type is "<<paramStatus<<")");
+				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+				failed = true;
+			}
 		} else { // else if we failed to derive a type for this node
 			failed = true;
 		}

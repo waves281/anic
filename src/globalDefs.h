@@ -92,6 +92,10 @@ extern StdType *stdCharType;
 extern StdType *stdStringType;
 extern StdType *stdBoolLitType;
 
+extern StdType *inIntType;
+extern StdType *inFloatType;
+extern StdType *inCharType;
+extern StdType *inStringType;
 extern ObjectType *stringerType;
 extern ObjectType *boolUnOpType;
 extern ObjectType *intUnOpType;

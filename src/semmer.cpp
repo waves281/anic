@@ -15,6 +15,10 @@ StdType *stdFloatType;
 StdType *stdCharType;
 StdType *stdStringType;
 StdType *stdBoolLitType;
+StdType *inIntType;
+StdType *inFloatType;
+StdType *inCharType;
+StdType *inStringType;
 ObjectType *stringerType;
 ObjectType *boolUnOpType;
 ObjectType *intUnOpType;
@@ -207,10 +211,10 @@ void catStdLib(SymbolTree *&stRoot) {
 	SymbolTree *stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
-	*stdLib *= new SymbolTree(KIND_STD, "inInt", new StdType(STD_INT, SUFFIX_LATCH));
-	*stdLib *= new SymbolTree(KIND_STD, "inFloat", new StdType(STD_FLOAT, SUFFIX_LATCH));
-	*stdLib *= new SymbolTree(KIND_STD, "inChar", new StdType(STD_CHAR, SUFFIX_LATCH));
-	*stdLib *= new SymbolTree(KIND_STD, "inString", new StdType(STD_STRING, SUFFIX_LATCH));
+	*stdLib *= new SymbolTree(KIND_STD, "inInt", inIntType);
+	*stdLib *= new SymbolTree(KIND_STD, "inFloat", inFloatType);
+	*stdLib *= new SymbolTree(KIND_STD, "inChar", inCharType);
+	*stdLib *= new SymbolTree(KIND_STD, "inString", inStringType);
 	*stdLib *= new SymbolTree(KIND_STD, "out", stringerType);
 	*stdLib *= new SymbolTree(KIND_STD, "err", stringerType);
 	// control nodes
@@ -225,14 +229,14 @@ void catStdLib(SymbolTree *&stRoot) {
 
 void initStdTypes() {
 	// build the standard types
-	nullType = new StdType(STD_NULL); nullType->operable = false;
+	nullType = new StdType(STD_NULL); nullType->referensible = false;
 	errType = new ErrorType();
-	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->operable = false;
-	stdBoolType = new StdType(STD_BOOL); stdBoolType->operable = false;
-	stdIntType = new StdType(STD_INT); stdIntType->operable = false;
-	stdFloatType = new StdType(STD_FLOAT); stdFloatType->operable = false;
-	stdCharType = new StdType(STD_CHAR); stdCharType->operable = false;
-	stdStringType = new StdType(STD_STRING); stdStringType->operable = false;
+	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->referensible = false; stdLibType->instantiable = false;
+	stdBoolType = new StdType(STD_BOOL); stdBoolType->referensible = false;
+	stdIntType = new StdType(STD_INT); stdIntType->referensible = false;
+	stdFloatType = new StdType(STD_FLOAT); stdFloatType->referensible = false;
+	stdCharType = new StdType(STD_CHAR); stdCharType->referensible = false;
+	stdStringType = new StdType(STD_STRING); stdStringType->referensible = false;
 	stdBoolLitType = new StdType(STD_BOOL, SUFFIX_LATCH);
 	// build some auxiliary types
 	// latches
@@ -259,55 +263,60 @@ void initStdTypes() {
 	vector<Type *> stringPair;
 	stringPair.push_back(stdStringType); stringPair.push_back(stdStringType);
 	Type *stringPairType = new TypeList(stringPair);
+	// build the in* types
+	inIntType = new StdType(STD_INT, SUFFIX_LATCH); inIntType->instantiable = false;
+	inFloatType = new StdType(STD_FLOAT, SUFFIX_LATCH); inFloatType->instantiable = false;
+	inCharType = new StdType(STD_CHAR, SUFFIX_LATCH); inCharType->instantiable = false;
+	inStringType = new StdType(STD_STRING, SUFFIX_LATCH); inStringType->instantiable = false;
 	// build the stringerType
 	StructorList instructorList;
 	StructorList stringerOutstructorList;
-	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->operable = false;
+	TypeList *stringOutstructorType = new TypeList(stdStringType); stringOutstructorType->referensible = false;
 	stringerOutstructorList.add(stringOutstructorType);
-	stringerType = new ObjectType(instructorList, stringerOutstructorList, SUFFIX_LIST, 1); stringerType->operable = false;
+	stringerType = new ObjectType(instructorList, stringerOutstructorList, SUFFIX_LIST, 1); stringerType->referensible = false; stringerType->instantiable = false;
 	// prepare to build the standard operator types
 	TypeList *filterOutstructorType;
 	StructorList opOutstructorList;
 	// build the boolUnOpType
 	filterOutstructorType = new TypeList(new FilterType(stdBoolType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	boolUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolUnOpType->operable = false;
+	boolUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolUnOpType->referensible = false;
 	// build the intUnOpType
 	filterOutstructorType = new TypeList(new FilterType(stdIntType, intLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	intUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intUnOpType->operable = false;
+	intUnOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intUnOpType->referensible = false;
 	// build the boolBinOpType
 	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	boolBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolBinOpType->operable = false;
+	boolBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolBinOpType->referensible = false;
 	// build the intBinOpType
 	filterOutstructorType = new TypeList(new FilterType(intPairType, intLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	intBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intBinOpType->operable = false;
+	intBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intBinOpType->referensible = false;
 	// build the floatBinOpType
 	filterOutstructorType = new TypeList(new FilterType(floatPairType, floatLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	floatBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatBinOpType->operable = false;
+	floatBinOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatBinOpType->referensible = false;
 	// build the boolCompOpType
 	filterOutstructorType = new TypeList(new FilterType(boolPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	boolCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolCompOpType->operable = false;
+	boolCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); boolCompOpType->referensible = false;
 	// build the intCompOpType
 	filterOutstructorType = new TypeList(new FilterType(intPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	intCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intCompOpType->operable = false;
+	intCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); intCompOpType->referensible = false;
 	// build the floatCompOpType
 	filterOutstructorType = new TypeList(new FilterType(floatPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	floatCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatCompOpType->operable = false;
+	floatCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); floatCompOpType->referensible = false;
 	// build the charCompOpType
 	filterOutstructorType = new TypeList(new FilterType(charPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	charCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); charCompOpType->operable = false;
+	charCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); charCompOpType->referensible = false;
 	// build the stringCompOpType
 	filterOutstructorType = new TypeList(new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
-	stringCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); stringCompOpType->operable = false;
+	stringCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); stringCompOpType->referensible = false;
 }
 
 SymbolTree *genDefaultDefs() {
@@ -743,7 +752,7 @@ void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTree(root, parent);
 	} else if (root->kind == STD_STD) { // else if it's a standard node, ensure that it's not a copy-import of a non-referensible type
-		if (root->copyImportSite != NULL && !(root->defSite->status.type->operable)) { // if it's a copy-import of a non-referensible type, flag an error
+		if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
 			Token curToken = root->copyImportSite->defSite->t;
 			semmerError(curToken.fileName,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->id<<"'");
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<root->defSite->status.type<<")");
@@ -1720,20 +1729,10 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 		mutableIdStatus.type->poolize();
 		returnStatus(mutableIdStatus);
 	} else /* if (*tree == TOKEN_CopyInstantiationSource) */ { // else if it's a copy-style instantiation
-		TypeStatus idStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
-		if (*idStatus) { // if we managed to derive a type for the identifier we're copying from
-			Tree *accessorc = tree->child->child; // SLASH
-			if (idStatus->operable) { // if the type that we're copying is operable
-				TypeStatus mutableIdStatus = idStatus;
-				mutableIdStatus.type = mutableIdStatus.type->copy();
-				mutableIdStatus.type->copyDelatch();
-				returnStatus(mutableIdStatus);
-			} else {
-				Token curToken = accessorc->t; // SLASH
-				semmerError(curToken.fileName,curToken.row,curToken.col,"copy instantiation of non-referensible type");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (type is "<<idStatus<<")");
-			}
-		}
+		TypeStatus mutableIdStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->copyDelatch();
+		returnStatus(mutableIdStatus);
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
@@ -1745,9 +1744,10 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
-		if (*instantiationStatus == *stdLibType) { // if we are instantiating the standard library node, flag an error
+		if (!(instantiationStatus.type->instantiable)) { // if we are instantiating an uninstantiable node, flag an error
 			Token curToken = is->t; // InstantiationSource
-			semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation of non-instantiable node '"<<STANDARD_LIBRARY_STRING<<"'");
+			Tree *identifier = ((*(is->child) == TOKEN_NonArrayedIdentifier) ? is->child: is->child->next);// NonArrayedIdentifier or ArrayedIdentifier
+			semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation of non-instantiable node '"<<identifier<<"'"); 
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
 			returnTypeRet(errType, NULL);
 		}
@@ -1852,7 +1852,7 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 	if (*tstc == TOKEN_Node) { // if it's a regular node
 		TypeStatus nodeStatus = getStatusNode(tstc, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the sub-node
-			if (nodeStatus->operable) { // if the node is referensible on its own
+			if (nodeStatus->referensible) { // if the node is referensible on its own
 				Tree *tstcc = tstc->child;
 				if ((*tstcc == TOKEN_NonArrayedIdentifier || *tstcc == TOKEN_ArrayedIdentifier) &&
 						!(nodeStatus->category == CATEGORY_FILTERTYPE && nodeStatus->suffix == SUFFIX_LATCH) && nodeStatus.type != stdBoolLitType) { // if the Node needs to be constantized
@@ -1892,7 +1892,7 @@ TypeStatus getStatusAccess(Tree *tree, const TypeStatus &inStatus) {
 	// first, derive the Type of the Node that we're acting upon
 	TypeStatus nodeStatus = getStatusNode(tree->child->next, inStatus); // Node
 	if (*nodeStatus) { // if we managed to derive a type for the subnode
-		if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
+		if (!(nodeStatus->referensible)) { // else if it's a standard node that we can't use an access operator on, flag an error
 			Token curToken = tree->child->child->t; // SLASH, SSLASH, ASLASH, DSLASH, DSSLASH, or DASLASH
 			semmerError(curToken.fileName,curToken.row,curToken.col,"access of immutable node '"<<tree->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
@@ -2055,7 +2055,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Send) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the send destination
-			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
+			if ((nodeStatus->referensible || nodeStatus.type == stringerType) &&
 					(nodeStatus.type != stdBoolLitType)) { // if the destination allows sends
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);
@@ -2065,7 +2065,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (source type is "<<inStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 				}
-			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
+			} else if (!(nodeStatus->referensible)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // RARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"send to immutable node '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
@@ -2077,7 +2077,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Swap) {
 		TypeStatus nodeStatus = getStatusNode(dtc->child->next, inStatus);
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
-			if ((nodeStatus->operable || nodeStatus.type == stringerType) &&
+			if ((nodeStatus->referensible || nodeStatus.type == stringerType) &&
 					(nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
 				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
 					returnType(nullType);
@@ -2087,7 +2087,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (source type is "<<inStatus<<")");
 					semmerError(curToken.fileName,curToken.row,curToken.col,"-- (destination type is "<<nodeStatus<<")");
 				}
-			} else if (!(nodeStatus->operable)) { // else if it's a standard node that we can't use an access operator on, flag an error
+			} else if (!(nodeStatus->referensible)) { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = dtc->child->t; // LRARROW
 				semmerError(curToken.fileName,curToken.row,curToken.col,"swap with immutable node '"<<dtc->child->next->child<<"'"); // NonArrayedIdentifier or ArrayedIdentifier
 				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");

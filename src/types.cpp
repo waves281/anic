@@ -3,7 +3,7 @@
 #include "outputOperators.h"
 
 // Type functions
-Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), operable(true), toStringHandled(false) {}
+Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), referensible(true), instantiable(true), toStringHandled(false) {}
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
 	return (
@@ -425,7 +425,7 @@ bool StdType::objectTypePromotion(Type &otherType) const {
 	// none of the above cases succeeded, so return false
 	return false;
 }
-Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->operable = true; return retVal;}
+Type *StdType::copy() {Type *retVal = new StdType(*this); retVal->referensible = true; return retVal;}
 void StdType::erase() {delete this;}
 void StdType::clear() {}
 bool StdType::operator==(Type &otherType) {
@@ -581,13 +581,13 @@ TypeList::TypeList() : Type(CATEGORY_TYPELIST) {
 }
 TypeList::~TypeList() {
 	for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->referensible)) {
 			delete (*iter);
 		}
 	}
 }
 bool TypeList::isComparable(const Type &otherType) const {return (list.size() == 1 && list[0]->isComparable(otherType));}
-Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->operable = true; return retVal;}
+Type *TypeList::copy() {Type *retVal = new TypeList(*this); retVal->referensible = true; return retVal;}
 void TypeList::erase() {clear(); delete this;}
 void TypeList::clear() {list.clear();}
 bool TypeList::operator==(Type &otherType) {
@@ -799,7 +799,7 @@ TypeList *FilterType::to() { // either TypeList or errType
 	return toInternal;
 }
 bool FilterType::isComparable(const Type &otherType) const {return false;}
-Type *FilterType::copy() {Type *retVal = new FilterType(*this); retVal->operable = true; return retVal;}
+Type *FilterType::copy() {Type *retVal = new FilterType(*this); retVal->referensible = true; return retVal;}
 void FilterType::erase() {clear(); delete this;}
 void FilterType::clear() {fromInternal = NULL; toInternal = NULL; defSite = NULL;}
 bool FilterType::operator==(Type &otherType) {
@@ -986,23 +986,23 @@ ObjectType::ObjectType(const StructorList &instructorList, const StructorList &o
 	Type(CATEGORY_OBJECTTYPE, suffix, depth), instructorList(instructorList), outstructorList(outstructorList), memberList(memberList) {}
 ObjectType::~ObjectType() {
 	for (StructorList::iterator iter = instructorList.begin(); iter != instructorList.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->referensible)) {
 			delete (Type *)(*iter);
 		}
 	}
 	for (StructorList::iterator iter = outstructorList.begin(); iter != outstructorList.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->referensible)) {
 			delete (Type *)(*iter);
 		}
 	}
 	for (MemberList::iterator iter = memberList.begin(); iter != memberList.end(); iter++) {
-		if (**iter != *nullType && **iter != *errType && !((*iter)->operable)) {
+		if (**iter != *nullType && **iter != *errType && !((*iter)->referensible)) {
 			delete (Type *)(*iter);
 		}
 	}
 }
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
-Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); retVal->operable = true; return retVal;}
+Type *ObjectType::copy() {ObjectType *retVal = new ObjectType(*this); retVal->referensible = true; return retVal;}
 void ObjectType::erase() {clear(); delete this;}
 void ObjectType::clear() {instructorList.clear(); outstructorList.clear(); memberList.clear();}
 bool ObjectType::operator==(Type &otherType) {
@@ -1301,7 +1301,7 @@ ObjectType::operator string() {
 ErrorType::ErrorType() : Type(CATEGORY_ERRORTYPE) {}
 ErrorType::~ErrorType() {}
 bool ErrorType::isComparable(const Type &otherType) const {return false;}
-Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->operable = true; return retVal;}
+Type *ErrorType::copy() {Type *retVal = new ErrorType(*this); retVal->referensible = true; return retVal;}
 void ErrorType::erase() {delete this;}
 void ErrorType::clear() {}
 bool ErrorType::operator==(Type &otherType) {

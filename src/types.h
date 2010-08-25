@@ -30,7 +30,8 @@ class Type {
 		int category; // the category that this Type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
-		bool operable; // whether a node of this type can be operated upon
+		bool referensible; // whether a node of this type can be referenced on its own
+		bool instantiable; // whether a node of this type can be instantiated
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
 		void constantize(); // for when an identifier is present without an accessor or a sub-identifier's type is constrained by upstream identifiers

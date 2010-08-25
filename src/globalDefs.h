@@ -84,6 +84,7 @@ extern int gennerErrorCode;
 extern Type *nullType;
 extern Type *errType;
 class StdType;
+extern StdType *stdLibType;
 extern StdType *stdBoolType;
 extern StdType *stdIntType;
 extern StdType *stdFloatType;

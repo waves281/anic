@@ -8,6 +8,7 @@ int semmerErrorCode;
 
 Type *nullType;
 Type *errType;
+StdType *stdLibType;
 StdType *stdBoolType;
 StdType *stdIntType;
 StdType *stdFloatType;
@@ -203,7 +204,6 @@ void catStdNodes(SymbolTree *&stRoot) {
 
 void catStdLib(SymbolTree *&stRoot) {
 	// standard root
-	StdType *stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->operable = false;
 	SymbolTree *stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
@@ -227,6 +227,7 @@ void initStdTypes() {
 	// build the standard types
 	nullType = new StdType(STD_NULL); nullType->operable = false;
 	errType = new ErrorType();
+	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->operable = false;
 	stdBoolType = new StdType(STD_BOOL); stdBoolType->operable = false;
 	stdIntType = new StdType(STD_INT); stdIntType->operable = false;
 	stdFloatType = new StdType(STD_FLOAT); stdFloatType->operable = false;
@@ -1744,6 +1745,12 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	Tree *is = tree->child->next; // InstantiationSource
 	TypeStatus instantiationStatus = getStatusInstantiationSource(is, inStatus); // BlankInstantiationSource or CopyInstantiationSource
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
+		if (*instantiationStatus == *stdLibType) { // if we are instantiating the standard library node, flag an error
+			Token curToken = is->t; // InstantiationSource
+			semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation of non-instantiable node '"<<STANDARD_LIBRARY_STRING<<"'");
+			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
+			returnTypeRet(errType, NULL);
+		}
 		if (is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) { // if there is no initializer or a null initializer, simply return the derived type
 			returnStatus(instantiationStatus);
 		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible

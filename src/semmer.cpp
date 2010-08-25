@@ -781,7 +781,7 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
-		returnTypeRet(tree->status.type, inStatus);
+		return (tree->status);
 	}
 	GET_STATUS_OFFSET;
 	// KOL need to properly derive the offset for all cases
@@ -1758,7 +1758,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	if (*instantiationStatus) { // if we successfully derived a type for the instantiation
 		if (!(instantiationStatus.type->instantiable)) { // if we are instantiating an uninstantiable node, flag an error
 			Token curToken = is->t; // InstantiationSource
-			Tree *identifier = ((*(is->child) == TOKEN_NonArrayedIdentifier) ? is->child: is->child->next);// NonArrayedIdentifier or ArrayedIdentifier
+			Tree *identifier = (*(is->child) == TOKEN_NonArrayedIdentifier) ? is->child: is->child->next;// NonArrayedIdentifier or ArrayedIdentifier
 			semmerError(curToken.fileName,curToken.row,curToken.col,"instantiation of non-instantiable node '"<<identifier<<"'"); 
 			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
 			returnTypeRet(errType, NULL);

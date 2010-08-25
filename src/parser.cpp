@@ -127,22 +127,22 @@ Tree::operator string() const {
 					TypeStatus expStatus = getStatusExp(curn->child->next);
 					if (!(*expStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
-						semmerError(curToken.fileName,curToken.row,curToken.col,"array subscript is invalid");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"array subscript is invalid");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 					}
 					retVal += "[]";
 				} else { // else if this is an extent subscript
 					TypeStatus leftExpStatus = getStatusExp(curn->child->next);
 					if (!(*leftExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
-						semmerError(curToken.fileName,curToken.row,curToken.col,"left extent subscript is invalid");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<leftExpStatus<<")");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"left extent subscript is invalid");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<leftExpStatus<<")");
 					}
 					TypeStatus rightExpStatus = getStatusExp(curn->child->next);
 					if (!(*rightExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->next->next->t; // Exp
-						semmerError(curToken.fileName,curToken.row,curToken.col,"right extent subscript is invalid");
-						semmerError(curToken.fileName,curToken.row,curToken.col,"-- (subscript type is "<<rightExpStatus<<")");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"right extent subscript is invalid");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<rightExpStatus<<")");
 					}
 					retVal += "[:]";
 				}
@@ -194,7 +194,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 	treeCur = treeToAdd;
 }
 
-int parse(vector<Token> *lexeme, Tree *&parseme, string &fileName) {
+int parse(vector<Token> *lexeme, Tree *&parseme, unsigned int fileIndex) {
 
 	// initialize error code
 	parserErrorCode = 0;
@@ -242,7 +242,7 @@ transitionParserState: ;
 			// create the token that the promoted node will have
 			Token t;
 			t.tokenType = tokenType;
-			t.fileName = fileName;
+			t.fileIndex = fileIndex;
 			t.row = treeCur != NULL ? treeCur->t.row : 0;
 			t.col = treeCur != NULL ? treeCur->t.col : 0;
 			// promote the current token, as appropriate
@@ -273,7 +273,7 @@ transitionParserState: ;
 			} else {
 				errorString += "\'" + t.s + "\'";
 			}
-			parserError(fileName, t.row, t.col, errorString);
+			parserError(fileIndex, t.row, t.col, errorString);
 			break;
 		}
 	}

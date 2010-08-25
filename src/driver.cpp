@@ -18,24 +18,22 @@ bool silentMode = SILENT_MODE_DEFAULT;
 int tabModulus = TAB_MODULUS_DEFAULT;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
+vector<string> inFileNames; // source file name vector
+
 // header print functions
 
 void printHeader(void) {
 	cerr << HEADER_LITERAL;
 }
-
 void printUsage(void) {
 	cerr << USAGE_LITERAL;
 }
-
 void printSeeAlso(void) {
 	cerr << SEE_ALSO_LITERAL;
 }
-
 void printLink(void) {
 	cerr << LINK_LITERAL;
 }
-
 void printHelp(void) {
 	printHeader();
 	printUsage();
@@ -51,7 +49,6 @@ void die(int errorCode) {
 	}
 	exit(errorCode);
 }
-
 void die(void) {
 	die(0);
 }
@@ -88,7 +85,6 @@ int main(int argc, char **argv) {
 	}
 	// now, parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
-	vector<string> inFileNames; // source file name vector
 	string outFileName(OUTPUT_FILE_DEFAULT); // initialize the output file name
 	// handled flags for each option
 	bool oHandled = false;
@@ -181,12 +177,7 @@ int main(int argc, char **argv) {
 			}
 
 		} else { // default case; assume regular file argument
-			string fileName;
-			if (argv[i][0] == '-') {
-				fileName = STD_IN_FILE_NAME;
-			} else {
-				fileName = argv[i];
-			}
+			string fileName = (argv[i][0] != '-') ? argv[i] : STD_IN_FILE_NAME;
 			if (containsString(inFileNames, fileName)) {
 				printWarning("including file '" << fileName << "' multiple times");
 				continue;
@@ -222,7 +213,7 @@ int main(int argc, char **argv) {
 		)
 		// do the actual lexing
 		int thisLexError = 0; // one-shot error flag
-		vector<Token> *lexeme = lex(inFiles[i], fileName);
+		vector<Token> *lexeme = lex(inFiles[i], i);
 		if (lexeme == NULL) { // if lexing failed with an error, log the error condition
 			thisLexError = 1;
 		} else { // else if lexing was successful, log the lexeme to the vector
@@ -249,21 +240,17 @@ int main(int argc, char **argv) {
 
 	// parse lexemes
 	int parserError = 0; // error flag
-	unsigned int fileIndex = 0; // file name index
 	Tree *treeRoot = NULL; // the root parseme of the parse tree
 	Tree *treeCur = NULL; // the tail of the linked list of parsemes
+	unsigned int fileIndex = 0; // current lexeme's file name index
 	for (vector<vector<Token> *>::iterator lexemeIter = lexemes.begin(); lexemeIter != lexemes.end(); lexemeIter++) {
-		string fileName(inFileNames[fileIndex]);
-		if (fileName == "-") {
-			fileName = STD_IN_FILE_NAME;
-		}
-		VERBOSE(printNotice("parsing file \'" << fileName << "\'...");)
+		VERBOSE(printNotice("parsing file \'" << inFileNames[fileIndex] << "\'...");)
 		// do the actual parsing
 		Tree *thisParseme;
-		int thisParseError = parse(*lexemeIter, thisParseme, fileName);
+		int thisParseError = parse(*lexemeIter, thisParseme, fileIndex);
 		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
-				printNotice("failed to parse file \'" << fileName << "\'");
+				printNotice("failed to parse file \'" << inFileNames[fileIndex] << "\'");
 				print(""); // new line
 			)
 		} else { // else if parsing was successful, latch the parseme into the tree trunk
@@ -279,7 +266,7 @@ int main(int argc, char **argv) {
 				treeRoot = treeCur = thisParseme;
 			}
 			VERBOSE(
-				printNotice("successfully parsed file \'" << fileName << "\'");
+				printNotice("successfully parsed file \'" << inFileNames[fileIndex] << "\'");
 				print(""); // new line
 			)
 		}
@@ -287,7 +274,7 @@ int main(int argc, char **argv) {
 		if (thisParseError > parserError) {
 			parserError = thisParseError;
 		}
-		// advance file name index
+		// advance the file index
 		fileIndex++;
 	}
 	// now, check if parsing failed and if so, kill the system as appropriate

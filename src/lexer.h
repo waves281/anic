@@ -12,19 +12,19 @@ class Token {
 		// data members
 		int tokenType;
 		string s;
-		string fileName;
+		unsigned int fileIndex;
 		int row;
 		int col;
 		// allocators/deallocators
 		Token(int tokenType = TOKEN_STD);
-		Token(int tokenType, const string &s, const string &fileName, int row, int col);
+		Token(int tokenType, const string &s, unsigned int fileIndex, int row, int col);
 		Token(const Token &otherToken);
 		~Token();
 		// operators
 		Token &operator=(Token &otherToken);
 };
 
-vector<Token> *lex(ifstream *in, string &fileName);
+vector<Token> *lex(ifstream *in, unsigned int fileIndex);
 
 // post-includes
 

@@ -7,11 +7,11 @@
 int lexerErrorCode;
 
 // Token functions
-Token::Token(int tokenType) : tokenType(tokenType), row(0), col(0) {}
-Token::Token(int tokenType, const string &s, const string &fileName, int row, int col) : tokenType(tokenType), s(s), fileName(fileName), row(row), col(col) {}
-Token::Token(const Token &otherToken) : tokenType(otherToken.tokenType), s(otherToken.s), fileName(otherToken.fileName), row(otherToken.row), col(otherToken.col) {}
+Token::Token(int tokenType) : tokenType(tokenType), fileIndex(STANDARD_LIBRARY_FILE_INDEX), row(0), col(0) {}
+Token::Token(int tokenType, const string &s, unsigned int fileIndex, int row, int col) : tokenType(tokenType), s(s), fileIndex(fileIndex), row(row), col(col) {}
+Token::Token(const Token &otherToken) : tokenType(otherToken.tokenType), s(otherToken.s), fileIndex(otherToken.fileIndex), row(otherToken.row), col(otherToken.col) {}
 Token::~Token() {}
-Token &Token::operator=(Token &otherToken) {tokenType = otherToken.tokenType; s = otherToken.s; fileName = otherToken.fileName; row = otherToken.row; col = otherToken.col; return *this;}
+Token &Token::operator=(Token &otherToken) {tokenType = otherToken.tokenType; s = otherToken.s; fileIndex = otherToken.fileIndex; row = otherToken.row; col = otherToken.col; return *this;}
 
 // main lexing functions
 
@@ -36,9 +36,9 @@ void resetState(string &s, int &state, int &tokenType) {
 	return;
 }
 
-void commitToken(string &s, int &state, int &tokenType, string &fileName, int rowStart, int colStart, vector<Token> *outputVector, char c) {
+void commitToken(string &s, int &state, int &tokenType, unsigned int fileIndex, int rowStart, int colStart, vector<Token> *outputVector, char c) {
 	// first, build up the token
-	Token t(tokenType, s, fileName, rowStart, colStart);
+	Token t(tokenType, s, fileIndex, rowStart, colStart);
 	// now, commit it to the output vector
 	outputVector->push_back(t);
 	// finally, reset our state back to the default
@@ -77,7 +77,7 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 	}
 }
 
-vector<Token> *lex(ifstream *in, string &fileName) {
+vector<Token> *lex(ifstream *in, unsigned int fileIndex) {
 
 	// initialize error variables
 	lexerErrorCode = 0;
@@ -128,12 +128,12 @@ lexerLoopTop: ;
 		// first, check it it was a special character
 		if (isWhiteSpace(c)) { // whitespace?
 			if (tokenType == TOKEN_ERROR) { // if we got whitespace space while in error mode,
-				lexerError(fileName,rowStart,colStart,"whitespace-truncated token");
+				lexerError(fileIndex,rowStart,colStart,"whitespace-truncated token");
 				// throw away this token and continue parsing
 				resetState(s, state, tokenType);
 				carryOver = c;
 			} else if (tokenType != -1) { // else if we were in a commitable state, commit this token to the output vector
-				commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
+				commitToken(s, state, tokenType, fileIndex, rowStart, colStart, outputVector, c);
 			}
 			if (isNewLine(c)) { // newline?
 				// bump up the row count and carriage return the column
@@ -151,7 +151,7 @@ lexerLoopTop: ;
 				// second, check if we're jumping into a failure state
 				if(transition.tokenType == TOKEN_FAIL) { // if it's a failure state, print an error, reset, and continue
 					// print the error message
-					lexerError(fileName,row,col,"token mangled by stray character 0x"<<hex(c));
+					lexerError(fileIndex,row,col,"token mangled by stray character 0x"<<hex(c));
 					// also, reset state
 					resetState(s, state, tokenType);
 					// however, carry over the faulting character, as it might be useful for later debugging
@@ -192,7 +192,7 @@ lexerLoopTop: ;
 							col++;
 						}
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
-							lexerError(fileName,rowStart,colStart,"/* comment truncated by EOF");
+							lexerError(fileIndex,rowStart,colStart,"/* comment truncated by EOF");
 							done = true;
 							goto lexerLoopTop;
 						} else if (isNewLine(c)) { // if we hit a newline, update the row and col as necessary
@@ -219,9 +219,9 @@ lexerLoopTop: ;
 						}
 						if (!retVal) { // if we hit EOF, flag a critical comment truncation error and signal that we're done
 							if (termChar == '\'') {
-								lexerError(fileName,rowStart,colStart,"character literal truncated by EOF");
+								lexerError(fileIndex,rowStart,colStart,"character literal truncated by EOF");
 							} else {
-								lexerError(fileName,rowStart,colStart,"string literal truncated by EOF");
+								lexerError(fileIndex,rowStart,colStart,"string literal truncated by EOF");
 							}
 							done = true;
 							goto lexerLoopTop;
@@ -263,7 +263,7 @@ lexerLoopTop: ;
 								// continue so the character isn't logged
 								continue;
 							} else { // else if it's an unrecognized escape sequence, throw an error and discard the character
-								lexerError(fileName,row,col-1,"unrecognized escape sequence "<<ESCAPE_CHARACTER<<"0x"<<hex(c));
+								lexerError(fileIndex,row,col-1,"unrecognized escape sequence "<<ESCAPE_CHARACTER<<"0x"<<hex(c));
 								// unflag the condition
 								lastCharWasEsc = false;
 								// continue so the character isn't logged
@@ -274,19 +274,19 @@ lexerLoopTop: ;
 						if (!lastCharWasEsc) { // if we don't need special forced commiting of this character due to escaping
 							if (isNewLine(c)) { // if we hit a newline, throw a quote truncation error
 								if (termChar == '\'') {
-									lexerError(fileName,rowStart,colStart,"character literal truncated by end of line");
+									lexerError(fileIndex,rowStart,colStart,"character literal truncated by end of line");
 								} else {
-									lexerError(fileName,rowStart,colStart,"string literal truncated by end of line");
+									lexerError(fileIndex,rowStart,colStart,"string literal truncated by end of line");
 								}
 								row++;
 								col = 0;
 								goto lexerLoopTop;
 							} else if (c == termChar) { // else if we've found the end of the quote
 								if (termChar == '\'' && s.size() > 1) { // if this is an overflowing CQUOTE, throw a CQUOTE overflow error
-									lexerError(fileName,rowStart,colStart,"character literal overflow");
+									lexerError(fileIndex,rowStart,colStart,"character literal overflow");
 								}
 								// either way, commit the token and continue with processing
-								commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
+								commitToken(s, state, tokenType, fileIndex, rowStart, colStart, outputVector, c);
 								break;
 							}
 						} else { // else if we *do* need to force the character to commit due to escaping
@@ -298,7 +298,7 @@ lexerLoopTop: ;
 						if (s.size() < (MAX_TOKEN_LENGTH-1)) { // else if there is room in the buffer for this character, log it
 							s += c;
 						} else { // else if there is no more room in the buffer for this character, discard the token with an error
-							lexerError(fileName,rowStart,colStart,"quoted literal overflow");
+							lexerError(fileIndex,rowStart,colStart,"quoted literal overflow");
 							// also, reset state and scan to the end of this token
 							resetState(s, state, tokenType);
 							discardToken(in, c, row, col, done);
@@ -312,7 +312,7 @@ lexerLoopTop: ;
 						tokenType = transition.tokenType;
 						state = transition.toState;
 					} else { // else if there is no more room in the buffer for this character, discard the token with an error
-						lexerError(fileName,rowStart,colStart,"token overflow");
+						lexerError(fileIndex,rowStart,colStart,"token overflow");
 						// also, reset state and scan to the end of this token
 						resetState(s, state, tokenType);
 						discardToken(in, c, row, col, done);
@@ -320,20 +320,20 @@ lexerLoopTop: ;
 				}
 			} else { // else if the transition isn't valid
 				if (tokenType == -1) { // if there were no valid characters before this junk
-					lexerError(fileName,row,col,"stray character 0x"<<hex(c));
+					lexerError(fileIndex,row,col,"stray character 0x"<<hex(c));
 					// now, reset the state and try to recover by eating up characters until we hit whitespace or EOF
 					// reset state
 					resetState(s, state, tokenType);
 					discardToken(in, c, row, col, done);
 				} else if (tokenType == TOKEN_ERROR) { // else if it's an invalid transition from an error state, flag it
 					// print the error message
-					lexerError(fileName,row,col,"token truncated by stray character 0x"<<hex(c));
+					lexerError(fileIndex,row,col,"token truncated by stray character 0x"<<hex(c));
 					// also, reset state
 					resetState(s, state, tokenType);
 					// however, carry over the faulting character, as it might be useful for later debugging
 					carryOver = c;
 				} else { // else if there is a valid commit pending, do it and carry over this character for the next round
-					commitToken(s, state, tokenType, fileName, rowStart, colStart, outputVector, c);
+					commitToken(s, state, tokenType, fileIndex, rowStart, colStart, outputVector, c);
 					// also, carry over the current character to the next round
 					carryOver = c;
 				}
@@ -351,7 +351,7 @@ lexerLoopTop: ;
 	} else {
 		// augment the vector with the end token
 		string eofString("EOF");
-		Token termToken(TOKEN_END, eofString, fileName, 0, 0);
+		Token termToken(TOKEN_END, eofString, fileIndex, 0, 0);
 		outputVector->push_back(termToken);
 		// print out the lexeme if we're in verbose mode
 		VERBOSE(

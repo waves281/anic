@@ -76,6 +76,8 @@ extern bool silentMode;
 extern int tabModulus;
 extern bool eventuallyGiveUp;
 
+extern vector<string> inFileNames;
+
 extern int lexerErrorCode;
 extern int parserErrorCode;
 extern int semmerErrorCode;

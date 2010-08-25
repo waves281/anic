@@ -17,7 +17,7 @@ class Token {
 		int col;
 		// allocators/deallocators
 		Token(int tokenType = TOKEN_STD);
-		Token(int tokenType, string &s, string &fileName, int row, int col);
+		Token(int tokenType, const string &s, const string &fileName, int row, int col);
 		Token(const Token &otherToken);
 		~Token();
 		// operators

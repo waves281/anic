@@ -8,7 +8,6 @@ int semmerErrorCode;
 
 Type *nullType;
 Type *errType;
-StdType *stdLibType;
 StdType *stdBoolType;
 StdType *stdIntType;
 StdType *stdFloatType;
@@ -30,6 +29,8 @@ ObjectType *intCompOpType;
 ObjectType *floatCompOpType;
 ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
+StdType *stdLibType;
+SymbolTree *stdLib;
 
 // SymbolTree functions
 SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
@@ -207,8 +208,6 @@ void catStdNodes(SymbolTree *&stRoot) {
 }
 
 void catStdLib(SymbolTree *&stRoot) {
-	// standard root
-	SymbolTree *stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 	// system nodes
 	// streams
 	*stdLib *= new SymbolTree(KIND_STD, "inInt", inIntType);
@@ -227,11 +226,10 @@ void catStdLib(SymbolTree *&stRoot) {
 	*stRoot *= stdLib;
 }
 
-void initStdTypes() {
+void initGlobals() {
 	// build the standard types
 	nullType = new StdType(STD_NULL); nullType->referensible = false;
 	errType = new ErrorType();
-	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->referensible = false; stdLibType->instantiable = false;
 	stdBoolType = new StdType(STD_BOOL); stdBoolType->referensible = false;
 	stdIntType = new StdType(STD_INT); stdIntType->referensible = false;
 	stdFloatType = new StdType(STD_FLOAT); stdFloatType->referensible = false;
@@ -317,6 +315,10 @@ void initStdTypes() {
 	filterOutstructorType = new TypeList(new FilterType(stringPairType, boolLatchType, SUFFIX_LATCH));
 	opOutstructorList = stringerOutstructorList; opOutstructorList.add(filterOutstructorType);
 	stringCompOpType = new ObjectType(instructorList, opOutstructorList, SUFFIX_LATCH); stringCompOpType->referensible = false;
+	// build the standard library type
+	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->referensible = false; stdLibType->instantiable = false;
+	// build the standard library node
+	stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
 }
 
 SymbolTree *genDefaultDefs() {
@@ -644,6 +646,9 @@ void subImportDecls(vector<SymbolTree *> importList) {
 			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
 				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
 					(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
+					if (copyImport) { // if it was a copy-import, log the import site as the standard library node
+						(*importIter)->copyImportSite = stdLib;
+					}
 					stdExplicitlyImported = true;
 					continue;
 				}
@@ -751,17 +756,17 @@ void subImportDecls(vector<SymbolTree *> importList) {
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
 		getStatusSymbolTree(root, parent);
-	} else if (root->kind == STD_STD) { // else if it's a standard node, ensure that it's not a copy-import of a non-referensible type
-		if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
-			Token curToken = root->copyImportSite->defSite->t;
-			semmerError(curToken.fileName,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->id<<"'");
-			semmerError(curToken.fileName,curToken.row,curToken.col,"-- (identifier type is "<<root->defSite->status.type<<")");
-		} else { // else if it's an allowable standard node, set it to free allocation
-			root->offsetKind = OFFSET_FREE;
-		}
+	} else if (root->kind == STD_STD) { // else if it's a standard node, set it to free allocation
+		root->offsetKind = OFFSET_FREE;
 	} else if (root->kind == KIND_FILTER || root->kind == KIND_OBJECT) { // else if it's an object or filter node, set it to partition allocation
 		root->offsetKind = OFFSET_PARTITION;
 		root->offsetIndex = parent->addPartition();
+	}
+	// ensure that this isn't a copy-import of non-referensible nodes
+	if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
+		Token curToken = root->defSite->t;
+		Token sourceToken = root->copyImportSite->defSite->t;
+		semmerError(curToken.fileName,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->copyImportSite->id<<"'");
 	}
 	// recurse on this node's children
 	for (map<string, SymbolTree *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
@@ -1879,7 +1884,6 @@ TypeStatus getStatusTypedStaticTerm(Tree *tree, const TypeStatus &inStatus) {
 			} else { // else if it's a standard node that we can't use an access operator on, flag an error
 				Token curToken = tstc->child->child->t; // guaranteed to be ID, since only NonArrayedIdentifier or ArrayedIdentifier nodes generate inoperable types
 				semmerError(curToken.fileName,curToken.row,curToken.col,"reference to non-referensible node '"<<tstc->child<<"'");
-				semmerError(curToken.fileName,curToken.row,curToken.col,"-- (node type is "<<nodeStatus<<")");
 			}
 		}
 	} else if (*tstc == TOKEN_BracketedExp) { // else if it's an expression
@@ -2434,8 +2438,8 @@ int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 
 	VERBOSE( printNotice("building symbol tree..."); )
 
-	// initialize the standard types used for type comparison during analysis
-	initStdTypes();
+	// initialize the standard types and nodes
+	initGlobals();
 	
 	// build the symbol tree
 	stRoot = genDefaultDefs(); // initialize the symbol tree root with the default definitions

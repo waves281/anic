@@ -84,7 +84,6 @@ extern int gennerErrorCode;
 extern Type *nullType;
 extern Type *errType;
 class StdType;
-extern StdType *stdLibType;
 extern StdType *stdBoolType;
 extern StdType *stdIntType;
 extern StdType *stdFloatType;
@@ -107,6 +106,9 @@ extern ObjectType *intCompOpType;
 extern ObjectType *floatCompOpType;
 extern ObjectType *charCompOpType;
 extern ObjectType *stringCompOpType;
+
+extern StdType *stdLibType;
+extern SymbolTree *stdLib;
 
 // global function forward declarations
 

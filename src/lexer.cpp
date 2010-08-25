@@ -8,7 +8,7 @@ int lexerErrorCode;
 
 // Token functions
 Token::Token(int tokenType) : tokenType(tokenType), row(0), col(0) {}
-Token::Token(int tokenType, string &s, string &fileName, int row, int col) : tokenType(tokenType), s(s), fileName(fileName), row(row), col(col) {}
+Token::Token(int tokenType, const string &s, const string &fileName, int row, int col) : tokenType(tokenType), s(s), fileName(fileName), row(row), col(col) {}
 Token::Token(const Token &otherToken) : tokenType(otherToken.tokenType), s(otherToken.s), fileName(otherToken.fileName), row(otherToken.row), col(otherToken.col) {}
 Token::~Token() {}
 Token &Token::operator=(Token &otherToken) {tokenType = otherToken.tokenType; s = otherToken.s; fileName = otherToken.fileName; row = otherToken.row; col = otherToken.col; return *this;}

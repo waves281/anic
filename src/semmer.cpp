@@ -55,12 +55,7 @@ SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copy
 }
 SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children),
 	offsetKind(st.offsetKind), offsetIndex(st.offsetIndex), numRaws(st.numRaws), numBlocks(st.numBlocks), numPartitions(st.numPartitions) {}
-SymbolTree::~SymbolTree() {
-	// delete all of the child nodes
-	for (map<string, SymbolTree *>::const_iterator childIter = children.begin(); childIter != children.end(); childIter++) {
-		delete (*childIter).second;
-	}
-}
+SymbolTree::~SymbolTree() {}
 unsigned int SymbolTree::addRaw() {return (numRaws++);}
 unsigned int SymbolTree::addBlock() {return (numBlocks++);}
 unsigned int SymbolTree::addPartition() {return (numPartitions++);}
@@ -646,93 +641,124 @@ void subImportDecls(vector<SymbolTree *> importList) {
 				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
 			string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
 			SymbolTree *importParent = (*importIter)->parent;
-			// check for the standard library import special case
-			if (importPath == STANDARD_LIBRARY_STRING) { // if it's the standard import
-				if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
-					(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
-					if (copyImport) { // if it was a copy-import, log the import site as the standard library node
-						(*importIter)->copyImportSite = stdLib;
-					}
-					stdExplicitlyImported = true;
-					continue;
-				}
-			}
-			// otherwise, try to find a non-std binding for this import
+			// try to find a binding for this import
 			SymbolTree *binding = bindId(importPath, *importIter).first;
 			if (binding != NULL) { // if we found a valid binding
-				string importPathTip = binding->id; // must exist if binding succeeed
-				if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import
-					// check to make sure that this import doesn't cause a binding conflict
-					string importPathTip = binding->id; // must exist if binding succeeed
-					map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find(importPathTip);
-					if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
-						if (copyImport) { // if this is a copy-import
-							**importIter = *(new SymbolTree(*binding, importParent, binding)); // scope to the local environment
-						} else { // else if this is not a copy-import
-							**importIter = *(new SymbolTree(*binding, binding->parent, NULL)); // scope to the foreign environment
+				// check for the standard library import special case
+				if (binding == stdLib) { // if the import binds to the standard library node
+					if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import of the standard library node
+						if (copyImport) { // if it was a copy-import, log the import site as the standard library node (this will flag an error later)
+							(*importIter)->copyImportSite = stdLib;
 						}
-					} else { // else if there was a conflict, flag an error
-						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
-						Token prevDefToken;
-						if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
-							prevDefToken = (*conflictFind).second->defSite->t;
-						} else { // otherwise, it must be a standard definition, so make up the token as if it was
-							prevDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
-							prevDefToken.row = 0;
-							prevDefToken.col = 0;
+						if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
+							(*importIter)->id = STANDARD_IMPORT_DECL_STRING;
+							stdExplicitlyImported = true;
+							continue;
 						}
-						semmerError(curDefToken.fileIndex,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
-						semmerError(prevDefToken.fileIndex,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
-					}
-				} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import
-					// verify that what's being open-imported is actually an object by finding an object-style child in the binding's children
-					map<string, SymbolTree *>::const_iterator bindingChildIter;
-					for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
-						if ((*bindingChildIter).second->kind == KIND_OBJECT) {
-							break;
-						}
-					}
-					if (bindingChildIter != binding->children.end()) { // if we found an object-style child in this open-import's children (it's a valid open-impoprt of an object)
-						SymbolTree *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
+					} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import of the standard library node
 						// add in the imported nodes, scanning for conflicts along the way
 						bool firstInsert = true;
-						for (map<string, SymbolTree *>::const_iterator bindingBaseIter = bindingBase->children.begin();
-								bindingBaseIter != bindingBase->children.end();
-								bindingBaseIter++) {
-							// check for member naming conflicts (constructor type conflicts will be resolved later)
-							map<string, SymbolTree *>::const_iterator conflictFind = (*importIter)->children.find((*bindingBaseIter).second->id);
-							if (conflictFind == (*importIter)->children.end()) { // if there were no member naming conflicts
+						for (map<string, SymbolTree *>::const_iterator childIter = binding->children.begin();
+								childIter != binding->children.end();
+								childIter++) {
+							// check for naming conflicts
+							map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find((*childIter).second->id);
+							if (conflictFind == importParent->children.end()) { // if there were no member naming conflicts
 								if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
 									if (copyImport) { // if this is a copy-import
-										**importIter = *(new SymbolTree(*((*bindingBaseIter).second), importParent, (*bindingBaseIter).second)); // scope to the local environment
+										**importIter = SymbolTree(*((*childIter).second), importParent, (*childIter).second); // scope to the local environment
 									} else { // else if this is not a copy-import
-										**importIter = *(new SymbolTree(*((*bindingBaseIter).second), (*bindingBaseIter).second->parent, NULL)); // scope to the foreign environment
+										**importIter = SymbolTree(*((*childIter).second), (*childIter).second->parent, NULL); // scope to the foreign environment
 									}
 									firstInsert = false;
 								} else { // else if this is not the first insertion, latch in a copy of the child
-									SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), NULL, (copyImport) ? (*bindingBaseIter).second : NULL); // build the copy, scoping to NULL for now
+									SymbolTree *baseChildCopy = new SymbolTree(*((*childIter).second), NULL, (copyImport) ? (*childIter).second : NULL); // build the copy, scoping to NULL for now
 									*((*importIter)->parent) *= baseChildCopy; // latch in the copy
 									// correct the scope based on whether this is a copy-import or not
 									if (copyImport) { // if this is a copy-import
 										baseChildCopy->parent = importParent; // scope to the local environment
 									} else { // else if this is not a copy-import
-										baseChildCopy->parent = (*bindingBaseIter).second->parent; // scope to the foreign environment
+										baseChildCopy->parent = (*childIter).second->parent; // scope to the foreign environment
 									}
 								}
 							} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
 						}
-					} else { // else if we didn't find an object-style child in this open-import's children (it's an open-impoprt of a non-object), flag an error
-						Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
-						Token prevDefToken;
-						if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
-							prevDefToken = binding->defSite->t;
-						} else { // otherwise, it must be a standard definition, so make up the token as if it was
-							prevDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
-							prevDefToken.row = 0;
-							prevDefToken.col = 0;
+					}
+				} else { // else if the import doesn't bind to the standard library node, proceed with normal import processing
+					string importPathTip = binding->id; // must exist if binding succeeed
+					if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import
+						// check to make sure that this import doesn't cause a binding conflict
+						string importPathTip = binding->id; // must exist if binding succeeed
+						map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find(importPathTip);
+						if (conflictFind == importParent->children.end()) { // there was no conflict, so just copy the binding in place of the import placeholder node
+							if (copyImport) { // if this is a copy-import
+								**importIter = SymbolTree(*binding, importParent, binding); // scope to the local environment
+							} else { // else if this is not a copy-import
+								**importIter = SymbolTree(*binding, binding->parent, NULL); // scope to the foreign environment
+							}
+						} else { // else if there was a conflict, flag an error
+							Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
+							Token prevDefToken;
+							if ((*conflictFind).second->defSite != NULL) { // if there is a definition site for the previous symbol
+								prevDefToken = (*conflictFind).second->defSite->t;
+							} else { // otherwise, it must be a standard definition, so make up the token as if it was
+								prevDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
+								prevDefToken.row = 0;
+								prevDefToken.col = 0;
+							}
+							semmerError(curDefToken.fileIndex,curDefToken.row,curDefToken.col,"name conflict in importing '"<<importPathTip<<"'");
+							semmerError(prevDefToken.fileIndex,prevDefToken.row,prevDefToken.col,"-- (conflicting definition was here)");
 						}
-						semmerError(curDefToken.fileIndex,curDefToken.row,curDefToken.col,"open import on non-object '"<<importPathTip<<"'");
-						semmerError(prevDefToken.fileIndex,prevDefToken.row,prevDefToken.col,"-- (importing from here)");
+					} else /* if ((*importIter)->kind == KIND_OPEN_IMPORT) */ { // else if this is an open-import
+						// verify that what's being open-imported is actually an object by finding an object-style child in the binding's children
+						map<string, SymbolTree *>::const_iterator bindingChildIter;
+						for (bindingChildIter = binding->children.begin(); bindingChildIter != binding->children.end(); bindingChildIter++) {
+							if ((*bindingChildIter).second->kind == KIND_OBJECT) {
+								break;
+							}
+						}
+						if (bindingChildIter != binding->children.end()) { // if we found an object-style child in this open-import's children (it's a valid open-impoprt of an object)
+							SymbolTree *bindingBase = (*bindingChildIter).second; // KIND_OBJECT; this node's children are the ones we're going to import in
+							// add in the imported nodes, scanning for conflicts along the way
+							bool firstInsert = true;
+							for (map<string, SymbolTree *>::const_iterator bindingBaseIter = bindingBase->children.begin();
+									bindingBaseIter != bindingBase->children.end();
+									bindingBaseIter++) {
+								// check for member naming conflicts (constructor type conflicts will be resolved later)
+								map<string, SymbolTree *>::const_iterator conflictFind = importParent->children.find((*bindingBaseIter).second->id);
+								if (conflictFind == importParent->children.end()) { // if there were no member naming conflicts
+									if (firstInsert) { // if this is the first insertion, copy in place of the import placeholder node
+										if (copyImport) { // if this is a copy-import
+											**importIter = SymbolTree(*((*bindingBaseIter).second), importParent, (*bindingBaseIter).second); // scope to the local environment
+										} else { // else if this is not a copy-import
+											**importIter = SymbolTree(*((*bindingBaseIter).second), (*bindingBaseIter).second->parent, NULL); // scope to the foreign environment
+										}
+										firstInsert = false;
+									} else { // else if this is not the first insertion, latch in a copy of the child
+										SymbolTree *baseChildCopy = new SymbolTree(*((*bindingBaseIter).second), NULL, (copyImport) ? (*bindingBaseIter).second : NULL); // build the copy, scoping to NULL for now
+										*((*importIter)->parent) *= baseChildCopy; // latch in the copy
+										// correct the scope based on whether this is a copy-import or not
+										if (copyImport) { // if this is a copy-import
+											baseChildCopy->parent = importParent; // scope to the local environment
+										} else { // else if this is not a copy-import
+											baseChildCopy->parent = (*bindingBaseIter).second->parent; // scope to the foreign environment
+										}
+									}
+								} // else if there is a member naming conflict, do nothing; the import is overridden by what's already there
+							}
+						} else { // else if we didn't find an object-style child in this open-import's children (it's an open-impoprt of a non-object), flag an error
+							Token curDefToken = importId->child->t; // child of NonArrayedIdentifier or ArrayedIdentifier
+							Token prevDefToken;
+							if (binding->defSite != NULL) { // if there is a definition site for the previous symbol
+								prevDefToken = binding->defSite->t;
+							} else { // otherwise, it must be a standard definition, so make up the token as if it was
+								prevDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
+								prevDefToken.row = 0;
+								prevDefToken.col = 0;
+							}
+							semmerError(curDefToken.fileIndex,curDefToken.row,curDefToken.col,"open import on non-object '"<<importPathTip<<"'");
+							semmerError(prevDefToken.fileIndex,prevDefToken.row,prevDefToken.col,"-- (importing from here)");
+						}
 					}
 				}
 			} else { // else if no binding could be found

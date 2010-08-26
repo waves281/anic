@@ -784,15 +784,17 @@ void subImportDecls(vector<SymbolTree *> importList) {
 
 // recursively derives the Type trees and offsets of all named nodes in the passed-in SymbolTree
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
-	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a named node, derive its type
+	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER ||
+			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR ||
+			root->kind == KIND_FILTER || root->kind == KIND_OBJECT) { // if it's a simply derivable node, derive its type
 		getStatusSymbolTree(root, parent);
-	} else if (root->kind == STD_STD) { // else if it's a standard node, set it to free allocation
-		root->offsetKind = OFFSET_FREE;
-	} else if (root->kind == KIND_FILTER || root->kind == KIND_OBJECT) { // else if it's an object or filter node, set it to partition allocation
+	} else if (root->kind == KIND_BLOCK && parent != NULL) { // else if it's a non-root block node, set it to partition allocation
 		root->offsetKind = OFFSET_PARTITION;
 		root->offsetIndex = parent->addPartition();
+	} else if (root->kind == STD_STD) { // else if it's a standard node, set it to free allocation
+		root->offsetKind = OFFSET_FREE;
 	}
-	// ensure that this isn't a copy-import of non-referensible nodes
+	// ensure that this isn't a copy-import of a non-referensible node
 	if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
 		Token curToken = root->defSite->t;
 		Token sourceToken = root->copyImportSite->defSite->t;
@@ -815,17 +817,35 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
 	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
+	} else if (root->kind == KIND_FILTER) { // else if the symbol was defined as a filter-style node
+		returnStatus(getStatusFilter(tree, inStatus)); // Filter
+	} else if (root->kind == KIND_OBJECT) { // else if the symbol was defined as an object-style node
+		returnStatus(getStatusObject(tree, inStatus)); // Object
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		return (tree->status);
 	}
 	GET_STATUS_OFFSET;
 	// KOL need to properly derive the offset for all cases
-	Type *&type = root->defSite->status.type;
-	if (type->category == CATEGORY_STDTYPE && (((StdType *)(type))->kind != STD_STRING)) {
-		root->offsetKind = OFFSET_RAW;
-		root->offsetIndex = parent->addRaw();
-	} else {
+	Type *type = root->defSite->status.type;
+	if (type->suffix == SUFFIX_CONSTANT || type->suffix == SUFFIX_LATCH) {
+		if (type->category == CATEGORY_STDTYPE) {
+			if ((((StdType *)(type))->kind != STD_STRING)) {
+				root->offsetKind = OFFSET_RAW;
+				root->offsetIndex = parent->addRaw();
+			} else {
+				root->offsetKind = OFFSET_BLOCK;
+				root->offsetIndex = parent->addBlock();
+			}
+		} else /* if (type->category == CATEGORY_FILTERTYPE || type->category == CATEGORY_OBJECTTYPE) */ { // note that CATEGORY_TYPELIST never occurs in SymbolTree nodes
+			root->offsetKind = OFFSET_PARTITION;
+			root->offsetIndex = parent->addPartition();
+		}
+	} else if (type->suffix == SUFFIX_LIST || type->suffix == SUFFIX_ARRAY || type->suffix == SUFFIX_POOL) {
+		// KOL this is not correctly implemented yet
 		root->offsetKind = OFFSET_FREE;
+	} else /* if (type->suffix == SUFFIX_STREAM) */ {
+		root->offsetKind = OFFSET_PARTITION;
+		root->offsetIndex = parent->addPartition();
 	}
 	GET_STATUS_FOOTER;
 }
@@ -1432,7 +1452,6 @@ TypeStatus verifyStatusObject(Tree *tree) {
 					}
 				}
 			}
-			
 		} else { // else if we failed to derive a type for this instructor
 			failed = true;
 		}
@@ -1686,7 +1705,6 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 							} else { // else if we failed to derive a type
 								failed = true;
 							}
-							
 						} else { // else if there was a naming conflict with this member
 							Token curDefToken = cur->child->t;
 							Token prevDefToken = *iter2;

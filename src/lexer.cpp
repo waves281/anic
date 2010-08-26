@@ -100,7 +100,7 @@ void discardToken(ifstream *in, char c, int &row, int &col, bool &done) {
 
 vector<Token> *lex(ifstream *in, unsigned int fileIndex) {
 
-	// initialize error variables
+	// initialize local error code
 	lexerErrorCode = 0;
 
 	// declare and initialize lexer structure

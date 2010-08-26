@@ -2499,7 +2499,7 @@ SchedTree *genCodeRoot(Tree *treeRoot) {
 // main semming function; makes no assumptions about stRoot and codeRoot's values; they're just return parameters
 int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 
-	// initialize error code
+	// initialize local error code
 	semmerErrorCode = 0;
 
 	VERBOSE( printNotice("building symbol tree..."); )

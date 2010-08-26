@@ -196,7 +196,7 @@ void shiftPromoteNullToken(Tree *&treeCur, Token &t) {
 
 int parse(vector<Token> *lexeme, Tree *&parseme, unsigned int fileIndex) {
 
-	// initialize error code
+	// initialize local error code
 	parserErrorCode = 0;
 
 	// initialize parser structures

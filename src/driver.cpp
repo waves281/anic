@@ -12,6 +12,8 @@
 
 // global variables
 
+int driverErrorCode;
+
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
@@ -78,12 +80,17 @@ int containsString(vector<string> inFileNames, string &s) {
 // main driver function
 
 int main(int argc, char **argv) {
+	
+	// initialize local error code
+	driverErrorCode = 0;
+
 	// verify arguments
 	if (argc == 1) {
 		printHelp();
 		die();
 	}
-	// now, parse the command-line arguments
+	
+	// parse the command-line arguments
 	vector<ifstream *> inFiles; // source file vector
 	string outFileName(OUTPUT_FILE_DEFAULT); // initialize the output file name
 	// handled flags for each option
@@ -185,7 +192,6 @@ int main(int argc, char **argv) {
 			ifstream *inFile = (fileName == STD_IN_FILE_NAME) ? NULL : new ifstream(fileName.c_str()); // create a stream for this file
 			if (inFile != NULL && !inFile->good()) { // if file open failed
 				printError("cannot open input file '" << fileName << "'");
-				die();
 			} else { // else if file open succeeded, add the file and its name to the appropriate vectors
 				inFiles.push_back(inFile);
 				inFileNames.push_back(fileName);
@@ -193,8 +199,10 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// terminate if there were no input files
-	if (inFiles.empty()) {
+	// terminate if there was an error or if there are no input files
+	if (driverErrorCode) {
+		die(1);
+	} else if (inFiles.empty()) {
 		printError("no input files");
 		die();
 	}

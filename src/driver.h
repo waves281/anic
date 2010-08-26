@@ -56,7 +56,7 @@
 #define print(s) if (!silentMode) { cout << s << "\n"; }
 #define printLabel(s) if (!silentMode) { cout << "\n" << s << "\n"; }
 #define printNotice(s) if (!silentMode) { cout << PROGRAM_STRING << ": " << s << ".\n"; }
-#define printError(s) if (!silentMode) { cerr << ERROR_STRING << ": " << s << ".\n"; }
+#define printError(s) if (!silentMode) { cerr << ERROR_STRING << ": " << s << ".\n"; }; driverErrorCode++;
 #define printWarning(s) if (!silentMode) { cerr << WARNING_STRING << ": " << s << ".\n"; }
 
 #define GET_FILE_NAME(fi) ((fi != STANDARD_LIBRARY_FILE_INDEX) ? inFileNames[fi] : STANDARD_LIBRARY_FILE_NAME)

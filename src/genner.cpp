@@ -511,7 +511,7 @@ void SchedTree::asmDump(string &asmString) const {
 // main code generation function; asmDump is the assembler text generated
 int gen(SchedTree *codeRoot, string &asmString) {
 
-	// initialize error code
+	// initialize local error code
 	gennerErrorCode = 0;
 	
 	// recursively generate the assembly code for the program

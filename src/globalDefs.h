@@ -78,6 +78,7 @@ extern bool eventuallyGiveUp;
 
 extern vector<string> inFileNames;
 
+extern int driverErrorCode;
 extern int lexerErrorCode;
 extern int parserErrorCode;
 extern int semmerErrorCode;

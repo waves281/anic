@@ -2427,7 +2427,16 @@ TypeStatus getStatusDeclaration(Tree *tree) {
 		if (*(tree->child) != TOKEN_AT && *(tree->child) != TOKEN_DAT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a standard declaration
-				returnTypeRet(getStatusTypedStaticTerm(declarationSub), NULL);
+				TypeStatus derivedStatus = getStatusTypedStaticTerm(declarationSub);
+				if (*derivedStatus) { // if we managed to derive a type for this node
+					if (derivedStatus.type->category != CATEGORY_TYPELIST) { // if the derived type is not a TypeList, simply return it 
+						returnTypeRet(derivedStatus, NULL);
+					} else { // else if the derived type is a TypeList, flag an error
+						Token curToken = tree->t; // Declaration
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"declaration of compound-typed identifier '"<<tree->child->t.s<<"'");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (identifier type is "<<derivedStatus<<")");
+					}
+				}
 			} else if (*declarationSub == TOKEN_BlankInstantiation) { // else if it's a blank instantiation declaration
 				returnTypeRet(getStatusInstantiation(declarationSub), NULL);
 			}

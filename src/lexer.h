@@ -22,6 +22,7 @@ class Token {
 		~Token();
 		// operators
 		Token &operator=(Token &otherToken);
+		operator string() const;
 };
 
 vector<Token> *lex(ifstream *in, unsigned int fileIndex);

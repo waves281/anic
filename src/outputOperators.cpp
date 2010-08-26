@@ -3,7 +3,7 @@
 // operator definitions
 
 ostream &operator<< (ostream &os, Token &t) {
-	os << "[" << tokenType2String(t.tokenType) << ' ' << t.s << " (" << t.row << ',' << t.col << ")]";
+	os << ((string)(t));
 	return os;
 }
 

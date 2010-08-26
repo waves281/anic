@@ -19,14 +19,14 @@ bool Type::baseSendable(const Type &otherType) const {
 string Type::suffixString() const {
 	string acc;
 	if (suffix == SUFFIX_LATCH) {
-		acc = '\\';
+		acc += '\\';
 	} else if (suffix == SUFFIX_LIST) {
 		for (int i = 0; i < depth; i++) {
-			acc = "[]";
+			acc += "[]";
 		}
 	} else if (suffix == SUFFIX_STREAM) {
 		for (int i = 0; i < depth; i++) {
-			acc = "\\\\";
+			acc += "\\\\";
 		}
 	} else if (suffix == SUFFIX_ARRAY) {
 		for (int i = 0; i < depth; i++) {
@@ -503,7 +503,6 @@ string StdType::kindToString() const {
 			return "int";
 		case STD_FLOAT:
 			return "float";
-			break;
 		case STD_BOOL:
 			return "bool";
 		case STD_CHAR:
@@ -564,7 +563,10 @@ string StdType::kindToString() const {
 }
 string StdType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
+	acc = SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(CYAN_CODE);
 	acc += kindToString();
+	acc += SET_TERM(RESET_CODE);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
@@ -871,21 +873,39 @@ bool FilterType::operator>>(Type &otherType) {
 }
 string FilterType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
-	acc = "[";
+	acc = SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
+	acc += '[';
+	acc += SET_TERM(RESET_CODE);
 	acc += from()->toString(tabDepth+1);
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
 	acc += " --> ";
+	acc += SET_TERM(RESET_CODE);
 	acc += to()->toString(tabDepth+1);
-	acc += "]";
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
+	acc += ']';
+	acc += SET_TERM(RESET_CODE);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
 FilterType::operator string() {
 	TYPE_TO_STRING_HEADER;
-	acc = "[";
+	acc = SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
+	acc += '[';
+	acc += SET_TERM(RESET_CODE);
 	acc += (string)(*(from()));
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
 	acc += " --> ";
+	acc += SET_TERM(RESET_CODE);
 	acc += (string)(*(to()));
-	acc += "]";
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(GREEN_CODE);
+	acc += ']';
+	acc += SET_TERM(RESET_CODE);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
@@ -1208,91 +1228,179 @@ bool ObjectType::operator>>(Type &otherType) {
 }
 string ObjectType::toString(unsigned int tabDepth) {
 	TYPE_TO_STRING_HEADER;
-	acc = "{";
+	acc = SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(RED_CODE);
+	acc += '{';
+	acc += SET_TERM(RESET_CODE);
 	for (StructorList::iterator iter = instructorList.begin(); iter != instructorList.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
-		acc += "=[";
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
+		acc += '=';
+		acc += SET_TERM(RESET_CODE);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
+		acc += "[";
+		acc += SET_TERM(RESET_CODE);
 		acc += (*iter)->toString(tabDepth+1);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
 		acc += ']';
+		acc += SET_TERM(RESET_CODE);
 		StructorList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != instructorList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
-	if (instructorList.size() > 0 && outstructorList.size() > 0) {
+	if (instructorList.size() > 0 && (outstructorList.size() > 0 || memberList.size() > 0)) {
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(RED_CODE);
 		acc += ", ";
+		acc += SET_TERM(RESET_CODE);
 	}
 	for (StructorList::iterator iter = outstructorList.begin(); iter != outstructorList.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
-		acc += "=[--> ";
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
+		acc += '=';
+		acc += SET_TERM(RESET_CODE);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);	
+		acc += "[--> ";
+		acc += SET_TERM(RESET_CODE);
 		acc += (*iter)->toString(tabDepth+1);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
 		acc += ']';
+		acc += SET_TERM(RESET_CODE);
 		StructorList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != outstructorList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
 	if (outstructorList.size() > 0 && memberList.size() > 0) {
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(RED_CODE);
 		acc += ", ";
+		acc += SET_TERM(RESET_CODE);
 	}
 	for (MemberList::iterator iter = memberList.begin(); iter != memberList.end(); iter++) {
 		TYPE_TO_STRING_INDENT;
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
 		acc += (string)(*iter);
+		acc += SET_TERM(RESET_CODE);
 		acc += '=';
 		acc += (*iter)->toString(tabDepth+1);
 		MemberList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != memberList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
 	TYPE_TO_STRING_INDENT_CLOSE;
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(RED_CODE);
 	acc += '}';
+	acc += SET_TERM(RESET_CODE);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }
 ObjectType::operator string() {
 	TYPE_TO_STRING_HEADER;
-	acc = "{";
+	acc = SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(RED_CODE);
+	acc += '{';
+	acc += SET_TERM(RESET_CODE);
 	for (StructorList::iterator iter = instructorList.begin(); iter != instructorList.end(); iter++) {
-		acc += "=[";
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
+		acc += '=';
+		acc += SET_TERM(RESET_CODE);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
+		acc += "[";
+		acc += SET_TERM(RESET_CODE);
 		acc += (string)(**iter);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
 		acc += ']';
+		acc += SET_TERM(RESET_CODE);
 		StructorList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != instructorList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
-	if (instructorList.size() > 0 && outstructorList.size() > 0) {
+	if (instructorList.size() > 0 && (outstructorList.size() > 0 || memberList.size() > 0)) {
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(RED_CODE);
 		acc += ", ";
+		acc += SET_TERM(RESET_CODE);
 	}
 	for (StructorList::iterator iter = outstructorList.begin(); iter != outstructorList.end(); iter++) {
-		acc += "=[-->";
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
+		acc += '=';
+		acc += SET_TERM(RESET_CODE);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);	
+		acc += "[--> ";
+		acc += SET_TERM(RESET_CODE);
 		acc += (string)(**iter);
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(GREEN_CODE);
 		acc += ']';
+		acc += SET_TERM(RESET_CODE);
 		StructorList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != outstructorList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
 	if (outstructorList.size() > 0 && memberList.size() > 0) {
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(RED_CODE);
 		acc += ", ";
+		acc += SET_TERM(RESET_CODE);
 	}
 	for (MemberList::iterator iter = memberList.begin(); iter != memberList.end(); iter++) {
+		acc += SET_TERM(BRIGHT_CODE);
+		acc += SET_TERM(MAGENTA_CODE);
 		acc += (string)(*iter);
+		acc += SET_TERM(RESET_CODE);
 		acc += '=';
-		acc += (string)(*((Type *)(*iter)));
+		acc += (string)(**iter);
 		MemberList::iterator tempIter = iter;
 		tempIter++;
 		if (tempIter != memberList.end()) {
+			acc += SET_TERM(BRIGHT_CODE);
+			acc += SET_TERM(RED_CODE);
 			acc += ", ";
+			acc += SET_TERM(RESET_CODE);
 		}
 	}
+	acc += SET_TERM(BRIGHT_CODE);
+	acc += SET_TERM(RED_CODE);
 	acc += '}';
+	acc += SET_TERM(RESET_CODE);
 	acc += suffixString();
 	TYPE_TO_STRING_FOOTER;
 }

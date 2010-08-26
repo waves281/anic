@@ -228,7 +228,7 @@ transitionParserState: ;
 			shiftToken(treeCur, t);
 			stateStack.push(transition.n);
 
-			VERBOSE( cout << "\tSHIFT\t" << curState << "\t->\t" << transition.n << "\t[" << tokenType2String(t.tokenType) << "]\n"; )
+			VERBOSE( cout << "\t" << BRIGHT_MAGENTA("SHIFT") << "\t" << curState << "\t->\t" << transition.n << "\t[" << BRIGHT_CYAN(tokenType2String(t.tokenType)) << "]\n"; )
 
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleRhsLength[transition.n];
@@ -257,13 +257,13 @@ transitionParserState: ;
 
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];
-				cout << "\tREDUCE\t" << curState << "\t->\t" << stateStack.top() << "\t<" << tokenString << ">\n";
+				cout << "\t" << BRIGHT_GREEN("REDUCE") << "\t" << curState << "\t->\t" << stateStack.top() << "\t<" << BRIGHT_CYAN(tokenString) << ">\n";
 			)
 
 			goto transitionParserState;
 		} else if (transition.action == ACTION_ACCEPT) {
 
-			VERBOSE( cout << "\tACCEPT\n"; )
+			VERBOSE( cout << "\t" << BRIGHT_WHITE("ACCEPT") << "\n"; )
 
 			break;
 		} else if (transition.action == ACTION_ERROR) {

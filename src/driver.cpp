@@ -45,7 +45,7 @@ void printHelp(void) {
 
 void die(int errorCode) {
 	if (errorCode) {
-		printError("fatal error code " << errorCode << " -- stop");
+		printError(RED("fatal error code " << errorCode << " -- stop"));
 	}
 	exit(errorCode);
 }
@@ -222,9 +222,9 @@ int main(int argc, char **argv) {
 		// print out the tokens if we're in verbose mode
 		VERBOSE(
 			if (!thisLexError) {
-				printNotice("successfully lexed file \'" << fileName << "\'");
+				printNotice(GREEN("successfully lexed file \'" << fileName << "\'"));
 			} else {
-				printNotice("failed to lex file \'" << fileName << "\'");
+				printNotice(RED("failed to lex file \'" << fileName << "\'"));
 			}
 			print(""); // new line
 		)
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
 		int thisParseError = parse(*lexemeIter, thisParseme, fileIndex);
 		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
-				printNotice("failed to parse file \'" << inFileNames[fileIndex] << "\'");
+				printNotice(RED("failed to parse file \'" << inFileNames[fileIndex] << "\'"));
 				print(""); // new line
 			)
 		} else { // else if parsing was successful, latch the parseme into the tree trunk
@@ -266,7 +266,7 @@ int main(int argc, char **argv) {
 				treeRoot = treeCur = thisParseme;
 			}
 			VERBOSE(
-				printNotice("successfully parsed file \'" << inFileNames[fileIndex] << "\'");
+				printNotice(GREEN("successfully parsed file \'" << inFileNames[fileIndex] << "\'"));
 				print(""); // new line
 			)
 		}
@@ -295,12 +295,12 @@ int main(int argc, char **argv) {
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(
-			printNotice("failed to map semantics");
+			printNotice(RED("failed to map semantics"));
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice("successfully mapped semantics");
+			printNotice(GREEN("successfully mapped semantics"));
 			print(""); // new line
 		)
 	}
@@ -321,12 +321,12 @@ int main(int argc, char **argv) {
 	// now, check if genning failed and kill the system as appropriate
 	if (gennerErrorCode) {
 		VERBOSE(
-			printNotice("failed to generate code dump");
+			printNotice(RED("failed to generate code dump"));
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice("successfully generated code dump");
+			printNotice(GREEN("successfully generated code dump"));
 			print(""); // new line
 		)
 	}

@@ -73,6 +73,7 @@ class IRTree;
 extern int optimizationLevel;
 extern bool verboseOutput;
 extern bool silentMode;
+extern bool codedOutput;
 extern int tabModulus;
 extern bool eventuallyGiveUp;
 

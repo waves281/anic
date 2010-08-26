@@ -41,7 +41,7 @@ version: start var/versionStamp.txt
 
 test: start $(TARGET) bld/runTests.sh
 	@chmod +x bld/runTests.sh
-	@./bld/runTests.sh $(TARGET) -v $(TEST_FILES)
+	@./bld/runTests.sh $(TARGET) -v -c $(TEST_FILES)
 
 install: start $(TARGET) man $(INSTALL_SCRIPT) bld/authenticatedInstall.sh
 	@chmod +x bld/authenticatedInstall.sh

@@ -17,6 +17,7 @@ int driverErrorCode;
 int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 bool verboseOutput = VERBOSE_OUTPUT_DEFAULT;
 bool silentMode = SILENT_MODE_DEFAULT;
+bool codedOutput = CODED_OUTPUT_DEFAULT;
 int tabModulus = TAB_MODULUS_DEFAULT;
 bool eventuallyGiveUp = EVENTUALLY_GIVE_UP_DEFAULT;
 
@@ -86,6 +87,7 @@ int main(int argc, char **argv) {
 
 	// verify arguments
 	if (argc == 1) {
+		codedOutput = true; // enable coded output for the help text
 		printHelp();
 		die();
 	}
@@ -98,6 +100,7 @@ int main(int argc, char **argv) {
 	bool pHandled = false;
 	bool vHandled = false;
 	bool sHandled = false;
+	bool cHandled = false;
 	bool tHandled = false;
 	bool eHandled = false;
 	for (int i=1; i<argc; i++) {
@@ -137,10 +140,14 @@ int main(int argc, char **argv) {
 				)
 				// flag this option as handled
 				vHandled = true;
-			} else if (argv[i][1] == 's' && argv[i][2] == '\0' && !vHandled && !sHandled) { // silent compilation option
+			} else if (argv[i][1] == 's' && argv[i][2] == '\0' && !vHandled && !sHandled && !cHandled) { // silent compilation option
 				silentMode = true;
 				// flag this option as handled
 				sHandled = true;
+			} else if (argv[i][1] == 'c' && argv[i][2] == '\0' && !cHandled && !sHandled) { // coded output option
+				codedOutput = true;
+				// flag this option as handled
+				cHandled = true;
 			} else if (argv[i][1] == 't' && argv[i][2] == '\0' && !tHandled) {
 				if (++i >= argc) { // jump to the next argument, test if it doesn't exist
 					printError("-t expected tab modulus argument");

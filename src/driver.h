@@ -6,7 +6,7 @@
 
 // terminal control codes
 
-#define SET_TERM(mode) "\x1b[" mode "m"
+#define SET_TERM(mode) (codedOutput ? ("\x1b[" mode "m") : "")
 
 #define RESET_CODE "0"
 #define BRIGHT_CODE "1"
@@ -29,14 +29,14 @@
 #define CYAN(s) SET_TERM(CYAN_CODE) << s << SET_TERM(RESET_CODE)
 #define WHITE(s) SET_TERM(WHITE_CODE) << s << SET_TERM(RESET_CODE)
 
-#define BRIGHT_BLACK(s) SET_TERM(BRIGHT_CODE) SET_TERM(BLACK_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_RED(s) SET_TERM(BRIGHT_CODE) SET_TERM(RED_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_GREEN(s) SET_TERM(BRIGHT_CODE) SET_TERM(GREEN_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_YELLOW(s) SET_TERM(BRIGHT_CODE) SET_TERM(YELLOW_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_BLUE(s) SET_TERM(BRIGHT_CODE) SET_TERM(BLUE_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_MAGENTA(s) SET_TERM(BRIGHT_CODE) SET_TERM(MAGENTA_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_CYAN(s) SET_TERM(BRIGHT_CODE) SET_TERM(CYAN_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_WHITE(s) SET_TERM(BRIGHT_CODE) SET_TERM(WHITE_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_BLACK(s) SET_TERM(BRIGHT_CODE) << SET_TERM(BLACK_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_RED(s) SET_TERM(BRIGHT_CODE) << SET_TERM(RED_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_GREEN(s) SET_TERM(BRIGHT_CODE) << SET_TERM(GREEN_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_YELLOW(s) SET_TERM(BRIGHT_CODE) << SET_TERM(YELLOW_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_BLUE(s) SET_TERM(BRIGHT_CODE) << SET_TERM(BLUE_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_MAGENTA(s) SET_TERM(BRIGHT_CODE) << SET_TERM(MAGENTA_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_CYAN(s) SET_TERM(BRIGHT_CODE) << SET_TERM(CYAN_CODE) << s << SET_TERM(RESET_CODE)
+#define BRIGHT_WHITE(s) SET_TERM(BRIGHT_CODE) << SET_TERM(WHITE_CODE) << s << SET_TERM(RESET_CODE)
 
 // standard program strings
 
@@ -47,7 +47,7 @@
 #define WARNING_STRING BRIGHT_YELLOW("WARNING")
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" Compiler v.["<<VERSION_STRING<<"."<<VERSION_STAMP<<"] (c) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" /* compiler header */
-#define USAGE_LITERAL "\n\tusage:\t"<<PROGRAM_STRING<<" sourceFile... [-] [-o outputFile] [-p optimizationLevel]\n\t\t[-v] [-s] [-t tabWidth] [-e] [-h]\n" /* info literal */
+#define USAGE_LITERAL "\n\tusage:\t"<<PROGRAM_STRING<<" sourceFile... [-] [-o outputFile] [-p optimizationLevel]\n\t\t[-v] [-s] [-c] [-t tabWidth] [-e] [-h]\n" /* info literal */
 #define SEE_ALSO_LITERAL "\n\tFor more information, type '"<<PROGRAM_STRING<<" -h'.\n" /* see also literal */
 #define LINK_LITERAL "\thome page: "<<HOME_PAGE<<"\n" /* link literal */
 

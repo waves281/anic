@@ -28,7 +28,6 @@
 %token CQUOTE
 %token SQUOTE
 %token AT
-%token DAT
 
 /* arithmetic tokens */
 %token DOR
@@ -90,22 +89,14 @@ Declaration : ID EQUALS TypedStaticTerm
 	| ID EQUALS TypedStaticTerm SEMICOLON
 	| ID EQUALS BlankInstantiation
 	| ID EQUALS BlankInstantiation SEMICOLON
-	| AT NonArrayedIdentifier
-	| AT ArrayedIdentifier
-	| AT NonArrayedIdentifier SEMICOLON
-	| AT ArrayedIdentifier SEMICOLON
-	| AT LSQUARE NonArrayedIdentifier RSQUARE
-	| AT LSQUARE ArrayedIdentifier RSQUARE
-	| AT LSQUARE NonArrayedIdentifier RSQUARE SEMICOLON
-	| AT LSQUARE ArrayedIdentifier RSQUARE SEMICOLON
-	| DAT NonArrayedIdentifier
-	| DAT ArrayedIdentifier
-	| DAT NonArrayedIdentifier SEMICOLON
-	| DAT ArrayedIdentifier SEMICOLON
-	| DAT LSQUARE NonArrayedIdentifier RSQUARE
-	| DAT LSQUARE ArrayedIdentifier RSQUARE
-	| DAT LSQUARE NonArrayedIdentifier RSQUARE SEMICOLON
-	| DAT LSQUARE ArrayedIdentifier RSQUARE SEMICOLON
+	| AT ImportIdentifier
+	| AT ImportIdentifier SEMICOLON
+	| AT LSQUARE ImportIdentifier RSQUARE
+	| AT LSQUARE ImportIdentifier RSQUARE SEMICOLON
+	;
+ImportIdentifier : NonArrayedIdentifier
+	| ArrayedIdentifier
+	| OpenIdentifier
 	;
 NonEmptyTerms : Term Terms
 	;
@@ -211,17 +202,23 @@ Node : NonArrayedIdentifier
 	| PrimOpNode
 	| PrimLiteral
 	;
+NonArrayedIdentifier : ID NonArrayedIdentifierSuffix
+	| DPERIOD NonArrayedIdentifierSuffix
+	;
 ArrayedIdentifier : ID ArrayedIdentifierSuffix
 	| DPERIOD ArrayedIdentifierSuffix
 	;
-NonArrayedIdentifier : ID NonArrayedIdentifierSuffix
-	| DPERIOD NonArrayedIdentifierSuffix
+OpenIdentifier : ID OpenIdentifierSuffix
+	| DPERIOD OpenIdentifierSuffix
 	;
 NonArrayedIdentifierSuffix :
 	| PERIOD ID NonArrayedIdentifierSuffix
 	;
 ArrayedIdentifierSuffix : PERIOD ID ArrayedIdentifierSuffix
 	| PERIOD ArrayAccess IdentifierSuffix
+	;
+OpenIdentifierSuffix : PERIOD TIMES
+	| PERIOD ID OpenIdentifierSuffix
 	;
 IdentifierSuffix :
 	| PERIOD ID IdentifierSuffix

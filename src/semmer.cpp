@@ -434,9 +434,10 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 				// recurse
 				buildSt(tree->child, newDef, importList); // child of Declaration
 				buildSt(tree->next, st, importList); // right
-			} else if (*(tree->child) == TOKEN_AT || *(tree->child) == TOKEN_DAT) { // import-style declaration
+			} else if (*(tree->child) == TOKEN_AT) { // import-style declaration
 				// allocate the new definition node
-				SymbolTree *newDef = new SymbolTree((*(tree->child) == TOKEN_AT) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
+				Tree *importId = (*(tree->child->next) == TOKEN_ImportIdentifier) ? tree->child->next : tree->child->next->next; // ImportIdentifier
+				SymbolTree *newDef = new SymbolTree((*(importId->child) != TOKEN_OpenIdentifier) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
 				// ... and link it in
 				*st *= newDef;
 				// also, since it's an import declaration, log it to the import list
@@ -645,10 +646,8 @@ void subImportDecls(vector<SymbolTree *> importList) {
 			// extract the import path out of the iterator
 			Tree *importdcn = (*importIter)->defSite->child->next;
 			bool copyImport = (*importdcn == TOKEN_LSQUARE); // whether this is a copy-import
-			Tree *importId = copyImport ?
-				(*importIter)->defSite->child->next->next :
-				(*importIter)->defSite->child->next; // NonArrayedIdentifier or ArrayedIdentifier
-			string importPath = *importId; // NonArrayedIdentifier or ArrayedIdentifier
+			Tree *importId = copyImport ? importdcn->next : importdcn; // ImportIdentifier
+			string importPath = *(importId->child); // NonArrayedIdentifier, ArrayedIdentifier, or OpenIdentifier
 			SymbolTree *importParent = (*importIter)->parent;
 			// try to find a binding for this import
 			SymbolTree *binding = bindId(importPath, *importIter).first;
@@ -656,7 +655,7 @@ void subImportDecls(vector<SymbolTree *> importList) {
 				// check for the standard library import special case
 				if (binding == stdLib) { // if the import binds to the standard library node
 					if ((*importIter)->kind == KIND_CLOSED_IMPORT) { // if this is a closed-import of the standard library node
-						if (copyImport) { // if it was a copy-import, log the import site as the standard library node (this will flag an error later)
+						if (copyImport) { // if it was a copy-import, log the copy-import site as the standard library node (this will flag an error later)
 							(*importIter)->copyImportSite = stdLib;
 						}
 						if (!stdExplicitlyImported) { // if it's the first standard import, flag it as handled and let it slide
@@ -2433,7 +2432,7 @@ TypeStatus getStatusDeclaration(Tree *tree) {
 			}
 		}
 		// otherwise, if this is not a Filter or Object special case
-		if (*(tree->child) != TOKEN_AT && *(tree->child) != TOKEN_DAT) { // if it's a non-import declaration
+		if (*(tree->child) != TOKEN_AT) { // if it's a non-import declaration
 			// attempt to derive the type of this Declaration
 			if (*declarationSub == TOKEN_TypedStaticTerm) { // if it's a standard declaration
 				TypeStatus derivedStatus = getStatusTypedStaticTerm(declarationSub);

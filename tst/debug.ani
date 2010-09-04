@@ -124,7 +124,7 @@ inhObj = {
 }
 subObj = {
 	=;
-	@@[inhObj];
+	@[inhObj.*];
 	subMem = [float\];
 }
 

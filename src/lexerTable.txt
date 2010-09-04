@@ -81,8 +81,8 @@
 // quote characters
 0 ' CQUOTE -1
 0 " SQUOTE -1
-// package traversal operators
-0 @ AT 115
+// import operator
+0 @ AT -1
 // arithmetic characters
 0 + PLUS 103
 0 - MINUS 104
@@ -345,6 +345,3 @@
 
 // state 114 (. seen)
 114 . DPERIOD -1
-
-// state 115 (@ seen)
-115 @ DAT -1

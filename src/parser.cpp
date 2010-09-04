@@ -111,40 +111,39 @@ void Tree::operator&=(Tree *parent) {
 
 // converters
 Tree::operator string() const {
-	if (*this == TOKEN_NonArrayedIdentifier || *this == TOKEN_ArrayedIdentifier) { // if this is an identifier-style Tree node, parse it
-		string retVal(this->child->t.s); // ID or DPERIOD
-		for(const Tree *cur = this->child->next->child; cur != NULL; cur = cur->next->next->child) { // interloop invariant: cur is a non-NULL child of NonArrayedIdentifierSuffix, ArrayedIdentifierSuffix, or IdentifierSuffix
-			// log the period
-			retVal += '.';
+	if (*this == TOKEN_NonArrayedIdentifier || *this == TOKEN_ArrayedIdentifier || *this == TOKEN_OpenIdentifier) { // if this is an identifier-style Tree node, decode it
+		string retVal(child->t.s); // ID or DPERIOD
+		// invariant: cur is a non-NULL child of NonArrayedIdentifierSuffix, ArrayedIdentifierSuffix, or IdentifierSuffix
+		for(const Tree *cur = child->next->child; cur != NULL; cur = (cur->next->next != NULL) ? cur->next->next->child : NULL) {
 			// log the extension
-			const Tree *curn = cur->next; // ID or ArrayAccess
+			const Tree *curn = cur->next; // ID, ArrayAccess, or TIMES
 			if (*curn == TOKEN_ID) {
+				retVal += '.';
 				retVal += curn->t.s;
 			} else if (*curn == TOKEN_ArrayAccess) {
 				// check to make sure that the expressions are compatible with STD_INT
-				StdType stdIntType(STD_INT); // temporary integer type for comparison
 				if (curn->child->next->next->next == NULL) { // if there's only one subscript
 					TypeStatus expStatus = getStatusExp(curn->child->next);
-					if (!(*expStatus >> stdIntType)) { // if the types are incompatible, flag an error
+					if (!(*expStatus >> *stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"array subscript is invalid");
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 					}
-					retVal += "[]";
+					retVal += ".[]";
 				} else { // else if this is an extent subscript
 					TypeStatus leftExpStatus = getStatusExp(curn->child->next);
-					if (!(*leftExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
+					if (!(*leftExpStatus >> *stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->t; // Exp
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"left extent subscript is invalid");
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<leftExpStatus<<")");
 					}
 					TypeStatus rightExpStatus = getStatusExp(curn->child->next);
-					if (!(*rightExpStatus >> stdIntType)) { // if the types are incompatible, flag an error
+					if (!(*rightExpStatus >> *stdIntType)) { // if the types are incompatible, flag an error
 						Token curToken = curn->child->next->next->next->t; // Exp
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"right extent subscript is invalid");
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<rightExpStatus<<")");
 					}
-					retVal += "[:]";
+					retVal += ".[:]";
 				}
 			}
 		}

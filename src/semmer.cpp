@@ -87,7 +87,6 @@ SymbolTree &SymbolTree::operator*=(SymbolTree *st) {
 				curDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
 				curDefToken.row = 0;
 				curDefToken.col = 0;
-				cerr << endl << "LOL 1" << endl;
 				exit(1);
 			}
 			Token prevDefToken;
@@ -97,7 +96,6 @@ SymbolTree &SymbolTree::operator*=(SymbolTree *st) {
 				prevDefToken.fileIndex = STANDARD_LIBRARY_FILE_INDEX;
 				prevDefToken.row = 0;
 				prevDefToken.col = 0;
-				cerr << endl << "LOL 2" << endl;
 				exit(1);
 			}
 			semmerError(curDefToken.fileIndex,curDefToken.row,curDefToken.col,"redefinition of '"<<st->id<<"'");
@@ -793,8 +791,7 @@ void subImportDecls(vector<SymbolTree *> importList) {
 // recursively derives the Type trees and offsets of all named nodes in the passed-in SymbolTree
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER ||
-			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR ||
-			root->kind == KIND_FILTER || root->kind == KIND_OBJECT) { // if it's a simply derivable node, derive its type
+			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a simply derivable node, derive its type
 		getStatusSymbolTree(root, parent);
 	} else if (root->kind == KIND_BLOCK && parent != NULL) { // else if it's a non-root block node, set it to partition allocation
 		root->offsetKind = OFFSET_PARTITION;
@@ -825,10 +822,6 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
 	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
-	} else if (root->kind == KIND_FILTER) { // else if the symbol was defined as a filter-style node
-		returnStatus(getStatusFilter(tree, inStatus)); // Filter
-	} else if (root->kind == KIND_OBJECT) { // else if the symbol was defined as an object-style node
-		returnStatus(getStatusObject(tree, inStatus)); // Object
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		return (tree->status);
 	}
@@ -917,9 +910,11 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*pbc == TOKEN_Instantiation) {
 		returnStatus(getStatusInstantiation(pbc, inStatus));
 	} else if (*pbc == TOKEN_Filter) {
-		returnStatus(getStatusFilter(pbc, inStatus));
+		getStatusFilter(pbc, inStatus); // blindly generates a thunk; never fails
+		returnStatus(verifyStatusFilter(pbc)); // return the status resulting from verifying the contents of this filter
 	} else if (*pbc == TOKEN_Object) {
-		returnStatus(getStatusObject(pbc, inStatus));
+		getStatusObject(pbc, inStatus); // blindly generates a thunk; never fails
+		returnStatus(verifyStatusObject(pbc)); // return the status resulting from verifying the contents of this object
 	} else if (*pbc == TOKEN_PrimLiteral) {
 		returnStatus(getStatusPrimLiteral(pbc, inStatus));
 	} else if (*pbc == TOKEN_BracketedExp) {
@@ -1359,11 +1354,11 @@ TypeStatus verifyStatusFilter(Tree *tree) {
 TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
 	// derive the declared type of the filter
-	Tree *filterCur = tree->child; // Block or FilterHeader
-	if (*filterCur == TOKEN_Block) { // if it's an implicit block-defined filter, return its type as a consumer of the input type
+	Tree *filterc = tree->child; // Block or FilterHeader
+	if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, return its type as a consumer of the input type
 		returnTypeRet(new FilterType(inStatus.type, nullType, SUFFIX_LATCH), NULL);
-	} else /* if (*filterCur == TOKEN_FilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
-		returnTypeRet(new FilterType(filterCur, SUFFIX_LATCH), NULL);
+	} else /* if (*filterc == TOKEN_FilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
+		returnTypeRet(new FilterType(filterc, SUFFIX_LATCH), NULL);
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
@@ -1906,9 +1901,11 @@ TypeStatus getStatusNode(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*nodec == TOKEN_Instantiation) {
 		returnStatus(getStatusInstantiation(nodec, inStatus)); // erroneous recursion handled by Declaration derivation
 	} else if (*nodec == TOKEN_Filter) {
-		returnStatus(getStatusFilter(nodec, inStatus)); // allows for recursive definitions
+		getStatusFilter(nodec, inStatus); // blindly generates a thunk; never fails
+		returnStatus(verifyStatusFilter(nodec)); // return the status resulting from verifying the contents of this filter
 	} else if (*nodec == TOKEN_Object) {
-		returnStatus(getStatusObject(nodec, inStatus)); // allows for recursive definitions
+		getStatusObject(nodec, inStatus); // blindly generates a thunk; never fails
+		returnStatus(verifyStatusObject(nodec)); // return the status resulting from verifying the contents of this object
 	} else if (*nodec == TOKEN_PrimOpNode) {
 		returnStatus(getStatusPrimOpNode(nodec, inStatus)); // can't possibly be recursive
 	} else if (*nodec == TOKEN_PrimLiteral) {
@@ -2070,7 +2067,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*dtc == TOKEN_Link) {
 		TypeStatus linkStatus = getStatusStaticTerm(dtc->child->next);
 		if (*linkStatus) { // if we managed to derive a type for the Link subnode
-			Type *linkType = inStatus->link(*inStatus);
+			Type *linkType = inStatus->link(*linkStatus);
 			if (*linkType) { // if the types are link-compatible, return the resulting type
 				returnTypeRet(linkType, inStatus.retType);
 			} else {

@@ -207,7 +207,7 @@ bool Type::unpack() {
 		return true;
 	}
 }
-Type *Type::link(const Type &otherType) const {
+Type *Type::link(Type &otherType) {
 	if (suffix == SUFFIX_LIST && otherType.suffix == SUFFIX_LIST && depth == otherType.depth) {
 		if (*this >> otherType) {
 			return (Type *)(&otherType);
@@ -225,7 +225,7 @@ Type *Type::link(const Type &otherType) const {
 			return errType;
 		}
 	} else {
-		return false;
+		return errType;
 	}
 }
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}

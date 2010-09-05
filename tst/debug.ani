@@ -130,11 +130,11 @@ subObj = {
 
 // real-time parallel clock + calculator hybrid program
 {
-	@std.inInt; @std.inChar;
+	@std.*;
 	a=[int](0); op=[char](' '); b=[int](0); r=[int](0);
 	0 [int ms] {
-			("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->std.out;
-			1 std.delay (ms+1) <-
+			("\r" + ms/1000.0 + ":" + a + op + b + "=" + r) ->out;
+			1 delay (ms+1) <-
 	};
 	{\inInt->a \inChar->op \inInt->b <-};
 	{\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r <-};

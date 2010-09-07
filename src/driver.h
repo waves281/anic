@@ -6,7 +6,11 @@
 
 // terminal control codes
 
-#define SET_TERM(mode) (codedOutput ? ("\x1b[" mode "m") : "")
+#define COLOR(s) if (codedOutput) {s}
+#define COLOREXP(e) (codedOutput ? (e) : "")
+
+#define SET_TERM(mode) ("\x1b[" mode "m")
+#define AND ";"
 
 #define RESET_CODE "0"
 #define BRIGHT_CODE "1"
@@ -40,11 +44,11 @@
 
 // standard program strings
 
-#define PROGRAM_STRING BRIGHT_GREEN("anic")
+#define PROGRAM_STRING COLOREXP(SET_TERM(BRIGHT_CODE AND GREEN_CODE) )<<"anic"<<COLOREXP(SET_TERM(RESET_CODE))
 #define LANGUAGE_STRING "ANI"
-#define HOME_PAGE BRIGHT_BLUE("http://anic.googlecode.com/")
-#define ERROR_STRING BRIGHT_RED("ERROR")
-#define WARNING_STRING BRIGHT_YELLOW("WARNING")
+#define HOME_PAGE COLOREXP(SET_TERM(BRIGHT_CODE AND BLUE_CODE))<<"http://anic.googlecode.com/"<<COLOREXP(SET_TERM(RESET_CODE))
+#define ERROR_STRING COLOREXP(SET_TERM(BRIGHT_CODE AND RED_CODE))<<"ERROR"<<COLOREXP(SET_TERM(RESET_CODE))
+#define WARNING_STRING COLOREXP(SET_TERM(BRIGHT_CODE AND YELLOW_CODE))<<"WARNING"<<COLOREXP(SET_TERM(RESET_CODE))
 
 #define HEADER_LITERAL PROGRAM_STRING<<" -- "<<LANGUAGE_STRING<<" Compiler v.["<<VERSION_STRING<<"."<<VERSION_STAMP<<"] (c) "<<VERSION_YEAR<<" Kajetan Adrian Biedrzycki\n" /* compiler header */
 #define USAGE_LITERAL "\n\tusage:\t"<<PROGRAM_STRING<<" sourceFile... [-] [-o outputFile] [-p optimizationLevel]\n\t\t[-v] [-s] [-c] [-t tabWidth] [-e] [-h]\n" /* info literal */
@@ -79,7 +83,5 @@ void printLink(void);
 const string &getFileName(unsigned int fileIndex);
 void die(int errorCode);
 void die(void);
-
-
 
 #endif

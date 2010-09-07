@@ -14,15 +14,13 @@ Token::~Token() {}
 Token &Token::operator=(Token &otherToken) {tokenType = otherToken.tokenType; s = otherToken.s; fileIndex = otherToken.fileIndex; row = otherToken.row; col = otherToken.col; return *this;}
 Token::operator string() const {
 	string acc("[");
-	acc += SET_TERM(BRIGHT_CODE);
-	acc += SET_TERM(CYAN_CODE);
+	COLOR( acc += SET_TERM(BRIGHT_CODE AND CYAN_CODE); )
 	acc += tokenType2String(tokenType);
-	acc += SET_TERM(RESET_CODE);
+	COLOR( acc += SET_TERM(RESET_CODE); )
 	acc += ' ';
-	acc += SET_TERM(BRIGHT_CODE);
-	acc += SET_TERM(WHITE_CODE);
+	COLOR( acc += SET_TERM(BRIGHT_CODE AND WHITE_CODE); )
 	acc += s;
-	acc += SET_TERM(RESET_CODE);
+	COLOR( acc += SET_TERM(RESET_CODE); )
 	acc += " (";
 	char tempBuf[MAX_INT_STRING_LENGTH];
 	sprintf(tempBuf, "%d", row);

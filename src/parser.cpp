@@ -227,7 +227,11 @@ transitionParserState: ;
 			shiftToken(treeCur, t);
 			stateStack.push(transition.n);
 
-			VERBOSE( cout << "\t" << BRIGHT_MAGENTA("SHIFT") << "\t" << curState << "\t->\t" << transition.n << "\t[" << BRIGHT_CYAN(tokenType2String(t.tokenType)) << "]\n"; )
+			VERBOSE( cout << "\t" <<
+				COLOREXP(SET_TERM(BRIGHT_CODE AND MAGENTA_CODE)) << "SHIFT" << COLOREXP(SET_TERM(RESET_CODE)) <<
+				"\t" << curState << "\t->\t" << transition.n << "\t[" <<
+				COLOREXP(SET_TERM(BRIGHT_CODE AND CYAN_CODE)) << tokenType2String(t.tokenType) << COLOREXP(SET_TERM(RESET_CODE)) <<
+				"]\n"; )
 
 		} else if (transition.action == ACTION_REDUCE) {
 			unsigned int numRhs = ruleRhsLength[transition.n];
@@ -256,13 +260,19 @@ transitionParserState: ;
 
 			VERBOSE(
 				const char *tokenString = ruleLhsTokenString[transition.n];
-				cout << "\t" << BRIGHT_GREEN("REDUCE") << "\t" << curState << "\t->\t" << stateStack.top() << "\t<" << BRIGHT_CYAN(tokenString) << ">\n";
+				cout << "\t" <<
+					COLOREXP(SET_TERM(BRIGHT_CODE AND GREEN_CODE)) << "REDUCE" << COLOREXP(SET_TERM(RESET_CODE)) <<
+					"\t" << curState << "\t->\t" << stateStack.top() << "\t<" <<
+					COLOREXP(SET_TERM(BRIGHT_CODE AND CYAN_CODE)) << tokenString << COLOREXP(SET_TERM(RESET_CODE)) <<
+					">\n";
 			)
 
 			goto transitionParserState;
 		} else if (transition.action == ACTION_ACCEPT) {
 
-			VERBOSE( cout << "\t" << BRIGHT_WHITE("ACCEPT") << "\n"; )
+			VERBOSE( cout << "\t" <<
+				COLOREXP(SET_TERM(BRIGHT_CODE AND WHITE_CODE)) << "ACCEPT" << COLOREXP(SET_TERM(RESET_CODE)) <<
+				"\n"; )
 
 			break;
 		} else if (transition.action == ACTION_ERROR) {

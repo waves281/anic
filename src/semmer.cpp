@@ -127,8 +127,7 @@ string SymbolTree::toString(unsigned int tabDepth) {
 		}
 	}
 	if (kind != KIND_BLOCK && kind != KIND_CLOSED_IMPORT && kind != KIND_OPEN_IMPORT) {
-		acc += SET_TERM(BRIGHT_CODE);
-		acc += SET_TERM(WHITE_CODE);
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND WHITE_CODE);)
 		if (kind == KIND_INSTRUCTOR) {
 			acc += INSTRUCTOR_NODE_STRING;
 		} else if (kind == KIND_OUTSTRUCTOR) {
@@ -140,7 +139,7 @@ string SymbolTree::toString(unsigned int tabDepth) {
 		} else {
 			acc += id;
 		}
-		acc += SET_TERM(RESET_CODE);
+		COLOR( acc += SET_TERM(RESET_CODE); )
 		if (kind != KIND_OBJECT) {
 			Type *defType = defSite->status.type;
 			if (defType != NULL) {
@@ -149,8 +148,7 @@ string SymbolTree::toString(unsigned int tabDepth) {
 			}
 		}
 		acc += " <";
-		acc += SET_TERM(BRIGHT_CODE);
-		acc += SET_TERM(BLACK_CODE);
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND BLACK_CODE); )
 		switch(offsetKind) {
 			case OFFSET_RAW: {
 				acc += "RAW:";
@@ -180,13 +178,12 @@ string SymbolTree::toString(unsigned int tabDepth) {
 			default: // can't happen; the above should cover all cases
 				break;
 		}
-		acc += SET_TERM(RESET_CODE);
+		COLOR( acc += SET_TERM(RESET_CODE); )
 		acc += '>';
 	} else {
-		acc += SET_TERM(BRIGHT_CODE);
-		acc += SET_TERM(WHITE_CODE);
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND WHITE_CODE); )
 		acc += id;
-		acc += SET_TERM(RESET_CODE);
+		COLOR( acc += SET_TERM(RESET_CODE); )
 	}
 	acc += '\n';
 	for (map<string, SymbolTree *>::iterator childIter = children.begin(); childIter != children.end(); childIter++) {

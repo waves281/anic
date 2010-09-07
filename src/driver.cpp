@@ -48,7 +48,7 @@ void printHelp(void) {
 
 void die(int errorCode) {
 	if (errorCode) {
-		printError(RED("fatal error code " << errorCode << " -- stop"));
+		printError(COLOREXP(SET_TERM(RED_CODE)) << "fatal error code " << errorCode << " -- stop" << COLOREXP(SET_TERM(RESET_CODE)));
 	}
 	exit(errorCode);
 }
@@ -237,9 +237,9 @@ int main(int argc, char **argv) {
 		// print out the tokens if we're in verbose mode
 		VERBOSE(
 			if (!thisLexError) {
-				printNotice(GREEN("successfully lexed file \'" << fileName << "\'"));
+				printNotice(COLOREXP(SET_TERM(GREEN_CODE)) << "successfully lexed file \'" << fileName << "\'" << COLOREXP(SET_TERM(RESET_CODE)));
 			} else {
-				printNotice(RED("failed to lex file \'" << fileName << "\'"));
+				printNotice(COLOREXP(SET_TERM(RED_CODE)) << "failed to lex file \'" << fileName << "\'" << COLOREXP(SET_TERM(RESET_CODE)));
 			}
 			print(""); // new line
 		)
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
 		int thisParseError = parse(*lexemeIter, thisParseme, fileIndex);
 		if (thisParseError) { // if parsing failed with an error, log the error condition
 			VERBOSE(
-				printNotice(RED("failed to parse file \'" << inFileNames[fileIndex] << "\'"));
+				printNotice(COLOREXP(SET_TERM(RED_CODE)) << "failed to parse file \'" << inFileNames[fileIndex] << "\'" << COLOREXP(SET_TERM(RESET_CODE)));
 				print(""); // new line
 			)
 		} else { // else if parsing was successful, latch the parseme into the tree trunk
@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
 				treeRoot = treeCur = thisParseme;
 			}
 			VERBOSE(
-				printNotice(GREEN("successfully parsed file \'" << inFileNames[fileIndex] << "\'"));
+				printNotice(COLOREXP(SET_TERM(GREEN_CODE)) << "successfully parsed file \'" << inFileNames[fileIndex] << "\'" << COLOREXP(SET_TERM(RESET_CODE)));
 				print(""); // new line
 			)
 		}
@@ -310,12 +310,12 @@ int main(int argc, char **argv) {
 	// now, check if semming failed and kill the system as appropriate
 	if (semmerErrorCode) {
 		VERBOSE(
-			printNotice(RED("failed to map semantics"));
+			printNotice(COLOREXP(SET_TERM(RED_CODE)) << "failed to map semantics" << COLOREXP(SET_TERM(RESET_CODE)));
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice(GREEN("successfully mapped semantics"));
+			printNotice(COLOREXP(SET_TERM(GREEN_CODE)) << "successfully mapped semantics" << COLOREXP(SET_TERM(RESET_CODE)));
 			print(""); // new line
 		)
 	}
@@ -336,12 +336,12 @@ int main(int argc, char **argv) {
 	// now, check if genning failed and kill the system as appropriate
 	if (gennerErrorCode) {
 		VERBOSE(
-			printNotice(RED("failed to generate code dump"));
+			printNotice(COLOREXP(SET_TERM(RED_CODE)) << "failed to generate code dump" << COLOREXP(SET_TERM(RESET_CODE)));
 			print(""); // new line
 		)
 	} else {
 		VERBOSE(
-			printNotice(GREEN("successfully generated code dump"));
+			printNotice(COLOREXP(SET_TERM(GREEN_CODE)) << "successfully generated code dump" << COLOREXP(SET_TERM(RESET_CODE)));
 			print(""); // new line
 		)
 	}

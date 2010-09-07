@@ -24,24 +24,6 @@
 #define CYAN_CODE "36"
 #define WHITE_CODE "37"
 
-#define BLACK(s) SET_TERM(BLACK_CODE) << s << SET_TERM(RESET_CODE)
-#define RED(s) SET_TERM(RED_CODE) << s << SET_TERM(RESET_CODE)
-#define GREEN(s) SET_TERM(GREEN_CODE) << s << SET_TERM(RESET_CODE)
-#define YELLOW(s) SET_TERM(YELLOW_CODE) << s << SET_TERM(RESET_CODE)
-#define BLUE(s) SET_TERM(BLUE_CODE) << s << SET_TERM(RESET_CODE)
-#define MAGENTA(s) SET_TERM(MAGENTA_CODE) << s << SET_TERM(RESET_CODE)
-#define CYAN(s) SET_TERM(CYAN_CODE) << s << SET_TERM(RESET_CODE)
-#define WHITE(s) SET_TERM(WHITE_CODE) << s << SET_TERM(RESET_CODE)
-
-#define BRIGHT_BLACK(s) SET_TERM(BRIGHT_CODE) << SET_TERM(BLACK_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_RED(s) SET_TERM(BRIGHT_CODE) << SET_TERM(RED_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_GREEN(s) SET_TERM(BRIGHT_CODE) << SET_TERM(GREEN_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_YELLOW(s) SET_TERM(BRIGHT_CODE) << SET_TERM(YELLOW_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_BLUE(s) SET_TERM(BRIGHT_CODE) << SET_TERM(BLUE_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_MAGENTA(s) SET_TERM(BRIGHT_CODE) << SET_TERM(MAGENTA_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_CYAN(s) SET_TERM(BRIGHT_CODE) << SET_TERM(CYAN_CODE) << s << SET_TERM(RESET_CODE)
-#define BRIGHT_WHITE(s) SET_TERM(BRIGHT_CODE) << SET_TERM(WHITE_CODE) << s << SET_TERM(RESET_CODE)
-
 // standard program strings
 
 #define PROGRAM_STRING COLOREXP(SET_TERM(BRIGHT_CODE AND GREEN_CODE) )<<"anic"<<COLOREXP(SET_TERM(RESET_CODE))
@@ -65,14 +47,20 @@
 
 #define GET_FILE_NAME(fi) ((fi != STANDARD_LIBRARY_FILE_INDEX) ? inFileNames[fi] : STANDARD_LIBRARY_FILE_NAME)
 
-#define lexerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<<CYAN("LEXER")<<": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+#define lexerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": " << \
+		COLOREXP(SET_TERM(CYAN_CODE)) << "LEXER" << COLOREXP(SET_TERM(RESET_CODE)) << \
+		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
 	lexerErrorCode++; \
 	if (eventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
-#define parserError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<<CYAN("PARSER")<<": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+#define parserError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
+		COLOREXP(SET_TERM(CYAN_CODE)) << "PARSER" << COLOREXP(SET_TERM(RESET_CODE)) << \
+		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
 	parserErrorCode++;
 
-#define semmerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<<CYAN("SEMMER")<<": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+#define semmerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
+		COLOREXP(SET_TERM(CYAN_CODE)) << "SEMMER" << COLOREXP(SET_TERM(RESET_CODE)) << \
+		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
 	semmerErrorCode++;
 
 void printHeader(void);

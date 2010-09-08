@@ -1355,6 +1355,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 		returnTypeRet(new FilterType(filterc, SUFFIX_LATCH), NULL);
 	}
 	GET_STATUS_CODE;
+	// KOL need to derive the offset here
 	GET_STATUS_FOOTER;
 }
 
@@ -1539,6 +1540,7 @@ TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	// return a thunk representing this ObjectType
 	returnTypeRet(new ObjectType(instructorList, outstructorList, memberList, SUFFIX_LATCH), NULL);
 	GET_STATUS_CODE;
+	// KOL need to derive the offset here
 	GET_STATUS_FOOTER;
 }
 

@@ -785,19 +785,16 @@ void subImportDecls(vector<SymbolTree *> importList) {
 	} // per-change loop
 }
 
-// recursively derives the Type trees and offsets of all named nodes in the passed-in SymbolTree
+// recursively derives the Type trees and offsets of all non-inlined semantic-impacting nodes in the passed-in SymbolTree
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER ||
-			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a simply derivable node, derive its type
+			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a non-inlined node, derive its type
 		getStatusSymbolTree(root, parent);
-	} else if (root->kind == KIND_BLOCK && parent != NULL) { // else if it's a non-root block node, set it to partition allocation
-		root->offsetKind = OFFSET_PARTITION;
-		root->offsetIndex = parent->addPartition();
 	} else if (root->kind == STD_STD) { // else if it's a standard node, set it to free allocation
 		root->offsetKind = OFFSET_FREE;
 	}
 	// ensure that this isn't a copy-import of a non-referensible node
-	if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
+	if (root->offsetKind != OFFSET_NULL && root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
 		Token curToken = root->defSite->t;
 		Token sourceToken = root->copyImportSite->defSite->t;
 		semmerError(curToken.fileIndex,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->copyImportSite->id<<"'");

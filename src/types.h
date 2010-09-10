@@ -377,10 +377,9 @@ extern Type *errType;
 #define TYPE_TO_STRING_HEADER \
 	/* if we have reached a recursive loop, return this fact */\
 	if (toStringHandled) {\
-		string acc(SET_TERM(BRIGHT_CODE));\
-		acc += SET_TERM(YELLOW_CODE);\
+		string acc(COLOREXP( SET_TERM(BRIGHT_CODE AND YELLOW_CODE) ));\
 		acc += "<RECURSION>";\
-		acc += SET_TERM(RESET_CODE);\
+		acc += COLOREXP( SET_TERM(RESET_CODE) );\
 		return acc;\
 	} else { /* otherwise, set the recursive printing flag */\
 		toStringHandled = true;\

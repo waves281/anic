@@ -28,7 +28,7 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	};
 	5, (8 == 9 || (false || true)) someFilter ->std.out;
 	1, 2 + , 5 * , 5 % - ++ >> 2 << 1 ->someInt;
-	someObj = {
+	someObj = []{
 		xStream = [int\\];
 		\\xStream ->std.out;
 		=[--> string] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
@@ -43,7 +43,7 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 	1 [int x] {x};
 	1.0e+100 [float\ f --> string] {\f; "someString" + 'c' + true + " someOtherString" + (7++ - 8--) -->};
 	[float](-5.0) ([int x]{});
-	someObj /* expression injection */ ({=;=[--> string]{"lol"-->}}) ->out;
+	someObj /* expression injection */ ([]{=;=[--> string]{"lol"-->}}) ->out;
 	@std.out;
 	packStream = [float\\];
 	packStream2 = [float\\];
@@ -54,7 +54,7 @@ exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 };
 
 // standard object construction testing
-BinTree = {
+BinTree = []{
 	x = [int\];
 	leftTree = [BinTree](1); rightTree = [BinTree](2);
 	=[int\ x] {\x ->BinTree.x};
@@ -86,7 +86,7 @@ boolPool = [bool[100]]();
 false ->boolPool.[0];
 
 // object sub-identifier testing
-obj = {
+obj = []{
 	=;
 	mem = 1;
 	rec = obj;
@@ -99,30 +99,30 @@ recMemRef = obj.rec.mem;
 objLatchRef = [obj](\obj);
 
 // self-constructing object testing
-selfConsObj = {
+selfConsObj = []{
 	=;
 	=[selfConsObj\ self] {};
 }
 selfConsObjIns = [selfConsObj\];
 
 // basic import testing
-impObj = {
+impObj = []{
 	=;
 	mem1 = 1;
 	mem2 = "Hi";
 }
-useObj = {
+useObj = []{
 	=[int x] {};
 	@impObj.mem1;
 	mem = [int](mem1);
 }
 
 // basic inheritance testing
-inhObj = {
+inhObj = []{
 	=[int\ initX] {\initX;};
 	inhMem = [int\];
 }
-subObj = {
+subObj = []{
 	=;
 	@[inhObj.*];
 	subMem = [float\];

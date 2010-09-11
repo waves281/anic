@@ -30,8 +30,8 @@
 #define STANDARD_LIBRARY_FILE_NAME "<stdlib>"
 
 #define BLOCK_NODE_STRING "{}"
-#define OBJECT_NODE_STRING "{=}"
 #define FILTER_NODE_STRING "[]"
+#define OBJECT_NODE_STRING "[=]"
 #define INSTRUCTOR_NODE_STRING "=[]"
 #define OUTSTRUCTOR_NODE_STRING "=[-->]"
 #define FAKE_RECALL_NODE_PREFIX ".."

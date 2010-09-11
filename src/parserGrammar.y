@@ -364,13 +364,7 @@ TypeList : Type
 	;
 Block : LCURLY Pipes RCURLY
 	;
-Object : LCURLY InstructedObjectPipes RCURLY
-	;
-InstructedObjectPipes : LastInstructor
-	| Instructor
-	| Instructor ObjectPipes
-	| Outstructor InstructedObjectPipes
-	| Pipe InstructedObjectPipes
+Object : LSQUARE RSQUARE LCURLY ObjectPipes RCURLY
 	;
 ObjectPipes : LastInstructor
 	| Instructor

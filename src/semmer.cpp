@@ -1499,7 +1499,7 @@ TypeStatus verifyStatusObject(Tree *tree) {
 		}
 	}
 	// verify all remaining regular pipes in this Object definition
-	for (Tree *pipe = tree->child->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
+	for (Tree *pipe = tree->child->next->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
 		if (*pipe == TOKEN_Pipe || *pipe == TOKEN_LastPipe) {
 			Tree *pipec = pipe->child;
 			if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status

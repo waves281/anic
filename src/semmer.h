@@ -23,13 +23,6 @@
 #define KIND_OBJECT 10
 #define KIND_FAKE 11
 
-// SymbolTree offset kinds
-#define OFFSET_NULL 0
-#define OFFSET_RAW 1
-#define OFFSET_BLOCK 2
-#define OFFSET_PARTITION 3
-#define OFFSET_FREE 4
-
 class SymbolTree {
 	public:
 		// data members
@@ -39,11 +32,12 @@ class SymbolTree {
 		SymbolTree *copyImportSite; // if this node is a copy-import, the node from which we're importing; NULL otherwise
 		SymbolTree *parent; // pointer ot the parent of this node; populated during SymbolTree status derivation
 		map<string, SymbolTree *> children; // list of this node's children
-		int offsetKind; // the kind of child this node apprears as to its lexical parent
-		unsigned int offsetIndex; // the offset of this child in the lexical parent's offset kind
+		int offsetKindInternal; // the kind of child this node apprears as to its lexical parent
+		unsigned int offsetIndexInternal; // the offset of this child in the lexical parent's offset kind
 		unsigned int numRaws; // the number of raw-represented children for this node
 		unsigned int numBlocks; // the number of block-represented children for this node
 		unsigned int numPartitions; // the number of partition-represented children for this node
+		unsigned int numShares; // the number of share-represented children for this node
 		// allocators/deallocators
 		SymbolTree(int kind, const string &id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
 		SymbolTree(int kind, const char *id, Tree *defSite = NULL, SymbolTree *copyImportSite = NULL);
@@ -55,6 +49,10 @@ class SymbolTree {
 		unsigned int addRaw();
 		unsigned int addBlock();
 		unsigned int addPartition();
+		unsigned int addShare();
+		void getOffset();
+		int offsetKind();
+		unsigned int offsetIndex();
 		string toString(unsigned int tabDepth);
 		// operators
 		SymbolTree &operator=(const SymbolTree &st);
@@ -116,7 +114,7 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	if (tree->status.type != NULL) {\
 		goto endTypeDerivation;\
 	}\
-	/* otherwise, compute the type and offset normally */
+	/* otherwise, compute the type normally */
 
 #define returnType(x) \
 	/* memoize the return value and jump to the intermediate code generation point */\
@@ -141,15 +139,6 @@ TypeStatus getStatusPipe(Tree *tree, const TypeStatus &inStatus = TypeStatus(nul
 	endTypeDerivation:\
 	/* if we derived a valid return status, proceed to build the intermediate code tree */\
 	if (tree->status.type->category != CATEGORY_ERRORTYPE) {
-
-#define GET_STATUS_OFFSET \
-	/* if we failed to do a returnType, returnTypeRet, or returnStatus, memoize the error type and return from this function */\
-	tree->status = TypeStatus(errType, NULL);\
-	return (tree->status);\
-	/* label the exit point of type derivation (i.e. the entry point for offset derivation) */\
-	endTypeDerivation:\
-	/* if the offset hasn't been derived yet and we have a valid return status, derive the offset now */\
-	if (root->offsetKind == OFFSET_NULL && tree->status.type->category != CATEGORY_ERRORTYPE) {
 
 #define returnCode(x) \
 	/* memoize the intermediate code tree and return from this function */\

@@ -34,31 +34,68 @@ SymbolTree *stdLib;
 
 // SymbolTree functions
 SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
+		offsetKindInternal(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
 SymbolTree::SymbolTree(int kind, const char *id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL), 
-		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
+		offsetKindInternal(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0) {
 	if (defSite != NULL) {
 		defSite->env = this;
 	}
 }
 SymbolTree::SymbolTree(int kind, const string &id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
+		offsetKindInternal(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
 SymbolTree::SymbolTree(int kind, const char *id, Type *defType, SymbolTree *copyImportSite) : kind(kind), id(id), copyImportSite(copyImportSite), parent(NULL),
-		offsetKind(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
+		offsetKindInternal(OFFSET_NULL), numRaws(0), numBlocks(0), numPartitions(0){
 	TypeStatus status(defType, NULL); defSite = new Tree(status); defSite->env = this;
 }
 SymbolTree::SymbolTree(const SymbolTree &st, SymbolTree *parent, SymbolTree *copyImportSite) : kind(st.kind), id(st.id), defSite(st.defSite), copyImportSite(copyImportSite), parent(parent), children(st.children),
-	offsetKind(st.offsetKind), offsetIndex(st.offsetIndex), numRaws(st.numRaws), numBlocks(st.numBlocks), numPartitions(st.numPartitions) {}
+	offsetKindInternal(st.offsetKindInternal), offsetIndexInternal(st.offsetIndexInternal), numRaws(st.numRaws), numBlocks(st.numBlocks), numPartitions(st.numPartitions) {}
 SymbolTree::~SymbolTree() {}
 unsigned int SymbolTree::addRaw() {return (numRaws++);}
 unsigned int SymbolTree::addBlock() {return (numBlocks++);}
 unsigned int SymbolTree::addPartition() {return (numPartitions++);}
+unsigned int SymbolTree::addShare() {return (numShares++);}
+void SymbolTree::getOffset() {
+	if (kind == KIND_STD) { // if this is a standard node, set it to free allocation
+		offsetKindInternal = OFFSET_FREE;
+	} else if (parent != NULL) { // else if this is not the root node, derive the offset normally from the corresponding Type
+		offsetKindInternal = defSite->status.type->offsetKind();
+		switch (offsetKindInternal) {
+			case OFFSET_RAW:
+				offsetIndexInternal = parent->addRaw();
+				break;
+			case OFFSET_BLOCK:
+				offsetIndexInternal = parent->addBlock();
+				break;
+			case OFFSET_PARTITION:
+				offsetIndexInternal = parent->addPartition();
+				break;
+			case OFFSET_SHARE:
+				offsetIndexInternal = parent->addShare();
+				break;
+			default:
+				// can't happen; Type::offsetKind() doesn't return OFFSET_NULL or OFFSET_FREE
+				break;
+		}
+	}
+}
+int SymbolTree::offsetKind() {
+	if (offsetKindInternal == OFFSET_NULL) {
+		getOffset();
+	}
+	return offsetKindInternal;
+}
+unsigned int SymbolTree::offsetIndex() {
+	if (offsetKindInternal == OFFSET_NULL) {
+		getOffset();
+	}
+	return offsetIndexInternal;
+}
 SymbolTree &SymbolTree::operator=(const SymbolTree &st) {
 	kind = st.kind;
 	defSite = st.defSite;
@@ -149,25 +186,32 @@ string SymbolTree::toString(unsigned int tabDepth) {
 		}
 		acc += " <";
 		COLOR( acc += SET_TERM(BRIGHT_CODE AND BLACK_CODE); )
-		switch(offsetKind) {
+		switch(offsetKind()) {
 			case OFFSET_RAW: {
 				acc += "RAW:";
 				char offsetString[MAX_INT_STRING_LENGTH];
-				sprintf(offsetString, "%u", offsetIndex);
+				sprintf(offsetString, "%u", offsetIndex());
 				acc += offsetString;
 				break;
 			}
 			case OFFSET_BLOCK: {
 				acc += "BLK:";
 				char offsetString[MAX_INT_STRING_LENGTH];
-				sprintf(offsetString, "%u", offsetIndex);
+				sprintf(offsetString, "%u", offsetIndex());
 				acc += offsetString;
 				break;
 			}
 			case OFFSET_PARTITION: {
 				acc += "PRT:";
 				char offsetString[MAX_INT_STRING_LENGTH];
-				sprintf(offsetString, "%u", offsetIndex);
+				sprintf(offsetString, "%u", offsetIndex());
+				acc += offsetString;
+				break;
+			}
+			case OFFSET_SHARE: {
+				acc += "SHA:";
+				char offsetString[MAX_INT_STRING_LENGTH];
+				sprintf(offsetString, "%u", offsetIndex());
 				acc += offsetString;
 				break;
 			}
@@ -790,14 +834,6 @@ void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
 	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER ||
 			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a non-inlined node, derive its type
 		getStatusSymbolTree(root, parent);
-	} else if (root->kind == STD_STD) { // else if it's a standard node, set it to free allocation
-		root->offsetKind = OFFSET_FREE;
-	}
-	// ensure that this isn't a copy-import of a non-referensible node
-	if (root->offsetKind != OFFSET_NULL && root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
-		Token curToken = root->defSite->t;
-		Token sourceToken = root->copyImportSite->defSite->t;
-		semmerError(curToken.fileIndex,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->copyImportSite->id<<"'");
 	}
 	// recurse on this node's children
 	for (map<string, SymbolTree *>::const_iterator iter = root->children.begin(); iter != root->children.end(); iter++) {
@@ -819,28 +855,12 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		return (tree->status);
 	}
-	GET_STATUS_OFFSET;
-	// KOL need to properly derive the offset for all cases
-	Type *type = root->defSite->status.type;
-	if (type->suffix == SUFFIX_CONSTANT || type->suffix == SUFFIX_LATCH) {
-		if (type->category == CATEGORY_STDTYPE) {
-			if ((((StdType *)(type))->kind != STD_STRING)) {
-				root->offsetKind = OFFSET_RAW;
-				root->offsetIndex = parent->addRaw();
-			} else {
-				root->offsetKind = OFFSET_BLOCK;
-				root->offsetIndex = parent->addBlock();
-			}
-		} else /* if (type->category == CATEGORY_FILTERTYPE || type->category == CATEGORY_OBJECTTYPE) */ { // note that CATEGORY_TYPELIST never occurs in SymbolTree nodes
-			root->offsetKind = OFFSET_PARTITION;
-			root->offsetIndex = parent->addPartition();
-		}
-	} else if (type->suffix == SUFFIX_LIST || type->suffix == SUFFIX_ARRAY || type->suffix == SUFFIX_POOL) {
-		// KOL this is not correctly implemented yet
-		root->offsetKind = OFFSET_FREE;
-	} else /* if (type->suffix == SUFFIX_STREAM) */ {
-		root->offsetKind = OFFSET_PARTITION;
-		root->offsetIndex = parent->addPartition();
+	GET_STATUS_CODE;
+	// ensure that this isn't a copy-import of a non-referensible node
+	if (root->copyImportSite != NULL && !(root->defSite->status.type->referensible)) { // if it's a copy-import of a non-referensible type, flag an error
+		Token curToken = root->defSite->t;
+		Token sourceToken = root->copyImportSite->defSite->t;
+		semmerError(curToken.fileIndex,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->copyImportSite->id<<"'");
 	}
 	GET_STATUS_FOOTER;
 }

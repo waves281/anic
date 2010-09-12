@@ -22,6 +22,14 @@
 #define SUFFIX_ARRAY 4
 #define SUFFIX_POOL 5
 
+// Type offset kinds
+#define OFFSET_NULL 0
+#define OFFSET_RAW 1
+#define OFFSET_BLOCK 2
+#define OFFSET_PARTITION 3
+#define OFFSET_SHARE 4
+#define OFFSET_FREE 5
+
 // core Type class
 
 class Type {
@@ -58,6 +66,7 @@ class Type {
 		// non-virtual
 		bool baseEquals(const Type &otherType) const;
 		bool baseSendable(const Type &otherType) const;
+		int offsetKind() const;
 		string suffixString() const;
 		// operators
 		// virtual

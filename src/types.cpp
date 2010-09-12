@@ -16,6 +16,30 @@ bool Type::baseSendable(const Type &otherType) const {
 		(suffix == SUFFIX_POOL && (otherType.suffix == SUFFIX_POOL || otherType.suffix == SUFFIX_ARRAY) && depth == otherType.depth)
 	);
 }
+int Type::offsetKind() const {
+	if (suffix == SUFFIX_CONSTANT || suffix == SUFFIX_ARRAY) {
+		return OFFSET_RAW;
+	} else if (suffix == SUFFIX_LATCH) {
+		switch(category) {
+			case CATEGORY_STDTYPE:
+				if ((((StdType *)(this))->kind != STD_STRING)) {
+					return OFFSET_RAW;
+				} else {
+					return OFFSET_BLOCK;
+				}
+			case CATEGORY_FILTERTYPE:
+			case CATEGORY_OBJECTTYPE:
+				return OFFSET_PARTITION;
+			default:
+				// can't happen; we don't call this on TYPELIST or ERRORTYPE categories
+				return OFFSET_NULL;
+		}
+	} else if (suffix == SUFFIX_LIST || suffix == SUFFIX_STREAM) {
+		return OFFSET_PARTITION;
+	} else /* if (suffix == SUFFIX_POOL) */ {
+		return OFFSET_SHARE;
+	}
+}
 string Type::suffixString() const {
 	string acc;
 	if (suffix == SUFFIX_LATCH) {

@@ -25,7 +25,7 @@ int Type::offsetKind() const {
 				if ((((StdType *)(this))->kind != STD_STRING)) {
 					return OFFSET_RAW;
 				} else {
-					return OFFSET_BLOCK;
+					return OFFSET_PARTITION;
 				}
 			case CATEGORY_FILTERTYPE:
 			case CATEGORY_OBJECTTYPE:

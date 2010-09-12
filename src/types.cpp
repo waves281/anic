@@ -37,7 +37,20 @@ int Type::offsetKind() const {
 	} else if (suffix == SUFFIX_LIST || suffix == SUFFIX_STREAM) {
 		return OFFSET_PARTITION;
 	} else /* if (suffix == SUFFIX_POOL) */ {
-		return OFFSET_SHARE;
+		switch(category) {
+			case CATEGORY_STDTYPE:
+				if ((((StdType *)(this))->kind != STD_STRING)) {
+					return OFFSET_BLOCK;
+				} else {
+					return OFFSET_SHARE;
+				}
+			case CATEGORY_FILTERTYPE:
+			case CATEGORY_OBJECTTYPE:
+				return OFFSET_SHARE;
+			default:
+				// can't happen; we don't call this on TYPELIST or ERRORTYPE categories
+				return OFFSET_NULL;
+		}
 	}
 }
 string Type::suffixString() const {

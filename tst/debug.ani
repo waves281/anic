@@ -8,6 +8,11 @@ exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
 exp6 = [int\[1][2][3]];
+exp7 = [float]{
+	{{1},{2}},
+	{{3.0},{4}},
+	{{5},{6}}
+};
 
 // basic construct testing
 {

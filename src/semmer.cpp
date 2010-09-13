@@ -926,7 +926,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else if (*pbc == TOKEN_Instantiation) {
 		returnStatus(getStatusInstantiation(pbc, inStatus));
-	} else if (*pbc == TOKEN_Filter) {
+	} else if (*pbc == TOKEN_ExplicitFilter) {
 		getStatusFilter(pbc, inStatus); // blindly generates a thunk; never fails
 		returnStatus(verifyStatusFilter(pbc)); // return the status resulting from verifying the contents of this filter
 	} else if (*pbc == TOKEN_Object) {
@@ -1828,6 +1828,80 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	GET_STATUS_FOOTER;
 }
 
+unsigned int decodeInitializerList(Tree *tree, deque<unsigned int> *depthList, const TypeStatus &instantiationStatus, const TypeStatus &inStatus, bool last = true) { // tree is a CurlyBracketedExp
+	if (*(tree->child->next) == TOKEN_ExpList) { // if this is an ExpList base case, verify that the raw initializers are compatible
+		bool failed = false;
+		unsigned int initializerCount = 0;
+		for (Tree *initializer = tree->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // Exp
+			initializerCount++;
+			TypeStatus initializerStatus = getStatusExp(initializer, inStatus);
+			if (*initializerStatus) { //  if we successfully derived a type for the initializer
+				// try the ObjectType outstructor special case for instantiation
+				bool objectOutstructorFound = false;
+				if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
+					for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
+							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
+							outsIter++) {
+						if (**outsIter >> *instantiationStatus) {
+							objectOutstructorFound = true;
+							break;
+						}
+					}
+				}
+				if (!objectOutstructorFound) { // if the special case failed, try a direct compatibility
+					if (!(*initializerStatus >> *instantiationStatus)) { // if the initializer is incompatible, throw an error
+						Token curToken = initializer->t; // Exp
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"incompatible initializer in list");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
+						failed = true;
+					}
+				}
+			}
+		}
+		if (!failed) { // if we didn't find any incompatible initializers
+			if (last) { // if we're the last call among our siblings, log the initializer count in the depthList
+				depthList->push_front(initializerCount);
+			}
+			return initializerCount; // return the count of how many initializers there were
+		} else { // else if we found incompatible initializers, return error code 0
+			return 0;
+		}
+	} else /* if (*(tree->child->next) == TOKEN_CurlyBracketedExpList) */ { // else if this is the recursive CurlyBracketedExpList case
+		Tree *cbel = tree->child->next; // CurlyBracketedExpList
+		unsigned int firstCbeBreadth = decodeInitializerList(cbel->child, depthList, instantiationStatus, inStatus, (last && (cbel->child->next == NULL)));
+		bool failed = (firstCbeBreadth == 0);
+		unsigned int breadthCount = 1;
+		for (Tree *cbe = (cbel->child->next != NULL) ? cbel->child->next->next->child : NULL;
+				cbe != NULL;
+				cbe = (cbe->next != NULL) ? cbe->next->next->child : NULL) { // CurlyBracketedExp
+			breadthCount++;
+			unsigned int thisCbeBreadth = decodeInitializerList(cbe, depthList, instantiationStatus, inStatus, (last && (cbe->next == NULL)));
+			if (thisCbeBreadth != firstCbeBreadth) { // if a this breadth analysis differs from the first one
+				if (firstCbeBreadth != 0 && thisCbeBreadth != 0) { // if neither breadth analysis was a failure, flag a breadth mismatch error
+					Token curToken = cbe->t; // CurlyBracketedExp
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"initializer list is jagged");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (found "<<thisCbeBreadth<<" elements)");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (expected "<<firstCbeBreadth<<" elements)");
+					failed = true;
+				} else if (firstCbeBreadth == 0 /* && thisCbeBreadth != 0 */) { // else if our first breadth analysis failed but this one didn't, log this one as the new first one
+					firstCbeBreadth = thisCbeBreadth;
+				} else /* if (thisCbeBreadth == 0 && firstCbeBreadth != 0) */ { // else if this breadth analysis failed but the first one didn't, flag the failure but don't report an error
+					failed = true;
+				}
+			}
+		}
+		if (!failed) { // if all of the breadth analyses at this level were consistent
+			if (last) { // if we're the last call among our siblings, log this level's breadth count in the depthList
+				depthList->push_front(breadthCount);
+			}
+			return breadthCount; // return the breadth count for this call
+		} else { // else if the breadth analyses at this level were inconsistent, return error code 0
+			return 0;
+		}
+	}
+}
+
 // reports errors
 TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
@@ -1876,40 +1950,15 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				}
 			}
 		} else /* if (*(is->next->next) == TOKEN_CurlyBracketedExp) */ { // else if there is an initializer list, make sure that all of the initializers are compatiable
-			bool failed = false;
-			uintptr_t initializerCount = 0;
-			for (Tree *initializer = is->next->next->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // Exp
-				initializerCount++;
-				TypeStatus initializerStatus = getStatusExp(initializer, inStatus);
-				if (*initializerStatus) { //  if we successfully derived a type for the initializer
-					// try the ObjectType outstructor special case for instantiation
-					bool objectOutstructorFound = false;
-					if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
-						for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
-								outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
-								outsIter++) {
-							if (**outsIter >> *instantiationStatus) {
-								objectOutstructorFound = true;
-								break;
-							}
-						}
-					}
-					if (!objectOutstructorFound) { // if the special case failed, try a direct compatibility
-						if (!(*initializerStatus >> *instantiationStatus)) { // if the initializer is incompatible, throw an error
-							Token curToken = initializer->t; // Exp
-							semmerError(curToken.fileIndex,curToken.row,curToken.col,"incompatible initializer in list");
-							semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (instantiation type is "<<instantiationStatus<<")");
-							semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (initializer type is "<<initializerStatus<<")");
-							failed = true;
-						}
-					}
-				}
-			}
-			if (!failed) { // if we didn't find any incompatible initializers, return a poolized version of the instantiation type
+			deque<unsigned int> *depthList = new deque<unsigned int>();
+			if (decodeInitializerList(is->next->next, depthList, instantiationStatus, inStatus) > 0) { // if we succeeded in decoding the initializer list depths
 				TypeStatus mutableInstantiationStatus = instantiationStatus;
 				mutableInstantiationStatus.type = mutableInstantiationStatus.type->copy();
-				mutableInstantiationStatus.type->poolize(new Tree(initializerCount)); // use the initializer count as the pool size expression
+				mutableInstantiationStatus.type->depth = depthList->size();
+				mutableInstantiationStatus.type->poolize(new Tree(depthList)); // use the depthList as the pool size expression
 				returnStatus(mutableInstantiationStatus);
+			} else { // else if we failed to decode the initializer list depths, delete the allocated depthList
+				delete depthList;
 			}
 		}
 	}

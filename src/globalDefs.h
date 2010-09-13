@@ -6,8 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <map>
 #include <vector>
+#include <map>
+#include <deque>
 #include <stack>
 
 #include <stdlib.h>
@@ -27,6 +28,7 @@ using std::ofstream;
 using std::ostream;
 using std::string;
 using std::vector;
+using std::deque;
 using std::map;
 using std::stack;
 using std::pair;

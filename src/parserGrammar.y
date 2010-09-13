@@ -156,7 +156,11 @@ TypedStaticTerm : Node
 BracketedExp : LBRACKET RBRACKET
 	| LBRACKET ExpList RBRACKET
 	;
+CurlyBracketedExpList : CurlyBracketedExp
+	| CurlyBracketedExp COMMA CurlyBracketedExpList
+	;
 CurlyBracketedExp : LCURLY ExpList RCURLY
+	| LCURLY CurlyBracketedExpList RCURLY
 	;
 ExpList : Exp
 	| Exp COMMA ExpList
@@ -189,7 +193,7 @@ PrimaryBase : NonArrayedIdentifier
 	| SingleAccessor NonArrayedIdentifier
 	| SingleAccessor ArrayedIdentifier
 	| Instantiation
-	| Filter
+	| ExplicitFilter
 	| Object
 	| PrimLiteral
 	| BracketedExp
@@ -290,6 +294,8 @@ PrimLiteral : INUM
 	;
 Filter : Block
 	| FilterHeader Block
+	;
+ExplicitFilter : FilterHeader Block
 	;
 FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE

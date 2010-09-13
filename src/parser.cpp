@@ -12,7 +12,7 @@ int parserErrorCode;
 Tree::Tree(const Token &t) : t(t), next(NULL), back(NULL), child(NULL), parent(NULL), status(TypeStatus()) {}
 Tree::Tree(const Token &t, Tree *next, Tree *back, Tree *child, Tree *parent) : t(t), next(next), back(back), child(child), parent(parent), status(TypeStatus()) {}
 Tree::Tree(const TypeStatus &status) : next(NULL), back(NULL), child(NULL), parent(NULL), status(status) {}
-Tree::Tree(uintptr_t constInt) : t(TOKEN_CONSTANT), next((Tree *)constInt) {}
+Tree::Tree(deque<unsigned int> *depthList) : t(TOKEN_RAW_VECTOR), next((Tree *)depthList) {}
 
 // destructor
 Tree::~Tree() {

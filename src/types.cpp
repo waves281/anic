@@ -775,7 +775,9 @@ string TypeList::toString(unsigned int tabDepth) {
 	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
 		acc += (*iter)->toString(tabDepth);
 		if ((iter+1) != list.end()) {
+			COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 			acc += ", ";
+			COLOR( acc += SET_TERM(RESET_CODE); )
 		}
 	}
 	TYPE_TO_STRING_FOOTER;
@@ -785,7 +787,9 @@ TypeList::operator string() {
 	for (vector<Type *>::const_iterator iter = list.begin(); iter != list.end(); iter++) {
 		acc += (string)(**iter);
 		if ((iter+1) != list.end()) {
+			COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 			acc += ", ";
+			COLOR( acc += SET_TERM(RESET_CODE); )
 		}
 	}
 	TYPE_TO_STRING_FOOTER;

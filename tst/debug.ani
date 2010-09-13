@@ -7,6 +7,7 @@ exp2 = (-7+(-5--++-(-1))*2++-100.0e+10);
 exp3 = [int\]; 1 + 2 ++ -- ->exp3;
 exp4 = [float\]; 7e-1 - + ->exp4;
 exp5 = [string\]; 1.0 + " concatenated to a string" ->exp5;
+exp6 = [int\[1][2][3]];
 
 // basic construct testing
 {

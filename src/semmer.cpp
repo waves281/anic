@@ -1587,12 +1587,12 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else if (*(typeSuffix->child) == TOKEN_ArrayTypeSuffix) {
 		suffixVal = SUFFIX_ARRAY;
-		for (Tree *ats = typeSuffix->child; ats != NULL; ats = (ats->child->next->next->next != NULL) ? ats->child->next->next->next : NULL) { // ArrayTypeSuffix
+		for (Tree *exp = typeSuffix->child->child->next; exp != NULL; exp = (exp->next->next != NULL) ? exp->next->next->child->next : NULL) { // Exp
 			depthVal++;
 			// validate that this suffix expression is valid
-			TypeStatus expStatus = getStatusExp(ats->child->next, inStatus); // Exp
+			TypeStatus expStatus = getStatusExp(exp, inStatus); // Exp
 			if (!(*expStatus >> *stdIntType)) { // if the expression is incompatible with an integer, flag a bad expression error
-				Token curToken = ats->child->t; // LSQUARE
+				Token curToken = exp->t; // Exp
 				semmerError(curToken.fileIndex,curToken.row,curToken.col,"array subscript is invalid");
 				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;
@@ -1600,12 +1600,12 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else /* if (*(typeSuffix->child) == TOKEN_PoolTypeSuffix) */ {
 		suffixVal = SUFFIX_POOL;
-		for(Tree *pts = typeSuffix->child; pts != NULL; pts = (pts->child->next->next->next->next != NULL) ? pts->child->next->next->next->next : NULL) { // PoolTypeSuffix
+		for(Tree *exp = typeSuffix->child->child->next->next; exp != NULL; exp = (exp->next->next != NULL) ? exp->next->next->child->next : NULL) { // Exp
 			depthVal++;
 			// validate that this suffix expression is valid
-			TypeStatus expStatus = getStatusExp(pts->child->next->next, inStatus); // Exp
+			TypeStatus expStatus = getStatusExp(exp, inStatus); // Exp
 			if (!(*expStatus >> *stdIntType)) { // if the expression is incompatible with an integer, flag a bad expression error
-				Token curToken = pts->child->next->t; // LSQUARE
+				Token curToken = exp->t; // Exp
 				semmerError(curToken.fileIndex,curToken.row,curToken.col,"pool subscript is invalid");
 				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (subscript type is "<<expStatus<<")");
 				failed = true;

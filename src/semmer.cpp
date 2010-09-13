@@ -96,6 +96,9 @@ unsigned int SymbolTree::offsetIndex() {
 	}
 	return offsetIndexInternal;
 }
+Tree *SymbolTree::offsetExp() const {
+	return (defSite->status.type->offsetExp);
+}
 SymbolTree &SymbolTree::operator=(const SymbolTree &st) {
 	kind = st.kind;
 	defSite = st.defSite;
@@ -1571,6 +1574,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 	bool failed = false;
 	int suffixVal;
 	int depthVal = 0;
+	Tree *offsetExp = NULL;
 	if (typeSuffix == NULL) {
 		suffixVal = SUFFIX_CONSTANT;
 	} else if (*(typeSuffix->child) == TOKEN_SLASH) {
@@ -1600,7 +1604,8 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 		}
 	} else /* if (*(typeSuffix->child) == TOKEN_PoolTypeSuffix) */ {
 		suffixVal = SUFFIX_POOL;
-		for(Tree *exp = typeSuffix->child->child->next->next; exp != NULL; exp = (exp->next->next != NULL) ? exp->next->next->child->next : NULL) { // Exp
+		offsetExp = typeSuffix->child->child->next; // LSQUARE
+		for(Tree *exp = offsetExp->next; exp != NULL; exp = (exp->next->next != NULL) ? exp->next->next->child->next : NULL) { // Exp
 			depthVal++;
 			// validate that this suffix expression is valid
 			TypeStatus expStatus = getStatusExp(exp, inStatus); // Exp
@@ -1621,6 +1626,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					idStatus.type = idStatus.type->copy(); // make a copy of the identifier's type, so that the below mutation doesn't propagate to it
 					idStatus->suffix = suffixVal;
 					idStatus->depth = depthVal;
+					idStatus->offsetExp = offsetExp;
 					returnStatus(idStatus);
 				} else { // else if the type is defined by a standard literal, flag an error
 					Token curToken = typec->child->t; // guaranteed to be ID, since only NonArrayedIdentifier or ArrayedIdentifier nodes generate inoperable types
@@ -1639,11 +1645,11 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 			if (*sub == TOKEN_RetList) { // if there is a to-list
 				to = getStatusTypeList(sub->child->next, inStatus); // TypeList
 			}
-			returnType(new FilterType(from, to, suffixVal, depthVal));
+			returnType(new FilterType(from, to, suffixVal, depthVal, offsetExp));
 		} else if (*typec == TOKEN_ObjectType) { // else if it's an in-place-defined object type
 			Tree *otcn = typec->child->next; // RCURLY or ObjectTypeList
 			if (*otcn == TOKEN_RCURLY) { // if it's a blank object type
-				returnType(new ObjectType(suffixVal, depthVal));
+				returnType(new ObjectType(suffixVal, depthVal, offsetExp));
 			} else /* if (*otcn == TOKEN_ObjectTypeList) */ { // else if it's a custom-defined object type
 				StructorList instructorList;
 				vector<Token> instructorTokens;
@@ -1734,7 +1740,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 					}
 				}
 				if (!failed) {
-					returnType(new ObjectType(instructorList, outstructorList, memberList, suffixVal, depthVal));
+					returnType(new ObjectType(instructorList, outstructorList, memberList, suffixVal, depthVal, offsetExp));
 				}
 			}
 		}
@@ -1803,19 +1809,19 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	if (*tree == TOKEN_BlankInstantiationSource) { // if it's a blank slot instantiation 
 		returnStatus(getStatusType(tree, inStatus)); // BlankInstantiationSource (compatible in this form as a Type)
 	} else if (*tree == TOKEN_SingleInitInstantiationSource) { // else if it's a regular Single-initialized instantiation
-		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource or MultiInitInstantiationSource (compatible in this form as a Type)
+		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->latchize();
 		returnStatus(mutableIdStatus);
 	} else if (*tree == TOKEN_MultiInitInstantiationSource) { // else if it's a regular Multi-initialized instantiation
-		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource or MultiInitInstantiationSource (compatible in this form as a Type)
+		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // MultiInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
-		mutableIdStatus.type->poolize();
+		mutableIdStatus.type->poolize(tree->child->next->child->child); // LSQUARE
 		returnStatus(mutableIdStatus);
 	} else /* if (*tree == TOKEN_CopyInstantiationSource) */ { // else if it's a copy-style instantiation
 		TypeStatus mutableIdStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		mutableIdStatus.type = mutableIdStatus.type->copy();
-		mutableIdStatus.type->copyDelatch();
+		mutableIdStatus.type->copyDelatch(tree->child->next); // NonArrayedIdentifier or ArrayedIdentifier
 		returnStatus(mutableIdStatus);
 	}
 	GET_STATUS_CODE;
@@ -1871,7 +1877,9 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			}
 		} else /* if (*(is->next->next) == TOKEN_CurlyBracketedExp) */ { // else if there is an initializer list, make sure that all of the initializers are compatiable
 			bool failed = false;
-			for (Tree *initializer = is->next->next->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // invariant: initializer is an Exp
+			uintptr_t initializerCount = 0;
+			for (Tree *initializer = is->next->next->child->next->child; initializer != NULL; initializer = (initializer->next != NULL) ? initializer->next->next->child : NULL) { // Exp
+				initializerCount++;
 				TypeStatus initializerStatus = getStatusExp(initializer, inStatus);
 				if (*initializerStatus) { //  if we successfully derived a type for the initializer
 					// try the ObjectType outstructor special case for instantiation
@@ -1900,7 +1908,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			if (!failed) { // if we didn't find any incompatible initializers, return a poolized version of the instantiation type
 				TypeStatus mutableInstantiationStatus = instantiationStatus;
 				mutableInstantiationStatus.type = mutableInstantiationStatus.type->copy();
-				mutableInstantiationStatus.type->poolize();
+				mutableInstantiationStatus.type->poolize(new Tree(initializerCount)); // use the initializer count as the pool size expression
 				returnStatus(mutableInstantiationStatus);
 			}
 		}

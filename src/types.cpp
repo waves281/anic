@@ -3,7 +3,8 @@
 #include "outputOperators.h"
 
 // Type functions
-Type::Type(int category, int suffix, int depth) : category(category), suffix(suffix), depth(depth), referensible(true), instantiable(true), toStringHandled(false) {}
+Type::Type(int category, int suffix, int depth, Tree *offsetExp) : category(category), suffix(suffix), depth(depth), offsetExp(offsetExp),
+	referensible(true), instantiable(true), toStringHandled(false) {}
 bool Type::baseEquals(const Type &otherType) const {return (suffix == otherType.suffix && depth == otherType.depth);}
 bool Type::baseSendable(const Type &otherType) const {
 	return (
@@ -91,8 +92,9 @@ void Type::latchize() {
 	suffix = SUFFIX_LATCH;
 	depth = 0;
 }
-void Type::poolize() {
+void Type::poolize(Tree *offsetExp) {
 	suffix = SUFFIX_POOL;
+	this->offsetExp = offsetExp;
 	if (depth == 0) {
 		depth = 1;
 	}
@@ -183,13 +185,14 @@ bool Type::destream() {
 		return true;
 	}
 }
-void Type::copyDelatch() {
+void Type::copyDelatch(Tree *offsetExp) {
 	if (suffix == SUFFIX_CONSTANT) {
 		suffix = SUFFIX_LATCH;
 	} else if (suffix == SUFFIX_LIST) {
 		suffix = SUFFIX_STREAM;
 	} else if (suffix == SUFFIX_ARRAY) {
 		suffix = SUFFIX_POOL;
+		this->offsetExp = offsetExp;
 	}
 }
 bool Type::pack() {
@@ -271,7 +274,7 @@ bool Type::operator!=(Type &otherType) {return (!(operator==(otherType)));};
 bool Type::operator!=(int kind) const {return (!(operator==(kind)));}
 
 // StdType functions
-StdType::StdType(int kind, int suffix, int depth) : Type(CATEGORY_STDTYPE, suffix, depth), kind(kind) {}
+StdType::StdType(int kind, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_STDTYPE, suffix, depth, offsetExp), kind(kind) {}
 StdType::~StdType() {}
 bool StdType::isComparable() const {
 	return (kind >= STD_MIN_COMPARABLE && kind <= STD_MAX_COMPARABLE);
@@ -789,7 +792,7 @@ TypeList::operator string() {
 }
 
 // FilterType functions
-FilterType::FilterType(Type *from, Type *to, int suffix, int depth) : Type(CATEGORY_FILTERTYPE, suffix, depth), defSite(NULL) {
+FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), defSite(NULL) {
 	if (from->category == CATEGORY_TYPELIST) {
 		fromInternal = (TypeList *)from;
 	} else {
@@ -801,7 +804,7 @@ FilterType::FilterType(Type *from, Type *to, int suffix, int depth) : Type(CATEG
 		toInternal = new TypeList(to);
 	}
 }
-FilterType::FilterType(Tree *defSite, int suffix, int depth) : Type(CATEGORY_FILTERTYPE, suffix, depth), fromInternal(NULL), toInternal(NULL), defSite(defSite) {}
+FilterType::FilterType(Tree *defSite, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), fromInternal(NULL), toInternal(NULL), defSite(defSite) {}
 FilterType::~FilterType() {
 	if (fromInternal != NULL && *fromInternal != *nullType && *fromInternal != *errType) {
 		delete fromInternal;
@@ -1029,11 +1032,11 @@ MemberList::iterator MemberList::end() {return iterator(memberMap.end());}
 MemberList::iterator MemberList::find(const string &name) {return iterator(memberMap.find(name));}
 
 // ObjectType functions
-ObjectType::ObjectType(int suffix, int depth) : Type(CATEGORY_OBJECTTYPE, suffix, depth) {}
-ObjectType::ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix, int depth) :
-	Type(CATEGORY_OBJECTTYPE, suffix, depth), instructorList(instructorList), outstructorList(outstructorList) {}
-ObjectType::ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix, int depth) : 
-	Type(CATEGORY_OBJECTTYPE, suffix, depth), instructorList(instructorList), outstructorList(outstructorList), memberList(memberList) {}
+ObjectType::ObjectType(int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_OBJECTTYPE, suffix, depth, offsetExp) {}
+ObjectType::ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix, int depth, Tree *offsetExp) :
+	Type(CATEGORY_OBJECTTYPE, suffix, depth, offsetExp), instructorList(instructorList), outstructorList(outstructorList) {}
+ObjectType::ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix, int depth, Tree *offsetExp) : 
+	Type(CATEGORY_OBJECTTYPE, suffix, depth, offsetExp), instructorList(instructorList), outstructorList(outstructorList), memberList(memberList) {}
 ObjectType::~ObjectType() {
 	for (StructorList::iterator iter = instructorList.begin(); iter != instructorList.end(); iter++) {
 		if (**iter != *nullType && **iter != *errType && !((*iter)->referensible)) {

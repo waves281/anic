@@ -52,6 +52,7 @@ class SymbolTree {
 		unsigned int addShare();
 		void getOffset();
 		int offsetKind();
+		Tree *offsetExp() const;
 		unsigned int offsetIndex();
 		string toString(unsigned int tabDepth);
 		// operators

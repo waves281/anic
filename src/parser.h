@@ -30,6 +30,7 @@ class Tree {
 		Tree(const Token &t);
 		Tree(const Token &t, Tree *next, Tree *back, Tree *child, Tree *parent);
 		Tree(const TypeStatus &status);
+		Tree(uintptr_t constInt);
 		~Tree();
 		// core methods
 		IRTree *code() const;

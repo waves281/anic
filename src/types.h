@@ -38,23 +38,24 @@ class Type {
 		int category; // the category that this Type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
+		Tree *offsetExp; // the offset expression for this type (if it's a SUFFIX_POOL); TOKEN_CONSTANT, TOKEN_LSQUARE, TOKEN_NonArrayedIdentifier, or TOKEN_ArrayedIdentifier
 		bool referensible; // whether a node of this type can be referenced on its own
 		bool instantiable; // whether a node of this type can be instantiated
 		bool toStringHandled; // used for recursion detection in operator string()
 		// mutators
 		void constantize(); // for when an identifier is present without an accessor or a sub-identifier's type is constrained by upstream identifiers
 		void latchize(); // for when we're instantiating a node with a single initializer
-		void poolize(); // for when we're instantiating a node with a multi initializer
+		void poolize(Tree *offsetExp); // for when we're instantiating a node with a multi initializer
 		void decreaseDepth();
 		bool delatch() const;
 		bool delist();
 		bool destream();
-		void copyDelatch();
+		void copyDelatch(Tree *offsetExp);
 		bool pack();
 		bool unpack();
 		Type *link(Type &otherType);
 		// allocators/deallocators
-		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		virtual ~Type() = 0;
 		// core methods
 		// virtual
@@ -128,7 +129,7 @@ class StdType : public Type {
 		// data members
 		int kind; // the kind of standard type that this is
 		// allocators/deallocators
-		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		StdType(int kind, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		~StdType();
 		// core methods
 		bool isComparable() const;
@@ -179,8 +180,8 @@ class FilterType : public Type {
 		TypeList *toInternal; // the destination of this object type
 		Tree *defSite; // the FilterHeader tree node that defines this FilterType
 		// allocators/deallocators
-		FilterType(Type *fromInternal = nullType, Type *toInternal = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		FilterType(Tree *defSite, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		FilterType(Type *fromInternal = nullType, Type *toInternal = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
+		FilterType(Tree *defSite, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		~FilterType();
 		// core methods
 		TypeList *from();
@@ -309,9 +310,9 @@ class ObjectType : public Type {
 		StructorList outstructorList; // list of the types of this object's outstructors (each one is a TypeList)
 		MemberList memberList; // smart map of the names of members to their types
 		// allocators/deallocators
-		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix = SUFFIX_CONSTANT, int depth = 0);
-		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix = SUFFIX_CONSTANT, int depth = 0);
+		ObjectType(int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
+		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
+		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;

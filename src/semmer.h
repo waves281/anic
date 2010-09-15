@@ -21,7 +21,8 @@
 #define KIND_OUTSTRUCTOR 8
 #define KIND_FILTER 9
 #define KIND_OBJECT 10
-#define KIND_FAKE 11
+#define KIND_INSTANTIATION 11
+#define KIND_FAKE 12
 
 class SymbolTree {
 	public:

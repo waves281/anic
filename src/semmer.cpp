@@ -176,6 +176,8 @@ string SymbolTree::toString(unsigned int tabDepth) {
 			acc += FILTER_NODE_STRING;
 		} else if (kind == KIND_OBJECT) {
 			acc += OBJECT_NODE_STRING;
+		} else if (kind == KIND_INSTANTIATION) {
+			acc += INSTANTIATION_NODE_STRING;
 		} else {
 			acc += id;
 		}
@@ -391,7 +393,34 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 	// log the current symbol environment in the tree (this pointer will potentially be overridden by a SymbolTree() constructor)
 	tree->env = st;
 	// recursive cases
-	if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
+	if (*tree == TOKEN_Declaration) { // if it's a Declaration-style node
+		Token defToken = tree->child->t; // ID, AT, or DAT
+		if (defToken.tokenType != TOKEN_ID || (defToken.s != "null" && defToken.s != "true" && defToken.s != "false")) { // if this isn't a standard literal override, proceed normally
+			Tree *dcn = tree->child->next;
+			if (*dcn == TOKEN_EQUALS) { // standard static declaration
+				// allocate the new declaration node
+				SymbolTree *newDef = new SymbolTree(KIND_DECLARATION, tree->child->t.s, tree);
+				// ... and link it in
+				*st *= newDef;
+				// recurse
+				buildSt(tree->child, newDef, importList); // child of Declaration
+				buildSt(tree->next, st, importList); // right
+			} else if (*(tree->child) == TOKEN_AT) { // import-style declaration
+				// allocate the new definition node
+				Tree *importId = (*(tree->child->next) == TOKEN_ImportIdentifier) ? tree->child->next : tree->child->next->next; // ImportIdentifier
+				SymbolTree *newDef = new SymbolTree((*(importId->child) != TOKEN_OpenIdentifier) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
+				// ... and link it in
+				*st *= newDef;
+				// also, since it's an import declaration, log it to the import list
+				importList.push_back(newDef);
+				// recurse
+				buildSt(tree->child, newDef, importList); // child of Declaration
+				buildSt(tree->next, st, importList); // right
+			}
+		} else { // else if this is a standard literal override, flag an error
+			semmerError(defToken.fileIndex,defToken.row,defToken.col,"redefinition of standard literal '"<<defToken.s<<"'");
+		}
+	} else if (*tree == TOKEN_Block || *tree == TOKEN_Object) { // if it's a block-style node
 		// allocate the new block definition node
 		// generate an identifier for the node
 		int kind;
@@ -464,34 +493,17 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// recurse
 		buildSt(tree->child, consDef, importList); // child of Outstructor
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Declaration) { // if it's a Declaration-style node
-		Token defToken = tree->child->t; // ID, AT, or DAT
-		if (defToken.tokenType != TOKEN_ID || (defToken.s != "null" && defToken.s != "true" && defToken.s != "false")) { // if this isn't a standard literal override, proceed normally
-			Tree *dcn = tree->child->next;
-			if (*dcn == TOKEN_EQUALS) { // standard static declaration
-				// allocate the new declaration node
-				SymbolTree *newDef = new SymbolTree(KIND_DECLARATION, tree->child->t.s, tree);
-				// ... and link it in
-				*st *= newDef;
-				// recurse
-				buildSt(tree->child, newDef, importList); // child of Declaration
-				buildSt(tree->next, st, importList); // right
-			} else if (*(tree->child) == TOKEN_AT) { // import-style declaration
-				// allocate the new definition node
-				Tree *importId = (*(tree->child->next) == TOKEN_ImportIdentifier) ? tree->child->next : tree->child->next->next; // ImportIdentifier
-				SymbolTree *newDef = new SymbolTree((*(importId->child) != TOKEN_OpenIdentifier) ? KIND_CLOSED_IMPORT : KIND_OPEN_IMPORT, IMPORT_DECL_STRING, tree);
-				// ... and link it in
-				*st *= newDef;
-				// also, since it's an import declaration, log it to the import list
-				importList.push_back(newDef);
-				// recurse
-				buildSt(tree->child, newDef, importList); // child of Declaration
-				buildSt(tree->next, st, importList); // right
-			}
-		} else { // else if this is a standard literal override, flag an error
-			semmerError(defToken.fileIndex,defToken.row,defToken.col,"redefinition of standard literal '"<<defToken.s<<"'");
-		}
-	} else { // else if it's not a declaration node
+	} else if (*tree == TOKEN_Instantiation && st->kind != KIND_DECLARATION) { // if it's a non-bound (inlined) instantiation-style node
+		string fakeId(INSTANTIATION_NODE_STRING);
+		fakeId += (uintptr_t)tree;
+		// allocate the new instantiation node
+		SymbolTree *newDef = new SymbolTree(KIND_INSTANTIATION, fakeId, tree);
+		// ... and link it in
+		*st *= newDef;
+		// recurse
+		buildSt(tree->child, newDef, importList); // child of Instantiation
+		buildSt(tree->next, st, importList); // right
+	} else { // else if it's any other kind of node
 		// recurse normally
 		buildSt(tree->child, st, importList); // down
 		buildSt(tree->next, st, importList); // right
@@ -855,6 +867,8 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
 	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
+	} else if (root->kind == KIND_INSTANTIATION) { // else if the symbolt was defined as an instantiation-style node
+		returnStatus(getStatusInstantiation(tree, inStatus)); // Instantiation
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		return (tree->status);
 	}

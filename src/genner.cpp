@@ -17,11 +17,23 @@ void IRTree::asmDump(string &asmString) const {
 		case CATEGORY_SEQ:
 			((SeqTree *)this)->asmDump(asmString);
 			break;
-		case CATEGORY_WORD:
-			((WordTree *)this)->asmDump(asmString);
+		case CATEGORY_WORD8:
+			((WordTree8 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD16:
+			((WordTree16 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD32:
+			((WordTree32 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD64:
+			((WordTree64 *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_ARRAY:
 			((ArrayTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_LIST:
+			((ListTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_TEMP:
 			((TempTree *)this)->asmDump(asmString);
@@ -106,10 +118,18 @@ DataTree::DataTree(int category) : IRTree(category) {}
 DataTree::~DataTree() {}
 string DataTree::toString(unsigned int tabDepth) const {
 	switch(category) {
-		case CATEGORY_WORD:
-			return ((WordTree *)this)->toString(tabDepth);
+		case CATEGORY_WORD8:
+			return ((WordTree8 *)this)->toString(tabDepth);
+		case CATEGORY_WORD16:
+			return ((WordTree16 *)this)->toString(tabDepth);
+		case CATEGORY_WORD32:
+			return ((WordTree32 *)this)->toString(tabDepth);
+		case CATEGORY_WORD64:
+			return ((WordTree64 *)this)->toString(tabDepth);
 		case CATEGORY_ARRAY:
 			return ((ArrayTree *)this)->toString(tabDepth);
+		case CATEGORY_LIST:
+			return ((ListTree *)this)->toString(tabDepth);
 		case CATEGORY_TEMP:
 			return ((TempTree *)this)->toString(tabDepth);
 		case CATEGORY_READ:
@@ -120,11 +140,23 @@ string DataTree::toString(unsigned int tabDepth) const {
 }
 void DataTree::asmDump(string &asmString) const {
 	switch(category) {
-		case CATEGORY_WORD:
-			((WordTree *)this)->asmDump(asmString);
+		case CATEGORY_WORD8:
+			((WordTree8 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD16:
+			((WordTree16 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD32:
+			((WordTree32 *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_WORD64:
+			((WordTree64 *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_ARRAY:
 			((ArrayTree *)this)->asmDump(asmString);
+			break;
+		case CATEGORY_LIST:
+			((ListTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_TEMP:
 			((TempTree *)this)->asmDump(asmString);
@@ -138,17 +170,59 @@ void DataTree::asmDump(string &asmString) const {
 }
 
 // WordTree functions
-WordTree::WordTree(uint32_t data) : DataTree(CATEGORY_WORD), data(data) {}
-WordTree::~WordTree() {}
-string WordTree::toString(unsigned int tabDepth) const {
-	string acc("W[");
+WordTree8::WordTree8(uint8_t data) : DataTree(CATEGORY_WORD8), data(data) {}
+WordTree8::~WordTree8() {}
+string WordTree8::toString(unsigned int tabDepth) const {
+	string acc("W08[");
 	char tempS[3];
 	sprintf(tempS, "%08X", data);
 	acc += tempS;
 	acc += ']';
 	return acc;
 }
-void WordTree::asmDump(string &asmString) const {
+void WordTree8::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
+
+WordTree16::WordTree16(uint16_t data) : DataTree(CATEGORY_WORD16), data(data) {}
+WordTree16::~WordTree16() {}
+string WordTree16::toString(unsigned int tabDepth) const {
+	string acc("W16[");
+	char tempS[3];
+	sprintf(tempS, "%08hX", data);
+	acc += tempS;
+	acc += ']';
+	return acc;
+}
+void WordTree16::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
+
+WordTree32::WordTree32(uint32_t data) : DataTree(CATEGORY_WORD32), data(data) {}
+WordTree32::~WordTree32() {}
+string WordTree32::toString(unsigned int tabDepth) const {
+	string acc("W32[");
+	char tempS[3];
+	sprintf(tempS, "%08X", data);
+	acc += tempS;
+	acc += ']';
+	return acc;
+}
+void WordTree32::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
+
+WordTree64::WordTree64(uint64_t data) : DataTree(CATEGORY_WORD64), data(data) {}
+WordTree64::~WordTree64() {}
+string WordTree64::toString(unsigned int tabDepth) const {
+	string acc("W64[");
+	char tempS[3];
+	sprintf(tempS, "%08llX", data);
+	acc += tempS;
+	acc += ']';
+	return acc;
+}
+void WordTree64::asmDump(string &asmString) const {
 	asmString += ""; // LOL
 }
 
@@ -166,6 +240,24 @@ string ArrayTree::toString(unsigned int tabDepth) const {
 	return acc;
 }
 void ArrayTree::asmDump(string &asmString) const {
+	asmString += ""; // LOL
+}
+
+// ListTree functions
+ListTree::ListTree(const vector<DataTree *> &dataList) : DataTree(CATEGORY_LIST), dataList(dataList) {}
+ListTree::~ListTree() {}
+string ListTree::toString(unsigned int tabDepth) const {
+	string acc("L[");
+	for (vector<DataTree *>::const_iterator iter = dataList.begin(); iter != dataList.end(); iter++) {
+		acc += (*iter)->toString(tabDepth+1);
+		if (iter + 1 != dataList.end()) {
+			acc += ',';
+		}
+	}
+	acc += ']';
+	return acc;
+}
+void ListTree::asmDump(string &asmString) const {
 	asmString += ""; // LOL
 }
 

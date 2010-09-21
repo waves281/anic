@@ -31,6 +31,7 @@ ObjectType *charCompOpType;
 ObjectType *stringCompOpType;
 StdType *stdLibType;
 SymbolTree *stdLib;
+IRTree *nopCode;
 
 // SymbolTree functions
 SymbolTree::SymbolTree(int kind, const string &id, Tree *defSite, SymbolTree *copyImportSite) : kind(kind), id(id), defSite(defSite), copyImportSite(copyImportSite), parent(NULL),
@@ -278,7 +279,7 @@ void catStdLib(SymbolTree *&stRoot) {
 	*stRoot *= stdLib;
 }
 
-void initGlobals() {
+void initSemmerGlobals() {
 	// build the standard types
 	nullType = new StdType(STD_NULL); nullType->referensible = false;
 	errType = new ErrorType();
@@ -371,6 +372,8 @@ void initGlobals() {
 	stdLibType = new StdType(STD_STD, SUFFIX_LATCH); stdLibType->referensible = false; stdLibType->instantiable = false;
 	// build the standard library node
 	stdLib = new SymbolTree(KIND_STD, STANDARD_LIBRARY_STRING, stdLibType);
+	// build the nop IRTree
+	nopCode = new CodeTree(CATEGORY_NOP);
 }
 
 SymbolTree *genDefaultDefs() {
@@ -1072,6 +1075,20 @@ TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 		}
 	}
 	GET_STATUS_CODE;
+	if (*becn == TOKEN_RBRACKET) {
+		returnCode(nopCode);
+	} else /* if (*becn == TOKEN_ExpList) */ {
+		Tree *exp = becn->child;
+		if (exp->next == NULL) { // if it's just a single Exp
+			returnCode(exp->code());
+		} else { // else if it's a true ExpList
+			vector<DataTree *> dataList;
+			for (; exp != NULL; exp = (exp->next != NULL) ? exp->next->next->child : NULL) {
+				dataList.push_back((DataTree *)(exp->code()));
+			}
+			returnCode(new ListTree(dataList));
+		}
+	}
 	GET_STATUS_FOOTER;
 }
 
@@ -2588,7 +2605,7 @@ int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 	VERBOSE( printNotice("building symbol tree..."); )
 
 	// initialize the standard types and nodes
-	initGlobals();
+	initSemmerGlobals();
 	
 	// build the symbol tree
 	stRoot = genDefaultDefs(); // initialize the symbol tree root with the default definitions

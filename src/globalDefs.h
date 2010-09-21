@@ -53,8 +53,12 @@ class IRTree;
 	class LabelTree;
 	class SeqTree;
 	class DataTree;
-		class WordTree;
+		class WordTree8;
+		class WordTree16;
+		class WordTree32;
+		class WordTree64;
 		class ArrayTree;
+		class ListTree;
 		class TempTree;
 		class ReadTree;
 	class OpTree;
@@ -115,6 +119,8 @@ extern ObjectType *stringCompOpType;
 
 extern StdType *stdLibType;
 extern SymbolTree *stdLib;
+
+extern IRTree *nopCode;
 
 // global function forward declarations
 

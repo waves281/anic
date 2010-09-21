@@ -11,22 +11,30 @@
 #include "semmer.h"
 
 // CodeTree category specifiers
-#define CATEGORY_LABEL 0
-#define CATEGORY_SEQ 1
-#define CATEGORY_WORD 2
-#define CATEGORY_ARRAY 3
-#define CATEGORY_TEMP 4
-#define CATEGORY_READ 5
-#define CATEGORY_UNOP 6
-#define CATEGORY_BINOP 7
-#define CATEGORY_CONVOP 8
-#define CATEGORY_LOCK 9
-#define CATEGORY_UNLOCK 10
-#define CATEGORY_COND 11
-#define CATEGORY_JUMP 12
-#define CATEGORY_WRITE 13
-#define CATEGORY_COPY 14
-#define CATEGORY_SCHED 15
+#define CATEGORY_NOP 0
+#define CATEGORY_LABEL 1
+#define CATEGORY_SEQ 2
+#define CATEGORY_WORD8 3
+#define CATEGORY_WORD16 4
+#define CATEGORY_WORD32 5
+#define CATEGORY_WORD64 6
+#define CATEGORY_ARRAY 7
+#define CATEGORY_LIST 8
+#define CATEGORY_TEMP 9
+#define CATEGORY_READ 10
+#define CATEGORY_UNOP 11
+#define CATEGORY_BINOP 12
+#define CATEGORY_CONVOP 13
+#define CATEGORY_LOCK 14
+#define CATEGORY_UNLOCK 15
+#define CATEGORY_COND 16
+#define CATEGORY_JUMP 17
+#define CATEGORY_WRITE 18
+#define CATEGORY_COPY 19
+#define CATEGORY_SCHED 20
+
+// WordTree default size
+#define WordTree WordTree64
 
 // IRTree classes
 
@@ -35,7 +43,7 @@ class IRTree {
 		// data members
 		int category; // the category that this IRTree belongs to
 		// allocators/deallocators
-		IRTree(int category);
+		IRTree(int category = CATEGORY_NOP);
 		virtual ~IRTree();
 		// core methods
 		string toString(unsigned int tabDepth = 1) const;
@@ -86,14 +94,53 @@ class DataTree : public IRTree {
 		void asmDump(string &asmString) const;
 };
 
-// usage: an in-place inclusion of a data word
-class WordTree : public DataTree {
+// usage: an in-place inclusion of an 8-bit data word
+class WordTree8 : public DataTree {
+	public:
+		// data members
+		uint8_t data; // the raw data word contained in this node
+		// allocators/deallocators
+		WordTree8(uint8_t data);
+		~WordTree8();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
+};
+
+// usage: an in-place inclusion of a 16-bit data word
+class WordTree16 : public DataTree {
+	public:
+		// data members
+		uint16_t data; // the raw data word contained in this node
+		// allocators/deallocators
+		WordTree16(uint16_t data);
+		~WordTree16();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
+};
+
+// usage: an in-place inclusion of a 32-bit data word
+class WordTree32 : public DataTree {
 	public:
 		// data members
 		uint32_t data; // the raw data word contained in this node
 		// allocators/deallocators
-		WordTree(uint32_t data);
-		~WordTree();
+		WordTree32(uint32_t data);
+		~WordTree32();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
+};
+
+// usage: an in-place inclusion of a 64-bit data word
+class WordTree64 : public DataTree {
+	public:
+		// data members
+		uint64_t data; // the raw data word contained in this node
+		// allocators/deallocators
+		WordTree64(uint64_t data);
+		~WordTree64();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 		void asmDump(string &asmString) const;
@@ -103,10 +150,23 @@ class WordTree : public DataTree {
 class ArrayTree : public DataTree {
 	public:
 		// data members
-		vector<unsigned char> data; // vector of the raw byte-array of data contained in this node
+		vector<uint8_t> data; // vector of the raw byte-array of data contained in this node
 		// allocators/deallocators
-		ArrayTree(const vector<unsigned char> &data);
+		ArrayTree(const vector<uint8_t> &data);
 		~ArrayTree();
+		// core methods
+		string toString(unsigned int tabDepth) const;
+		void asmDump(string &asmString) const;
+};
+
+// usage: a compounding of several data trees to be computed separately but treated atomically
+class ListTree : public DataTree {
+	public:
+		// data members
+		vector<DataTree *> dataList; // vector of the data trees that make up this node
+		// allocators/deallocators
+		ListTree(const vector<DataTree *> &dataList);
+		~ListTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 		void asmDump(string &asmString) const;

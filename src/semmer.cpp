@@ -1845,20 +1845,30 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 	GET_STATUS_HEADER;
 	if (*tree == TOKEN_BlankInstantiationSource) { // if it's a blank slot instantiation 
 		returnStatus(getStatusType(tree, inStatus)); // BlankInstantiationSource (compatible in this form as a Type)
-	} else if (*tree == TOKEN_SingleInitInstantiationSource) { // else if it's a regular Single-initialized instantiation
+	} else if (*tree == TOKEN_SingleInitInstantiationSource) { // else if it's a regular single-initialized instantiation
 		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // SingleInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->latchize();
 		returnStatus(mutableIdStatus);
-	} else if (*tree == TOKEN_MultiInitInstantiationSource) { // else if it's a regular Multi-initialized instantiation
+	} else if (*tree == TOKEN_MultiInitInstantiationSource) { // else if it's a regular multi-initialized instantiation
 		TypeStatus mutableIdStatus = getStatusType(tree, inStatus); // MultiInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->poolize(tree->child->next->child->child); // LSQUARE
 		returnStatus(mutableIdStatus);
-	} else /* if (*tree == TOKEN_CopyInstantiationSource) */ { // else if it's a copy-style instantiation
+	} else if (*tree == TOKEN_CopyInstantiationSource) { // else if it's a copy-style instantiation
 		TypeStatus mutableIdStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->copyDelatch(tree->child->next); // NonArrayedIdentifier or ArrayedIdentifier
+		returnStatus(mutableIdStatus);
+	} else if (*tree == TOKEN_SingleFlowInitInstantiationSource) { // else if it's a single flow-style instantiation
+		TypeStatus mutableIdStatus = getStatusType(tree->child->next, inStatus); // SingleInitInstantiationSource (compatible in this form as a Type)
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->latchize();
+		returnStatus(mutableIdStatus);
+	} else /* if (*tree == TOKEN_MultiFlowInitInstantiationSource) */ { // else if it's a multi flow-style instantiation
+		TypeStatus mutableIdStatus = getStatusType(tree->child->next, inStatus); // MultiInitInstantiationSource (compatible in this form as a Type)
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->poolize(tree->child->next->child->next->child->child); // LSQUARE
 		returnStatus(mutableIdStatus);
 	}
 	GET_STATUS_CODE;
@@ -1952,8 +1962,36 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
 			returnTypeRet(errType, NULL);
 		}
-		if (is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) { // if there is no initializer or a null initializer, simply return the derived type
+		if ((is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) && *(is->child) != TOKEN_RARROW) { // if we're doing default initialization, just return the derived type
 			returnStatus(instantiationStatus);
+		} else if (*(is->child) == TOKEN_RARROW) { // else if we're doing flow initialization, verify that it's valid
+			// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization
+			Type *mutableInstantiationType = instantiationStatus.type->copy();
+			if (*(is->child->next) == TOKEN_MultiInitInstantiationSource) { // if it's a multi initialization, decrease the pool's depth to get at the initializable base type
+				mutableInstantiationType->decreaseDepth();
+			}
+			// try the ObjectType outstructor special case for instantiation
+			if (inStatus->category == CATEGORY_OBJECTTYPE) { // if the initializer is an object, see if one of its outstructors is acceptable
+				for (StructorList::iterator outsIter = ((ObjectType *)(inStatus.type))->outstructorList.begin();
+						outsIter != ((ObjectType *)(inStatus.type))->outstructorList.end();
+						outsIter++) {
+					if (**outsIter >> *mutableInstantiationType) {
+						mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+						returnStatus(instantiationStatus);
+					}
+				}
+			}
+			// if the special case failed, try a direct compatibility
+			if (*inStatus >> *mutableInstantiationType) { // if the initializer is directly compatible, allow it
+				mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+				returnStatus(instantiationStatus);
+			} else { // else if the initializer is incompatible, throw an error
+				Token curToken = is->child->next->t; // SingleInitInstantiationSource or MultiInitInstantiationSource
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"incompatible initialization of flow instantiation");
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (instantiation type is "<<mutableInstantiationType<<")");
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+				mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+			}
 		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible
 			Tree *initializer = is->next->next; // BracketedExp
 			TypeStatus initializerStatus = getStatusBracketedExp(initializer, inStatus);
@@ -1964,7 +2002,7 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					mutableInstantiationType->decreaseDepth();
 				}
 				// try the ObjectType outstructor special case for instantiation
-				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // else if the initializer is an object, see if one of its outstructors is acceptable
+				 if (initializerStatus->category == CATEGORY_OBJECTTYPE) { // if the initializer is an object, see if one of its outstructors is acceptable
 					for (StructorList::iterator outsIter = ((ObjectType *)(initializerStatus.type))->outstructorList.begin();
 							outsIter != ((ObjectType *)(initializerStatus.type))->outstructorList.end();
 							outsIter++) {
@@ -2450,7 +2488,8 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 		if (*nextTermStatus) { // if we managed to derive a type for this term
 			if (*(curTerm->child->child) == TOKEN_SimpleTerm &&
 					*(curTerm->child->child->child) == TOKEN_StaticTerm &&
-					*(curTerm->child->child->child->child->child) == TOKEN_Node) { // if it's a flow-through Term
+					*(curTerm->child->child->child->child->child) == TOKEN_Node &&
+					*(curTerm->child->child->child->child->child->child) != TOKEN_Instantiation) { // if it's a flow-through Term
 				pair<Type *, bool> stdFlowResult(errType, false);
 				if (nextTermStatus->category == CATEGORY_STDTYPE) { // if this Term's type is a STDTYPE, try to derive a three-term exceptional type for it
 					stdFlowResult = ((StdType *)(nextTermStatus.type))->stdFlowDerivation(curStatus, curTerm->next->child);

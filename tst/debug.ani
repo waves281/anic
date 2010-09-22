@@ -34,6 +34,9 @@ exp7 = [float]{
 	};
 	5, (8 == 9 || (false || true)) someFilter ->std.out;
 	1, 2 + , 5 * , 5 % - ++ >> 2 << 1 ->someInt;
+	{ 8 [->float] [float\ f]{\f ->std.out} };
+	{ 9 [->int[100]] [int\[100] intPool]{} };
+	{ "hi" [int](7) ->std.out};
 	someObj = []{
 		xStream = [int\\];
 		\\xStream ->std.out;

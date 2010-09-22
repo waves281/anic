@@ -314,7 +314,10 @@ pair<Type *, bool> StdType::stdFlowDerivation(const TypeStatus &prevTermStatus, 
 		case STD_MINUS:
 			if (nextTerm != NULL &&
 					*(nextTerm->child->child) == TOKEN_SimpleTerm &&
-					*(nextTerm->child->child->child) == TOKEN_StaticTerm) {
+					*(nextTerm->child->child->child) == TOKEN_StaticTerm && 
+					!(*(nextTerm->child->child->child->child->child) == TOKEN_Node &&
+					*(nextTerm->child->child->child->child->child->child) == TOKEN_Instantiation &&
+					*(nextTerm->child->child->child->child->child->child->child->next->child) == TOKEN_RARROW)) {
 				nextTermStatus = getStatusTerm(nextTerm, prevTermStatus);	
 			}
 			break;

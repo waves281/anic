@@ -43,7 +43,7 @@ class IRTree {
 		// data members
 		int category; // the category that this IRTree belongs to
 		// allocators/deallocators
-		IRTree(int category = CATEGORY_NOP);
+		IRTree(int category);
 		virtual ~IRTree();
 		// core methods
 		string toString(unsigned int tabDepth = 1) const;

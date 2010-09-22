@@ -870,7 +870,7 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 		returnStatus(getStatusInstructor(tree, inStatus)); // Instructor
 	} else if (root->kind == KIND_OUTSTRUCTOR) { // else if the symbol was defined as an outstructor-style node
 		returnStatus(getStatusOutstructor(tree, inStatus)); // OutStructor
-	} else if (root->kind == KIND_INSTANTIATION) { // else if the symbolt was defined as an instantiation-style node
+	} else if (root->kind == KIND_INSTANTIATION) { // else if the symbol was defined as an instantiation-style node
 		returnStatus(getStatusInstantiation(tree, inStatus)); // Instantiation
 	} else if (root->kind == KIND_FAKE) { // else if the symbol was fake-defined as part of bindId()
 		return (tree->status);
@@ -881,6 +881,12 @@ TypeStatus getStatusSymbolTree(SymbolTree *root, SymbolTree *parent, const TypeS
 		Token curToken = root->defSite->t;
 		Token sourceToken = root->copyImportSite->defSite->t;
 		semmerError(curToken.fileIndex,curToken.row,curToken.col,"copy import of non-referensible identifier '"<<root->copyImportSite->id<<"'");
+	}
+	// generate the intermediate code tree
+	if (root->kind == KIND_DECLARATION || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR || root->kind == KIND_INSTANTIATION) {
+		returnCode(tree->code());
+	} else if (root->kind == KIND_PARAMETER || root->kind == KIND_FAKE) {
+		returnCode(nopCode);
 	}
 	GET_STATUS_FOOTER;
 }

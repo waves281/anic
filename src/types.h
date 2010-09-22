@@ -38,7 +38,7 @@ class Type {
 		int category; // the category that this Type belongs to
 		int suffix; // the type suffix (constant, latch, stream, or array)
 		int depth; // stream depth of arrays and streams
-		Tree *offsetExp; // the offset expression for this type (if it's a SUFFIX_POOL); TOKEN_RAW_VECTOR, TOKEN_LSQUARE, TOKEN_NonArrayedIdentifier, or TOKEN_ArrayedIdentifier
+		Tree *offsetExp; // the offset expression for this type (if it's a SUFFIX_POOL); RAW_VECTOR, LSQUARE, NonArrayedIdentifier, ArrayedIdentifier, or CloneInstantiationSource
 		bool referensible; // whether a node of this type can be referenced on its own
 		bool instantiable; // whether a node of this type can be instantiated
 		bool toStringHandled; // used for recursion detection in operator string()

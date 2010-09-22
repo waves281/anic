@@ -1855,20 +1855,25 @@ TypeStatus getStatusInstantiationSource(Tree *tree, const TypeStatus &inStatus) 
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->poolize(tree->child->next->child->child); // LSQUARE
 		returnStatus(mutableIdStatus);
-	} else if (*tree == TOKEN_CopyInstantiationSource) { // else if it's a copy-style instantiation
-		TypeStatus mutableIdStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
-		mutableIdStatus.type = mutableIdStatus.type->copy();
-		mutableIdStatus.type->copyDelatch(tree->child->next); // NonArrayedIdentifier or ArrayedIdentifier
-		returnStatus(mutableIdStatus);
 	} else if (*tree == TOKEN_SingleFlowInitInstantiationSource) { // else if it's a single flow-style instantiation
 		TypeStatus mutableIdStatus = getStatusType(tree->child->next, inStatus); // SingleInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->latchize();
 		returnStatus(mutableIdStatus);
-	} else /* if (*tree == TOKEN_MultiFlowInitInstantiationSource) */ { // else if it's a multi flow-style instantiation
+	} else if (*tree == TOKEN_MultiFlowInitInstantiationSource) { // else if it's a multi flow-style instantiation
 		TypeStatus mutableIdStatus = getStatusType(tree->child->next, inStatus); // MultiInitInstantiationSource (compatible in this form as a Type)
 		mutableIdStatus.type = mutableIdStatus.type->copy();
 		mutableIdStatus.type->poolize(tree->child->next->child->next->child->child); // LSQUARE
+		returnStatus(mutableIdStatus);
+	} else if (*tree == TOKEN_CopyInstantiationSource) { // else if it's a copy-style instantiation
+		TypeStatus mutableIdStatus = getStatusIdentifier(tree->child->next, inStatus); // NonArrayedIdentifier or ArrayedIdentifier
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->copyDelatch(tree->child->next); // NonArrayedIdentifier or ArrayedIdentifier
+		returnStatus(mutableIdStatus);
+	} else if (*tree == TOKEN_CloneInstantiationSource) { // else if it's a clone-style instantiation
+		TypeStatus mutableIdStatus = inStatus; // NonArrayedIdentifier or ArrayedIdentifier
+		mutableIdStatus.type = mutableIdStatus.type->copy();
+		mutableIdStatus.type->copyDelatch(tree); // CloneInstantiationSource
 		returnStatus(mutableIdStatus);
 	}
 	GET_STATUS_CODE;
@@ -1964,33 +1969,37 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 		}
 		if ((is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) && *(is->child) != TOKEN_RARROW) { // if we're doing default initialization, just return the derived type
 			returnStatus(instantiationStatus);
-		} else if (*(is->child) == TOKEN_RARROW) { // else if we're doing flow initialization, verify that it's valid
-			// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization
-			Type *mutableInstantiationType = instantiationStatus.type->copy();
-			if (*(is->child->next) == TOKEN_MultiInitInstantiationSource) { // if it's a multi initialization, decrease the pool's depth to get at the initializable base type
-				mutableInstantiationType->decreaseDepth();
-			}
-			// try the ObjectType outstructor special case for instantiation
-			if (inStatus->category == CATEGORY_OBJECTTYPE) { // if the initializer is an object, see if one of its outstructors is acceptable
-				for (StructorList::iterator outsIter = ((ObjectType *)(inStatus.type))->outstructorList.begin();
-						outsIter != ((ObjectType *)(inStatus.type))->outstructorList.end();
-						outsIter++) {
-					if (**outsIter >> *mutableInstantiationType) {
-						mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
-						returnStatus(instantiationStatus);
+		} else if (*(is->child) == TOKEN_RARROW) { // else if we're doing flow-based initialization, verify that it's valid
+			if (*(is->child->next) != TOKEN_SingleAccessor) { // if it's a regular flow-based initialization
+				// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization
+				Type *mutableInstantiationType = instantiationStatus.type->copy();
+				if (*(is->child->next) == TOKEN_MultiInitInstantiationSource) { // if it's a multi initialization, decrease the pool's depth to get at the initializable base type
+					mutableInstantiationType->decreaseDepth();
+				}
+				// try the ObjectType outstructor special case for instantiation
+				if (inStatus->category == CATEGORY_OBJECTTYPE) { // if the initializer is an object, see if one of its outstructors is acceptable
+					for (StructorList::iterator outsIter = ((ObjectType *)(inStatus.type))->outstructorList.begin();
+							outsIter != ((ObjectType *)(inStatus.type))->outstructorList.end();
+							outsIter++) {
+						if (**outsIter >> *mutableInstantiationType) {
+							mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+							returnStatus(instantiationStatus);
+						}
 					}
 				}
-			}
-			// if the special case failed, try a direct compatibility
-			if (*inStatus >> *mutableInstantiationType) { // if the initializer is directly compatible, allow it
-				mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+				// if the special case failed, try a direct compatibility
+				if (*inStatus >> *mutableInstantiationType) { // if the initializer is directly compatible, allow it
+					mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+					returnStatus(instantiationStatus);
+				} else { // else if the initializer is incompatible, throw an error
+					Token curToken = is->child->next->t; // SingleInitInstantiationSource or MultiInitInstantiationSource
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"incompatible initialization of flow instantiation");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (instantiation type is "<<mutableInstantiationType<<")");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+					mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
+				}
+			} else /* if (*(is->child->next) == TOKEN_SingleAccessor) */ { // else if it's a clone-based initialization
 				returnStatus(instantiationStatus);
-			} else { // else if the initializer is incompatible, throw an error
-				Token curToken = is->child->next->t; // SingleInitInstantiationSource or MultiInitInstantiationSource
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"incompatible initialization of flow instantiation");
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (instantiation type is "<<mutableInstantiationType<<")");
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
-				mutableInstantiationType->erase(); // delete the temporary instantiation comparison type
 			}
 		} else if (*(is->next->next) == TOKEN_BracketedExp) { // else if there is a regular initializer, make sure that its type is compatible
 			Tree *initializer = is->next->next; // BracketedExp

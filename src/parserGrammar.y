@@ -236,9 +236,10 @@ Instantiation : LSQUARE SingleInitInstantiationSource RSQUARE
 	| LSQUARE SingleInitInstantiationSource RSQUARE CurlyBracketedExp
 	| LSQUARE MultiInitInstantiationSource RSQUARE
 	| LSQUARE MultiInitInstantiationSource RSQUARE BracketedExp
-	| LSQUARE CopyInstantiationSource RSQUARE
 	| LSQUARE SingleFlowInitInstantiationSource RSQUARE
 	| LSQUARE MultiFlowInitInstantiationSource RSQUARE
+	| LSQUARE CopyInstantiationSource RSQUARE
+	| LSQUARE CloneInstantiationSource RSQUARE
 	;
 BlankInstantiationSource : NonArrayedIdentifier BlankInstantiationTypeSuffix
 	;
@@ -246,12 +247,14 @@ SingleInitInstantiationSource : NonArrayedIdentifier
 	;
 MultiInitInstantiationSource : NonArrayedIdentifier MultiInitInstantiationTypeSuffix
 	;
-CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
-	| SingleAccessor ArrayedIdentifier
-	;
 SingleFlowInitInstantiationSource : RARROW SingleInitInstantiationSource
 	;
 MultiFlowInitInstantiationSource : RARROW MultiInitInstantiationSource
+	;
+CopyInstantiationSource : SingleAccessor NonArrayedIdentifier
+	| SingleAccessor ArrayedIdentifier
+	;
+CloneInstantiationSource : RARROW SingleAccessor
 	;
 ArrayAccess : LSQUARE Exp RSQUARE
 	| LSQUARE Exp COLON Exp RSQUARE

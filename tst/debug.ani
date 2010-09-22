@@ -36,7 +36,8 @@ exp7 = [float]{
 	1, 2 + , 5 * , 5 % - ++ >> 2 << 1 ->someInt;
 	{ 8 [->float] [float\ f]{\f ->std.out} };
 	{ 9 [->int[100]] [int\[100] intPool]{} };
-	{ "hi" [int](7) ->std.out};
+	{ "hi" [int](7) ->std.out };
+	{ someObj [->\] ->std.out };
 	someObj = []{
 		xStream = [int\\];
 		\\xStream ->std.out;

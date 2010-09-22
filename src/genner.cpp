@@ -227,11 +227,11 @@ void WordTree64::asmDump(string &asmString) const {
 }
 
 // ArrayTree functions
-ArrayTree::ArrayTree(const vector<unsigned char> &data) : DataTree(CATEGORY_ARRAY), data(data) {}
+ArrayTree::ArrayTree(const vector<uint8_t> &data) : DataTree(CATEGORY_ARRAY), data(data) {}
 ArrayTree::~ArrayTree() {}
 string ArrayTree::toString(unsigned int tabDepth) const {
 	string acc("A[");
-	for (vector<unsigned char>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
+	for (vector<uint8_t>::const_iterator iter = data.begin(); iter != data.end(); iter++) {
 		char tempS[3];
 		sprintf(tempS, "%02X", (*iter));
 		acc += tempS;

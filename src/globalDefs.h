@@ -58,7 +58,7 @@ class IRTree;
 		class WordTree32;
 		class WordTree64;
 		class ArrayTree;
-		class ListTree;
+		class CompoundTree;
 		class TempTree;
 		class ReadTree;
 	class OpTree;

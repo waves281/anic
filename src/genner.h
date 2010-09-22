@@ -160,13 +160,13 @@ class ArrayTree : public DataTree {
 };
 
 // usage: a compounding of several data trees to be computed separately but treated atomically
-class ListTree : public DataTree {
+class CompoundTree : public DataTree {
 	public:
 		// data members
 		vector<DataTree *> dataList; // vector of the data trees that make up this node
 		// allocators/deallocators
-		ListTree(const vector<DataTree *> &dataList);
-		~ListTree();
+		CompoundTree(const vector<DataTree *> &dataList);
+		~CompoundTree();
 		// core methods
 		string toString(unsigned int tabDepth) const;
 		void asmDump(string &asmString) const;

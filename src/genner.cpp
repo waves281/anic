@@ -33,7 +33,7 @@ void IRTree::asmDump(string &asmString) const {
 			((ArrayTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_LIST:
-			((ListTree *)this)->asmDump(asmString);
+			((CompoundTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_TEMP:
 			((TempTree *)this)->asmDump(asmString);
@@ -129,7 +129,7 @@ string DataTree::toString(unsigned int tabDepth) const {
 		case CATEGORY_ARRAY:
 			return ((ArrayTree *)this)->toString(tabDepth);
 		case CATEGORY_LIST:
-			return ((ListTree *)this)->toString(tabDepth);
+			return ((CompoundTree *)this)->toString(tabDepth);
 		case CATEGORY_TEMP:
 			return ((TempTree *)this)->toString(tabDepth);
 		case CATEGORY_READ:
@@ -156,7 +156,7 @@ void DataTree::asmDump(string &asmString) const {
 			((ArrayTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_LIST:
-			((ListTree *)this)->asmDump(asmString);
+			((CompoundTree *)this)->asmDump(asmString);
 			break;
 		case CATEGORY_TEMP:
 			((TempTree *)this)->asmDump(asmString);
@@ -243,10 +243,10 @@ void ArrayTree::asmDump(string &asmString) const {
 	asmString += ""; // LOL
 }
 
-// ListTree functions
-ListTree::ListTree(const vector<DataTree *> &dataList) : DataTree(CATEGORY_LIST), dataList(dataList) {}
-ListTree::~ListTree() {}
-string ListTree::toString(unsigned int tabDepth) const {
+// CompoundTree functions
+CompoundTree::CompoundTree(const vector<DataTree *> &dataList) : DataTree(CATEGORY_LIST), dataList(dataList) {}
+CompoundTree::~CompoundTree() {}
+string CompoundTree::toString(unsigned int tabDepth) const {
 	string acc("L[");
 	for (vector<DataTree *>::const_iterator iter = dataList.begin(); iter != dataList.end(); iter++) {
 		acc += (*iter)->toString(tabDepth+1);
@@ -257,7 +257,7 @@ string ListTree::toString(unsigned int tabDepth) const {
 	acc += ']';
 	return acc;
 }
-void ListTree::asmDump(string &asmString) const {
+void CompoundTree::asmDump(string &asmString) const {
 	asmString += ""; // LOL
 }
 

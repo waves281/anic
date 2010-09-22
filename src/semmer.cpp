@@ -1086,7 +1086,7 @@ TypeStatus getStatusBracketedExp(Tree *tree, const TypeStatus &inStatus) {
 			for (; exp != NULL; exp = (exp->next != NULL) ? exp->next->next->child : NULL) {
 				dataList.push_back((DataTree *)(exp->code()));
 			}
-			returnCode(new ListTree(dataList));
+			returnCode(new CompoundTree(dataList));
 		}
 	}
 	GET_STATUS_FOOTER;

@@ -2338,8 +2338,8 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 		if (*nodeStatus) { // if we managed to derive a type for the swap destination
 			if ((nodeStatus->referensible || nodeStatus.type == stringerType) &&
 					(nodeStatus.type != stdBoolLitType)) { // if the destination allows swaps
-				if (*inStatus >> *nodeStatus) { // if the Send is valid, proceed normally
-					returnType(nullType);
+				if (*inStatus >> *nodeStatus) { // if the Swap is valid, proceed normally
+					returnType(nodeStatus.type);
 				} else { // else if the Send is invalid, flag an error
 					Token curToken = dtc->child->t; // RARROW
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"swap with incompatible type");

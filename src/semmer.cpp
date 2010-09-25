@@ -1819,7 +1819,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	for (Tree *cur = tree->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a Param
 		if (*(cur->child) == TOKEN_Type) { // if it's a regularly typed parameter
 			TypeStatus paramStatus = getStatusType(cur->child, inStatus); // Type
-			list.push_back(paramStatus.type); // commit the type to the list
+			list.push_back(paramStatus.type->copy()); // commit the type to the list
 			if (*paramStatus) { // if we successfully derived a type for this node
 				if (!(paramStatus.type->instantiable)) { // if the derived type is not instantiable, flag an error
 					Token curToken = cur->t; // Param
@@ -1834,8 +1834,9 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 		} else /* if (*(cur->child) == TOKEN_QUESTION) */ { // else if it's an automatically typed parameter
 			if (inStatus->category == CATEGORY_TYPELIST) { // if the incoming type is a proper type list
 				if (((TypeList *)(inStatus.type))->list.size() > list.size()) { // if the incoming type list is long enough to contain a type for this parameter, allow the derivation
-					list.push_back(((TypeList *)(inStatus.type))->list[list.size()]);
+					list.push_back((((TypeList *)(inStatus.type))->list[list.size()])->copy());
 				} else { // else if the incoming type list is too short, flag an error
+					list.push_back(errType);
 					Token curToken = cur->t; // Param
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"auto-typed parameter in list with not enough incoming values"); // NonArrayedIdentifier
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
@@ -1844,7 +1845,7 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 				}
 			} else if (*inStatus != *nullType) { // else if there is a valid single non-null incoming type
 				if (list.size() == 0) { // if this is the first parameter in the list, allow the derivation
-					list.push_back(inStatus.type);
+					list.push_back(inStatus.type->copy());
 				} else { // else if this a subsequent parameter in the list, there are too many parameters
 					list.push_back(errType);
 					Token curToken = cur->t; // Param
@@ -1866,8 +1867,14 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 		// log the parameter's type in the Param tree node
 		cur->status.type = list.back();
 	}
-	if (!failed) {
+	if (!failed) { // if we managed to derive types for all of the parameters, return a TypeList containing them
 		returnType(new TypeList(list));
+	} else { // else if we failed to derive types for all of the parameters, erase any types that we copied
+		for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
+			if (*iter != nullType && *iter != errType) {
+				(*iter)->erase();
+			}
+		}
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;

@@ -168,7 +168,7 @@ string SymbolTree::toString(unsigned int tabDepth) {
 		}
 	}
 	if (kind != KIND_BLOCK && kind != KIND_CLOSED_IMPORT && kind != KIND_OPEN_IMPORT) {
-		COLOR( acc += SET_TERM(BRIGHT_CODE AND WHITE_CODE);)
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND WHITE_CODE); )
 		if (kind == KIND_INSTRUCTOR) {
 			acc += INSTRUCTOR_NODE_STRING;
 		} else if (kind == KIND_OUTSTRUCTOR) {

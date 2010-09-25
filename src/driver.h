@@ -49,18 +49,18 @@
 
 #define lexerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": " << \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "LEXER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
 	lexerErrorCode++; \
 	if (eventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
 #define parserError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "PARSER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
 	parserErrorCode++;
 
 #define semmerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "SEMMER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << GET_FILE_NAME(fi) << ":" << r << ":" << c << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
 	semmerErrorCode++;
 
 void printHeader(void);

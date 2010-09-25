@@ -289,6 +289,8 @@ int StdType::kindCast(const StdType &otherType) const {
 		return kind;
 	} else if (kind == STD_INT && otherType.kind == STD_FLOAT) {
 		return STD_FLOAT;
+	} else if (kind == STD_FLOAT && otherType.kind == STD_INT) {
+		return STD_INT;
 	} else if (otherType.kind == STD_STRING) {
 		return STD_STRING;
 	} else {

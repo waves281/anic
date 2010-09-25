@@ -799,7 +799,7 @@ TypeList::operator string() {
 }
 
 // FilterType functions
-FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), defSite(NULL) {
+FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp) {
 	if (from->category == CATEGORY_TYPELIST) {
 		fromInternal = (TypeList *)from;
 	} else {
@@ -811,7 +811,8 @@ FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offset
 		toInternal = new TypeList(to);
 	}
 }
-FilterType::FilterType(Tree *defSite, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), fromInternal(NULL), toInternal(NULL), defSite(defSite) {}
+FilterType::FilterType(Tree *defSite, Type *inType, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp),
+	fromInternal(NULL), toInternal(NULL), defSite(defSite), inType(inType) {}
 FilterType::~FilterType() {
 	if (fromInternal != NULL && *fromInternal != *nullType && *fromInternal != *errType) {
 		delete fromInternal;
@@ -822,7 +823,7 @@ FilterType::~FilterType() {
 }
 TypeList *FilterType::from() { // either TypeList or errType
 	if (fromInternal == NULL) {
-		TypeStatus derivedStatus = getStatusFilterHeader(defSite);
+		TypeStatus derivedStatus = getStatusFilterHeader(defSite, inType);
 		if (*derivedStatus) { // if we managed to derive a type for the filter header
 			fromInternal = ((FilterType *)(derivedStatus.type))->fromInternal;
 			toInternal = ((FilterType *)(derivedStatus.type))->toInternal;
@@ -835,7 +836,7 @@ TypeList *FilterType::from() { // either TypeList or errType
 }
 TypeList *FilterType::to() { // either TypeList or errType
 	if (toInternal == NULL) {
-		TypeStatus derivedStatus = getStatusFilterHeader(defSite);
+		TypeStatus derivedStatus = getStatusFilterHeader(defSite, inType);
 		if (*derivedStatus) { // if we managed to derive a type for the filter header
 			fromInternal = ((FilterType *)(derivedStatus.type))->fromInternal;
 			toInternal = ((FilterType *)(derivedStatus.type))->toInternal;

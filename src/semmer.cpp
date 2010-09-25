@@ -849,8 +849,7 @@ void subImportDecls(vector<SymbolTree *> importList) {
 
 // recursively derives the Type trees and offsets of all non-inlined semantic-impacting nodes in the passed-in SymbolTree
 void semSt(SymbolTree *root, SymbolTree *parent = NULL) {
-	if (root->kind == KIND_DECLARATION || root->kind == KIND_PARAMETER ||
-			root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a non-inlined node, derive its type
+	if (root->kind == KIND_DECLARATION || root->kind == KIND_INSTRUCTOR || root->kind == KIND_OUTSTRUCTOR) { // if it's a non-inlined node, derive its type
 		getStatusSymbolTree(root, parent);
 	}
 	// recurse on this node's children
@@ -1412,7 +1411,7 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	if (*filterc == TOKEN_Block) { // if it's an implicit block-defined filter, return its type as a consumer of the input type
 		returnTypeRet(new FilterType(inStatus.type, nullType, SUFFIX_LATCH), NULL);
 	} else /* if (*filterc == TOKEN_FilterHeader) */ { // else if it's an explicit header-defined filter, return the filter header's definition site in the FilterType thunk
-		returnTypeRet(new FilterType(filterc, SUFFIX_LATCH), NULL);
+		returnTypeRet(new FilterType(filterc, inStatus.type, SUFFIX_LATCH), NULL);
 	}
 	GET_STATUS_CODE;
 	// KOL need to derive the offset here
@@ -1445,7 +1444,7 @@ TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
 		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
 	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
-		returnTypeRet(new FilterType(icn, SUFFIX_LATCH), NULL);
+		returnTypeRet(new FilterType(icn, nullType, SUFFIX_LATCH), NULL);
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
@@ -1479,7 +1478,7 @@ TypeStatus verifyStatusOutstructor(Tree *tree) {
 // generates a thunk; does not actually generate any code
 TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	returnTypeRet(new FilterType(tree->child->next, SUFFIX_LATCH), NULL); // RetFilterHeader
+	returnTypeRet(new FilterType(tree->child->next, nullType, SUFFIX_LATCH), NULL); // RetFilterHeader
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
@@ -1818,20 +1817,54 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	vector<Type *> list;
 	bool failed = false;
 	for (Tree *cur = tree->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a Param
-		TypeStatus paramStatus = getStatusType(cur->child, inStatus); // Type
-		if (*paramStatus) { // if we successfully derived a type for this node
-			if (paramStatus.type->instantiable) { // if the derived type is instantiable
-				list.push_back(paramStatus.type); // commit the type to the list
-			} else { // else if the derived type is not instantiable, flag an error
-				Token curToken = cur->t; // Param
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"parameterized non-instantiable node '"<<cur->child->child<<"'"); // NonArrayedIdentifier
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter type is "<<paramStatus<<")");
-				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+		if (*(cur->child) == TOKEN_Type) { // if it's a regularly typed parameter
+			TypeStatus paramStatus = getStatusType(cur->child, inStatus); // Type
+			list.push_back(paramStatus.type); // commit the type to the list
+			if (*paramStatus) { // if we successfully derived a type for this node
+				if (!(paramStatus.type->instantiable)) { // if the derived type is not instantiable, flag an error
+					Token curToken = cur->t; // Param
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"parameterized non-instantiable node '"<<cur->child->child<<"'"); // NonArrayedIdentifier
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter type is "<<paramStatus<<")");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+					failed = true;
+				}
+			} else { // else if we failed to derive a type for this node
 				failed = true;
 			}
-		} else { // else if we failed to derive a type for this node
-			failed = true;
+		} else /* if (*(cur->child) == TOKEN_QUESTION) */ { // else if it's an automatically typed parameter
+			if (inStatus->category == CATEGORY_TYPELIST) { // if the incoming type is a proper type list
+				if (((TypeList *)(inStatus.type))->list.size() > list.size()) { // if the incoming type list is long enough to contain a type for this parameter, allow the derivation
+					list.push_back(((TypeList *)(inStatus.type))->list[list.size()]);
+				} else { // else if the incoming type list is too short, flag an error
+					Token curToken = cur->t; // Param
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"auto-typed parameter in list with not enough incoming values"); // NonArrayedIdentifier
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+					failed = true;
+				}
+			} else if (*inStatus != *nullType) { // else if there is a valid single non-null incoming type
+				if (list.size() == 0) { // if this is the first parameter in the list, allow the derivation
+					list.push_back(inStatus.type);
+				} else { // else if this a subsequent parameter in the list, there are too many parameters
+					list.push_back(errType);
+					Token curToken = cur->t; // Param
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"auto-typed parameter in list with single incoming value"); // NonArrayedIdentifier
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+					failed = true;
+				}
+			} else { // else if the incoming type is null, flag an error
+				list.push_back(errType);
+				Token curToken = cur->t; // Param
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"auto-typed parameter with no incoming value"); // NonArrayedIdentifier
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<inStatus<<")");
+				semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (parameter identifier is '"<<cur->child->next->t.s<<"')");
+				failed = true;
+				failed = true;
+			}
 		}
+		// log the parameter's type in the Param tree node
+		cur->status.type = list.back();
 	}
 	if (!failed) {
 		returnType(new TypeList(list));

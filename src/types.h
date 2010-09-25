@@ -179,9 +179,10 @@ class FilterType : public Type {
 		TypeList *fromInternal; // the source of this object type
 		TypeList *toInternal; // the destination of this object type
 		Tree *defSite; // the FilterHeader tree node that defines this FilterType
+		Type *inType; // the incoming type at the definition site
 		// allocators/deallocators
 		FilterType(Type *fromInternal = nullType, Type *toInternal = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
-		FilterType(Tree *defSite, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
+		FilterType(Tree *defSite, Type *inType = nullType, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		~FilterType();
 		// core methods
 		TypeList *from();

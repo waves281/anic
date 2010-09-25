@@ -321,6 +321,7 @@ ParamList : Param
 RetList : DRARROW TypeList
 	;
 Param : Type ID
+	| QUESTION ID
 	;
 Type : NonArrayedIdentifier
 	| FilterType

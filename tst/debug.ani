@@ -61,6 +61,10 @@ exp7 = [float]{
 	\packStream :: \packStream2 ->packStream;
 	\\packStream ->std.out;
 	5 ->packStream; 6.0e-1 ->packStream; 8.1 |> ->packStream;
+	8, 9.0e-5, "str", false [? intParam, ? floatParam, string\ stringParam, ? boolParam]{
+		\intParam <->floatParam [->int] ->intParam;
+		\boolParam <->stringParam == "str" ->boolParam;
+	};
 };
 
 // standard object construction testing

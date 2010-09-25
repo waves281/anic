@@ -62,9 +62,7 @@ unsigned int SymbolTree::addBlock() {return (numBlocks++);}
 unsigned int SymbolTree::addPartition() {return (numPartitions++);}
 unsigned int SymbolTree::addShare() {return (numShares++);}
 void SymbolTree::getOffset() {
-	if (kind == KIND_STD) { // if this is a standard node, set it to free allocation
-		offsetKindInternal = OFFSET_FREE;
-	} else if (parent != NULL) { // else if this is not the root node, derive the offset normally from the corresponding Type
+	if (kind != KIND_STD && parent != NULL && defSite->status.type != NULL) { // if this is a node for which we can derive the offset from the corresponding Type, do so
 		offsetKindInternal = defSite->status.type->offsetKind();
 		switch (offsetKindInternal) {
 			case OFFSET_RAW:
@@ -83,6 +81,8 @@ void SymbolTree::getOffset() {
 				// can't happen; Type::offsetKind() doesn't return OFFSET_NULL or OFFSET_FREE
 				break;
 		}
+	} else { // if this is a standard node, a parentless node, or one with a NULL type, set it to free allocation
+		offsetKindInternal = OFFSET_FREE;
 	}
 }
 int SymbolTree::offsetKind() {
@@ -442,7 +442,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// recurse
 		buildSt(tree->child, blockDef, importList); // child of Block or Object
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Filter) { // if it's a filter node
+	} else if (*tree == TOKEN_Filter || *tree == TOKEN_ExplicitFilter) { // if it's a filter-style node
 		// allocate the new filter definition node
 		// generate a fake identifier for the filter node from a hash of the Tree node
 		string fakeId(FILTER_NODE_STRING);
@@ -463,7 +463,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// recurse
 		buildSt(tree->child, filterDef, importList); // child of Filter
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Instructor || *tree == TOKEN_LastInstructor) { // if it's an Instructor-style node
+	} else if (*tree == TOKEN_Instructor || *tree == TOKEN_LastInstructor) { // if it's an instructor-style node
 		// allocate the new instructor definition node
 		// generate a fake identifier for the instructor node from a hash of the Tree node
 		string fakeId(INSTRUCTOR_NODE_STRING);
@@ -485,7 +485,7 @@ void buildSt(Tree *tree, SymbolTree *st, vector<SymbolTree *> &importList) {
 		// recurse
 		buildSt(tree->child, consDef, importList); // child of Instructor
 		buildSt(tree->next, st, importList); // right
-	} else if (*tree == TOKEN_Outstructor) { // if it's an Outstructor-style node
+	} else if (*tree == TOKEN_Outstructor) { // if it's an outstructor-style node
 		// allocate the new outstructor definition node
 		// generate a fake identifier for the outstructor node from a hash of the Tree node
 		string fakeId(OUTSTRUCTOR_NODE_STRING);
@@ -972,7 +972,7 @@ TypeStatus getStatusPrimaryBase(Tree *tree, const TypeStatus &inStatus) {
 	}
 	GET_STATUS_CODE;
 	if (*pbc == TOKEN_NonArrayedIdentifier || *pbc == TOKEN_ArrayedIdentifier ||
-			*pbc == TOKEN_Instantiation || *pbc == TOKEN_Filter || *pbc == TOKEN_Object || *pbc == TOKEN_PrimLiteral || *pbc == TOKEN_BracketedExp) {
+			*pbc == TOKEN_Instantiation || *pbc == TOKEN_ExplicitFilter || *pbc == TOKEN_Object || *pbc == TOKEN_PrimLiteral || *pbc == TOKEN_BracketedExp) {
 		returnCode(pbc->code());
 	} else if (*pbc == TOKEN_SingleAccessor) { // if it's an accessed term
 		// first, derive the subtype
@@ -1382,7 +1382,7 @@ TypeStatus verifyStatusFilter(Tree *tree) {
 			block = tree->child; // Block
 			// set the type to feed into the block derivation to be the one coming in to this filter
 			startStatus = headerType->from();
-		} else { // else if this is an explicitly header-defined filter
+		} else /* if (*(tree->child->next) == TOKEN_Block) */ { // else if this is an explicitly header-defined filter
 			block = tree->child->next; // Block
 			// nullify the type to feed into the block derivation, since we have an explicit parameter list
 			startStatus = nullType;
@@ -1869,12 +1869,6 @@ TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus) {
 	}
 	if (!failed) { // if we managed to derive types for all of the parameters, return a TypeList containing them
 		returnType(new TypeList(list));
-	} else { // else if we failed to derive types for all of the parameters, erase any types that we copied
-		for (vector<Type *>::iterator iter = list.begin(); iter != list.end(); iter++) {
-			if (*iter != nullType && *iter != errType) {
-				(*iter)->erase();
-			}
-		}
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;

@@ -229,6 +229,7 @@ class StructorList {
 		void add(TypeList *typeList);
 		void add(Tree *tree);
 		unsigned int size() const;
+		bool reify();
 		void clear();
 		// iterator methods
 		class iterator {

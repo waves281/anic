@@ -313,7 +313,7 @@ FilterHeader : LSQUARE ParamList RSQUARE
 NonRetFilterHeader : LSQUARE RSQUARE
 	| LSQUARE ParamList RSQUARE
 	;
-RetFilterHeader : LSQUARE ExplicitRetList RSQUARE
+RetFilterHeader : LSQUARE RetList RSQUARE
 	;
 ParamList : Param
 	| Param COMMA ParamList

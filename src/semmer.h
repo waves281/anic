@@ -76,12 +76,12 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus = TypeStatus(nu
 TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus verifyStatusFilter(Tree *tree);
 TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
-TypeStatus verifyStatusInstructor(Tree *tree);
 TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
-TypeStatus verifyStatusOutstructor(Tree *tree);
+TypeStatus verifyStatusInstructor(Tree *tree);
 TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
-TypeStatus verifyStatusObject(Tree *tree);
+TypeStatus verifyStatusOutstructor(Tree *tree);
 TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
+TypeStatus verifyStatusObject(Tree *tree);
 TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusTypeList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));
 TypeStatus getStatusParamList(Tree *tree, const TypeStatus &inStatus = TypeStatus(nullType, errType));

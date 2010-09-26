@@ -973,6 +973,32 @@ StructorList::~StructorList() {}
 void StructorList::add(TypeList *typeList) {structors.push_back(make_pair(typeList, (Tree *)NULL));}
 void StructorList::add(Tree *tree) {structors.push_back(make_pair((Type *)NULL, tree));}
 unsigned int StructorList::size() const {return structors.size();}
+bool StructorList::reify() {
+	bool failed = false;
+	for (vector<pair<Type *, Tree *> >::iterator iter = structors.begin(); iter != structors.end(); iter++) {
+		pair<Type *, Tree *> &target = (*iter);
+		if (target.first == NULL) {
+			if (*(target.second) == TOKEN_Instructor) {
+				TypeStatus derivedStatus = getStatusInstructor(target.second);
+				if (*derivedStatus) {
+					target.first = ((FilterType *)(derivedStatus.type))->from();
+				} else {
+					target.first = errType;
+					failed = true;
+				}
+			} else /* if (*(target.second) == TOKEN_Outstructor) */ {
+				TypeStatus derivedStatus = getStatusOutstructor(target.second);
+				if (*derivedStatus) {
+					target.first = ((FilterType *)(derivedStatus.type))->to();
+				} else {
+					target.first = errType;
+					failed = true;
+				}
+			}
+		}
+	}
+	return (!failed);
+}
 void StructorList::clear() {structors.clear();}
 StructorList::iterator::iterator() : internalIter() {}
 StructorList::iterator::iterator(const StructorList::iterator &otherIter) : internalIter(otherIter.internalIter) {}

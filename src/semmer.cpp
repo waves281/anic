@@ -1431,6 +1431,19 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_FOOTER;
 }
 
+// generates a thunk; does not actually generate any code
+TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
+	GET_STATUS_HEADER;
+	Tree *icn = tree->child->next; // NULL, SEMICOLON, or NonRetFilterHeader
+	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
+		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
+	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
+		returnTypeRet(new FilterType(icn, nullType, SUFFIX_LATCH), NULL);
+	}
+	GET_STATUS_CODE;
+	GET_STATUS_FOOTER;
+}
+
 // assumes that the corresponding Filter thunk was generated successfully
 TypeStatus verifyStatusInstructor(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
@@ -1451,14 +1464,9 @@ TypeStatus verifyStatusInstructor(Tree *tree) {
 }
 
 // generates a thunk; does not actually generate any code
-TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *icn = tree->child->next; // NULL, SEMICOLON, or NonRetFilterHeader
-	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
-		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
-	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
-		returnTypeRet(new FilterType(icn, nullType, SUFFIX_LATCH), NULL);
-	}
+	returnTypeRet(new FilterType(tree->child->next, nullType, SUFFIX_LATCH), NULL); // RetFilterHeader
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
 }
@@ -1466,13 +1474,16 @@ TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 // reports errors; assumes that the corresponding Filter thunk was generated successfully
 TypeStatus verifyStatusOutstructor(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
-	if (*(headerType->to())) { // if the header evaluates to a valid type
+	if (*(headerType->from())) { // if the header from-type evaluates to a valid type
 		Tree *block = tree->child->next->next; // NULL, RSQUARE, or Block
 		if (block != NULL && *block == TOKEN_Block) { // if there's an explicit block to verify for this Outstructor
 			TypeStatus startStatus(nullType, NULL); // set retType = NULL to allow the oustructor to return any type (for now) 
 			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
 			if (*verifiedStatus) { // if we successfully verified this outstructor (meaning there were no internal return type inconsistencies)
-				if (*(((FilterType *)(verifiedStatus.type))->to()) >> *(headerType->to())) { // if the return types are compatible, log the header's to-type as the return status
+				if (headerType->to() == NULL) { // if the header's to-type was implicit, update it to be whatever the block returned
+					headerType->toInternal = ((FilterType *)(verifiedStatus.type))->to();
+					returnTypeRet(headerType, NULL);
+				} else if (*(((FilterType *)(verifiedStatus.type))->to()) >> *(headerType->to())) { // else if the return types are compatible, log the header's to-type as the return status
 					returnTypeRet(headerType, NULL);
 				} else { // if the return types are not compatible, flag an error
 					Token curToken = block->child->t; // LCURLY
@@ -1489,23 +1500,56 @@ TypeStatus verifyStatusOutstructor(Tree *tree) {
 }
 
 // generates a thunk; does not actually generate any code
-TypeStatus getStatusOutstructor(Tree *tree, const TypeStatus &inStatus) {
+TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	returnTypeRet(new FilterType(tree->child->next, nullType, SUFFIX_LATCH), NULL); // RetFilterHeader
+	// log the definition sites of all intructors, outstructors, and members
+	StructorList instructorList;
+	StructorList outstructorList;
+	MemberList memberList;
+	SymbolTree *objectSt = tree->env;
+	for (map<string, SymbolTree *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
+		if ((*memberIter).second->kind == KIND_INSTRUCTOR) { // if it's an instructor-style node
+			instructorList.add((*memberIter).second->defSite); // Instructor
+		} else if ((*memberIter).second->kind == KIND_OUTSTRUCTOR) { // else if it's an outstructor-style node
+			outstructorList.add((*memberIter).second->defSite); // Outstructor
+		} else if ((*memberIter).second->kind == KIND_DECLARATION) { // else if it's a declaration-style node
+			memberList.add((*memberIter).second->id, (*memberIter).second->defSite);
+		} else if ((*memberIter).second->kind == KIND_STD) { // else if it's an imported standard node
+			memberList.add((*memberIter).second->id, (*memberIter).second->defSite->status.type);
+		}
+	}
+	// return a thunk representing this ObjectType
+	returnTypeRet(new ObjectType(instructorList, outstructorList, memberList, SUFFIX_LATCH), NULL);
 	GET_STATUS_CODE;
+	// KOL need to derive the offset here
 	GET_STATUS_FOOTER;
 }
 
 // reports errors; assumes that the corresponding Object thunk was generated successfully
 TypeStatus verifyStatusObject(Tree *tree) {
 	// overview:
-	// derive types for instructors and outstructors from headers, making sure that there are no conflicts
-	// verify the definitions of all instructors and outstructors
+	// derive types for instructors and outstructors from headers
+	// verify the definitions of all instructors and outstructors, including filling in the return types of implicit outstructors
+	// making sure that there are no type conflicts in instructors and outstructors
 	// derive types for and verify all members
 	// verify all remaining raw pipes in this Object definition
 	ObjectType *objectType = (ObjectType *)(tree->status.type);
-	bool failed = false;
-	// derive types for all instructors and outstructors from their headers, making sure that there are no type conflicts
+	// derive types for all instructors and outstructors from their headers and validate that there were no errors in doing so
+	bool failed = !(objectType->instructorList.reify() && objectType->outstructorList.reify());
+	// verify the definitions of all instructors and outstructors (including filling in the return types of implicit outstructors)
+	for (StructorList::iterator iter = objectType->instructorList.begin(); iter != objectType->instructorList.end(); iter++) {
+		TypeStatus verifiedStatus = verifyStatusInstructor((*iter).defSite()); // Instructor
+		if (!(*verifiedStatus)) { // if the verification failed, flag this fact
+			failed = true;
+		}
+	}
+	for (StructorList::iterator iter = objectType->outstructorList.begin(); iter != objectType->outstructorList.end(); iter++) {
+		TypeStatus verifiedStatus = verifyStatusOutstructor((*iter).defSite()); // Outstructor
+		if (!(*verifiedStatus)) { // if the verification failed, flag this fact
+			failed = true;
+		}
+	}
+	// make sure that there are no type conflicts in instuctors and outstructors
 	for (StructorList::iterator iter1 = objectType->instructorList.begin(); iter1 != objectType->instructorList.end(); iter1++) {
 		Type *insType1 = *iter1;
 		if (*insType1) { // if we managed to derive a type for this instructor, check that it doesn't conflict with any other instructor
@@ -1546,23 +1590,6 @@ TypeStatus verifyStatusObject(Tree *tree) {
 			failed = true;
 		}
 	}
-	// verify the definitions of all instructors and outstructors
-	for (StructorList::iterator iter = objectType->instructorList.begin(); iter != objectType->instructorList.end(); iter++) {
-		if (**iter) { // if this instructor has a valid header type
-			TypeStatus verifiedStatus = verifyStatusInstructor((*iter).defSite()); // Instructor
-			if (!(*verifiedStatus)) { // if the verification failed, flag this fact
-				failed = true;
-			}
-		}
-	}
-	for (StructorList::iterator iter = objectType->outstructorList.begin(); iter != objectType->outstructorList.end(); iter++) {
-		if (**iter) { // if this outstructor has a valid header type
-			TypeStatus verifiedStatus = verifyStatusOutstructor((*iter).defSite()); // Outstructor
-			if (!(*verifiedStatus)) { // if the verification failed, flag this fact
-				failed = true;
-			}
-		}
-	}
 	// derive the types and verify the definitions of all members
 	for (MemberList::iterator iter = objectType->memberList.begin(); iter != objectType->memberList.end(); iter++) {
 		Type *memberType = *iter;
@@ -1571,7 +1598,7 @@ TypeStatus verifyStatusObject(Tree *tree) {
 		}
 	}
 	// verify all remaining regular pipes in this Object definition
-	for (Tree *pipe = tree->child->next->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // invariant: pipe is a child of InstructedObjectPipesor ObjectPipes
+	for (Tree *pipe = tree->child->next->next->next->child; pipe != NULL; pipe = (pipe->next != NULL) ? pipe->next->child : NULL) { // pipe is child of InstructedObjectPipes or ObjectPipes
 		if (*pipe == TOKEN_Pipe || *pipe == TOKEN_LastPipe) {
 			Tree *pipec = pipe->child;
 			if (*pipec != TOKEN_Declaration) { // if it's not a declaration-style Pipe, derive and validate its status
@@ -1587,32 +1614,6 @@ TypeStatus verifyStatusObject(Tree *tree) {
 		returnStatus(tree->status);
 	}
 	GET_STATUS_CODE;
-	GET_STATUS_FOOTER;
-}
-
-// generates a thunk; does not actually generate any code
-TypeStatus getStatusObject(Tree *tree, const TypeStatus &inStatus) {
-	GET_STATUS_HEADER;
-	// log the definition sites of all intructors, outstructors, and members
-	StructorList instructorList;
-	StructorList outstructorList;
-	MemberList memberList;
-	SymbolTree *objectSt = tree->env;
-	for (map<string, SymbolTree *>::const_iterator memberIter = objectSt->children.begin(); memberIter != objectSt->children.end(); memberIter++) {
-		if ((*memberIter).second->kind == KIND_INSTRUCTOR) { // if it's an instructor-style node
-			instructorList.add((*memberIter).second->defSite); // Instructor
-		} else if ((*memberIter).second->kind == KIND_OUTSTRUCTOR) { // else if it's an outstructor-style node
-			outstructorList.add((*memberIter).second->defSite); // Outstructor
-		} else if ((*memberIter).second->kind == KIND_DECLARATION) { // else if it's a declaration-style node
-			memberList.add((*memberIter).second->id, (*memberIter).second->defSite);
-		} else if ((*memberIter).second->kind == KIND_STD) { // else if it's an imported standard node
-			memberList.add((*memberIter).second->id, (*memberIter).second->defSite->status.type);
-		}
-	}
-	// return a thunk representing this ObjectType
-	returnTypeRet(new ObjectType(instructorList, outstructorList, memberList, SUFFIX_LATCH), NULL);
-	GET_STATUS_CODE;
-	// KOL need to derive the offset here
 	GET_STATUS_FOOTER;
 }
 

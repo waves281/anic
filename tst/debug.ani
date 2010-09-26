@@ -41,7 +41,7 @@ exp7 = [float]{
 	someObj = []{
 		xStream = [int\\];
 		\\xStream ->std.out;
-		=[--> string] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
+		=[--> ?] {someInt == someFloat ? "someObj's string representation" : "garbage string" -->};
 		=[int\ x] {\x ->xStream;}
 		=[--> float] {2.0 -->};
 	};
@@ -123,7 +123,9 @@ selfConsObjIns = [selfConsObj\];
 // basic import testing
 impObj = []{
 	=;
-	mem1 = 1;
+	mem1 = []{
+		=[--> ?] { [int](10) -->; }
+	};
 	mem2 = "Hi";
 }
 useObj = []{

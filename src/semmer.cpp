@@ -1400,7 +1400,7 @@ TypeStatus verifyStatusFilter(Tree *tree) {
 		TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully verified the definition Block (meaning there were no internal return type inconsistencies)
 			if (headerType->to() == NULL) { // if the header's to-type was implicit, update it to be whatever the block returned
-				headerType->toInternal = ((FilterType *)(blockStatus.type))->to();
+				headerType->toInternal = ((FilterType *)(blockStatus.type))->to()->wrapTypeList();
 				returnTypeRet(headerType, NULL);
 			} else if ((*(((FilterType *)(blockStatus.type))->to()) == *nullType && *(headerType->to()) == *nullType) ||
 					(*(((FilterType *)(blockStatus.type))->to()) >> *(headerType->to()))) { // if the header and Block return types are compatible
@@ -1481,7 +1481,7 @@ TypeStatus verifyStatusOutstructor(Tree *tree) {
 			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
 			if (*verifiedStatus) { // if we successfully verified this outstructor (meaning there were no internal return type inconsistencies)
 				if (headerType->to() == NULL) { // if the header's to-type was implicit, update it to be whatever the block returned
-					headerType->toInternal = ((FilterType *)(verifiedStatus.type))->to();
+					headerType->toInternal = ((FilterType *)(verifiedStatus.type))->to()->wrapTypeList();
 					returnTypeRet(headerType, NULL);
 				} else if (*(((FilterType *)(verifiedStatus.type))->to()) >> *(headerType->to())) { // else if the return types are compatible, log the header's to-type as the return status
 					returnTypeRet(headerType, NULL);

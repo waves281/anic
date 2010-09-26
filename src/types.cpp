@@ -196,55 +196,63 @@ void Type::copyDelatch(Tree *offsetExp) {
 	}
 }
 bool Type::pack() {
-	if (suffix == SUFFIX_CONSTANT) {
-		suffix = SUFFIX_LIST;
-		depth = 1;
-		return true;
-	} else if (suffix == SUFFIX_LATCH) {
-		suffix = SUFFIX_STREAM;
-		depth = 1;
-		return true;
-	} else if (suffix == SUFFIX_LIST) {
-		depth++;
-		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		depth++;
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		return false;
-	} else /* if (suffix == SUFFIX_POOL) */ {
+	if (category != CATEGORY_TYPELIST) {
+		if (suffix == SUFFIX_CONSTANT) {
+			suffix = SUFFIX_LIST;
+			depth = 1;
+			return true;
+		} else if (suffix == SUFFIX_LATCH) {
+			suffix = SUFFIX_STREAM;
+			depth = 1;
+			return true;
+		} else if (suffix == SUFFIX_LIST) {
+			depth++;
+			return true;
+		} else if (suffix == SUFFIX_STREAM) {
+			depth++;
+			return true;
+		} else if (suffix == SUFFIX_ARRAY) {
+			return false;
+		} else /* if (suffix == SUFFIX_POOL) */ {
+			return false;
+		}
+	} else {
 		return false;
 	}
 }
 bool Type::unpack() {
-	if (suffix == SUFFIX_CONSTANT) {
+	if (category != CATEGORY_TYPELIST) {
+		if (suffix == SUFFIX_CONSTANT) {
+			return false;
+		} else if (suffix == SUFFIX_LATCH) {
+			return false;
+		} else if (suffix == SUFFIX_LIST) {
+			depth--;
+			if (depth == 0) {
+				suffix = SUFFIX_CONSTANT;
+			}
+			return true;
+		} else if (suffix == SUFFIX_STREAM) {
+			depth--;
+			if (depth == 0) {
+				suffix = SUFFIX_LATCH;
+			}
+			return true;
+		} else if (suffix == SUFFIX_ARRAY) {
+			depth--;
+			if (depth == 0) {
+				suffix = SUFFIX_CONSTANT;
+			}
+			return true;
+		} else /* if (suffix == SUFFIX_POOL) */ {
+			depth--;
+			if (depth == 0) {
+				suffix = SUFFIX_LATCH;
+			}
+			return true;
+		}
+	} else {
 		return false;
-	} else if (suffix == SUFFIX_LATCH) {
-		return false;
-	} else if (suffix == SUFFIX_LIST) {
-		depth--;
-		if (depth == 0) {
-			suffix = SUFFIX_CONSTANT;
-		}
-		return true;
-	} else if (suffix == SUFFIX_STREAM) {
-		depth--;
-		if (depth == 0) {
-			suffix = SUFFIX_LATCH;
-		}
-		return true;
-	} else if (suffix == SUFFIX_ARRAY) {
-		depth--;
-		if (depth == 0) {
-			suffix = SUFFIX_CONSTANT;
-		}
-		return true;
-	} else /* if (suffix == SUFFIX_POOL) */ {
-		depth--;
-		if (depth == 0) {
-			suffix = SUFFIX_LATCH;
-		}
-		return true;
 	}
 }
 Type *Type::link(Type &otherType) {
@@ -266,6 +274,20 @@ Type *Type::link(Type &otherType) {
 		}
 	} else {
 		return errType;
+	}
+}
+TypeList *Type::wrapTypeList() const {
+	if (category != CATEGORY_TYPELIST) {
+		return (new TypeList((Type *)this));
+	} else {
+		return (TypeList *)this;
+	}
+}
+Type *Type::foldTypeList() const {
+	if (category == CATEGORY_TYPELIST && ((TypeList *)(this))->list.size() == 1) {
+		return ((TypeList *)(this))->list[0]->foldTypeList();
+	} else {
+		return (Type *)this;
 	}
 }
 Type::operator bool() const {return (category != CATEGORY_ERRORTYPE);}
@@ -495,7 +517,7 @@ Type *StdType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from())) {
-			return otherTypeCast->to();
+			return otherTypeCast->to()->foldTypeList();
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		return errType;
@@ -718,7 +740,7 @@ Type *TypeList::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
-			return otherTypeCast->to();
+			return otherTypeCast->to()->foldTypeList();
 		} else {
 			return errType;
 		}
@@ -802,17 +824,9 @@ TypeList::operator string() {
 
 // FilterType functions
 FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), defSite(NULL) {
-	if (from->category == CATEGORY_TYPELIST) {
-		fromInternal = (TypeList *)from;
-	} else {
-		fromInternal = new TypeList(from);
-	}
+	fromInternal = from->wrapTypeList();
 	if (to != NULL) {
-		if (to->category == CATEGORY_TYPELIST) {
-			toInternal = (TypeList *)to;
-		} else {
-			toInternal = new TypeList(to);
-		}
+		toInternal = to->wrapTypeList();
 	} else {
 		toInternal = NULL;
 	}
@@ -881,7 +895,7 @@ Type *FilterType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
-			return otherTypeCast->to();
+			return otherTypeCast->to()->foldTypeList();
 		} else {
 			return errType;
 		}
@@ -1177,11 +1191,11 @@ Type *ObjectType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from())) {
-			return otherTypeCast->to();
+			return otherTypeCast->to()->foldTypeList();
 		} else if (suffix == SUFFIX_LATCH) {
 			for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
 				if (**outsIter >> *(otherTypeCast->from())) {
-					return otherTypeCast->to();
+					return otherTypeCast->to()->foldTypeList();
 				}
 			}
 			return errType;

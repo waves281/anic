@@ -54,6 +54,8 @@ class Type {
 		bool pack();
 		bool unpack();
 		Type *link(Type &otherType);
+		TypeList *wrapTypeList() const;
+		Type *foldTypeList() const;
 		// allocators/deallocators
 		Type(int category, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		virtual ~Type() = 0;

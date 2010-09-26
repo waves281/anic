@@ -319,6 +319,7 @@ class ObjectType : public Type {
 		ObjectType(const StructorList &instructorList, const StructorList &outstructorList, const MemberList &memberList, int suffix = SUFFIX_CONSTANT, int depth = 0, Tree *offsetExp = NULL);
 		~ObjectType();
 		// core methods
+		bool isNullInstantiable();
 		bool isComparable(const Type &otherType) const;
 		Type *copy() const;
 		void erase();

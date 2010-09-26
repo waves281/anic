@@ -1353,8 +1353,8 @@ TypeStatus getStatusBlock(Tree *tree, const TypeStatus &inStatus) {
 
 TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	TypeStatus from = TypeStatus(nullType, inStatus);
-	TypeStatus to = TypeStatus(nullType, inStatus);
+	TypeStatus from;
+	TypeStatus to;
 	Tree *treeCur = tree->child->next; // ParamList or RetList
 	bool failed = false;
 	if (*treeCur == TOKEN_ParamList) {
@@ -1362,6 +1362,8 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 		failed = !(*from);
 		// advance to handle the possible RetList
 		treeCur = treeCur->next; // RetList or RSQUARE
+	} else {
+		from = TypeStatus(nullType, inStatus);
 	}
 	if (*treeCur == TOKEN_RetList) { // if this is a potentially implicity defined to-list
 		if (*(treeCur->child->next) != TOKEN_QUESTION) { // if this is an explicitly-defined to-list
@@ -1373,6 +1375,8 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	} else if (*treeCur == TOKEN_ExplicitRetList) { // else if this is an explicitly defined to-list
 		to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
 		failed = (failed || !(*to));
+	} else {
+		to = TypeStatus(nullType, inStatus);
 	}
 	if (!failed) { // if we succeeded in deriving both the from- and to- statuses
 		returnType(new FilterType(from.type, to.type, SUFFIX_LATCH));
@@ -2024,8 +2028,19 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 			semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
 			returnTypeRet(errType, NULL);
 		}
-		if ((is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) && *(is->child) != TOKEN_RARROW) { // if we're doing default initialization, just return the derived type
-			returnStatus(instantiationStatus);
+		if ((is->next->next == NULL || *(is->next->next->child->next) == TOKEN_RBRACKET) && *(is->child) != TOKEN_RARROW) { // if we're doing default initialization
+			if (*is != TOKEN_BlankInstantiationSource && instantiationStatus.type->category == CATEGORY_OBJECTTYPE) { // if we're default-instantiating an object, ensure it's null-instantiable
+				if (((ObjectType *)(instantiationStatus.type))->isNullInstantiable()) {
+					returnStatus(instantiationStatus);
+				} else {
+					Token curToken = is->t; // InstantiationSource
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"null instantiation of object with no null instructor"); 
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (object type is "<<instantiationStatus<<")");
+					returnTypeRet(errType, NULL);
+				}
+			} else { // else if we're default instantiating a non-object, just return the type of the instantiation
+				returnStatus(instantiationStatus);
+			}
 		} else if (*(is->child) == TOKEN_RARROW) { // else if we're doing flow-based initialization, verify that it's valid
 			if (*(is->child->next) != TOKEN_SingleAccessor) { // if it's a regular flow-based initialization
 				// derive the temporary instantiation type to use for comparison, based on whether this is a single (latch) or multi (pool) initialization

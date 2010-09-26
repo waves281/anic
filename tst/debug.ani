@@ -158,5 +158,31 @@ subObj = []{
 	{\op ?? {'+': (\a+\b) '-': (\a-\b) '*': (\a*\b) '/': (\a/\b) : 0} ->r <-};
 };
 
+// dining philosophers problem
+philosopher = []{
+	id = [int\];
+	chopstick = [int\];
+	nextPhil = [philosopher\];
+	lol = [philosopher];
+	=;
+	=[int newId] { [\newId] <->id; }
+
+	getChopsticks = [--> ?] { \chopstick, \nextPhil.chopstick --> };
+	returnChopsticks = [int\ cs1, int\ cs2] { \cs1 ->chopstick; \cs2 ->nextPhil.chopstick; };
+	eat = [int\ cs1, int\ cs2 --> ?] {
+		"Philosopher " + id + " eating...\n" ->std.out;
+		\cs1, \cs2 -->;
+	};
+	{ std.randInt std.delay getChopsticks eat returnChopsticks <- };
+};
+
+numPhils = 5;
+
+philPool = [philosopher[numPhils]];
+numPhils std.gen <| [int curId] {
+	curId ->philPool.[curId];
+	\philPool.[(curId + 1) % numPhils] ->philPool.[curId].nextPhil;
+};
+
 // program termination testing
 0 -->; // terminate the program and return status 0

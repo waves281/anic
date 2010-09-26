@@ -1108,6 +1108,14 @@ ObjectType::~ObjectType() {
 		}
 	}
 }
+bool ObjectType::isNullInstantiable() {
+	for (StructorList::iterator iter = instructorList.begin(); iter != instructorList.end(); iter++) {
+		if (**iter == *nullType) {
+			return true;
+		}
+	}
+	return false;
+}
 bool ObjectType::isComparable(const Type &otherType) const {return false;}
 Type *ObjectType::copy() const {ObjectType *retVal = new ObjectType(*this); retVal->referensible = true; retVal->instantiable = true; return retVal;}
 void ObjectType::erase() {clear(); delete this;}

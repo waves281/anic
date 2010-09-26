@@ -65,6 +65,7 @@ exp7 = [float]{
 		\intParam <->floatParam [->int] ->intParam;
 		\boolParam <->stringParam == "str" ->boolParam;
 	};
+	"hello\t#1", (-8.0e-8) [? firstParam, ? secondParam --> ?] {[obj]() -->;}
 };
 
 // standard object construction testing

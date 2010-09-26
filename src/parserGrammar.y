@@ -313,12 +313,15 @@ FilterHeader : LSQUARE ParamList RSQUARE
 NonRetFilterHeader : LSQUARE RSQUARE
 	| LSQUARE ParamList RSQUARE
 	;
-RetFilterHeader : LSQUARE RetList RSQUARE
+RetFilterHeader : LSQUARE ExplicitRetList RSQUARE
 	;
 ParamList : Param
 	| Param COMMA ParamList
 	;
 RetList : DRARROW TypeList
+	| DRARROW QUESTION
+	;
+ExplicitRetList : DRARROW TypeList
 	;
 Param : Type ID
 	| QUESTION ID
@@ -355,8 +358,8 @@ PoolTypeSuffix : SLASH LSQUARE Exp RSQUARE
 	| SLASH LSQUARE Exp RSQUARE ArrayTypeSuffix
 	;
 FilterType : LSQUARE TypeList RSQUARE
-	| LSQUARE TypeList RetList RSQUARE
-	| LSQUARE RetList RSQUARE
+	| LSQUARE TypeList ExplicitRetList RSQUARE
+	| LSQUARE ExplicitRetList RSQUARE
 	;
 ObjectType : LCURLY RCURLY
 	| LCURLY ObjectTypeList RCURLY

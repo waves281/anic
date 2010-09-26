@@ -801,16 +801,20 @@ TypeList::operator string() {
 }
 
 // FilterType functions
-FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp) {
+FilterType::FilterType(Type *from, Type *to, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp), defSite(NULL) {
 	if (from->category == CATEGORY_TYPELIST) {
 		fromInternal = (TypeList *)from;
 	} else {
 		fromInternal = new TypeList(from);
 	}
-	if (to->category == CATEGORY_TYPELIST) {
-		toInternal = (TypeList *)to;
+	if (to != NULL) {
+		if (to->category == CATEGORY_TYPELIST) {
+			toInternal = (TypeList *)to;
+		} else {
+			toInternal = new TypeList(to);
+		}
 	} else {
-		toInternal = new TypeList(to);
+		toInternal = NULL;
 	}
 }
 FilterType::FilterType(Tree *defSite, Type *inType, int suffix, int depth, Tree *offsetExp) : Type(CATEGORY_FILTERTYPE, suffix, depth, offsetExp),
@@ -824,7 +828,7 @@ FilterType::~FilterType() {
 	}
 }
 TypeList *FilterType::from() { // either TypeList or errType
-	if (fromInternal == NULL) {
+	if (fromInternal == NULL && defSite != NULL) {
 		TypeStatus derivedStatus = getStatusFilterHeader(defSite, inType);
 		if (*derivedStatus) { // if we managed to derive a type for the filter header
 			fromInternal = ((FilterType *)(derivedStatus.type))->fromInternal;
@@ -837,7 +841,7 @@ TypeList *FilterType::from() { // either TypeList or errType
 	return fromInternal;
 }
 TypeList *FilterType::to() { // either TypeList or errType
-	if (toInternal == NULL) {
+	if (toInternal == NULL && defSite != NULL) {
 		TypeStatus derivedStatus = getStatusFilterHeader(defSite, inType);
 		if (*derivedStatus) { // if we managed to derive a type for the filter header
 			fromInternal = ((FilterType *)(derivedStatus.type))->fromInternal;

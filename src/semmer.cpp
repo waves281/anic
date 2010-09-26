@@ -1356,16 +1356,26 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 	TypeStatus from = TypeStatus(nullType, inStatus);
 	TypeStatus to = TypeStatus(nullType, inStatus);
 	Tree *treeCur = tree->child->next; // ParamList or RetList
+	bool failed = false;
 	if (*treeCur == TOKEN_ParamList) {
 		from = getStatusParamList(treeCur, inStatus);
+		failed = !(*from);
 		// advance to handle the possible RetList
 		treeCur = treeCur->next; // RetList or RSQUARE
 	}
-	if (*treeCur == TOKEN_RetList) {
+	if (*treeCur == TOKEN_RetList) { // if this is a potentially implicity defined to-list
+		if (*(treeCur->child->next) != TOKEN_QUESTION) { // if this is an explicitly-defined to-list
+			to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
+			failed = (failed || !(*to));
+		} else { // else if this is an implicitly defined to-list
+			to.type = NULL;
+		}
+	} else if (*treeCur == TOKEN_ExplicitRetList) { // else if this is an explicitly defined to-list
 		to = getStatusTypeList(treeCur->child->next, inStatus); // TypeList
+		failed = (failed || !(*to));
 	}
-	if (*from && *to) { // if we succeeded in deriving both the from- and to- statuses
-		returnType(new FilterType(from, to, SUFFIX_LATCH));
+	if (!failed) { // if we succeeded in deriving both the from- and to- statuses
+		returnType(new FilterType(from.type, to.type, SUFFIX_LATCH));
 	}
 	GET_STATUS_CODE;
 	GET_STATUS_FOOTER;
@@ -1374,7 +1384,7 @@ TypeStatus getStatusFilterHeader(Tree *tree, const TypeStatus &inStatus) {
 // reports errors; assumes that the corresponding Filter thunk was generated successfully
 TypeStatus verifyStatusFilter(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
-	if (*(headerType->from())) { // if the header evaluates to a valid type
+	if (*(headerType->from())) { // if the header from-type evaluates to a valid type
 		Tree *block;
 		TypeStatus startStatus; // the status that we're going to feed into the Block subnode derivation
 		startStatus.retType = NULL; // make no initial presuppositions about what type the Block should return
@@ -1389,7 +1399,10 @@ TypeStatus verifyStatusFilter(Tree *tree) {
 		}
 		TypeStatus blockStatus = getStatusBlock(block, startStatus); // derive the definition Block's Type
 		if (*blockStatus) { // if we successfully verified the definition Block (meaning there were no internal return type inconsistencies)
-			if ((*(((FilterType *)(blockStatus.type))->to()) == *nullType && *(headerType->to()) == *nullType) ||
+			if (headerType->to() == NULL) { // if the header's to-type was implicit, update it to be whatever the block returned
+				headerType->toInternal = ((FilterType *)(blockStatus.type))->to();
+				returnTypeRet(headerType, NULL);
+			} else if ((*(((FilterType *)(blockStatus.type))->to()) == *nullType && *(headerType->to()) == *nullType) ||
 					(*(((FilterType *)(blockStatus.type))->to()) >> *(headerType->to()))) { // if the header and Block return types are compatible
 				returnTypeRet(headerType, NULL);
 			} else { // else if the header and Block don't match
@@ -1678,7 +1691,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				// advance (in order to properly handle the possible trailing RetList)
 				sub = sub->next; // RetList
 			}
-			if (*sub == TOKEN_RetList) { // if there is a to-list
+			if (*sub == TOKEN_ExplicitRetList) { // if there is a to-list
 				to = getStatusTypeList(sub->child->next, inStatus); // TypeList
 			}
 			returnType(new FilterType(from, to, suffixVal, depthVal, offsetExp));

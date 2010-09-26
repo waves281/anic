@@ -60,7 +60,7 @@ class Type {
 		// core methods
 		// virtual
 		virtual bool isComparable(const Type &otherType) const = 0;
-		virtual Type *copy() = 0;
+		virtual Type *copy() const = 0;
 		virtual void erase() = 0;
 		virtual void clear() = 0;
 		virtual string toString(unsigned int tabDepth = 1) = 0;
@@ -137,7 +137,7 @@ class StdType : public Type {
 		int kindCast(const StdType &otherType) const; // returns kind resulting from sending *this to otherType, STD_NULL if the comparison is invalid
 		pair<Type *, bool> stdFlowDerivation(const TypeStatus &prevStatus, Tree *nextTerm) const; // bool is whether we consumed nextTerm in the derivation
 		bool objectTypePromotion(Type &otherType) const; // returns whether we can specially promote this StdType to the given ObjectType
-		Type *copy();
+		Type *copy() const;
 		void erase();
 		void clear();
 		string kindToString() const;
@@ -161,7 +161,7 @@ class TypeList : public Type {
 		~TypeList();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy();
+		Type *copy() const;
 		void erase();
 		void clear();
 		string toString(unsigned int tabDepth);
@@ -188,7 +188,7 @@ class FilterType : public Type {
 		TypeList *from();
 		TypeList *to();
 		bool isComparable(const Type &otherType) const;
-		Type *copy();
+		Type *copy() const;
 		void erase();
 		void clear();
 		string toString(unsigned int tabDepth);
@@ -318,7 +318,7 @@ class ObjectType : public Type {
 		~ObjectType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy();
+		Type *copy() const;
 		void erase();
 		void clear();
 		string toString(unsigned int tabDepth);
@@ -337,7 +337,7 @@ class ErrorType : public Type {
 		~ErrorType();
 		// core methods
 		bool isComparable(const Type &otherType) const;
-		Type *copy();
+		Type *copy() const;
 		void erase();
 		void clear();
 		string toString(unsigned int tabDepth);

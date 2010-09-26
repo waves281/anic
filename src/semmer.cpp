@@ -2565,7 +2565,11 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 					if (stdFlowResult.second) { // if we used a third term for the derivation, advance curTerm past it
 						curTerm = curTerm->next->child;
 					}
-				} else { // else if this is not a three-term STDTYPE filter exception case
+				} else if (*curStatus == *nullType &&
+						nextTermStatus.type->category == CATEGORY_FILTERTYPE && *(((FilterType *)(nextTermStatus.type))->from()) == *nullType) { // else if this is a generator invocation
+					// use the generator's result type as the current status
+					curStatus = TypeStatus(((FilterType *)(nextTermStatus.type))->to(), nextTermStatus);
+				} else { // else if this is not a recognized exceptional case
 					// derive a type for the flow of the current type into the next term in the sequence
 					Type *flowResult = (*curStatus , *nextTermStatus);
 					if (*flowResult) { // if the type flow is valid, log it as the current status

@@ -1434,8 +1434,8 @@ TypeStatus getStatusFilter(Tree *tree, const TypeStatus &inStatus) {
 // generates a thunk; does not actually generate any code
 TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 	GET_STATUS_HEADER;
-	Tree *icn = tree->child->next; // NULL, SEMICOLON, or NonRetFilterHeader
-	if (icn == NULL || *icn == TOKEN_SEMICOLON) {
+	Tree *icn = tree->child->next; // NULL, SEMICOLON, Block, or NonRetFilterHeader
+	if (icn == NULL || *icn == TOKEN_SEMICOLON || *icn == TOKEN_Block) {
 		returnTypeRet(new FilterType(nullType, nullType, SUFFIX_LATCH), NULL);
 	} else /* if (*icn == TOKEN_NonRetFilterHeader) */ {
 		returnTypeRet(new FilterType(icn, nullType, SUFFIX_LATCH), NULL);
@@ -1448,7 +1448,16 @@ TypeStatus getStatusInstructor(Tree *tree, const TypeStatus &inStatus) {
 TypeStatus verifyStatusInstructor(Tree *tree) {
 	FilterType *headerType = (FilterType *)(tree->status.type);
 	if (*(headerType->from())) { // if the header evaluates to a valid type
-		Tree *block = (tree->child->next != NULL) ? tree->child->next->next : NULL; // NULL or Block
+		Tree *block;
+		if (tree->child->next != NULL) {
+			if (*(tree->child->next) == TOKEN_Block) {
+				block = tree->child->next;
+			} else {
+				block = tree->child->next->next;
+			}
+		} else {
+			block = NULL;
+		}
 		if (block != NULL) { // if there's actually an explicit definition block to verify
 			TypeStatus startStatus(nullType, errType); // set retType = errType to make sure that the instructor doesn't return anything
 			TypeStatus verifiedStatus = getStatusBlock(block, startStatus);
@@ -1711,7 +1720,7 @@ TypeStatus getStatusType(Tree *tree, const TypeStatus &inStatus) {
 				for(Tree *cur = otcn->child; cur != NULL; cur = (cur->next != NULL) ? cur->next->next->child : NULL) { // invariant: cur is a child of ObjectTypeList
 					if (*cur == TOKEN_InstructorType) { // if it's an instructor type
 						TypeStatus insStatus;
-						if (cur->child->next == NULL || cur->child->next->next == NULL) { // if it's an implicitly null instructor, log it as such
+						if (cur->child->next == NULL) { // if it's an implicitly null instructor, log it as such
 							insStatus = TypeStatus(new TypeList(), inStatus);
 						} else { // else if it's an explicitly described instructor, get its type from the subnode
 							insStatus = getStatusTypeList(cur->child->next->next, inStatus); // TypeList

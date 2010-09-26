@@ -103,7 +103,7 @@ false ->boolPool.[0];
 
 // object sub-identifier testing
 obj = []{
-	=;
+	={"nothing"};
 	mem = 1;
 	rec = obj;
 }

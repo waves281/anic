@@ -310,8 +310,7 @@ FilterHeader : LSQUARE ParamList RSQUARE
 	| LSQUARE ParamList RetList RSQUARE
 	| LSQUARE RetList RSQUARE
 	;
-NonRetFilterHeader : LSQUARE RSQUARE
-	| LSQUARE ParamList RSQUARE
+NonRetFilterHeader : LSQUARE ParamList RSQUARE
 	;
 RetFilterHeader : LSQUARE RetList RSQUARE
 	;
@@ -372,7 +371,6 @@ ObjectTypeList : InstructorType
 	| MemberType COMMA ObjectTypeList
 	;
 InstructorType : EQUALS
-	| EQUALS LSQUARE RSQUARE
 	| EQUALS LSQUARE TypeList RSQUARE
 	;
 OutstructorType : EQUALS LSQUARE DRARROW TypeList RSQUARE
@@ -396,10 +394,12 @@ ObjectPipes : LastInstructor
 	| Pipe ObjectPipes
 	;
 Instructor : EQUALS SEMICOLON
+	| EQUALS Block SEMICOLON
 	| EQUALS NonRetFilterHeader Block
 	| EQUALS NonRetFilterHeader Block SEMICOLON
 	;
 LastInstructor : EQUALS
+	| EQUALS Block
 	;
 Outstructor : EQUALS RetFilterHeader Block
 	| EQUALS RetFilterHeader Block SEMICOLON

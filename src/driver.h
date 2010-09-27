@@ -47,20 +47,26 @@
 
 #define GET_FILE_NAME(fi) ((fi != STANDARD_LIBRARY_FILE_INDEX) ? inFileNames[fi] : STANDARD_LIBRARY_FILE_NAME)
 
-#define lexerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": " << \
+#define lexerError(fi,r,c,str) if (!silentMode) { silentMode = true; \
+		cerr << ERROR_STRING << ": " << \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "LEXER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; \
+		silentMode = false; } \
 	lexerErrorCode++; \
 	if (eventuallyGiveUp && lexerErrorCode >= TOLERABLE_ERROR_LIMIT) { printError("too many errors, giving up"); return NULL; }
 
-#define parserError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
+#define parserError(fi,r,c,str) if (!silentMode) { silentMode = true; \
+		cerr << ERROR_STRING << ": "<< \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "PARSER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; \
+		silentMode = false; } \
 	parserErrorCode++;
 
-#define semmerError(fi,r,c,str) if (!silentMode) { cerr << ERROR_STRING << ": "<< \
+#define semmerError(fi,r,c,str) if (!silentMode) { silentMode = true; \
+		cerr << ERROR_STRING << ": "<< \
 		COLOREXP(SET_TERM(CYAN_CODE)) << "SEMMER" << COLOREXP(SET_TERM(RESET_CODE)) << \
-		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; } \
+		": " << COLOREXP(SET_TERM(BRIGHT_CODE AND BLACK_CODE)) << GET_FILE_NAME(fi) << ":" << r << ":" << c << COLOREXP(SET_TERM(RESET_CODE)) << ": " << str << ".\n"; \
+		silentMode = false; } \
 	semmerErrorCode++;
 
 void printHeader(void);

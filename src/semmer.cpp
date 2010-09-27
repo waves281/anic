@@ -2035,8 +2035,8 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 				} else {
 					Token curToken = is->t; // InstantiationSource
 					Tree *identifier = (*(is->child) == TOKEN_NonArrayedIdentifier) ? is->child: is->child->next;// NonArrayedIdentifier or ArrayedIdentifier
-					semmerError(curToken.fileIndex,curToken.row,curToken.col,"null instantiation of null-instructorless object '"<<identifier<<"'"); 
-					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (object type is "<<instantiationStatus<<")");
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"null instantiation of non-null-instantiable node '"<<identifier<<"'"); 
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (node type is "<<instantiationStatus<<")");
 					returnTypeRet(errType, NULL);
 				}
 			} else { // else if we're default instantiating a non-object, just return the type of the instantiation

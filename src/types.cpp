@@ -517,7 +517,7 @@ Type *StdType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from())) {
-			return otherTypeCast->to()->foldTypeList();
+			return (otherTypeCast->to() != NULL) ? otherTypeCast->to()->foldTypeList() : NULL;
 		}
 	} else if (otherType.category == CATEGORY_OBJECTTYPE) {
 		return errType;
@@ -740,7 +740,7 @@ Type *TypeList::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
-			return otherTypeCast->to()->foldTypeList();
+			return (otherTypeCast->to() != NULL) ? otherTypeCast->to()->foldTypeList() : NULL;
 		} else {
 			return errType;
 		}
@@ -895,7 +895,7 @@ Type *FilterType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (otherTypeCast->suffix == SUFFIX_LATCH && (*this >> *(otherTypeCast->from()))) {
-			return otherTypeCast->to()->foldTypeList();
+			return (otherTypeCast->to() != NULL) ? otherTypeCast->to()->foldTypeList() : NULL;
 		} else {
 			return errType;
 		}
@@ -947,7 +947,13 @@ string FilterType::toString(unsigned int tabDepth) {
 	COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 	acc += " --> ";
 	COLOR( acc += SET_TERM(RESET_CODE); )
-	acc += to()->toString(tabDepth+1);
+	if (to() != NULL) {
+		acc += to()->toString(tabDepth+1);
+	} else {
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND BLUE_CODE); )
+		acc += "<IMPLICIT>";
+		COLOR( acc += SET_TERM(RESET_CODE); )
+	}
 	COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 	acc += ']';
 	COLOR( acc += SET_TERM(RESET_CODE); )
@@ -963,7 +969,13 @@ FilterType::operator string() {
 	COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 	acc += " --> ";
 	COLOR( acc += SET_TERM(RESET_CODE); )
-	acc += (string)(*(to()));
+	if (to() != NULL) {
+		acc += (string)(*(to()));
+	} else {
+		COLOR( acc += SET_TERM(BRIGHT_CODE AND BLUE_CODE); )
+		acc += "<IMPLICIT>";
+		COLOR( acc += SET_TERM(RESET_CODE); )
+	}
 	COLOR( acc += SET_TERM(BRIGHT_CODE AND GREEN_CODE); )
 	acc += ']';
 	COLOR( acc += SET_TERM(RESET_CODE); )
@@ -1199,11 +1211,11 @@ Type *ObjectType::operator,(Type &otherType) {
 	} else if (otherType.category == CATEGORY_FILTERTYPE) {
 		FilterType *otherTypeCast = (FilterType *)(&otherType);
 		if (*this >> *(otherTypeCast->from())) {
-			return otherTypeCast->to()->foldTypeList();
+			return (otherTypeCast->to() != NULL) ? otherTypeCast->to()->foldTypeList() : NULL;
 		} else if (suffix == SUFFIX_LATCH) {
 			for (StructorList::iterator outsIter = outstructorList.begin(); outsIter != outstructorList.end(); outsIter++) {
 				if (**outsIter >> *(otherTypeCast->from())) {
-					return otherTypeCast->to()->foldTypeList();
+					return (otherTypeCast->to() != NULL) ? otherTypeCast->to()->foldTypeList() : NULL;
 				}
 			}
 			return errType;
@@ -1486,7 +1498,11 @@ bool ErrorType::operator==(int kind) const {return false;}
 Type *ErrorType::operator,(Type &otherType) {return errType;}
 bool ErrorType::operator>>(Type &otherType) {return false;}
 string ErrorType::toString(unsigned int tabDepth) {
-	return "<ERROR>";
+	TYPE_TO_STRING_HEADER;
+	acc += COLOREXP( SET_TERM(RED_CODE) );
+	acc += "<ERROR>";
+	acc += COLOREXP( SET_TERM(RESET_CODE) );
+	TYPE_TO_STRING_FOOTER;
 }
 ErrorType::operator string() {return toString(1);}
 

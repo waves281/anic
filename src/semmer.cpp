@@ -608,8 +608,8 @@ pair<SymbolTree *, bool> bindId(const string &s, SymbolTree *env, const TypeStat
 					}
 				}
 			} else if (stCur->kind == KIND_DECLARATION) { // else if it's a Declaration binding, carefully get its type
-				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, NonEmptyTerms, or NULL
-				if (discriminant != NULL && (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation)) { // if it's a Declaration that could possibly have sub-identifiers, derive its type
+				Tree *discriminant = stCur->defSite->child->next->next; // TypedStaticTerm, BlankInstantiation, SEMICOLON, ImportIdentifier, or NULL
+				if (discriminant != NULL && (*discriminant == TOKEN_TypedStaticTerm || *discriminant == TOKEN_BlankInstantiation)) { // if it's a Declaration with sub-identifiers, derive its type
 					stCurType = getStatusDeclaration(stCur->defSite);
 				}
 			} else if (stCur->kind == KIND_PARAMETER) { // else if it's a Param binding, naively get its type
@@ -2034,7 +2034,8 @@ TypeStatus getStatusInstantiation(Tree *tree, const TypeStatus &inStatus) {
 					returnStatus(instantiationStatus);
 				} else {
 					Token curToken = is->t; // InstantiationSource
-					semmerError(curToken.fileIndex,curToken.row,curToken.col,"null instantiation of object with no null instructor"); 
+					Tree *identifier = (*(is->child) == TOKEN_NonArrayedIdentifier) ? is->child: is->child->next;// NonArrayedIdentifier or ArrayedIdentifier
+					semmerError(curToken.fileIndex,curToken.row,curToken.col,"null instantiation of null-instructorless object '"<<identifier<<"'"); 
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (object type is "<<instantiationStatus<<")");
 					returnTypeRet(errType, NULL);
 				}
@@ -2313,13 +2314,17 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 			if (enclosingParent->kind == KIND_FILTER) {
 				FilterType *enclosingType = (FilterType *)(enclosingParent->defSite->status.type);
 				if ((*inStatus == *nullType && *(enclosingType->from()) == *nullType) || (*inStatus >> *(enclosingType->from()))) {
-					if (enclosingType->to()->list.size() == 1) {
+					if (enclosingType->to() == NULL) {
+						Token curToken = dtc->child->t; // LARROW
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"irresolvable implicit loopback return type");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (incoming type is "<<enclosingType->from()<<")");
+					} else if (enclosingType->to()->list.size() == 1) {
 						returnTypeRet(enclosingType->to()->list[0], inStatus.retType);
 					} else {
 						returnTypeRet(enclosingType->to(), inStatus.retType);
 					}
 				} else {
-					Token curToken = dtc->child->t; // ERARROW
+					Token curToken = dtc->child->t; // LARROW
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (expected type is "<<enclosingType->from()<<")");
 				}
@@ -2328,7 +2333,7 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 				if (*inStatus >> *enclosingType) {
 					returnTypeRet(nullType, inStatus.retType);
 				} else {
-					Token curToken = dtc->child->t; // ERARROW
+					Token curToken = dtc->child->t; // LARROW
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (expected type is "<<enclosingType<<")");
 				}
@@ -2341,13 +2346,13 @@ TypeStatus getStatusDynamicTerm(Tree *tree, const TypeStatus &inStatus) {
 						returnTypeRet(enclosingType, inStatus.retType);
 					}
 				} else {
-					Token curToken = dtc->child->t; // ERARROW
+					Token curToken = dtc->child->t; // LARROW
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"loopback of unexpected type "<<inStatus);
 					semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (expected type is "<<enclosingType<<")");
 				}
 			}
 		} else {
-			Token curToken = dtc->child->t; // ERARROW
+			Token curToken = dtc->child->t; // LARROW
 			semmerError(curToken.fileIndex,curToken.row,curToken.col,"loopback outside of a filter block");
 		}
 	} else if (*dtc == TOKEN_Send) {
@@ -2587,7 +2592,16 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 				} else { // else if this is not a recognized exceptional case
 					// derive a type for the flow of the current type into the next term in the sequence
 					Type *flowResult = (*curStatus , *nextTermStatus);
-					if (*flowResult) { // if the type flow is valid, log it as the current status
+					if (flowResult == NULL) {
+						Token curToken = curTerm->t; // Term
+						Token prevToken = prevTerm->t; // Term
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"irresolvable implicit filter return type");
+						semmerError(curToken.fileIndex,curToken.row,curToken.col,"-- (term's type is "<<nextTermStatus<<")");
+						semmerError(prevToken.fileIndex,prevToken.row,prevToken.col,"-- (incoming type is "<<curStatus<<")");
+						// short-circuit the derivation of this NonEmptyTerms
+						curStatus = errType;
+						break;
+					} else if (*flowResult) { // if the type flow is valid, log it as the current status
 						curStatus = TypeStatus(flowResult, nextTermStatus);
 					} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
 						curStatus = nextTermStatus;
@@ -2755,7 +2769,7 @@ int sem(Tree *treeRoot, SymbolTree *&stRoot, SchedTree *&codeRoot) {
 	
 	VERBOSE( cout << stRoot; )
 
-	// if there were no errors, free the error type node
+	// if there were no errors, delete the error type node
 	if (!semmerErrorCode) {
 		delete errType;
 	}

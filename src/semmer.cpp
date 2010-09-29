@@ -2592,7 +2592,7 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 				} else { // else if this is not a recognized exceptional case
 					// derive a type for the flow of the current type into the next term in the sequence
 					Type *flowResult = (*curStatus , *nextTermStatus);
-					if (flowResult == NULL) {
+					if (flowResult == NULL) { // if the flow result was implicit (NULL), flag an error
 						Token curToken = curTerm->t; // Term
 						Token prevToken = prevTerm->t; // Term
 						semmerError(curToken.fileIndex,curToken.row,curToken.col,"irresolvable implicit filter return type");
@@ -2601,9 +2601,9 @@ TypeStatus getStatusNonEmptyTerms(Tree *tree, const TypeStatus &inStatus) {
 						// short-circuit the derivation of this NonEmptyTerms
 						curStatus = errType;
 						break;
-					} else if (*flowResult) { // if the type flow is valid, log it as the current status
+					} else if (*flowResult) { // else if the type flow is valid, log it as the current status
 						curStatus = TypeStatus(flowResult, nextTermStatus);
-					} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, log the next term's status as the current one
+					} else if (*curStatus == *nullType) { // else if the flow is not valid, but the incoming type is null, treat it as a value injection
 						curStatus = nextTermStatus;
 					} else { // else if the type flow is not valid and the incoming type is not null, flag an error
 						Token curToken = curTerm->t; // Term

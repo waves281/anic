@@ -163,7 +163,6 @@ philosopher = []{
 	id = [int\];
 	chopstick = [int\];
 	nextPhil = [philosopher\];
-	lol = [philosopher];
 	=;
 	=[int newId] { [\newId] <->id; }
 

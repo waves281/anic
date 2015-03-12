@@ -12,6 +12,9 @@ Here's the original home page, re-typed in rST:
 Introduction
 ************
 
+.. image:: https://github.com/kirbyfan64/anic/blob/master/ani.jpg
+   :target: https://github.com/kirbyfan64/anic/blob/master
+
 **anic** is the reference implementation compiler for the experimental, high-performance, implicitly parallel, deadlock-free general-purpose dataflow programming language **ANI**.
 
 Portably written using the GNU toolchain, *anic* works on all of the popular operating systems, including \*nix, Mac OS X, and Windows (via Cygwin).
